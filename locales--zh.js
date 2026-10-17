@@ -209,6 +209,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "chooseAnswer": "请先选择一个答案。",
     "hintAnswer": "{why} 选择答案并检查，即可完成本章。",
     "wrongAnswer": "再试一次。{why}",
+    "replayCelebration": "再庆祝一次",
     "award": "答对了，第 {n} 章完成。",
     "chapterComplete": "第 {n} 章完成。",
     "journeyComplete": "你完成了这段旅程。",

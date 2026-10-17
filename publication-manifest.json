@@ -37,6 +37,10 @@
       "published": "course-navigation.js"
     },
     {
+      "source": "explanation/visual-introduction/course-rewards.js",
+      "published": "course-rewards.js"
+    },
+    {
       "source": "explanation/visual-introduction/course-zh.css",
       "published": "course-zh.css"
     },

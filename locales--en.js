@@ -209,6 +209,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "chooseAnswer": "Choose an answer first.",
     "hintAnswer": "{why} Choose an answer and check it to complete this chapter.",
     "wrongAnswer": "Try again. {why}",
+    "replayCelebration": "Celebrate again",
     "award": "Well done! Chapter {n} complete.",
     "chapterComplete": "Chapter {n} complete.",
     "journeyComplete": "Your journey is complete.",

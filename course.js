@@ -6,7 +6,7 @@
 	const i18n = window.SmallJourneyI18n, t = i18n.t;
 	const chapterIds = [...data.quizzes.map(q => q.chapter),'capstone'];
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-	let celebrationMotion;
+	const rewards = window.SmallJourneyRewards;
 	let celebrationDelay, celebrationReveal;
 	const storageKey = 'dml-small-journey-progress-v1';
 	let completed = new Set();
@@ -56,7 +56,7 @@
 	function clearCelebration() {
 		clearTimeout(celebrationDelay); celebrationDelay = undefined;
 		celebrationReveal?.cancel(); celebrationReveal = undefined;
-		celebrationMotion?.cancel(); celebrationMotion = undefined;
+		rewards.clear();
 	}
 	document.addEventListener('course-navigation-change',clearCelebration);
 	document.addEventListener('course-language-will-change',clearCelebration);
@@ -65,26 +65,15 @@
 	document.addEventListener('visibilitychange',() => { if (document.hidden) clearCelebration(); });
 	reducedMotion.addEventListener('change',event => { if (event.matches) clearCelebration(); });
 	function celebrate(host) {
-		if (reducedMotion.matches) return;
-		const mark = host.querySelector('.reward-planet');
-		if (!mark || typeof mark.animate !== 'function') return;
-		// Animate the illustration itself so it stays attached through scroll and layout changes.
-		const motion = mark.animate([
-			{transform:'scale(1)',offset:0},
-			{transform:'scale(1.5)',offset:.45},
-			{transform:'scale(1.5)',offset:.58},
-			{transform:'scale(1)',offset:1}
-		],{duration:2800,easing:'cubic-bezier(.4,0,.2,1)'});
-		celebrationMotion = motion;
-		const done = () => { if (celebrationMotion === motion) celebrationMotion = undefined; };
-		motion.finished.then(done,done);
+		rewards.play(host);
 	}
 	function showCompletion(host,first) {
 		clearCelebration();
 		const reduced = reducedMotion.matches;
 		const needsScroll = host.getBoundingClientRect().bottom > window.innerHeight-20;
 		if (needsScroll) host.scrollIntoView({block:'nearest',behavior:reduced ? 'instant' : 'smooth'});
-		if (!first || reduced || typeof host.animate !== 'function') return;
+		if (reduced || typeof host.animate !== 'function') return;
+		if (!first) { rewards.play(host,true); return; }
 		celebrationReveal = host.animate([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:850,easing:'ease-in-out'});
 		celebrationDelay = setTimeout(() => {
 			celebrationDelay = undefined;
@@ -96,19 +85,23 @@
 		feedback.className = 'feedback'; feedback.replaceChildren(); delete feedback.dataset.state;
 		delete form.dataset.result;
 		delete feedback.dataset.kind;
+		delete feedback.dataset.finalMilestone;
 		for (const option of form.querySelectorAll('.answer-option')) delete option.dataset.correct;
 	}
 	function reward(form,feedback,quiz,index,first=false) {
+		const finalMilestone = first && completed.size === chapterIds.length || feedback.dataset.finalMilestone === 'true';
 		clearFeedback(form,feedback); form.dataset.result = 'correct'; feedback.dataset.state = 'correct'; feedback.classList.add('reward-feedback');
+		if (finalMilestone) feedback.dataset.finalMilestone = 'true';
 		const header = document.createElement('div'); header.className = 'reward-header';
 		const mark = planet();
 		const text = document.createElement('div'), title = document.createElement('strong'), progress = document.createElement('span');
 		feedback.dataset.kind = 'correct';
-		title.className = 'reward-title'; title.textContent = t(completed.size === chapterIds.length ? 'journeyComplete' : first ? 'award' : 'chapterComplete',{n:index+1});
+		title.className = 'reward-title'; title.textContent = t(finalMilestone ? 'journeyComplete' : first ? 'award' : 'chapterComplete',{n:index+1});
 		progress.className = 'reward-progress'; progress.textContent = t('stops',{n:completed.size,total:chapterIds.length});
 		text.append(title,progress); header.append(mark,text);
 		const explanation = document.createElement('p'); explanation.textContent = i18n.quiz(quiz).why; feedback.append(header,journey(),explanation);
 		form.querySelector('input:checked')?.closest('.answer-option').setAttribute('data-correct','true');
+		rewards.decorate(feedback,index,finalMilestone);
 	}
 	for (const [index,quiz] of data.quizzes.entries()) {
 		const initialWords = i18n.quiz(quiz);
@@ -300,14 +293,15 @@
 		const issues = [...(state.month !== '2025-02-01' ? [t('selectFebruary')] : []),...(state.fields[0] !== 'region' ? [t('groupRegion')] : []),...(state.region !== 'all' ? [t('includeAll')] : []),...(missing.length ? [t('includeMeasures',{names:missing.join(', ')})] : [])];
 		const p = $('final-feedback');
 		if (issues.length) { p.textContent = t('finalIssues',{issues:issues.join('; ')}); p.dataset.state = 'retry'; p.dataset.kind = 'issues'; return; }
-		const first = finishChapter('capstone'); p.dataset.state = 'correct';
+		finishChapter('capstone'); p.dataset.state = 'correct';
 		$('capstone-check').dataset.result = 'correct';
 		p.textContent = t('finalCorrect'); p.dataset.kind = 'correct';
 		$('course-finish').hidden = false;
 		$('course-finish').querySelector('h3').textContent = t(completed.size === chapterIds.length ? 'journeyComplete' : 'ready');
 		if (!$('course-finish').querySelector('.reward-planet')) $('course-finish').prepend(planet());
 		if (!$('course-finish').querySelector('.reward-journey')) $('course-finish').querySelector('h3').after(journey());
-		if (first) showCompletion($('course-finish'),true);
+		rewards.decorate($('course-finish'),11,true);
+		showCompletion($('course-finish'),true);
 	});
 	$('download-query').addEventListener('click',() => {
 		const url = URL.createObjectURL(new Blob([$('final-query').textContent+'\n'],{type:'text/plain;charset=utf-8'}));
@@ -334,6 +328,7 @@
 		filters(); shares(); grain(); time(); lookups(); missing(); finalReport(false); updateProgress();
 		$('check-final').textContent = t('checkChapter',{n:12}); $('final-hint').textContent = t('hint'); $('download-query').textContent = t('downloadQuery');
 		$('course-finish').querySelector('h3').textContent = t(completed.size === chapterIds.length ? 'journeyComplete' : 'ready');
+		if (!$('course-finish').hidden) rewards.decorate($('course-finish'),11,true);
 		const feedback = $('final-feedback'), kind = feedback.dataset.kind;
 		if (kind === 'hint' || kind === 'correct' || kind === 'review') feedback.textContent = t({hint:'finalHint',correct:'finalCorrect',review:'finalReview'}[kind]);
 		if (kind === 'issues') $('capstone-check').dispatchEvent(new Event('submit',{cancelable:true}));

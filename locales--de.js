@@ -209,6 +209,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "chooseAnswer": "Wähle zuerst eine Antwort.",
     "hintAnswer": "{why} Wähle eine Antwort und prüfe sie, um das Kapitel abzuschließen.",
     "wrongAnswer": "Versuche es noch einmal. {why}",
+    "replayCelebration": "Noch einmal feiern",
     "award": "Richtig! Kapitel {n} abgeschlossen.",
     "chapterComplete": "Kapitel {n} abgeschlossen.",
     "journeyComplete": "Deine Reise ist abgeschlossen.",

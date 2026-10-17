@@ -209,6 +209,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "chooseAnswer": "まず答えを選んでください。",
     "hintAnswer": "{why} 答えを選び、確認するとこの章が完了します。",
     "wrongAnswer": "もう一度考えてみましょう。{why}",
+    "replayCelebration": "もう一度お祝いする",
     "award": "正解です。第 {n} 章を完了しました。",
     "chapterComplete": "第 {n} 章、完了。",
     "journeyComplete": "旅を最後まで歩きました。",

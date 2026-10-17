@@ -87,6 +87,18 @@ button.secondary:hover { background:#e7ede6; }
 .reward-header > div { grid-column:2; display:flex; align-items:baseline; flex-wrap:wrap; gap:3px 12px; min-width:0; }
 .reward-planet { position:relative; display:block; width:60px; height:60px; flex-shrink:0; }
 .reward-planet > img { position:absolute; inset:0; width:100%; height:100%; }
+.reward-planet > svg { display:block; width:100%; height:100%; overflow:visible; }
+.rose-petals { transform-box:fill-box; transform-origin:50% 90%; }
+.paper-plane { transform-box:fill-box; transform-origin:center; }
+.orbit-moon { transform-origin:60px 66px; }
+.notebook-page { transform-origin:60px 60px; }
+.journey-finale { clear:both; grid-column:1/-1; margin:14px 0 0; width:100%; max-width:720px; justify-self:center; }
+.journey-finale > svg { display:block; width:100%; height:auto; max-height:180px; overflow:visible; }
+.finale-world,.finale-home { transform-box:fill-box; transform-origin:center; }
+.finale-plane { opacity:0; }
+.reward-replay { grid-column:1/-1; justify-self:start; margin-top:12px; min-height:44px; font-size:13px; }
+.has-finale { border-color:#9fb8a6; background:#f8f7ec; }
+.course-complete.has-finale { background:#f2f3e7; }
 .reward-header > .reward-planet { grid-column:1; grid-row:1/4; align-self:center; }
 .reward-title { display:block; color:#37565c; font:italic 20px/1.3 Georgia,serif; }
 .reward-progress { display:block; color:#5c706d; font-size:11px; }
@@ -150,5 +162,5 @@ html:lang(ja) h1,html:lang(ja) h2,html:lang(ja) h3,html:lang(ja) .story { font-f
 .chapter-nav a[data-complete="true"] { text-decoration:underline; text-decoration-color:#75937a; text-decoration-thickness:2px; }
 @media(max-width:800px) { .stage-board { grid-template-columns:1fr; } .chapter-check { padding:21px; } .metric-options { grid-template-columns:1fr; } .final-preview .preview-note { min-height:0; } }
 @media(max-width:480px) { .reward-feedback { grid-template-columns:44px minmax(0,1fr); column-gap:10px; } .reward-header > .reward-planet { width:44px; height:44px; grid-row:1/3; } .reward-title { font-size:18px; } .reward-feedback p { grid-column:1/-1; margin-top:4px; } }
-@media print { .learning-progress,.chapter-check,.lab-controls,.download-row,button { display:none; } .stage-board,.explorer-grid { display:block; } }
+@media print { .learning-progress,.chapter-check,.lab-controls,.download-row,button,.journey-finale { display:none; } .stage-board,.explorer-grid { display:block; } }
 @media(prefers-reduced-motion:reduce) { .reward-journey > span { transition:none; } }
