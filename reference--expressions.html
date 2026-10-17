@@ -1,0 +1,325 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMX expressions and functions · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dmx-expressions-and-functions">DMX expressions and functions</h1>
+<p>This page owns reference forms and intrinsic functions. <a href="reference--modifiers.html">Measure modifiers</a> owns modifier behavior. <a href="reference--model-query-sql.html">Model Query SQL</a> owns query grammar and aliases. Functions in examples are expression syntax; emitted SQL depends on the selected dialect.</p>
+<p><a id="1-reference-syntax"></a></p>
+<h2 id="reference-syntax">Reference syntax</h2>
+<h3 id="in-dml-formulas">In <code>.dml</code> formulas</h3>
+<table>
+<thead>
+<tr>
+<th>Reference type</th>
+<th>Syntax</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Column</td>
+<td><code>{column_name}</code></td>
+<td><code>SUM({amount})</code></td>
+</tr>
+<tr>
+<td>Measure</td>
+<td><code>{measure_name}</code></td>
+<td><code>DIVIDE({sales}, {count})</code></td>
+</tr>
+<tr>
+<td>Cross-dataset column</td>
+<td><code>{DATASET}.column</code></td>
+<td><code>{products}.price</code></td>
+</tr>
+<tr>
+<td>Measure with modifier</td>
+<td><code>{measure: modifier}</code></td>
+<td><code>{sales: yoy}</code></td>
+</tr>
+<tr>
+<td>Measure with nested modifiers</td>
+<td><code>{measure: {modifier: sub}}</code></td>
+<td><code>{sales: {+d: customer}}</code></td>
+</tr>
+</tbody></table>
+<h3 id="in-model-query-sql">In Model Query SQL</h3>
+<table>
+<thead>
+<tr>
+<th>Reference type</th>
+<th>Syntax</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Column (dimension)</td>
+<td>bare name</td>
+<td><code>SELECT product, dt_month</code></td>
+</tr>
+<tr>
+<td>Measure</td>
+<td><code>AGG(measure_name)</code></td>
+<td><code>AGG(sales)</code></td>
+</tr>
+<tr>
+<td>Measure with modifier</td>
+<td><code>AGG({measure: modifier})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+<tr>
+<td>Measure with positional modifier</td>
+<td><code>AGG(measure, &#39;modifier&#39;)</code></td>
+<td><code>AGG(sales, &#39;yoy&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>Key rule</strong>: <code>{...}</code> braces are for <code>.dml</code> only. In Model Query SQL, use bare names for dimensions and <code>AGG(...)</code> for measures. The only exception: <code>AGG({measure: modifier})</code> for modifier form.</p>
+<h3 id="pk-lookups"><code>pk(...)</code> lookups</h3>
+<p>Cross-dataset column lookups in <code>.dml</code> formulas:</p>
+<pre><code class="language-yaml"># Single PK
+formula: &#39;SUM({amount} * pk(customer_id).{customers}.tier_discount)&#39;
+
+# Composite PK
+formula: &#39;SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)&#39;
+</code></pre>
+<p>Supply one expression per target dimension field, in declaration order. <code>pk(1, tag_id)</code> has the correct arity for <code>[brand_id, tag_id]</code>; it deliberately fixes <code>brand_id</code> to 1. Whether that lookup is correct depends on the intended key and source uniqueness.</p>
+<hr>
+<p><a id="3-functions"></a></p>
+<h2 id="functions">Functions</h2>
+<p><a id="31-core-aggregation-functions"></a></p>
+<h3 id="core-aggregation-functions">Core aggregation functions</h3>
+<p>Valid in both <code>.dml</code> and Model Query SQL. In <code>.dml</code>, they aggregate raw columns (<code>SUM({amount})</code>) or drill-down measures (<code>SUM({sales: {+d: product}})</code>). In Model Query SQL, they aggregate drill-down measures only (e.g. <code>SUM(AGG({sales: {+d: product}}))</code> sums per-product sales into a total). Use <code>AGG(measure)</code> alone for a plain measure reference.</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SUM</code></td>
+<td><code>SUM({column})</code></td>
+<td>Sum</td>
+</tr>
+<tr>
+<td><code>COUNT</code></td>
+<td><code>COUNT({column})</code></td>
+<td>Count non-null</td>
+</tr>
+<tr>
+<td><code>COUNT(DISTINCT ...)</code></td>
+<td><code>COUNT(DISTINCT {column})</code></td>
+<td>Count distinct</td>
+</tr>
+<tr>
+<td><code>MAX</code></td>
+<td><code>MAX({column})</code></td>
+<td>Maximum</td>
+</tr>
+<tr>
+<td><code>MIN</code></td>
+<td><code>MIN({column})</code></td>
+<td>Minimum</td>
+</tr>
+<tr>
+<td><code>AVG</code></td>
+<td><code>AVG({column})</code></td>
+<td>Average</td>
+</tr>
+</tbody></table>
+<p><a id="32-dml-specific-functions"></a></p>
+<h3 id="dml-specific-functions">DML-specific functions</h3>
+<p>The context column identifies where a function can appear within a valid measure expression. Model Query SQL still requires measure aggregation through <code>AGG(...)</code>; these functions do not permit raw-column aggregation in <code>SELECT</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Syntax</th>
+<th>Context</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AGG()</code></td>
+<td><code>AGG(measure)</code></td>
+<td>Model Query SQL only</td>
+<td>References a measure in queries (not an aggregation function)</td>
+</tr>
+<tr>
+<td><code>DIVIDE()</code></td>
+<td><code>DIVIDE({num}, {den})</code></td>
+<td>Both</td>
+<td>Safe division (returns NULL on divide-by-zero)</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNT()</code></td>
+<td><code>DISTINCTCOUNT({column})</code></td>
+<td>Both</td>
+<td>Count distinct values</td>
+</tr>
+<tr>
+<td><code>SUMIF</code></td>
+<td><code>SUMIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Conditional sum</td>
+</tr>
+<tr>
+<td><code>COUNTIF</code></td>
+<td><code>COUNTIF({condition})</code> / <code>COUNTIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Matching rows / matching non-null values</td>
+</tr>
+<tr>
+<td><code>AVGIF</code></td>
+<td><code>AVGIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Conditional average</td>
+</tr>
+<tr>
+<td><code>MAXIF</code></td>
+<td><code>MAXIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Conditional maximum</td>
+</tr>
+<tr>
+<td><code>MINIF</code></td>
+<td><code>MINIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Conditional minimum</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNTIF</code></td>
+<td><code>DISTINCTCOUNTIF({val}, {condition})</code></td>
+<td>Both</td>
+<td>Conditional distinct count</td>
+</tr>
+</tbody></table>
+<p><strong>Conditional aggregation examples</strong>:</p>
+<pre><code class="language-yaml"># In .dml
+completed_sales:
+    type: measure
+    formula: SUMIF({amount}, {status} = &#39;completed&#39;)
+
+high_value_customers:
+    type: measure
+    formula: &#39;DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)&#39;
+</code></pre>
+<pre><code class="language-sql">-- In Model Query SQL (modifier form)
+SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
+</code></pre>
+<p><a id="33-conditional-and-utility-functions"></a></p>
+<h3 id="conditional-and-utility-functions">Conditional and utility functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IIF</code></td>
+<td><code>IIF(condition, true_val, false_val)</code></td>
+<td>Inline conditional</td>
+</tr>
+<tr>
+<td><code>ISNULL</code> / <code>IFNULL</code> / <code>COALESCE</code></td>
+<td><code>ISNULL({expr}, default)</code></td>
+<td>Null coalescing</td>
+</tr>
+<tr>
+<td><code>NULLIF</code></td>
+<td><code>NULLIF({a}, {b})</code></td>
+<td>Return NULL if a = b</td>
+</tr>
+</tbody></table>
+<p>Utility functions use the SQL expression layer. They are valid formula syntax, but they are not canonical DML intrinsic symbols. The DML function catalog reserves that identity for DML-owned functions such as <code>AGG</code>, <code>DIVIDE</code>, and <code>SUMIF</code>.</p>
+<p>An outermost null-coalescing formula with a literal fallback activates <a href="reference--measures.html#fill-default-when-row-missing">missing-row fill</a> at that measure&#39;s use sites.</p>
+<pre><code class="language-yaml">daily_sales:
+    type: measure
+    formula: SUM(ISNULL({sales: {+d: dt_date}}, 0))
+</code></pre>
+<p><a id="34-date-functions-sqlite-dialect"></a></p>
+<h3 id="date-functions-sqlite-dialect">Date functions (SQLite dialect)</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>date()</code></td>
+<td><code>date(current_date)</code></td>
+<td>Current date</td>
+</tr>
+<tr>
+<td><code>date(current_date, &#39;start of month&#39;)</code></td>
+<td>—</td>
+<td>First day of current month</td>
+</tr>
+<tr>
+<td><code>date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)</code></td>
+<td>—</td>
+<td>First day of last month</td>
+</tr>
+<tr>
+<td><code>date(current_date, &#39;start of year&#39;)</code></td>
+<td>—</td>
+<td>First day of current year</td>
+</tr>
+<tr>
+<td><code>date(current_date, &#39;-N days&#39;)</code></td>
+<td>—</td>
+<td>N days ago</td>
+</tr>
+</tbody></table>
+<p><strong>Dialect note</strong>: Match your date functions to the target dialect. DML supports a SQLite-style date expression language and lowers supported forms to the selected dialect. Inspect the emitted SQL; these expressions are not a promise that the target database accepts the same text natively.</p>
+<hr>
+<p><a id="4-modifier-syntax-in-model-query-sql"></a></p>
+<h2 id="modifier-syntax-in-model-query-sql">Modifier syntax in Model Query SQL</h2>
+<p>Two equivalent forms in Model Query SQL:</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Syntax</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Positional</td>
+<td><code>AGG(measure, &#39;mod1&#39;, &#39;mod2&#39;)</code></td>
+<td><code>AGG(sales, &#39;yoy&#39;)</code></td>
+</tr>
+<tr>
+<td>Brace</td>
+<td><code>AGG({measure: mod})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+</tbody></table>
+<p><strong>Alias rules</strong>: See <a href="reference--model-query-sql.html#33-alias-rules">Model Query alias rules</a> for the canonical alias rules table (<code>AGG(sales)</code> auto-aliases; <code>AGG({sales: yoy})</code> requires <code>AS</code>).</p>
+<hr>
+<h2 id="runtime-variables">Runtime variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Context</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{dim_dt}</code></td>
+<td>Time-aware expressions and modifiers</td>
+<td>Resolved standard time field for the current evaluation context</td>
+</tr>
+<tr>
+<td><code>{measure}</code></td>
+<td><code>fn-macro</code> formula</td>
+<td>The calling measure that the macro wraps</td>
+</tr>
+<tr>
+<td><code>{dt_date}</code>, <code>{dt_week}</code>, <code>{dt_month}</code>, <code>{dt_quarter}</code>, <code>{dt_year}</code></td>
+<td>Standard time references</td>
+<td>The named standard time field</td>
+</tr>
+</tbody></table>
+<p><a href="reference--semantics.html#24-dim_dt--the-time-dimension">Time context</a> defines resolution and period conventions. <a href="how-to--define-macros.html">Define macros</a> covers macro declarations and variable use.</p>
+</main></html>

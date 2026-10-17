@@ -1,0 +1,569 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML evaluation semantics · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-evaluation-semantics">DML evaluation semantics</h1>
+<p>This page owns evaluation context, grain compatibility, and composition contracts. Declaration syntax lives in <a href="reference--model-structure.html">model structure</a>, <a href="reference--measures.html">measures</a>, <a href="reference--query-yaml.html">queries</a>, and <a href="reference--materialization.html">materialization</a>. <a href="maintenance--release-evidence.html">Compiler evidence</a> records observed implementation gaps.</p>
+<p><a id="1--scope-and-position"></a></p>
+<h2 id="scope-and-position">Scope and position</h2>
+<p><a id="11-what-this-spec-covers"></a></p>
+<h3 id="what-this-spec-covers">What this spec covers</h3>
+<p>This document specifies DML evaluation context, grain compatibility, and modifier constraints. Rules below describe language contracts. Error codes, MCP protocol, and structured error response format are documented in <a href="reference--error-codes.html">DMLC Error Codes Reference</a> and <a href="reference--mcp-contract.html">MCP Contract (CLI + MCP)</a>.</p>
+<p>Current product capability status and evidence boundaries are maintained separately in <a title="Reference available in the development workspace"><code>DML 产品事实源</code></a>. This spec defines language meaning; examples here do not by themselves upgrade a product capability to <code>tested</code>.</p>
+<p><a id="12-what-this-spec-does-not-cover"></a></p>
+<h3 id="what-this-spec-does-not-cover">What this spec does not cover</h3>
+<ul>
+<li><a href="how-to--compile-and-validate.html">Compile and validate a query</a> covers CLI commands and evidence collection.</li>
+<li><a href="reference--mcp-contract.html">MCP contract</a> covers tool requests and responses.</li>
+<li><a href="how-to--build-analysis.html">Build an analysis</a> covers business analysis procedures.</li>
+<li><a href="explanation--core-concepts.html">Core concepts</a> explains the model, query, and expression layers.</li>
+</ul>
+<p><a id="13-three-layer-architecture"></a></p>
+<h3 id="three-layer-architecture">Three-layer architecture</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Language</th>
+<th>What you write</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Modeling</strong></td>
+<td>DML</td>
+<td>Datasets, measures, column-macros, materialize, dt/fn-macros</td>
+<td><code>.dml</code> (YAML)</td>
+</tr>
+<tr>
+<td><strong>Querying</strong></td>
+<td>Model Query (SQL or DML format)</td>
+<td><code>AGG(measure)</code>, <code>GROUP BY</code>, modifiers</td>
+<td><code>.sql</code> or <code>.dml</code> <code>type: query</code></td>
+</tr>
+<tr>
+<td><strong>Expressions</strong></td>
+<td>DMX (Dato Measure eXpression)</td>
+<td>Formulas, references, modifiers, <code>pk()</code></td>
+<td>Inside both layers</td>
+</tr>
+</tbody></table>
+<p>DMX is the shared expression language. In <code>.dml</code> formulas: <code>{column}</code>, <code>{measure: modifier}</code>, <code>pk(...)</code>. In Model Query SQL: <code>AGG(measure)</code>, <code>AGG({measure: modifier})</code>.</p>
+<p><a id="14-core-building-blocks"></a></p>
+<h3 id="core-building-blocks">Core building blocks</h3>
+<p><strong>Dataset</strong> — a table with a declared dimension and columns. Its <strong>dataset declared grain</strong> is determined by the declared <code>dimension:</code> list.</p>
+<p><strong>Measure</strong> — a named business metric. Two types:</p>
+<ul>
+<li><strong>Atomic</strong>: bound to a dataset (<code>dataset:</code> field), uses SQL aggregation on columns.</li>
+<li><strong>Composite</strong>: references other measures (no <code>dataset:</code> field).</li>
+</ul>
+<p><strong>Dimension field</strong> — one named DML field.</p>
+<p><strong>Dimension</strong> — a list containing one or more dimension fields. A dataset <code>dimension:</code> declares source-row identity; a query dimension declares grouping; an evaluation dimension controls a measure reference; and a materialization dimension declares an output key. Each inner list in measure <code>dimensions:</code> is one allowed dimension. A <strong>measure-as-dimension</strong> field is a query-dimension field whose value is produced by evaluating a measure (see <a href="#37-measure-as-dimension">Measure-as-dimension</a>).</p>
+<p>The modifier form <code>{dimension: []}</code> clears the evaluation dimension to request a grand-total context. The empty list is an operation, not a zero-field dimension.</p>
+<p><strong>Column-macro</strong> — a derived column or cross-dataset lookup defined in <code>.dml</code>. Brings fields from other datasets into measure formulas without <code>JOIN</code>.</p>
+<p><a id="15-design-principles"></a></p>
+<h3 id="design-principles">Design principles</h3>
+<ol>
+<li><strong>Semantics must be executable.</strong> Measures compile to warehouse SQL — not just documentation.</li>
+<li><strong>Govern semantics like code.</strong> Git, PR, LSP, <code>dml_schema.yaml</code> validation.</li>
+<li><strong>Measures are not bound to a fixed result grain.</strong> A measure has a derived, optionally constrained <strong>measure valid/native context</strong> and is evaluated at an effective grain chosen by the query and modifiers; the compiler enforces compatibility.</li>
+<li><strong>Complex derivations belong in the model.</strong> Time comparisons, ratios, multi-level aggregation — kept in <code>.dml</code>, not scattered to BI calculated fields or ad-hoc SQL.</li>
+<li><strong>Agents are equal consumers.</strong> MCP <code>run_query</code>, <code>structuredContent</code>, <code>next.actions</code> — agents and analysts share the same semantic entry point.</li>
+</ol>
+<hr>
+<p><a id="2--evaluation-context-model"></a></p>
+<h2 id="evaluation-context-model">Evaluation context model</h2>
+<p><a id="21-definition"></a></p>
+<h3 id="definition">Definition</h3>
+<p>The <strong>evaluation context</strong> is the complete set of information the compiler uses to resolve a measure reference into executable SQL.</p>
+<p>The canonical product shorthand is <code>Context = {grain, filters, time}</code>. In the language model below, the <code>time</code> role is represented by the resolved <code>dim_dt</code> field.</p>
+<pre><code>Context = {
+    grain: [dim₁, dim₂, ...],   // active grouping dimension fields
+    filters: [predicate₁, ...],  // active filter predicates
+    dim_dt: TimeDim | null       // resolved time dimension
+}
+</code></pre>
+<p><a id="22-canonical-grain-roles"></a></p>
+<h3 id="canonical-grain-roles">Canonical grain roles</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dataset declared grain</strong></td>
+<td>Dataset <code>dimension:</code></td>
+<td>What one dataset row represents</td>
+</tr>
+<tr>
+<td><strong>Measure valid/native context</strong></td>
+<td>Dataset source, referenced measures, formula/modifiers, and optional measure <code>dimensions:</code> constraint</td>
+<td>Contexts in which the measure definition is valid; not a fixed output grain</td>
+</tr>
+<tr>
+<td><strong>Effective evaluation grain</strong></td>
+<td>Query grain after applying <code>+d</code>, <code>-d</code>, <code>dimension</code>, and related modifiers</td>
+<td>Grain at which a particular measure reference is evaluated</td>
+</tr>
+<tr>
+<td><strong>Query result grain</strong></td>
+<td><code>GROUP BY</code> or query <code>columns.dimension</code></td>
+<td>What one output row represents. May include measure-as-dimension fields (<a href="#37-measure-as-dimension">Measure-as-dimension</a>) alongside physical or mapped dimension fields.</td>
+</tr>
+</tbody></table>
+<p>The broader <strong>query context</strong> combines query result grain with <code>WHERE</code> / <code>filters:</code> and resolved time information. “Measure native grain” and “target grain” in older material are aliases for <strong>measure valid/native context</strong> and <strong>effective evaluation grain</strong> respectively; new normative text should use the canonical terms above.</p>
+<p><a id="23-context-transition"></a></p>
+<h3 id="context-transition">Context transition</h3>
+<p>Modifiers transform the evaluation context. The compiler applies modifiers to derive a new context for measure evaluation:</p>
+<pre><code>apply_modifier(Context, Modifier) -&gt; Context&#39;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Modifier</th>
+<th>Effect on grain</th>
+<th>Effect on filters</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+d: dim</code></td>
+<td>Append <code>dim</code> to grain (drill down)</td>
+<td>No change</td>
+</tr>
+<tr>
+<td><code>-d: dim</code></td>
+<td>Remove <code>dim</code> from grain (roll up)</td>
+<td>No change — filters on <code>dim</code> still pushed to dataset <code>WHERE</code></td>
+</tr>
+<tr>
+<td><code>-df: dim</code></td>
+<td>Remove <code>dim</code> from grain</td>
+<td>Remove filters on <code>dim</code> (and derived columns) from measure evaluation</td>
+</tr>
+<tr>
+<td><code>dimension: [dims]</code></td>
+<td>Replace entire grain with <code>dims</code></td>
+<td>No change</td>
+</tr>
+<tr>
+<td><code>+f: condition</code></td>
+<td>No change</td>
+<td>Add <code>condition</code> to filters</td>
+</tr>
+<tr>
+<td><code>-f: dim</code></td>
+<td>No change</td>
+<td>Remove filters referencing <code>dim</code></td>
+</tr>
+<tr>
+<td>dt-macro (e.g. <code>ya</code>, <code>pp</code>, <code>ytd</code>)</td>
+<td>No change</td>
+<td>Replace time range in <code>dim_dt</code></td>
+</tr>
+<tr>
+<td>fn-macro (e.g. <code>yoy</code>, <code>rank</code>)</td>
+<td>May change grain (e.g. <code>grand</code> → <code>dimension: []</code>)</td>
+<td>Depends on macro formula</td>
+</tr>
+</tbody></table>
+<p><a id="24-dim_dt--the-time-dimension"></a></p>
+<h3 id="dim_dt--the-time-dimension"><code>dim_dt</code> — the time dimension</h3>
+<p><code>dim_dt</code> is the system variable representing the <strong>time dimension of the current query</strong>.</p>
+<p><strong>Resolution priority</strong>: query <code>dimension</code> → query <code>filter</code> → null.</p>
+<p><strong>Properties</strong>:</p>
+<ul>
+<li><code>{dim_dt}</code> — resolves to the query&#39;s current time field (e.g. <code>dt_month</code>, <code>dt_quarter</code>)</li>
+<li><code>{dim_dt.datetype}</code> — type string: <code>&#39;day&#39;</code>, <code>&#39;week&#39;</code>, <code>&#39;month&#39;</code>, <code>&#39;quarter&#39;</code>, <code>&#39;year&#39;</code></li>
+<li><code>{dim_dt.periods_per_year}</code> — periods per year: 52 for weeks, 12 for months, 4 for quarters</li>
+<li><code>{dim_dt.datepart}</code> — SQL datepart string</li>
+</ul>
+<p><strong>Design goal</strong>: use <code>dim_dt</code> instead of concrete <code>dt_date</code>/<code>dt_month</code>/<code>dt_quarter</code> in measure formulas, so a measure works at any time grain without rewriting.</p>
+<p><strong>Period conversion</strong>: <code>dim_dt as quarter</code> makes <code>pp</code> operate at quarter grain even if the query groups by year + quarter:</p>
+<pre><code class="language-sql">SELECT dt_year, dt_quarter,
+       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+FROM MODEL GROUP BY dt_year, dt_quarter
+</code></pre>
+<p><a id="25-standard-time-dimension-fields"></a></p>
+<h3 id="standard-time-dimension-fields">Standard time dimension fields</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Grain</th>
+<th>Example value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt_date</code></td>
+<td>Day</td>
+<td><code>2024-03-15</code></td>
+</tr>
+<tr>
+<td><code>dt_week</code></td>
+<td>Week (starting Monday)</td>
+<td><code>2024-03-11</code></td>
+</tr>
+<tr>
+<td><code>dt_month</code></td>
+<td>Month</td>
+<td><code>2024-03-01</code></td>
+</tr>
+<tr>
+<td><code>dt_quarter</code></td>
+<td>Quarter</td>
+<td><code>2024-01-01</code></td>
+</tr>
+<tr>
+<td><code>dt_year</code></td>
+<td>Year</td>
+<td><code>2024-01-01</code></td>
+</tr>
+</tbody></table>
+<p>All time fields use <strong>first-day format</strong>: the first day of the period.</p>
+<h4 id="automatic-coarser-grain-derivation">Automatic coarser-grain derivation</h4>
+<p>A dataset that explicitly declares a standard time field also exposes the supported coarser
+members of the <code>dt_&lt;grain&gt;</code> series through the system calendar. For example, an explicit
+<code>dt_date</code> column makes <code>dt_week</code>, <code>dt_month</code>, <code>dt_quarter</code>, and <code>dt_year</code> valid dataset-scoped
+column references; model authors do not need to repeat those names under <code>columns:</code> merely to
+query or filter at a coarser time grain. The generated values follow the calendar and first-day
+rules above.</p>
+<p>An auto-derived time field is a <strong>virtual column identity</strong>, not a second explicit source
+definition. Language tooling must therefore:</p>
+<ul>
+<li>include supported derived fields in dataset-scoped resolution and completion;</li>
+<li>accept them anywhere the corresponding dataset column is legal, including as query dimension fields,
+filters, formulas, and modifier payloads;</li>
+<li>navigate a derived reference to the explicit source time column that supplies it
+(<code>dt_month</code> derived from <code>dt_date</code> navigates to <code>dt_date</code>);</li>
+<li>keep the virtual field name read-only for rename purposes unless an explicit definition with
+that name exists.</li>
+</ul>
+<p>If the same derived field can be reached from more than one explicit time source and no unique
+source can be selected, tooling must fail closed rather than choose an arbitrary definition.</p>
+<p><a id="26-calendar-dataset"></a></p>
+<h3 id="calendar-dataset">Calendar dataset</h3>
+<p>The system provides a <code>Dim Calendar</code> dataset for cross-grain time lookups:</p>
+<pre><code class="language-yaml">Dim Calendar:
+    type: dataset
+    table: DML_CALENDAR
+    dimension: [dt_date]
+    columns:
+        dt_date:
+        dt_week:
+        dt_month:
+            source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
+        dt_quarter:
+            source: pk({dt_month}).DML_CALENDAR(dt_date).dt_quarter
+        dt_year:
+            source: pk({dt_quarter}).DML_CALENDAR(dt_date).dt_year
+</code></pre>
+<p><a id="27-filter-context-and-pushdown"></a></p>
+<h3 id="filter-context-and-pushdown">Filter context and pushdown</h3>
+<p>Filter placement depends on semantic scope:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Where</th>
+<th>What goes here</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Query <code>filters:</code> / <code>WHERE</code></td>
+<td>Query block</td>
+<td>Report-specific slices (channel, brand, date range)</td>
+</tr>
+<tr>
+<td>Measure formula</td>
+<td><code>.dml</code> measure</td>
+<td>Metric-specific eligibility when rejected rows may remain in output groups</td>
+</tr>
+<tr>
+<td>Dataset <code>sql:</code></td>
+<td>Dataset definition</td>
+<td>Permanent source-population restrictions that current declarative DML cannot express</td>
+</tr>
+</tbody></table>
+<p>A source <code>WHERE</code> and a NULL-producing measure gate are not generally interchangeable: rejected-only groups disappear in the former and may remain in the latter. Prove group existence, sibling metrics, distinct/join/window behavior, and NULL semantics before moving between these layers.</p>
+<p><strong>Pushdown rule</strong>: query <code>filters:</code> are pushed to the dataset <code>WHERE</code> before aggregation. When <code>-d</code> generates a coarser-grain temp table, the filter is still applied — this can shrink ratio denominators. Use <code>-df</code> to block filter pushdown for a specific dimension field.</p>
+<p><strong>Dependency tracing</strong>: the compiler traces column derive chain. A filter on <code>store_name</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) is blocked when <code>store_id</code> is <code>-df</code>&#39;d, because the column purily derived from <code>store_id</code>.</p>
+<hr>
+<p><a id="3--grain-system"></a></p>
+<h2 id="grain-system">Grain system</h2>
+<p>The dimension in each evaluation context determines its grain and compatibility with other contexts. The DML roles of each dimension declaration are summarized in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p><a id="31-three-grain-types"></a></p>
+<h3 id="three-grain-types">Three grain types</h3>
+<table>
+<thead>
+<tr>
+<th>Grain type</th>
+<th>Declared by</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dataset grain</strong></td>
+<td>Dataset <code>dimension:</code></td>
+<td>One row of the underlying table represents one value combination of the dimension fields in this dimension</td>
+</tr>
+<tr>
+<td><strong>Measure grain</strong></td>
+<td>Formula + modifiers + optional <code>dimensions:</code> constraint</td>
+<td>The grain at which the measure&#39;s formula is valid</td>
+</tr>
+<tr>
+<td><strong>Query grain</strong></td>
+<td>Query <code>GROUP BY</code> / <code>columns.dimension:</code></td>
+<td>One query-result row represents one value combination of the dimension fields in this dimension</td>
+</tr>
+</tbody></table>
+<p><a id="32-grain-compatibility-rule"></a></p>
+<h3 id="grain-compatibility-rule">Grain compatibility rule</h3>
+<p><strong>The query grain must be compatible with every measure&#39;s grain.</strong></p>
+<p>For an atomic measure without <code>dimensions:</code> constraint:</p>
+<ul>
+<li>The measure can be evaluated at any compatible dimension composed from its dataset&#39;s dimension fields.</li>
+<li>The compiler chooses aggregation from the declared grain and requested context; at the declared unique row grain it may project raw values.</li>
+</ul>
+<p>For an atomic measure with <code>dimensions: [[dims]]</code> constraint:</p>
+<ul>
+<li>The measure can <strong>only</strong> be evaluated at the specified grain.</li>
+<li>Other formulas wanting to use it must explicitly <code>{measure: {+d: dim}}</code> to drill to that grain.</li>
+<li>The compiler rejects incompatible grains with: <code>cannot set dimension [...] since only [...] are allowed</code>.</li>
+</ul>
+<p>Dataset/materialize <code>dimension:</code> contains one dimension, while measure <code>dimensions:</code> contains alternative allowed dimensions—each inner list is one dimension. The latter is a constraint, not a declaration of dataset identity or query grouping. See the dimension-role contract in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p>For a composite measure:</p>
+<ul>
+<li>The grain is the union of referenced measures&#39; grains (after modifier resolution).</li>
+<li>All referenced measures must be grain-compatible with each other.</li>
+</ul>
+<p><a id="33-multi-level-aggregation-via-d"></a></p>
+<h3 id="multi-level-aggregation-via-d">Multi-level aggregation via <code>+d</code></h3>
+<p><code>+d</code> establishes a <strong>finer evaluation stage</strong>. It does <strong>not</strong> by itself roll the value back to the query grain.</p>
+<table>
+<thead>
+<tr>
+<th>Writing</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{m: {+d: x}}</code></td>
+<td>Evaluate at query grain ∪ <code>{x}</code>; <strong>stop there</strong></td>
+</tr>
+<tr>
+<td><code>SUM</code> / <code>AVG</code> / <code>MAX</code> / …<code>({m: {+d: x}})</code></td>
+<td>Fine-grain value, then an <strong>explicit outer aggregate</strong> rolls back to the current query grain</td>
+</tr>
+<tr>
+<td>Query dim binding <code>- lab: &#39;{m: {+d: K}}&#39;</code></td>
+<td>Measure-as-dimension (<a href="#37-measure-as-dimension">Measure-as-dimension</a>): the result is a grouping key, not an ordinary rolled-up measure column</td>
+</tr>
+</tbody></table>
+<p>The outer aggregation function (<code>SUM</code>, <code>AVG</code>, <code>MAX</code>, etc.) is <strong>chosen by the author</strong>. The compiler does not invent it. With an outer aggregate, the compiler typically emits a CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
+<p><strong>Pattern</strong>: atomic measure → <code>+d</code> drill-down inside a composite that supplies the outer aggregate → query at any grain</p>
+<pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
+销售量:
+    type: measure
+    dataset: o2o_pos
+    formula: SUM(count_qty)
+
+# Distribution SKU count: how many products have sales &gt; 0?
+# {销售量: {+d: prod_id}} drills down to per-product grain,
+# then DISTINCTCOUNTIF counts products with positive sales.
+分销SKU数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+
+# Distribution store count: how many stores have sales &gt; 0?
+分销客户数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+
+# Average sales per store (selling power)
+卖力:
+    type: measure
+    formula: |-
+        divide({销售额}, {分销客户数})
+</code></pre>
+<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
+SELECT dt_quarter, brand,
+       AGG(销售额),
+       AGG(分销SKU数),
+       AGG(分销客户数),
+       AGG(卖力)
+FROM MODEL
+GROUP BY dt_quarter, brand
+</code></pre>
+<p>When <code>+d</code> appears on a <strong>query dimension</strong> binding rather than inside a measure formula with an explicit outer aggregate, that is <strong>measure-as-dimension</strong> (<a href="#37-measure-as-dimension">Measure-as-dimension</a>), not the two-step pattern above.</p>
+<p><a id="34-cross-dataset-auto-join"></a></p>
+<h3 id="cross-dataset-auto-join">Cross-dataset auto-join</h3>
+<p>Independent measure datasets normally aggregate separately and compose with FULL OUTER JOIN on aligned dimensions (<em>key-union</em>). Composition / densify FOJ ON uses <strong>plain <code>=</code></strong> (SQL <code>NULL≠NULL</code>); row-preserving LEFT and <code>nullpk</code> invent stay <strong>null-safe</strong>. Do not assume the same NULL equality for composition and for <code>pk()</code> / detail spines. Authoring detail: <a href="reference--join-null-equality.html">join NULL equality</a>.</p>
+<p><strong>Emitted join type.</strong> FULL OUTER JOIN is the composition semantics, not the emitted form. The intermediate template emits <code>FULL OUTER JOIN</code> (or densify <code>UNION</code>+<code>LEFT</code> with the same bare-<code>=</code> contract); the SQL compiler may then reduce each join to the strongest type proven by query predicates: a filter that proves the primary side present (e.g. <code>{primary_presence_measure} is not null</code>) lowers the emitted join to <code>LEFT JOIN</code>; filters proving both sides required lower it to <code>INNER JOIN</code>. Inspect the emitted SQL for the final join type — a <code>LEFT</code>/<code>INNER</code> result means the presence contract was proven by authored filters, not that composition semantics or ON equality changed.</p>
+<p>For a LEFT population, filter on a dedicated primary presence measure that is non-null on every valid primary group and NULL on absent groups. For an INNER population, require presence from both sides. Use unfilled source counts or another proven presence signal; a nullable business value can discard valid groups, while missing-row fill can retain absent groups.</p>
+<p>Validate shared key meaning, complete-key uniqueness, nullable-key acceptance (bare <code>=</code> vs null-safe site), unmatched rows, and missing-row fill separately. Independent preaggregation does not repair duplicate lookup keys or a wrong alignment contract. <a href="maintenance--release-evidence.html">Executable probes</a> establish SQL shape, not database result parity.</p>
+<p><a id="35-grain-safety-enforcement-existing-compiler-behavior"></a></p>
+<h3 id="grain-safety-enforcement-existing-compiler-behavior">Grain safety enforcement (existing compiler behavior)</h3>
+<p>The compiler enforces grain safety at compile time:</p>
+<ol>
+<li><p><strong>Measure dimension-constraint violation</strong>: if a measure with allowed dimension <code>dimensions: [[customer_id]]</code> is referenced at a query dimension that also includes <code>dt_date</code>, the compiler rejects with:</p>
+<pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
+</code></pre>
+<p>The compiler now includes a Hint explaining that <code>...</code> allows additional dimension fields but listed fields remain required, and suggests using <code>+d</code> to add missing required fields. Use <code>...</code> to permit additional dimension fields; the listed fields remain required.</p>
+</li>
+<li><p><strong>Measure aggregation requires <code>+d</code></strong>: <code>SUM({measure})</code> fails with &quot;cannot aggregate a measure w/o +d modifier&quot;—the compiler includes a Hint explaining that without <code>+d</code> the measure is already at its target evaluation dimension with nothing finer to aggregate. This applies to <strong>any</strong> measure reference wrapped in an aggregation function, regardless of <code>dimensions:</code> declarations. The target evaluation dimension comes from query <code>GROUP BY</code> plus the measure&#39;s allowed-dimension constraint. <code>+d: dim</code> appends a dimension field and evaluates at the resulting finer grain; the <strong>outer</strong> <code>SUM</code>/<code>AVG</code>/… rolls back to the target dimension. Use <code>SUM({measure: {+d: dim}})</code> (not bare <code>{measure: {+d: dim}}</code> as a rolled-up column) when that two-step contract is intended.</p>
+</li>
+<li><p><strong>Missing time context</strong>: time modifiers require a resolvable <code>dim_dt</code> and their macro prerequisites. A grouped time field or a time filter can supply the context.</p>
+</li>
+<li><p><strong>Incompatible cross-dataset grains</strong>: if two measures from different datasets don&#39;t share enough dimensions for the query grain, the compiler reports an error.</p>
+</li>
+<li><p><strong>Measure-as-dimension rules</strong>: see <a href="#37-measure-as-dimension">Measure-as-dimension</a> and the release caveats. Missing entity keys are rejected, but static checks do not catch every invalid lowering.</p>
+</li>
+</ol>
+<p><strong>Evidence boundary:</strong> compile success is not a proof of valid SQL or correct numbers. The distributed build has a strict-success classifier probe that emits <code>GROUP BY COUNT(1)</code>. Check SQL shape, live uniqueness and result parity as separate gates; see <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p><a id="36-time-grain-rules"></a></p>
+<h3 id="time-grain-rules">Time grain rules</h3>
+<ul>
+<li>Prefer one explicit time grain for a clear reporting contract. The checked build accepts <code>dt_year, dt_month</code> together; this does not establish every multi-time modifier combination.</li>
+<li>Use period-start values for coarser time fields. Equality selects one period; structured <code>range: [start, end]</code> includes both endpoints at that grain.</li>
+<li>WHERE predicate order is an authoring convention, not a grammar restriction.</li>
+<li>Use the macro&#39;s actual prerequisites and resolved <code>dim_dt</code>; a time filter can supply the context without a visible time grouping field.</li>
+</ul>
+<p><a id="37-measure-as-dimension"></a></p>
+<h3 id="measure-as-dimension">Measure-as-dimension</h3>
+<p>A <strong>measure-as-dimension</strong> field is a member of the <strong>query dimension</strong> whose value is the result of evaluating a measure (or a scalar expression over such a measure), not a physical dataset column. It remains a query-dimension role (<a title="Reference available in the development workspace">dimension roles</a>): it contributes to the <strong>query result grain</strong>. It does not declare dataset identity.</p>
+<p>Explanation: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. This section states the intended multi-pass contract. The <a href="explanation--measure-as-dimension.html">explanation</a> separates working shapes from shipped lowering defects. The compiler models these query columns separately from physical dimension columns and ordinary output measures while reusing normal measure calculation behavior.</p>
+<p><a id="371-syntax-on-columnsdimension"></a></p>
+<h4 id="syntax-on-columnsdimension">Syntax on <code>columns.dimension</code></h4>
+<p>Authoring forms and capability boundaries (DML-format query):</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Example</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Named measure + explicit <code>+d</code></td>
+<td><code>- first_purchase_month: &#39;{first_purchase_month: {+d: store_id}}&#39;</code></td>
+<td>Evaluate the measure with <code>store_id</code> appended to its evaluation dimension; use the result as the query-dimension field</td>
+</tr>
+<tr>
+<td>Bare measure name</td>
+<td><code>- first_purchase_month</code></td>
+<td>Invalid for a measure-derived dimension. The use site must declare an explicit complete <code>+d</code> key.</td>
+</tr>
+<tr>
+<td>Scalar wrap over <code>{m: {+d: dim}}</code></td>
+<td><code>- payment_day: &#39;cast({authorization_ts: {+d: payment_id}} as date)&#39;</code></td>
+<td>Evaluate the scalar once per complete key and use the result as a query-dimension field.</td>
+</tr>
+<tr>
+<td>Named scalar measure + <code>+d</code> on the query</td>
+<td>measure <code>formula: &#39;cast({authorization_ts} as date)&#39;</code>, then <code>- payment_day: &#39;{dt_payment_day: {+d: payment_id}}&#39;</code></td>
+<td>Equivalent preferred authoring shape when the scalar is reusable</td>
+</tr>
+<tr>
+<td><code>dimension:</code> / <code>rank</code> label (no <code>+d</code>)</td>
+<td><code>- brand_bucket: &#39;iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, &#39;&#39;others&#39;&#39;)&#39;</code></td>
+<td>Query-dimension formula that replaces evaluation dimension via <code>dimension:</code> / uses <code>rank</code>; not the <code>+d</code> multi-pass attachment pattern</td>
+</tr>
+</tbody></table>
+<p>Prefer <code>type: query</code> for authoring and validating these bindings. SQL shown in generated fixture headers is not proof that the corresponding Model Query SQL round trip is supported.</p>
+<p><a id="372-evaluation-semantics-multi-pass"></a></p>
+<h4 id="evaluation-semantics-multi-pass">Evaluation semantics (multi-pass)</h4>
+<p>Let <code>M</code> be the measure-as-dimension expression, <code>K</code> its explicitly authored <code>+d</code> fields, and <code>Q</code> the ordinary query-dimension fields. Its evaluation and attachment grain is <code>G = Q ∪ K</code>, excluding measure-derived labels. Internal aggregation stages do not redefine <code>K</code>.</p>
+<ol>
+<li><strong>Fine-grain evaluation.</strong> Evaluate every measure-as-dimension at <code>G</code>. Evaluate ordinary output measures at <code>G</code> as well, preserving the states or component measures required for later rollup.</li>
+<li><strong>Attach on the complete classification key <code>G</code>.</strong> The classification relation must have one scalar value per complete key. If it is not co-located with consuming measures, attach it before grouping those measures by its value. Store-month classification requires store and month in the join, not just <code>+d: store_id</code>. Coarser attachment requires its complete key to be available or provably derivable in the consumer; a finer attachment requires an explicit drill-down and rollup. Preserve NULL-key and query-population semantics.</li>
+<li><strong>Roll up to query result grain.</strong> Aggregate ordinary measures to <code>{ measure-as-dimension fields } ∪ Q</code>. Fields in <code>K</code> are dropped unless also present in <code>Q</code>. If an ordinary measure cannot be safely rewritten to evaluation at <code>G</code> followed by this rollup, compilation fails.</li>
+</ol>
+<p>This is the same executable idea as multi-level aggregation via <code>+d</code> (<a href="#33-multi-level-aggregation-via-d">multi-level aggregation</a>), specialized so the drilled measure result becomes a <strong>query-dimension field</strong> rather than only an intermediate input to a composite formula.</p>
+<pre><code class="language-text">source
+  → evaluate measure-as-dimension + other measures at finer evaluation dimension (+d)
+  → attach on the complete classification key
+  → roll up to query result grain (GROUP BY measure-as-dimension field[, ordinary query-dimension fields])
+</code></pre>
+<p><a id="373-d-compatibility"></a></p>
+<h4 id="d-compatibility"><code>+d</code> compatibility</h4>
+<p>Use explicit entity keys on the classification and participating sibling drill-down references. Compatibility is determined by resolved evaluation dimensions and scope, not only the spelling of <code>+d</code> payloads.</p>
+<p><strong>Shared <code>+d</code>.</strong> Every measure-as-dimension requires an explicit complete key. Several independent labels are allowed only when their keys are equal as sets; declaration order within the key is irrelevant.</p>
+<p><strong>Bare references.</strong> Do not infer entity grain from sibling measures. Use an explicit <code>+d</code> or <code>dimension:</code> entity key; a bare measure binding is rejected. <code>dimension:</code> is recognized but not reliable for all shapes in the checked build. Adding or removing an output metric must not change classification membership.</p>
+<p><strong>Different keys.</strong> Independent labels with unequal keys are rejected. A label may not depend on another label in the same query. General bridging between different entity grains requires a separate modeled relation.</p>
+<p><a id="374-constraints"></a></p>
+<h4 id="constraints">Constraints</h4>
+<ol>
+<li><p>Classification requires explicit entity keys (<code>+d</code> preferred; <code>dimension:</code> is also recognized). Multiple-label compatibility and safe rollup are contract requirements, not blanket release guarantees; validate the exact query.</p>
+</li>
+<li><p>General period-modifier combinations are unverified. test_82d exercises a <code>mat</code> rolling-year classifier; this does not establish <code>yoy</code>/<code>pop</code> correctness. Use only combinations with explicit classification/report time scope and result evidence.</p>
+</li>
+<li><p>Scalar transformations may be inline or named. They must yield one determined value per complete classification key.</p>
+</li>
+<li><p>Measure <code>dimensions:</code> allowlists and grain-safety rules (<a href="#35-grain-safety-enforcement-existing-compiler-behavior">grain safety</a>) apply to every measure reference inside the measure-as-dimension expression at its effective evaluation grain.</p>
+</li>
+<li><p>Cross-dataset auto-join (<a href="#34-cross-dataset-auto-join">cross-dataset composition</a>) still aggregates each dataset’s measures to a common query grain; a measure-as-dimension field is part of that query grain after attachment and roll-up.</p>
+</li>
+<li><p>Group by the same completed classification value that is displayed. One row per complete query key is required, including NULL keys. A classifier does not authorize summing nonadditive measures or inventing inactive entities. Ratios retain their component semantics; an explicit outer aggregate over entity values remains the author&#39;s choice.</p>
+</li>
+<li><p>Source filters apply through existing modifier rules. <code>-d</code> changes grain without removing filters; <code>-f</code> and <code>-df</code> provide the existing scope controls. A label predicate belongs after classification, and a report aggregate threshold after aggregation; neither may alter the inputs of its own classification. History-to-cutoff, rolling-window and current-selection classifiers are distinct business definitions.</p>
+</li>
+</ol>
+<p><a id="375-example"></a></p>
+<h4 id="example">Example</h4>
+<p><code>first_purchase_month</code> below specifically means the first <strong>positive monthly net-sales</strong> month within the evaluation scope. <code>purchase_span</code> explicitly evaluates both endpoints at the entity grain and surrounds the finer result with the final aggregation.</p>
+<pre><code class="language-yaml">first_purchase_month:
+    type: measure
+    formula: &#39;MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)&#39;
+
+report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - first_purchase_month: &#39;{first_purchase_month: {+d: store_id}}&#39;
+        sales:
+        purchase_span: &#39;SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))&#39;
+</code></pre>
+<ul>
+<li>Query result grain: <code>[first_purchase_month]</code>.</li>
+<li>Fine-grain evaluation via <code>{+d: store_id}</code> on the measure-as-dimension and on <code>purchase_span</code>.</li>
+<li>Final <code>GROUP BY</code> uses <code>first_purchase_month</code> and drops <code>store_id</code>.</li>
+</ul>
+<p><a id="44-modifier-schema-constraints"></a></p>
+<h2 id="modifier-schema-constraints">Modifier schema constraints</h2>
+<p>From <code>dmx_variable_schema.yaml</code>, the modifier object has these structural constraints:</p>
+<ul>
+<li><strong><code>dim_dt</code> variants</strong>: at most one <code>dim_dt</code> / <code>dim_dt as date</code> / <code>dim_dt as month</code> / etc. per modifier object.</li>
+<li><strong><code>+d</code> and <code>dimension</code></strong>: at most one per modifier object (mutually exclusive).</li>
+<li><strong><code>-d</code> and <code>dimension</code></strong>: at most one per modifier object (mutually exclusive).</li>
+<li><strong><code>+d</code> and <code>-d</code> / <code>-df</code></strong>: may coexist only when their <strong>dimension-name sets are disjoint</strong> (drill one field, remove another). <strong>Same-name intersection is illegal</strong> — see <a href="#45-modifier-composition">modifier composition</a>.</li>
+<li>Multiple modifiers can coexist in a single modifier object (see <a href="reference--modifiers.html#24-combining-modifiers">combining modifiers</a> for composition examples), subject to the intersection rule above.</li>
+</ul>
+<p><a id="45-modifier-composition"></a></p>
+<h2 id="modifier-composition">Modifier composition</h2>
+<p>Preserve authored modifier order. Several macros may create intermediate measures; time macros on multi-path functions may instead propagate into each branch. See <a href="reference--modifiers.html#25-modifier-stacking">stacking semantics</a> and its release probes.</p>
+<p>Write one YAML key per modifier: <code>{+f: {a: 1, b: 2}}</code>, not repeated <code>+f</code> keys. <code>-df</code> combines dimension removal with filter removal.</p>
+<p><strong>Same-dimension modifier conflicts:</strong></p>
+<p>The language contract requires a compile error when the field set of <code>+d</code> intersects the field set of either <code>-d</code> or <code>-df</code> within one modifier object. The current build does not enforce this requirement in the checked cases. Do <strong>not</strong> algebraically cancel to bare <code>{m}</code>, and do <strong>not</strong> silently rewrite <code>{+d: x, -df: x}</code> into <code>{-f: x}</code> (when the output grain already contains <code>x</code>, <code>-df</code> and <code>-f</code> differ).</p>
+<table>
+<thead>
+<tr>
+<th>Illegal</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{销量: {+d: 门店, -d: 门店}}</code></td>
+<td>Add and remove the same field — no unique silent reading; canceling to <code>{销量}</code> hides typos and diverges from <code>AVG({销量: {+d: 门店}})</code> (equal weight per store)</td>
+</tr>
+<tr>
+<td><code>{销量: {+d: 门店, -df: 门店}}</code></td>
+<td>Must not become <code>{-f: 门店}</code>; grain vs filter-only semantics diverge</td>
+</tr>
+</tbody></table>
+<p>Authors who intend a clear reading must write one of: <code>{销量}</code> / <code>SUM({销量: {+d: 门店}})</code> / <code>{销量: {-d:…\|-df:…\|-f:…}}</code>.<br><strong>Different</strong> dimensions may still coexist, e.g. <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>.</p>
+<p>The 2026-10-16 <code>dimension_conflict</code> and <code>dimension_filter_conflict</code> probes both exit 0. They emit a regional window total at customer grain and then sum the repeated totals. The manifest records this behavior as a known compiler gap. It is not an accepted authoring pattern. See <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+</main></html>

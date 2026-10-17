@@ -1,0 +1,55 @@
+/* Chinese has its own type scale; Latin tracking and simulated italics crowd CJK text. */
+html:lang(zh) {
+  --course-zh-font:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+}
+html:lang(zh) body {
+  font-family:var(--course-zh-font);
+  font-size:16px;
+  line-height:1.85;
+}
+html:lang(zh) h1,
+html:lang(zh) h2,
+html:lang(zh) h3 {
+  font-family:var(--course-zh-font);
+  font-weight:500;
+  letter-spacing:0;
+}
+html:lang(zh) h1 { font-size:clamp(36px,4.5vw,56px); line-height:1.35; }
+html:lang(zh) h2 { font-size:clamp(28px,2.8vw,36px); line-height:1.45; margin-bottom:20px; }
+html:lang(zh) h3 { font-size:22px; line-height:1.5; }
+html:lang(zh) .hero .lead { font-size:18px; line-height:1.9; }
+html:lang(zh) .story { font:normal 18px/1.85 var(--course-zh-font); }
+html:lang(zh) .chapter-no { font:500 15px/1.6 var(--course-zh-font); margin-bottom:12px; }
+html:lang(zh) .stage-number { font:500 15px/1.6 var(--course-zh-font); }
+html:lang(zh) .eyebrow,
+html:lang(zh) .caption-label { font-size:12px; letter-spacing:.04em; }
+html:lang(zh) .chapter-check legend {
+  font:600 18px/1.7 var(--course-zh-font);
+}
+html:lang(zh) .final-check fieldset fieldset legend { font-size:14px; }
+html:lang(zh) .answer-option { font-size:15px; line-height:1.8; }
+html:lang(zh) .reward-title { font:500 17px/1.6 var(--course-zh-font); }
+html:lang(zh) .reward-progress { font-size:12px; }
+html:lang(zh) .reward-feedback p { font-size:14px; line-height:1.8; }
+html:lang(zh) .journey-overview label { font:500 16px/1.6 var(--course-zh-font); }
+html:lang(zh) .chapter-menu { line-height:1.6; }
+html:lang(zh) .chapter-menu-links { font-size:14px; }
+html:lang(zh) button,
+html:lang(zh) select,
+html:lang(zh) .download-link { font-family:var(--course-zh-font); line-height:1.5; }
+html:lang(zh) button,
+html:lang(zh) .download-link { min-height:44px; }
+html:lang(zh) .small,
+html:lang(zh) .rule,
+html:lang(zh) .grain-note,
+html:lang(zh) .context-note { font-size:14px; line-height:1.8; }
+html:lang(zh) summary { font-size:14px; }
+html:lang(zh) .compiler-observation { font-size:13px; line-height:1.8; }
+html:lang(zh) .compiler-observation summary { font-size:13px; }
+html:lang(zh) .formula-parts strong,
+html:lang(zh) .flow-item strong { font:500 20px/1.5 var(--course-zh-font); }
+html:lang(zh) pre code { line-height:1.75; }
+@media(max-width:800px) {
+  html:lang(zh) h2 { font-size:28px; }
+  html:lang(zh) .hero .lead { font-size:16px; }
+}

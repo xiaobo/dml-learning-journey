@@ -1,0 +1,460 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Troubleshooting index · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="troubleshooting-index">Troubleshooting index</h1>
+<p>Find a symptom or a stable pitfall ID below. <a href="how-to--troubleshoot-query.html">Troubleshoot a query</a> gives the diagnostic procedure. <a href="reference--error-codes.html">Error codes</a> describes structured diagnostics.</p>
+<h2 id="error--fix-quick-reference">Error → fix quick reference</h2>
+<table>
+<thead>
+<tr>
+<th>Error / symptom</th>
+<th>Fix</th>
+<th>Pitfall</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UNION is not supported</code></td>
+<td>Separate queries or measures with different filters</td>
+<td><a href="reference--troubleshooting--queries.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>aggregation is not possible with MODEL.DATASET_*</code></td>
+<td><code>FROM MODEL</code> + <code>AGG(measure)</code></td>
+<td><a href="reference--troubleshooting--queries.html#p8">P8</a>, <a href="reference--troubleshooting--queries.html#p45">P45</a></td>
+</tr>
+<tr>
+<td><code>subquery is not supported</code></td>
+<td>DML measure or <code>+f</code> / <code>HAVING</code> with <code>AGG()</code></td>
+<td><a href="reference--troubleshooting--queries.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>JOIN is not supported</code></td>
+<td><code>{DATASET}.column</code> in column-macros</td>
+<td><a href="reference--troubleshooting--queries.html#p11">P11</a></td>
+</tr>
+<tr>
+<td><code>ref {...} not defined</code></td>
+<td>Define in model; in SQL use bare names</td>
+<td><a href="reference--troubleshooting--models.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>measure cannot be redefined</code></td>
+<td>Drop <code>AS measure_name</code> on <code>AGG(measure_name)</code></td>
+<td><a href="reference--troubleshooting--models.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>use existing measure &quot;X&quot; instead of recreating…</code></td>
+<td><code>AGG(X)</code> only</td>
+<td><a href="reference--troubleshooting--models.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>... was referenced but not defined in sql</code></td>
+<td>Remove <code>{...}</code> from Model Query SQL (except modifier form inside <code>AGG({…})</code>)</td>
+<td><a href="reference--troubleshooting--models.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>file not found: SELECT ...</code> (Windows)</td>
+<td>Replace <code>/</code> operator with <code>DIVIDE()</code> in inline CLI Model Query SQL</td>
+<td><a href="reference--troubleshooting--tooling.html#p63">P63</a></td>
+</tr>
+<tr>
+<td><code>table … is owned by dataset …</code></td>
+<td><code>from {Dataset}</code> / <code>join {Dataset}</code>, or <code>pk(...).{Dataset}.Col</code></td>
+<td><a href="reference--troubleshooting--models.html#p22b">P22b</a></td>
+</tr>
+<tr>
+<td>Measure-as-dimension: missing <code>+d</code>, incompatible label keys, or unsafe sibling rollup</td>
+<td>Add a complete explicit <code>+d</code> key to every measure-as-dimension; use compatible keys and aggregatable output measures</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p66">P66</a>–<a href="reference--troubleshooting--grain-and-joins.html#p68">P68</a></td>
+</tr>
+<tr>
+<td>Same-object <code>{+d:x,-d:x}</code> / <code>{+d:x,-df:x}</code> silently becomes bare <code>{m}</code> or <code>{-f:x}</code></td>
+<td>Illegal — must fail loudly; rewrite to an explicit intent</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p79">P79</a></td>
+</tr>
+<tr>
+<td><code>-f</code> / <code>-df</code> arm drops a non-grain query filter → FOJ partner rows leak</td>
+<td>Keep report population constrained (<code>EXISTS</code> / semi-join); <code>-f</code> does not change grouping</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p80">P80</a></td>
+</tr>
+<tr>
+<td><code>{m:{dimension:[dt_quarter]}}</code> on a month query attaches as a scalar / wrong grain</td>
+<td>Calendar-bridge the coarse CTE and broadcast by quarter</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p81">P81</a></td>
+</tr>
+<tr>
+<td>Fine-grain CTE <code>WHERE</code> then outer <code>SUM</code> rewritten as coarse <code>filters: &quot;cnt &gt; 3&quot;</code></td>
+<td><code>SUMIF</code> / <code>SUM(iif)</code> with matching <code>{+d: …}</code> inside the measure</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p69">P69</a></td>
+</tr>
+<tr>
+<td><code>window functions are not allowed in atomic measures</code> / illegal <code>GROUP BY</code> + <code>OVER</code></td>
+<td>Detail <code>OVER</code> → <code>columns:</code>; post-<code>GROUP-BY</code> → composite / <code>{-d:}</code></td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p70">P70</a>–<a href="reference--troubleshooting--grain-and-joins.html#p71">P71</a></td>
+</tr>
+<tr>
+<td><code>… reference is not allowed in PARTITION BY</code></td>
+<td>Bare <code>{col}</code> on a measure window — move detail to <code>columns:</code> or use <code>{-d:}</code> / <code>{dimension:}</code></td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p71">P71</a></td>
+</tr>
+<tr>
+<td>Rollup ratio denominator collapses (<code>left²</code> instead of <code>left × right</code>), no diagnostic</td>
+<td>Two grain fields alias one column — <code>-df</code>/<code>dimension:</code> anchored the second role on the first key; use <code>pk()</code> into a declared-dimension <code>sql:</code> dataset</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p72">P72</a></td>
+</tr>
+<tr>
+<td>Extra rows (or fake <code>left = right</code> rows) from a rollup composite</td>
+<td>Cross-dataset <code>-df</code> emits <code>FULL OUTER JOIN</code>; guard with <code>&#39;{primary_measure} is not null&#39;:</code></td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p73">P73</a></td>
+</tr>
+<tr>
+<td><code>-df</code> rollup drops a grain field with only a &quot;skip dimension column&quot; warning</td>
+<td>Two <code>table:</code> datasets on one physical table with asymmetric column sets — keep column sets identical or avoid role-playing datasets</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p74">P74</a></td>
+</tr>
+<tr>
+<td><code>column(s) [x] … not in dimension</code> on <code>-df</code> after a dimension rename</td>
+<td><code>-df</code> args are declared grain field names, not source columns</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p76">P76</a></td>
+</tr>
+<tr>
+<td><code>dataset must be specified … did you mean X</code> on <code>MAX(pk(…))</code></td>
+<td>Set <code>dataset:</code> to the <strong>consuming</strong> dataset</td>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p77">P77</a></td>
+</tr>
+</tbody></table>
+<h2 id="find-a-pitfall-by-id">Find a pitfall by ID</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Topic</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="reference--troubleshooting--migration.html#p1">P1</a></td>
+<td>Including presentation logic in DML</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p2">P2</a></td>
+<td>Including query-only derived columns in DML</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p3">P3</a></td>
+<td>Not simplifying SQL before <code>--to-dml</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p4">P4</a></td>
+<td>Forgetting PK hints</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p5">P5</a></td>
+<td>Not verifying compiled SQL matches golden SQL</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p6">P6</a></td>
+<td>Creating one-off measures for filters or query-dimension combinations</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.html#p7">P7</a></td>
+<td>Duplicating aggregation formulas</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p8">P8</a></td>
+<td>Forgetting AGG() in aggregation queries</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p9">P9</a></td>
+<td>Adding redundant alias on AGG()</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p10">P10</a></td>
+<td>Using subqueries</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p11">P11</a></td>
+<td>Using JOINs</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p12">P12</a></td>
+<td>Missing time context for time modifiers</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p13">P13</a></td>
+<td>Mixing time granularities</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p14">P14</a></td>
+<td>Adding unnecessary null filters</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p15">P15</a></td>
+<td>Using BETWEEN for single periods</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p16">P16</a></td>
+<td>Time-filter order is a style convention</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p17">P17</a></td>
+<td>Using ORDER BY without need</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p18">P18</a></td>
+<td>Manual growth rate calculation</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p20">P20</a></td>
+<td>Using DISTINCT alone for existence checks</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p21">P21</a></td>
+<td>AGG() in measure formulas</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p22">P22</a></td>
+<td>Cross-dataset references without lookup</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p22b">P22b</a></td>
+<td>Joining a <code>table:</code>-owned physical table in another dataset&#39;s <code>sql:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p23">P23</a></td>
+<td>Missing <code>dataset:</code> on atomic measures</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p24">P24</a></td>
+<td>Overly specific measure names</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p25">P25</a></td>
+<td>Not documenting edge cases</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p27">P27</a></td>
+<td>Mixing dimension-constrained measures with incompatible queries</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p28">P28</a></td>
+<td>Using <code>+d</code> when <code>GROUP BY</code> suffices</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p28b">P28b</a></td>
+<td>Null contagion when a joined row is missing</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p28c">P28c</a></td>
+<td>Null-safe ON on composition FOJ (<em>key-union</em>)</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p29">P29</a></td>
+<td>Non-first-day time filters</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p30">P30</a></td>
+<td>Missing current day in past-N-days</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p31">P31</a></td>
+<td>Including current period in past-N-months</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p32">P32</a></td>
+<td>Using ytd modifier with full-period GROUP BY</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p33">P33</a></td>
+<td>Period-to-date with date range</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p34">P34</a></td>
+<td>Not running validateOnly before trusted use</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p35">P35</a></td>
+<td>Ignoring column descriptions</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p36">P36</a></td>
+<td>Mismatched dialect</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p37">P37</a></td>
+<td>Modifiers on columns</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p38">P38</a></td>
+<td>Unquoted YAML formulas</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p39">P39</a></td>
+<td><code>dataset:</code> on composite measures</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p40">P40</a></td>
+<td>Measure cannot be redefined / duplicate formula</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p41">P41</a></td>
+<td>DML <code>{...}</code> syntax in Model Query SQL</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.html#p42">P42</a></td>
+<td>Bare name vs <code>{col}</code> inside <code>.dml</code> formulas</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p43">P43</a></td>
+<td><code>{dimension: [...]}</code> vs <code>{-d: dim_dt}</code> (different SQL shape)</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p44">P44</a></td>
+<td>Window share vs <code>{-d: dim}</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p45">P45</a></td>
+<td>Measure in a detail query</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p46">P46</a></td>
+<td>Bare column name in aggregate query</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p47">P47</a></td>
+<td>Mismatched dimension field names across datasets</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p48">P48</a></td>
+<td>Mapping used as a dimension field in <code>dimension:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p49">P49</a></td>
+<td>Dimension field under <code>measures:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p50">P50</a></td>
+<td>Complex filter in query <code>filters:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p51">P51</a></td>
+<td>PK chaining parameter count mismatch</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p52">P52</a></td>
+<td>Manual GROUP BY in <code>after:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p53">P53</a></td>
+<td>PowerShell <code>&amp;&amp;</code> chaining</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p53b">P53b</a></td>
+<td><code>FROM</code> name ≠ <code>--model=</code> <strong>file</strong> name</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p63">P63</a></td>
+<td><code>/</code> operator in inline CLI Model Query SQL on Windows</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p54">P54</a></td>
+<td>CJK JSON via PowerShell pipe</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p55">P55</a></td>
+<td>explain_change filter ≠ headline SQL</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p56">P56</a></td>
+<td>analysis-path dimension missing from --dimensions</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p57">P57</a></td>
+<td>Windows <code>--analysis-path</code> JSON mangling</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.html#p58">P58</a></td>
+<td>Treating shareOfHeadlineDelta as additive</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.html#p59">P59</a></td>
+<td>YoY without column probe</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p60">P60</a></td>
+<td>Subquery for MAX date in aggregation query</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.html#p61">P61</a></td>
+<td>Aggregating directly on dataset with GROUP BY</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p62">P62</a></td>
+<td>Treating measure <code>dimensions:</code> as dataset identity or query grouping</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p64">P64</a></td>
+<td><code>materialize: true</code> on a measure</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p66">P66</a></td>
+<td>Measure-as-dimension without an explicit entity key</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p67">P67</a></td>
+<td>Incompatible or dependent measure-derived dimensions</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p68">P68</a></td>
+<td>Output measure cannot be rolled up from the classification grain</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p69">P69</a></td>
+<td>Fine-grain <code>WHERE</code> hung on coarse query <code>filters:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p70">P70</a></td>
+<td><code>OVER</code> on an atomic measure</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p71">P71</a></td>
+<td>Bare <code>{col}</code> in measure <code>PARTITION BY</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p72">P72</a></td>
+<td>Two grain fields aliasing one column mis-anchor cross-dataset rollups</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p73">P73</a></td>
+<td><code>-df</code> rollup composites emit partner-only rows — and can fabricate key values</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p74">P74</a></td>
+<td>Two <code>table:</code> datasets on one physical table — merge quirks and silent <code>-df</code> grain loss</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p75">P75</a></td>
+<td>Measure guard filters in query <code>filters:</code> — shape and failure mode</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p76">P76</a></td>
+<td><code>-df</code> / <code>-d</code> arguments are declared grain field names, not source columns</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p77">P77</a></td>
+<td><code>pk()</code> into an aggregate relation: <code>sql:</code> target + <code>dataset:</code> on the wrapper</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p79">P79</a></td>
+<td>Same-dimension <code>+d</code> with <code>-d</code> / <code>-df</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p80">P80</a></td>
+<td><code>-f</code> / <code>-df</code> drops a non-grain query filter from the report row set</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p81">P81</a></td>
+<td>Cross-grain <code>dimension:</code> time replacement without calendar broadcast</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.html#p78">P78</a></td>
+<td>A <code>sql:</code> escape must bake its own population/window predicates</td>
+</tr>
+</tbody></table>
+</main></html>

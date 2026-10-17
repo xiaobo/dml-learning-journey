@@ -1,0 +1,105 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A small journey through DML · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="a-small-journey-through-dml">A small journey through DML</h1>
+<p>A traveler arrives with one question: how much did each region sell?</p>
+<p><img src="assets--little-worlds.png" alt="A small traveler with a golden scarf looks at tiny watercolor worlds containing a garden, a notebook, a telescope, and paper cards."></p>
+<p>Open the <a href="index.html">illustrated, interactive tutorial</a>. It now includes twelve chapters, graded exercises, saved progress, and a final report builder. The <a href="tutorials--interactive-journey.html">exercise guide</a> follows the complete beginner project. This page retains the shorter conceptual introduction.</p>
+<h2 id="each-sale-has-an-identity">Each sale has an identity</h2>
+<p>The traveler records four sales. These are invented rows for the illustration, not records fetched from a database.</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>region</th>
+<th>amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>North</td>
+<td>10</td>
+</tr>
+<tr>
+<td>2</td>
+<td>North</td>
+<td>20</td>
+</tr>
+<tr>
+<td>3</td>
+<td>South</td>
+<td>30</td>
+</tr>
+<tr>
+<td>4</td>
+<td>South</td>
+<td>40</td>
+</tr>
+</tbody></table>
+<p>The source dataset has <code>dimension: [id]</code>: one row represents one sale. Two sales can share a region, so <code>region</code> cannot identify a source row. A query can still group those rows by region.</p>
+<p>The <a href="explanation--dimensions.html">dimension explanation</a> describes source identity and report grouping in detail.</p>
+<h2 id="dml-records-the-reusable-definitions">DML records the reusable definitions</h2>
+<p>The traveler keeps a notebook of definitions. DML is that model, written in YAML. This fragment declares two atomic measures on the sales dataset:</p>
+<pre><code class="language-yaml">FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+</code></pre>
+<p><code>sales</code> sums the amount. <code>cnt</code> counts source rows. Both are atomic measures: they inherit <code>FACT_SALES</code> and directly aggregate its rows or column expressions without referencing other measures. Reports can reuse them at compatible evaluation grains.</p>
+<h2 id="dmx-expresses-a-calculation">DMX expresses a calculation</h2>
+<p>The notebook also records how to calculate an average:</p>
+<pre><code class="language-yaml">average_sale:
+  type: measure
+  formula: &#39;DIVIDE({sales}, {cnt})&#39;
+</code></pre>
+<p>The YAML declares a measure. The formula inside it is DMX. <code>{sales}</code> and <code>{cnt}</code> reference measures, and <code>DIVIDE</code> returns NULL for a zero denominator. <code>average_sale</code> is composite because it references other measures; it has no <code>dataset:</code> property.</p>
+<p>DMX is shared expression syntax inside model definitions and query expressions. It is not a separate processing step between the model and query. The <a href="reference--expressions.html">expression reference</a> owns the syntax.</p>
+<h2 id="the-query-chooses-what-one-result-row-represents">The query chooses what one result row represents</h2>
+<p>The traveler turns a telescope toward the regions:</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>AGG</code> references a model measure. <code>GROUP BY region</code> chooses one result row per region. For the four invented sales, the arithmetic gives these values:</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>sales</th>
+<th>average_sale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td>30</td>
+<td>15</td>
+</tr>
+<tr>
+<td>South</td>
+<td>70</td>
+<td>35</td>
+</tr>
+</tbody></table>
+<p>Without grouping fields, the same model measures give total sales of 100 and an average sale of 25. Grouping by <code>id</code> gives one result per sale. The source identity remains <code>[id]</code> in every case.</p>
+<p>At the declared source key <code>[id]</code>, the checked compiler simplifies the aggregate to a row expression and reports a strict finding. That simplification relies on <code>id</code> being unique in the source data. The total and regional queries pass strict compilation on the checked build.</p>
+<p>The checked executable is <code>dmlc 0.3.16</code>, build <code>2026-10-17 05:00:24 Z</code>. The <a href="compiler-observations.json">tutorial compiler record</a> includes its fingerprint and validation limits.</p>
+<p>The interactive page calculates these small example tables in the browser. It does not run DML or connect to a database.</p>
+<h2 id="compilation-produces-sql">Compilation produces SQL</h2>
+<p>The compiler combines the model and query to generate SQL. The database executes that SQL against the real source table.</p>
+<pre><code class="language-text">DML model + Model Query
+          |
+        dmlc
+          |
+     generated SQL
+          |
+       database
+          |
+       result rows
+</code></pre>
+<p>A successful compile confirms the checked compiler behavior. Live key validation and result comparisons provide separate evidence about the source data and answer. The <a href="tutorials--first-query.html">first-query tutorial</a> uses this same model and regional query for an executable exercise.</p>
+<p>For more detail, continue with <a href="explanation--core-concepts.html">core concepts</a>, <a href="reference--measures.html">measure declarations</a>, or <a href="reference--model-query-sql.html">Model Query SQL</a>.</p>
+</main></html>

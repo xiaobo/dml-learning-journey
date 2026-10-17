@@ -1,0 +1,157 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fine-grain aggregation examples · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="fine-grain-aggregation-examples">Fine-grain aggregation examples</h1>
+<p>These patterns evaluate a measure at an intermediate grain, then aggregate or filter those values. The fragments name their additional model dependencies. <a href="reference--modifiers.html">Measure modifiers</a> defines the payload syntax.</p>
+<p><a id="26-multi-level-aggregation-with-d"></a></p>
+<h2 id="multi-level-aggregation-with-d">Multi-level aggregation with <code>+d</code></h2>
+<p><code>+d</code> enables <strong>two-step aggregation</strong>: define a measure at an intermediate grain, then roll up to the query grain. The compiler generates a CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
+<p><strong>Pattern</strong>: dimension-constrained measure → rollup measure → query</p>
+<pre><code class="language-yaml"># Step 1: require customer_id during evaluation
+customer_sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    dimensions:
+        - [customer_id, ...]  # customer required; additional query fields allowed
+
+# Step 2: evaluate with dimension [customer_id], then roll up to the query dimension
+total_customer_sales:
+    type: measure
+    formula: SUM({customer_sales: {+d: customer_id}})
+</code></pre>
+<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([brand], [region], total, etc.)
+SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand
+</code></pre>
+<p><strong>RFM analysis</strong> — full example using <code>+d</code> + fn-macros:</p>
+<pre><code class="language-yaml"># .dml: customer-grain measures for RFM
+last_purchase_month:
+    type: measure
+    formula: &#39;MAXIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)&#39;
+    dimensions:
+        - [customer_id]
+
+purchase_months:
+    type: measure
+    dataset: transactions
+    formula: &#39;COUNT(DISTINCT CASE WHEN {amount} &gt; 0 THEN {dt_month} ELSE NULL END)&#39;
+    dimensions:
+        - [customer_id]
+</code></pre>
+<pre><code class="language-sql">-- Model Query SQL: RFM with ranks
+SELECT AGG(sales) AS M, AGG(sales, &#39;rank&#39;) AS M_rank,
+       AGG(purchase_months) AS F, AGG(purchase_months, &#39;rank&#39;) AS F_rank,
+       AGG(last_purchase_month) AS R, AGG(last_purchase_month, &#39;rank_asc&#39;) AS R_rank
+FROM MODEL GROUP BY customer_id
+</code></pre>
+<p><strong>Inline measures</strong> — define temporary measures directly in Model Query SQL via <code>/** dml ... **/</code> comment blocks, without modifying <code>.dml</code>. Full syntax and rules: <a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures (<code>/** dml ... **/</code>)</a>.</p>
+<pre><code class="language-sql">/** dml
+temp_customer_sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    dimensions:
+        - [customer_id, ...]
+
+temp_avg_customer_sales:
+    type: measure
+    formula: &#39;AVG({temp_customer_sales: {+d: customer_id}})&#39;
+**/
+SELECT brand, AGG(temp_avg_customer_sales) AS avg_customer_sales
+FROM MODEL GROUP BY brand
+</code></pre>
+<p><a id="26a-fine-grain-filter-then-d-roll-up"></a></p>
+<h3 id="fine-grain-filter-then-d-roll-up">Fine-grain filter, then <code>+d</code> roll-up</h3>
+<p>SQL often does: aggregate at a fine grain → <code>WHERE</code> on that grain → <code>SUM</code> to a coarser report grain.</p>
+<pre><code class="language-sql">WITH sales AS (
+  SELECT product, region, SUM(amount) AS total, COUNT(*) AS cnt
+  FROM fact GROUP BY product, region
+)
+SELECT product, SUM(total) AS grand_total
+FROM sales
+WHERE cnt &gt; 3                -- filter fine-grain rows
+GROUP BY product
+HAVING SUM(total) &gt; 500      -- report-level HAVING
+</code></pre>
+<p><strong>Preferred DML</strong> — put the fine-grain predicate <strong>inside</strong> the roll-up formula; keep query <code>filters:</code> for report scope / HAVING only:</p>
+<pre><code class="language-yaml">DATASET_SALES:
+    type: dataset
+    table: FACT
+    columns:
+        product:
+        region:
+    measures:
+        total: SUM(amount)
+        cnt: COUNT(1)
+
+grand_total:
+    type: measure
+    formula: |-
+        SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+    # No qualifying fine rows -&gt; NULL. Use an explicit fill only if required.
+
+report:
+    type: query
+    filters:
+        &quot;{grand_total} &gt; 500&quot;:
+    columns:
+        dimension:
+            - product
+        grand_total:
+</code></pre>
+<p><strong>How to read it:</strong> both <code>{cnt: {+d: region}}</code> and <code>{total: {+d: region}}</code> evaluate at the <strong>same</strong> fine grain <code>(product, region)</code>; <code>iif</code> / <code>SUMIF</code> decides which fine rows enter the outer <code>SUM</code>; the query dimension stays <code>product</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Avoid</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Query <code>filters: &quot;cnt &gt; 3&quot;</code> with only <code>product</code> in <code>columns.dimension</code></td>
+<td><code>cnt</code> left its defining grain; compile/fusion can rewrite to product-level <code>HAVING COUNT(1) &gt; 3</code> (wrong)</td>
+</tr>
+<tr>
+<td><code>filters: &quot;{cnt: {+d: region}} &gt; 3&quot;</code></td>
+<td>Compiles sometimes, but inverts the mental model (drill-down buried in a report filter)</td>
+</tr>
+<tr>
+<td><code>SUM({total: {+d: region, +f: &#39;{cnt} &gt; 3&#39;}})</code></td>
+<td>The predicate references an aggregate measure; <code>+f</code> expects input-row filtering</td>
+</tr>
+</tbody></table>
+<p>Fallback when you want SQL-literal steps: keep a fine-grain query (<code>dimension: [product, region]</code>, <code>filters: &quot;cnt &gt; 3&quot;</code>) and re-aggregate in presentation <code>after:</code> — prefer the measure form above for curation.</p>
+<p>Also see <a href="how-to--design-measures.html">measure design</a>, and pitfalls <a href="reference--troubleshooting--grain-and-joins.html#p69">P69</a>.</p>
+<p><strong>Limitations of <code>+d</code></strong>:</p>
+<ul>
+<li>Full N×N co-occurrence matrix (same dimension as both rows and columns) not supported — requires dimension aliasing/self-join. Use multiple 1×N queries or export detail data.</li>
+</ul>
+<p>When <code>+d</code> appears on a <strong>query dimension binding</strong> (<code>columns.dimension: - name: &#39;{m: {+d: K}}&#39;</code>), that is <strong>measure-as-dimension</strong>, not the roll-up pattern above — see <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>
+<p><strong>Co-occurrence analysis (1×N pattern)</strong> — count customers who bought both a target brand and each other brand, using <code>+d</code> + <code>-d</code> + <code>+f</code>:</p>
+<pre><code class="language-sql">/** dml
+target_brand_customers:
+    type: measure
+    formula: &#39;MAXIF(1, {sales: {+d: customer_id, -d: brand, +f: {brand: &#39;&#39;BrandA&#39;&#39;}}} &gt; 0)&#39;
+    dimensions:
+        - [..., customer_id]
+
+current_brand_customers:
+    type: measure
+    formula: &#39;MAXIF(1, {sales: {+d: [brand, customer_id]}} &gt; 0)&#39;
+    dimensions:
+        - [brand, customer_id]
+
+co_occurrence:
+    type: measure
+    formula: &#39;SUM({current_brand_customers: {+d: [brand, customer_id]}} * {target_brand_customers: {+d: customer_id}})&#39;
+**/
+SELECT brand, AGG(co_occurrence) AS overlap_with_brandA
+FROM MODEL GROUP BY brand ORDER BY AGG(co_occurrence) DESC
+</code></pre>
+<p>Key: <code>-d: brand</code> drops dimension field <code>brand</code> from the target measure&#39;s evaluation dimension (<code>[customer]</code> only), <code>+f</code> filters to the target brand, and the product of the two flags counts co-occurring customers.</p>
+<p>Measure <code>dimensions:</code> is always array-of-arrays: each inner list is one allowed dimension and the outer list contains alternatives:</p>
+<pre><code class="language-yaml">month_active_flag:
+    type: measure
+    formula: &#39;ISNULL(MAXIF(1, {month_qty: {+d: [prod_id, dt_month]}} &gt; 0), 0)&#39;
+    dimensions:
+      - [store_id, dt_month, ...]
+</code></pre>
+<p>Within an allowed dimension, <code>...</code> (ellipsis) permits additional dimension fields beyond the listed ones, but the listed fields remain required in the measure reference&#39;s evaluation dimension.</p>
+</main></html>

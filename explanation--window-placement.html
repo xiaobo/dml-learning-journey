@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Window placement · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="window-placement">Window placement</h1>
+<p>A window calculation depends on the rows available at its evaluation stage. Detail windows operate before a later measure aggregate. Composite windows operate on aggregated measure results.</p>
+<h2 id="supported-placements">Supported placements</h2>
+<table>
+<thead>
+<tr>
+<th>Calculation</th>
+<th>Placement</th>
+<th>Input rows</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Attribute of each source row</td>
+<td>Calculated column under dataset <code>columns:</code></td>
+<td>Detail rows</td>
+</tr>
+<tr>
+<td>Rank or share of grouped measures</td>
+<td>Composite formula with no <code>dataset:</code></td>
+<td>Aggregated rows</td>
+</tr>
+<tr>
+<td>Atomic measure containing <code>OVER</code></td>
+<td>Rejected in the checked build</td>
+<td>No supported placement</td>
+</tr>
+</tbody></table>
+<p>The <a href="maintenance--release-evidence.html">release evidence</a> records strict compilation of these shapes. Database execution and result parity are separate checks.</p>
+<h2 id="detail-window">Detail window</h2>
+<pre><code class="language-yaml">fact:
+  type: dataset
+  table: FACT_SALES
+  dimension: [id]
+  columns:
+    id:
+    customer:
+    region:
+    amount:
+    customer_amount: &#39;SUM({amount}) OVER (PARTITION BY {customer})&#39;
+  measures:
+    repeated_customer_amount: &#39;SUM({customer_amount})&#39;
+</code></pre>
+<p>The window repeats a customer&#39;s total on every detail row for that customer. Summing the calculated column counts the repeated total once per source row. The result is not a deduplicated customer total, so this example illustrates placement rather than a recommended sales metric.</p>
+<p>A row-order-sensitive window also depends on its ordering, frame, tie-break key, and source population. Changing a filter&#39;s stage can change every window result in a partition.</p>
+<h2 id="post-aggregation-window">Post-aggregation window</h2>
+<p>Given atomic <code>sales: SUM({amount})</code>, this composite formula ranks aggregated sales.</p>
+<pre><code class="language-yaml">customer_rank:
+  type: measure
+  formula: &#39;rank() over (partition by {-d: customer} order by {sales} desc)&#39;
+</code></pre>
+<p>At query grain <code>[region, customer]</code>, the partition expression retains the other query fields, here <code>region</code>. The checked SQL groups by region and customer, then ranks <code>SUM(amount)</code> within each region. Physical fact rows are not the ranking input.</p>
+<p><code>+d</code> establishes a finer aggregation stage. It does not turn a grouped value into a detail-window attribute. Source filters, filters on window results, and final report filters can select different populations.</p>
+<p>Model Query also accepts checked raw window forms. The <a href="reference--model-query-sql.html">query reference</a> describes the query surfaces. Acceptance of one form does not establish support for arbitrary frames or dialects.</p>
+</main></html>

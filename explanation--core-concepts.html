@@ -1,0 +1,95 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML, DMX, and Model Query · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-dmx-and-model-query">DML, DMX, and Model Query</h1>
+<p>A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains.</p>
+<p>The illustrated <a href="explanation--visual-introduction.html">small journey through DML</a> introduces these ideas with four example sales and a grouping explorer.</p>
+<p>For a complete executable example, see <a href="tutorials--first-query.html">Compile your first model query</a>. The <a href="reference--semantics.html">DML core specification</a> defines the language contracts.</p>
+<h2 id="1-the-model-query-and-expression-layers">1. The model, query, and expression layers</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Language</th>
+<th>Content</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Model</td>
+<td>DML, Dato Measure Language</td>
+<td>Datasets, measures, and column macros</td>
+<td><code>.dml</code> YAML</td>
+</tr>
+<tr>
+<td>Query</td>
+<td>Model Query</td>
+<td>Measure selection, grouping, and report filters</td>
+<td><code>.sql</code> or DML <code>type: query</code></td>
+</tr>
+<tr>
+<td>Expression</td>
+<td>DMX, Dato Measure eXpression</td>
+<td>Formulas, references, and modifiers</td>
+<td>Model formulas and query expressions</td>
+</tr>
+</tbody></table>
+<p>A dataset binds columns to a physical table or SQL relation. Its <code>dimension:</code> declares the complete source-row key.</p>
+<pre><code class="language-yaml">transactions:
+  type: dataset
+  table: fact_transactions
+  dimension: [transaction_id]
+  columns:
+    transaction_id:
+    amount:
+    discount:
+    net_amount: amount - discount
+  measures:
+    sales: SUM({net_amount})
+    number_of_transactions: COUNT(1)
+
+avg_transaction_value:
+  type: measure
+  formula: &#39;DIVIDE({sales}, {number_of_transactions})&#39;
+</code></pre>
+<p><code>sales</code> and <code>number_of_transactions</code> are atomic measures. They inherit the enclosing dataset and directly aggregate its rows or column expressions without referencing other measures. <code>avg_transaction_value</code> is composite because its formula references other measures, even though both use <code>transactions</code>. A composite measure has no <code>dataset:</code> property.</p>
+<p>In a model formula, bare <code>amount</code> names a physical SQL column. <code>{net_amount}</code> expands the model&#39;s calculated column. Braces retain that distinction even when logical and physical names happen to match.</p>
+<p>Column macros define reusable column expressions or cross-dataset lookups. They can expose attributes to measures without putting a join in each consumer query. Lookup correctness still depends on the target dataset&#39;s complete key.</p>
+<p>Model Query references measures through <code>AGG(...)</code>. Model formulas use aggregation functions such as <code>SUM</code> and <code>COUNT</code> directly. <code>AGG</code> is the query interface to a measure, not a replacement for <code>SUM</code> inside a model formula.</p>
+<h2 id="2-dimension-roles-and-grain">2. Dimension roles and grain</h2>
+<p>A dimension field is one named DML field. A dimension is a list of fields. The declaration site determines its role.</p>
+<table>
+<thead>
+<tr>
+<th>Declaration</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dataset <code>dimension:</code></td>
+<td>Complete source-row identity</td>
+</tr>
+<tr>
+<td>Formula dimension modifiers</td>
+<td>Evaluation dimension of one measure reference</td>
+</tr>
+<tr>
+<td>Query <code>GROUP BY</code> or <code>columns.dimension</code></td>
+<td>Result grouping</td>
+</tr>
+<tr>
+<td>Materialize <code>dimension:</code></td>
+<td>Stored grouping and key</td>
+</tr>
+<tr>
+<td>Measure <code>dimensions:</code></td>
+<td>Alternative allowed evaluation dimensions, one per inner list</td>
+</tr>
+</tbody></table>
+<p>Grain describes what one row represents in a particular context. For example, <code>[transaction_id]</code> identifies a transaction, while <code>[region, dt_month]</code> groups a report by region and month. A reporting group can contain many source rows, so it cannot replace the source key.</p>
+<p>The modifier <code>dimension: []</code> clears the evaluation dimension for a grand total. It does not declare dataset identity. <code>+d</code> adds fields for an intermediate calculation. An explicit outer aggregate combines those intermediate values when a formula needs a coarser result.</p>
+<p>The compiler trusts the declared source key. Duplicate <code>pk(...)</code> targets can multiply rows even when compilation succeeds. Live validation checks observed key uniqueness. Result comparisons establish a different claim: whether the query returns the intended answer.</p>
+<p><a href="explanation--dimensions.html">Dimension semantics</a> explains these roles and their consequences in more detail.</p>
+<h2 id="3-time-context-and-dim_dt">3. Time context and <code>dim_dt</code></h2>
+<p><code>dim_dt</code> represents the active time field of a measure&#39;s query context. It lets a formula refer to the current time grain without naming <code>dt_date</code>, <code>dt_month</code>, or <code>dt_quarter</code> directly. Macro prerequisites still limit which grains a macro accepts.</p>
+<p>A grouped time field or a time filter can supply the context. Compilation can also emit a strict warning for the joins that a time comparison introduces. The <a href="maintenance--release-evidence.html">release evidence</a> records those outcomes separately from syntax acceptance.</p>
+<p>Declaring a standard fine time field such as <code>dt_date</code> makes supported coarser fields available through the system calendar. These virtual fields do not require duplicate physical declarations. Editor go-to-definition for a derived <code>dt_month</code> resolves to the explicit source time column.</p>
+<p>The <a href="reference--semantics.html">time context specification</a> defines <code>dim_dt</code> and standard time fields. <a href="02-syntax--system_macros.dml">System macros</a> provides a reference copy of time and formula macro definitions.</p>
+</main></html>

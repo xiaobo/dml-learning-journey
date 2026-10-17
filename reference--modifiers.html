@@ -1,0 +1,328 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure modifiers · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="measure-modifiers">Measure modifiers</h1>
+<p>This page owns modifier payloads, filter effects, and composition. <a href="reference--expressions.html">Expressions and functions</a> owns references and intrinsic functions. <a href="reference--examples--aggregation.html">Fine-grain aggregation examples</a> shows complete stages.</p>
+<h2 id="payload-structure">Payload structure</h2>
+<p>In <code>{measure: {modifier_a: value, modifier_b: value}}</code>, the outer object has exactly one target-measure key. Its nested modifier map can contain several keys, subject to <a href="reference--semantics.html#44-modifier-schema-constraints">modifier constraints</a>. The <a href="02-syntax--dmx_variable_schema.yaml">modifier schema</a> defines the structure.</p>
+<table>
+<thead>
+<tr>
+<th>Key or form</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dim_dt</code></td>
+<td>Formula string or object with <code>value</code> and <code>range</code> fields</td>
+</tr>
+<tr>
+<td><code>dim_dt as date</code>, <code>dim_dt as week</code>, <code>dim_dt as month</code>, <code>dim_dt as quarter</code>, <code>dim_dt as year</code>, <code>dim_dt as hour</code></td>
+<td>Period conversion variant; at most one time variant per modifier object</td>
+</tr>
+<tr>
+<td><code>+f</code></td>
+<td>Filter-name string, list of filter names, or inline object such as <code>{column: value}</code></td>
+</tr>
+<tr>
+<td><code>-f</code></td>
+<td>Filter-name or column-name string, or a list of those names</td>
+</tr>
+<tr>
+<td>Bare modifier name</td>
+<td>A <code>dt-macro</code> or <code>fn-macro</code> name</td>
+</tr>
+</tbody></table>
+<p><a id="21-time-modifiers"></a></p>
+<h2 id="time-modifiers">Time modifiers</h2>
+<p>The <a href="02-syntax--system_macros.dml">system macro reference copy</a> contains time-shifting <code>dt-macro</code> definitions and formula-wrapping <code>fn-macro</code> definitions. Growth-rate macros return decimal rates. The selected executable&#39;s packaged resources govern available macros, formulas, and <code>prerequisite</code> constraints.</p>
+<p><strong>Two macro types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Returns</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt-macro</code></td>
+<td>Absolute value</td>
+<td><code>pp</code>, <code>ya</code>, <code>ytd</code>, <code>mat</code>, <code>p3m</code>, ...</td>
+</tr>
+<tr>
+<td><code>fn-macro</code> (growth)</td>
+<td>Decimal rate</td>
+<td><code>pop</code>, <code>yoy</code>, <code>mom</code></td>
+</tr>
+</tbody></table>
+<p><strong>Stacking</strong>: Modifiers can be stacked: <code>AGG(sales, &#39;ytd&#39;, &#39;ya&#39;)</code> = year-to-date one year ago. See <a href="reference--modifiers.html#25-modifier-stacking">modifier stacking</a> for full stacking semantics.</p>
+<p><strong>Time context:</strong> time modifiers require a resolvable <code>dim_dt</code> and must satisfy their macro prerequisites. Grouping by a time field is the clearest form; a time filter can also supply the context. See <a href="reference--model-query-sql.html#35-group-by-rules">Model Query time rules</a>.</p>
+<p><strong>Period conversion</strong> with <code>dim_dt</code>:</p>
+<pre><code class="language-sql">SELECT dt_year, dt_quarter,
+       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+FROM MODEL GROUP BY dt_year, dt_quarter
+</code></pre>
+<p><code>dim_dt as quarter</code> makes <code>pp</code> operate at quarter grain even if the query groups by year + quarter.</p>
+<p><a id="22-function-modifiers"></a></p>
+<h2 id="function-modifiers">Function modifiers</h2>
+<p>The <a href="02-syntax--system_macros.dml">system macro reference copy</a> defines macros such as <code>rank</code>, <code>pot</code>, <code>grand</code>, <code>firstday</code>, and <code>lastday</code>. The selected executable&#39;s packaged resources determine the available names, formulas, and prerequisites. An unknown modifier diagnostic lists available names on the checked build.</p>
+<p><strong>Filter modifier</strong> <code>+f</code> is not a system macro — it is a schema-level modifier:</p>
+<table>
+<thead>
+<tr>
+<th>Modifier</th>
+<th>Syntax</th>
+<th>Returns</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+f: condition</code></td>
+<td><code>{measure: {+f: {col: val}}}</code></td>
+<td>Filtered value</td>
+<td>Filter the <strong>measure</strong> while aggregating</td>
+</tr>
+</tbody></table>
+<p><strong><code>+f</code> filters atomic input rows; it is not a post-aggregation predicate.</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Target / predicate</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Column inside an atomic aggregate</td>
+<td>Filters the input to that aggregate</td>
+</tr>
+<tr>
+<td>Atomic measure + source-column predicate</td>
+<td>Supported; e.g. <code>{sales: {+f: &quot;status = 1&quot;}}</code> emits a conditional SUM</td>
+</tr>
+<tr>
+<td>Simple composite + source-column predicate</td>
+<td>Propagates to its atomic dependencies; verified for <code>divide({sales}, {cnt})</code>. Use only when every dependency should receive the filter</td>
+</tr>
+<tr>
+<td>Atomic measure with <code>+d</code> and source-column <code>+f</code></td>
+<td>Supported in the checked AVG rollup; inspect that filtering precedes the fine-grain aggregation</td>
+</tr>
+<tr>
+<td>Predicate referencing an aggregate measure, e.g. <code>&quot;{cnt} &gt; 3&quot;</code></td>
+<td>Rejected with <code>cannot use +f modifier with measure(s)</code>; use <a href="reference--examples--aggregation.html#26a-fine-grain-filter-then-d-roll-up">fine-grain filter examples</a></td>
+</tr>
+</tbody></table>
+<p>A bare filtered atomic reference evaluates at the current query grain. Preserve <code>+d</code> and an explicit outer aggregate when the question concerns per-entity values (especially AVG, MIN, MAX, COUNT). Conditional SUM with no accepted input returns NULL; an explicit <code>ELSE 0</code> is a different contract. Input gating can retain groups containing only rejected rows.</p>
+<p><strong>Window function fn-macros</strong> generate <code>rank() over (...)</code> in compiled SQL. Use them in Model Query SQL as <code>AGG(measure, &#39;rank&#39;)</code> or <code>AGG({measure: rank})</code>. See <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> for the full list and formulas.</p>
+<p><strong>Filter modifier</strong> in <code>.dml</code> (column target):</p>
+<pre><code class="language-yaml">completed_sales:
+    type: measure
+    formula: &quot;{amount: {+f: {status: &#39;completed&#39;}}}&quot;
+</code></pre>
+<p><strong>Filter modifier</strong> in Model Query SQL:</p>
+<pre><code class="language-sql">SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
+</code></pre>
+<p><a id="23-dimension-modifiers"></a></p>
+<h2 id="dimension-modifiers">Dimension modifiers</h2>
+<table>
+<thead>
+<tr>
+<th>Modifier</th>
+<th>Syntax</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+d: dim</code></td>
+<td><code>{measure: {+d: dim}}</code></td>
+<td>Drill down: append dimension field <code>dim</code> to the target evaluation dimension and evaluate there. <strong>Does not automatically roll up</strong> to the query grain — that requires an explicit outer aggregate (<code>SUM</code>/<code>AVG</code>/…). The target dimension comes from query <code>GROUP BY</code> plus the measure&#39;s <code>dimensions:</code> constraint (required fields must appear; <code>...</code> allows additional query fields). Without a dimension modifier, a measure reference is already at its target evaluation dimension; wrapping it in <code>SUM()</code> fails with &quot;cannot aggregate a measure w/o +d modifier&quot;. <code>+d</code> is required for <strong>any</strong> <code>SUM({measure})</code>, not just measures with <code>dimensions:</code> declarations.</td>
+</tr>
+<tr>
+<td><code>-d: dim</code></td>
+<td><code>{measure: {-d: dim}}</code></td>
+<td>Remove dimension field <code>dim</code> from the measure&#39;s evaluation dimension, producing a coarser grain. Use list form <code>{-d: [dim1, dim2]}</code> to remove multiple fields—repeating <code>{-d: dim1, -d: dim2}</code> causes YAML duplicate-key errors. If the measure declares closed allowed dimensions, one must permit the resulting evaluation/query dimension; omitting measure <code>dimensions:</code> permits any compatible dimension. Query <code>filters:</code> on the removed field are still pushed down to the dataset <code>WHERE</code>—this can corrupt ratio denominators (see <a href="reference--modifiers.html#23a--df--combined--d-and--f">dimension and filter removal</a> below).</td>
+</tr>
+<tr>
+<td><code>-df: dim</code></td>
+<td><code>{measure: {-df: dim}}</code></td>
+<td>Combined <code>-d</code> + <code>-f</code>: removes a dimension field from the evaluation dimension (<code>-d</code>) <strong>and</strong> removes filters on that field from the measure&#39;s evaluation (<code>-f</code>). Query <code>filters:</code> that reference the removed field (or columns that depend on it including via <code>pk()</code> chains) are <strong>not</strong> pushed to the coarser-grain query&#39;s <code>WHERE</code>. Use list form <code>{-df: [dim1, dim2]}</code>. Equivalent to DAX <code>CALCULATE(expr, REMOVEFILTERS(dim))</code>.</td>
+</tr>
+<tr>
+<td><code>-f: name</code></td>
+<td><code>{measure: {-f: name}}</code></td>
+<td>Remove filters referencing <code>name</code> from <strong>measure evaluation only</strong>. <code>name</code> can be a <strong>filter name</strong> (defined in query <code>filters:</code>) or a <strong>column name</strong> (including via <code>pk()</code> chain dependencies). Use list form <code>{-f: [name1, name2]}</code>. Does <strong>not</strong> change grouping. Query filters still define the report row set — when a blocked filter is not an output grain column, constrain population (e.g. <code>EXISTS</code>) rather than dropping the filter silently.</td>
+</tr>
+<tr>
+<td><code>dimension: [dims]</code></td>
+<td><code>{measure: {dimension: [dim1, dim2]}}</code></td>
+<td>Replace the entire evaluation dimension with the listed dimension fields. It shares the <code>dimension:</code> token with dataset/query/materialize properties, but here it modifies one measure reference rather than declaring dataset identity, query grouping, or a materialization key. Semantically close to <code>-d</code>, but generates different SQL: a separate aggregation CTE instead of a window <code>OVER (PARTITION BY …)</code>—see <a href="reference--troubleshooting--README.html">pitfalls P43</a>. Across time grains (e.g. <code>{m:{dimension:[dt_quarter]}}</code> on a <code>dt_month</code> query), bridge via the calendar and broadcast the coarse total onto fine rows — not a grand-total scalar.</td>
+</tr>
+</tbody></table>
+<h3 id="quick-glossary-avoid-ambiguity">Quick glossary (avoid ambiguity)</h3>
+<table>
+<thead>
+<tr>
+<th>Writing</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{销量: {+d: 门店}}</code></td>
+<td>Evaluate at <strong>query grain ∪ {门店}</strong>; <strong>stop there</strong> — no automatic roll-back</td>
+</tr>
+<tr>
+<td><code>SUM({销量: {+d: 门店}})</code> (or <code>AVG</code>/<code>MAX</code>/…)</td>
+<td>Fine-grain values, then <strong>outer aggregate</strong> rolls back to the current query grain</td>
+</tr>
+<tr>
+<td><code>{销量: {-d: 门店}}</code></td>
+<td>Drop 门店 from evaluation grain; filters on 门店 may still push down</td>
+</tr>
+<tr>
+<td><code>{销量: {-df: 门店}}</code></td>
+<td>Drop 门店 from grain <strong>and</strong> block 门店-related filters on that measure</td>
+</tr>
+<tr>
+<td><code>{销量: {-f: 门店}}</code></td>
+<td>Block 门店-related filters only; <strong>grouping unchanged</strong></td>
+</tr>
+</tbody></table>
+<p><a id="same-dimension-d-with--d--df--illegal"></a></p>
+<h3 id="same-dimension-modifier-conflicts">Same-dimension modifier conflicts</h3>
+<p>The language contract prohibits intersecting field sets in <code>+d</code> and either <code>-d</code> or <code>-df</code> within one modifier object. Different fields can coexist, as in <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>. The 2026-10-16 build still accepts the checked same-field conflicts and emits repeated regional totals followed by an outer sum. This is an implementation gap. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a> and <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p><a id="23a--df--combined--d-and--f"></a></p>
+<h3 id="-df--combined--d-and--f"><code>-df</code> — combined <code>-d</code> and <code>-f</code></h3>
+<p><code>-df</code> combines the semantics of two modifiers:</p>
+<ul>
+<li><strong><code>-d</code></strong> (don&#39;t group by): removes a dimension field from the measure&#39;s evaluation dimension, producing a coarser-grain aggregation.</li>
+<li><strong><code>-f</code></strong> (remove filter): removes filters on that dimension from the measure&#39;s evaluation — query <code>filters:</code> that reference the dimension (or columns that depend on it via <code>pk()</code> chains) are not pushed to the coarser-grain query&#39;s <code>WHERE</code>.</li>
+</ul>
+<p><code>-df</code> is shorthand for <code>{-d: dim, -f: dim}</code> — both forms produce identical compiled SQL. Use <code>-df</code> for brevity.</p>
+<p>Use <code>-df</code> in ratio measures where the denominator must ignore both the grouping and the filtering of a dimension.</p>
+<p><strong>Problem it solves</strong>: Without <code>-df</code>, query <code>filters:</code> are pushed to dataset <code>WHERE</code> <em>before</em> aggregation. When <code>-d</code> generates a coarser-grain temp table (ratio denominator), it computes from the filtered base — shrinking the denominator. <code>-df</code> blocks this pushdown for the specified dimension: the filter is applied only to temp tables whose grain includes that dimension, and omitted from temp tables where the dimension was removed.</p>
+<p><strong>When to use <code>-df</code> vs <code>-d</code></strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Modifier</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Ratio denominator must include all values of a dimension (e.g. brand share = brand sales / total sales across all brands)</td>
+<td><code>-df</code></td>
+<td>Filter on <code>brand_id</code> would shrink the denominator if pushed down</td>
+</tr>
+<tr>
+<td>Ratio denominator should reflect the filtered subset (e.g. share within selected brands only)</td>
+<td><code>-d</code></td>
+<td>Filter on <code>brand_id</code> should apply to both numerator and denominator</td>
+</tr>
+<tr>
+<td>No filter on the removed dimension field</td>
+<td><code>-d</code> (or <code>-df</code>, equivalent)</td>
+<td>No filter to block</td>
+</tr>
+</tbody></table>
+<p><strong>Example: brand share within each store</strong>, retaining selected brands in the numerator but including all brands in the denominator:</p>
+<pre><code class="language-yaml">brand_share:
+    type: measure
+    formula: &#39;divide({sales} * 100.0, {sales: {-df: brand_id}})&#39;
+</code></pre>
+<p>At query grain <code>[store_id, brand_id]</code>, a query filter on <code>brand_id</code> applies to the numerator. The denominator removes that field and its filter, retaining the store context.</p>
+<p><strong>Dependency tracing</strong>: The compiler traces <code>pk()</code> chain dependencies. A filter on <code>客户标准名称</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) is blocked when <code>store_id</code> is <code>-df</code>&#39;d, because the column depends on <code>store_id</code>.</p>
+<p><strong>Equivalence with other systems</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Equivalent</th>
+<th>Syntax</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DAX (Power BI)</td>
+<td><code>CALCULATE(expr, REMOVEFILTERS(dim))</code></td>
+<td>Removes grouping + filter context in one operation</td>
+</tr>
+<tr>
+<td>Tableau</td>
+<td>No direct equivalent</td>
+<td>Use FIXED LOD + Context Filter, or Table Calculation Filter</td>
+</tr>
+<tr>
+<td>Malloy</td>
+<td>No direct equivalent</td>
+<td>Use stage-level <code>where:</code> (post-aggregation) instead of source <code>where:</code></td>
+</tr>
+<tr>
+<td>LookML</td>
+<td>No direct equivalent</td>
+<td>Use filtered measure (<code>filters:</code> on measure)</td>
+</tr>
+</tbody></table>
+<pre><code class="language-sql">-- Product share within category
+SELECT category, product,
+       AGG(sales) as product_sales,
+       AGG({sales: {dimension: [category]}}) as category_total
+FROM MODEL GROUP BY category, product
+</code></pre>
+<pre><code class="language-sql">-- Remove time grouping while retaining the selected time filter
+SELECT region, AGG({sales: {-d: dim_dt}}) as selected_period_sales
+FROM MODEL WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY region
+</code></pre>
+<p><a id="23b--d-on-composite-measures-with-full-outer-join"></a></p>
+<h2 id="-d-on-composite-measures-with-full-outer-join"><code>{-d:}</code> on composite measures with FULL OUTER JOIN</h2>
+<p>Independent measure datasets normally compose through FULL OUTER JOIN at aligned evaluation grains (<em>key-union</em>). Alignment ON uses <strong>plain <code>=</code></strong> (not null-safe). Row-preserving LEFT / <code>nullpk</code> stay null-safe. Population, equality, uniqueness, and fill are separate contracts; see <a href="reference--semantics.html#34-cross-dataset-auto-join">cross-dataset composition</a> and <a href="reference--join-null-equality.html">join NULL equality</a>.</p>
+<p>For primary-side population, use an unfilled presence measure guaranteed non-null for each real primary group and NULL for absent groups. For INNER population, require presence on both sides. An arbitrary business measure can be NULL on a valid group, and a filled measure can be non-null on an absent group. Neither is a reliable existence test. NULL arithmetic does not by itself remove secondary-only output rows.</p>
+<p><a id="24-combining-modifiers"></a></p>
+<h2 id="combining-modifiers">Combining modifiers</h2>
+<p>Modifiers can be combined in a single reference, subject to <a href="reference--modifiers.html#same-dimension-d-with--d--df--illegal">same-dimension conflicts</a> and <a href="reference--semantics.html#44-modifier-schema-constraints">modifier constraints</a>:</p>
+<pre><code class="language-yaml"># Filter + dimension (outer SUM rolls +d back to query grain)
+formula: &#39;SUM({sales: {+d: customer, +f: {region: &quot;North&quot;}}})&#39;
+
+# Legal: +d and -d on DIFFERENT fields
+formula: &#39;SUM({sales: {+d: customer, -d: brand}})&#39;
+
+# Prohibited by the language contract, but accepted by the checked build:
+# formula: &#39;SUM({sales: {+d: store_id, -d: store_id}})&#39;
+# formula: &#39;{sales: {+d: store_id, -df: store_id}}&#39;
+
+# Time + dimension
+formula: &#39;{sales: {+d: customer}, yoy}&#39;
+
+# Dimension + rank
+formula: &#39;{sales: {-d: dim_dt, rank}}&#39;
+
+# Dimension + filter removal (ratio with deferred filters)
+formula: &#39;divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})&#39;
+
+# Filter + absolute grain (e.g., ratio numerator/denominator at different grains)
+formula: &#39;DIVIDE({sales: {+f: &quot;status = 1&quot;, dimension: [prod_id]}}, {sales: {+f: &quot;status = 1&quot;, dimension: [prod_id, store_id]}})&#39;
+</code></pre>
+<p>In Model Query SQL:</p>
+<pre><code class="language-sql">SELECT product,
+       AGG({sales: {-d: dt_date, rank}}) as all_time_rank
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+</code></pre>
+<p><a id="25-modifier-stacking"></a></p>
+<h2 id="modifier-stacking">Modifier stacking</h2>
+<p>Multiple macros can be stacked in one expression. The compiler creates intermediate measures automatically, mirroring what a user would write manually.</p>
+<p><strong>Syntax</strong>: <code>{measure: {macro1, macro2, macro3}}</code> or <code>AGG(measure, &#39;macro1&#39;, &#39;macro2&#39;, &#39;macro3&#39;)</code></p>
+<p>For an ordinary sequential stack, the first macro transforms the original measure and the next macro applies to that intermediate. Time modifiers combined with multi-branch functions also transform their branches, as described below. A sequential example is:</p>
+<pre><code class="language-yaml"># Stacking: yoy creates intermediate &quot;sales_yoy&quot;, then rank applies to it
+# Equivalent to:
+#   sales_yoy:
+#     type: measure
+#     formula: &#39;{sales: yoy}&#39;
+#   ...then: {sales_yoy: rank}
+q_col: &#39;{sales: {yoy, rank}}&#39;
+</code></pre>
+<p><strong>Time modifiers and multi-path functions:</strong> the verified build pushes <code>ytd</code> into the current and comparison branches of <code>yoy</code>. Both <code>{sales: {yoy, ytd}}</code> and <code>{sales: {ytd, yoy}}</code> emitted identical SQL for the recorded monthly probe: YTD sales divided by prior-year YTD sales, minus one. This is not a sum of monthly growth rates. Do not sort modifiers by category or infer a different meaning solely from generated intermediate names.</p>
+<p>Grain-changing macros such as <code>firstday</code> have additional multi-path constraints. Verify the exact combination; an intended equivalence in a design proposal is not a release guarantee. Quote authored <code>+f</code> expressions containing YAML indicators, for example <code>{sales: {+f: &quot;amount &gt; 5&quot;, yoy}}</code>.</p>
+<p><strong>Intermediate measure reuse.</strong> Before creating a new intermediate, the compiler searches existing measures for one with the same formula (by expanded formula, shorthand, or map form). If a user-defined or previously generated measure matches, it is reused. This avoids redundant intermediates and lets users name their intermediates deliberately.</p>
+<p><strong>Name collision handling.</strong> If the auto-generated intermediate name (e.g. <code>sales_yoy</code>) collides with an existing measure that has a <em>different</em> formula, the compiler appends a numeric suffix: <code>sales_yoy__2</code>, <code>sales_yoy__3</code>, etc.</p>
+<p><strong>Compatibility:</strong> macro prerequisites, time context, allowed dimensions, duplicate keys, and reaggregation determine whether a stack is valid. Compile the exact stack on the target build. Two range macros and repeated macro keys are not general composition mechanisms. If an error remains after expressing the stages explicitly, keep the diagnostic and reproducer; a manually named intermediate does not establish equivalence by itself.</p>
+</main></html>

@@ -1,0 +1,209 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Advanced measure examples · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="advanced-measure-examples">Advanced measure examples</h1>
+<p>These fragments illustrate distribution, lifecycle, segmentation, and cumulative ranking. Each pattern requires its named source measures and dimensions. They are not acceptance fixtures.</p>
+<h2 id="weighted-distribution-multi-grain-product">Weighted distribution (multi-grain product)</h2>
+<p>Weighted distribution measures a brand&#39;s share of sales weighted by store importance. It requires multiplying measures evaluated at <strong>different grains</strong> and rolling up.</p>
+<pre><code class="language-yaml"># Store-level sales (restricted to store + category grain)
+store_cat_sales:
+  type: measure
+  formula: &#39;IIF({sales} &gt; 0, {sales}, 0)&#39;
+  dimensions:
+    - [dim_dt, store_id, category]
+
+# Category-level sales (drop store)
+cat_sales:
+  type: measure
+  formula: &#39;SUM({store_cat_sales: {+d: store_id}})&#39;
+  dimensions:
+    - [dim_dt, category]
+
+# Store weight = store sales / category sales (store + category grain)
+store_weight:
+  type: measure
+  formula: &#39;DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})&#39;
+  dimensions:
+    - [dim_dt, store_id, category]
+
+# Brand distribution flag (store + category + brand grain)
+brand_dist_flag:
+  type: measure
+  formula: &#39;IIF({sales} &gt; 0, 1, 0)&#39;
+  dimensions:
+    - [dim_dt, store_id, category, brand]
+
+# Weighted distribution = SUM(store_weight * brand_flag) at brand grain
+weighted_distribution:
+  type: measure
+  formula: |-
+    SUM({store_weight: {dimension: [dim_dt, store_id, category]}}
+        * {brand_dist_flag: {dimension: [dim_dt, store_id, category, brand]}})
+  dimensions:
+    - [dim_dt, category, brand]
+</code></pre>
+<p><strong>Key technique</strong>: <code>dimension:</code> modifier forces each component measure to evaluate at its required grain inside the <code>SUM()</code>. The compiler generates CTEs for each grain and joins them.</p>
+<h2 id="product-lifecycle-tracking">Product lifecycle tracking</h2>
+<p>Track product age from first sale, classify by lifecycle stage, and compute rolling averages that adjust for new products.</p>
+<pre><code class="language-yaml"># First sale date per product (restricted to product grain)
+first_sale_raw:
+  type: measure
+  formula: &#39;MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)&#39;
+
+# First sale date, looking back up to 6 years
+first_sale:
+  type: measure
+  formula: &#39;{first_sale_raw: p6y}&#39;
+  dimensions:
+    - [dt_week, product]
+
+# Weeks since launch
+weeks_since_launch:
+  type: measure
+  formula: &#39;datediff(week, {first_sale}, {Dim Calendar}.dt_week)&#39;
+  dimensions:
+    - [dt_week, product]
+
+# Flag: product has 2+ years of sales data
+has_2yr_data:
+  type: measure
+  formula: &#39;IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)&#39;
+  dimensions:
+    - [product]
+
+# Total sales in first 2 years
+first_2yr_sales:
+  type: measure
+  formula: |-
+    SUMIF({sales: {+d: dt_week}},
+          {weeks_since_launch: {+d: dt_week}} &gt;= 0
+          AND {weeks_since_launch: {+d: dt_week}} &lt; 104)
+  dimensions:
+    - [product]
+
+# Rolling 4-week average, adjusted for product age
+weekly_avg_4w:
+  type: measure
+  formula: |-
+    DIVIDE({sales: p4w},
+           IIF({weeks_since_launch: {dimension: [product, dt_week]}} &gt;= 3,
+               4,
+               {weeks_since_launch: {dimension: [product, dt_week]}} + 1))
+</code></pre>
+<p><strong>Key techniques:</strong></p>
+<ul>
+<li><code>MINIF</code> with <code>{+d: dt_date}</code> finds first sale at day grain, restricted to <code>[dt_week, product]</code>.</li>
+<li>Custom <code>dt-macro</code> <code>p6y</code> limits the lookback window (see <a href="reference--examples--aggregation.html#26-multi-level-aggregation-with-d">Multi-level aggregation with <code>+d</code></a> Custom macro definitions).</li>
+<li><code>datediff</code> against <code>{Dim Calendar}.dt_week</code> computes age using the calendar dataset.</li>
+<li><code>SUMIF</code> with <code>{+d: dt_week}</code> filters to weeks within the first 104 weeks (2 years).</li>
+<li>Rolling average denominator adjusts for products younger than 4 weeks.</li>
+</ul>
+<h2 id="rfm-segmentation-with-percent_rank">RFM segmentation with percent_rank</h2>
+<p>Full RFM (Recency, Frequency, Monetary) segmentation using <code>percent_rank()</code> in measure formulas and CASE-based scoring.</p>
+<pre><code class="language-yaml"># Monetary: MAT sales (moving annual total)
+monetary:
+  type: measure
+  formula: &#39;{sales: mat}&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+# Recency: last purchase date
+recency:
+  type: measure
+  formula: &#39;MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+# Frequency: number of active sales days
+frequency:
+  type: measure
+  formula: &#39;DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+# Percentile ranks
+recency_pct:
+  type: measure
+  formula: &#39;percent_rank() over (order by {recency} desc)&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+frequency_pct:
+  type: measure
+  formula: &#39;percent_rank() over (order by {frequency} asc)&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+monetary_pct:
+  type: measure
+  formula: &#39;percent_rank() over (order by {monetary} asc)&#39;
+  dimensions:
+    - [dim_dt, customer_id]
+
+# Scores (1-5 scale)
+recency_score:
+  type: measure
+  formula: |-
+    CASE
+      WHEN {recency_pct} &gt;= 0.8 THEN 5
+      WHEN {recency_pct} &gt;= 0.6 THEN 4
+      WHEN {recency_pct} &gt;= 0.4 THEN 3
+      WHEN {recency_pct} &gt;= 0.2 THEN 2
+      ELSE 1
+    END
+  dimensions:
+    - [dim_dt, customer_id]
+
+# (frequency_score and monetary_score follow the same pattern)
+
+# Segment classification
+rfm_segment:
+  type: measure
+  formula: |-
+    CASE
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN &#39;Hibernating&#39;
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN &#39;At Risk&#39;
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN &#39;Cannot Lose Them&#39;
+      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN &#39;About to Sleep&#39;
+      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN &#39;Need Attention&#39;
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN &#39;Promising&#39;
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN &#39;Potential Loyalists&#39;
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN &#39;Loyal Customers&#39;
+      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN &#39;New Customers&#39;
+      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN &#39;Potential Loyalists&#39;
+      ELSE &#39;Champions&#39;
+    END
+  dimensions:
+    - [dim_dt, customer_id]
+</code></pre>
+<p><strong>Key techniques:</strong></p>
+<ul>
+<li><code>percent_rank() over (...)</code> inside measure formulas — window functions are valid in <code>.dml</code> formulas.</li>
+<li>All RFM measures restricted to <code>[dim_dt, customer_id]</code> grain — the <code>dim_dt</code> system variable makes them work at any time grain.</li>
+<li><code>MAXIF</code> / <code>DISTINCTCOUNTIF</code> with <code>{+d: dt_date}</code> for recency and frequency calculations.</li>
+<li><code>CASE</code> expressions compose scores into named segments.</li>
+</ul>
+<h2 id="product-power-ranking-with-cumulative-distribution">Product power ranking with cumulative distribution</h2>
+<p>Classify products into tiers (Top 50%, Top 80%, Top 95%) using window functions for cumulative sum.</p>
+<pre><code class="language-yaml"># Product rank by total first-2-year sales
+product_power_rank:
+  type: measure
+  formula: &#39;rank() over (order by {first_2yr_sales} desc)&#39;
+  dimensions:
+    - [product]
+
+# Tier classification via cumulative distribution
+product_tier:
+  type: measure
+  formula: |-
+    CASE
+      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
+           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN &#39;Top 50%&#39;
+      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
+           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN &#39;Top 80%&#39;
+      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
+           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN &#39;Top 95%&#39;
+      ELSE &#39;Others&#39;
+    END
+  dimensions:
+    - [product]
+</code></pre>
+<p><strong>Key technique</strong>: <code>SUM() over (order by ... desc)</code> computes a running total; <code>SUM() over ()</code> computes the grand total. Their ratio gives cumulative distribution for Pareto-style classification. All restricted to <code>[product]</code> grain.</p>
+</main></html>

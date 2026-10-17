@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Troubleshoot a query · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="troubleshoot-a-query">Troubleshoot a query</h1>
+<p>Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected <code>dmlc.exe</code> to resolve uncertain behavior.</p>
+<h2 id="debugging-workflow-model-query-sql">Debugging workflow (Model Query SQL)</h2>
+<p>Use when <code>run_query</code> returns <code>COMPILE_ERROR</code> or messages mention <code>UNION</code>, <code>JOIN</code>, <code>subquery</code>, <code>aggregation is not possible</code>, <code>ref {...} not defined</code>, <code>measure cannot be redefined</code>, or <code>use existing measure</code>.</p>
+<ol>
+<li><strong>Read the full error</strong> — including generated <code>-- dialect: …</code> SQL in the payload.</li>
+<li><strong>Classify query type</strong> — detail (existence, list, single record) vs aggregation. Aggregation ⇒ <code>FROM MODEL</code> + <code>AGG()</code> (or <code>FROM &lt;name&gt;</code> when the model file is <code>&lt;name&gt;.dml</code>).</li>
+<li><strong>Choose FROM</strong> — aggregation: <code>FROM MODEL</code> (or <code>FROM &lt;name&gt;</code> when the file is <code>&lt;name&gt;.dml</code>); detail: <code>FROM MODEL.&lt;dataset&gt;</code> / <code>FROM &lt;name&gt;.&lt;dataset&gt;</code>, no <code>AGG</code>, no <code>GROUP BY</code>. Keep the name aligned with the <code>.dml</code> file (<code>model.dml</code> ↔ <code>FROM MODEL</code>).</li>
+<li><strong>Remove unsupported SQL</strong> — no subqueries, UNION, JOIN. Use fn-macros from <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>pot</code>, <code>grand</code>) for portable windows, <code>+d</code> measures for multi-level aggregation, and <code>.dml</code> definitions for complex logic (<a href="how-to--design-measures.html">Measure design</a>, <a href="reference--modifiers.html#25-modifier-stacking">Modifier stacking</a>). Dataset <strong>window placement</strong> for hand-authored <code>OVER</code>: <a href="explanation--window-placement.html">Window placement</a>. Raw <code>OVER()</code> in Model Query is allowed when no fn-macro covers the pattern.</li>
+<li><strong>Measure vs column</strong> — in queries use <code>AGG(measure)</code>; in <code>.dml</code> use <code>{column}</code> / <code>&#39;{measure: modifier}&#39;</code>; do not use <code>{...}</code> on bare columns in Model Query SQL except <code>AGG({measure: modifier})</code>.</li>
+<li><strong>Debug incrementally</strong> — validate <code>SELECT AGG(one_measure) FROM MODEL</code>, then add <code>GROUP BY</code> and filters. Use MCP <code>run_query</code> with <code>validateOnly: true</code>, or CLI <code>dmlc --validate-only &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --output-format=json</code>.</li>
+</ol>
+<h3 id="reading-mcp-wrapped-errors">Reading MCP-wrapped errors</h3>
+<p>Wrapper labels (e.g. transport metadata) are context only. Read the inner compiler message and the generated SQL block. If stuck, reduce to one measure and add columns incrementally.</p>
+<h2 id="prevention-checklist">Prevention Checklist</h2>
+<p>Before submitting any DML or Model Query SQL:</p>
+<ol>
+<li>Measures use business names, not technical ones</li>
+<li>No <code>AGG()</code> inside <code>.dml</code> measure formulas</li>
+<li>No redundant aliases on plain <code>AGG(measure)</code></li>
+<li>Time modifiers have a resolved time context and satisfy macro prerequisites</li>
+<li>Time filters use first-day format</li>
+<li>Time filters placed last in WHERE</li>
+<li>No subqueries, JOINs, or UNIONs</li>
+<li>Single-line Model Query SQL for MCP submission (examples in <code>references/</code> may be multi-line for readability)</li>
+<li>Query type matches intent (detail vs aggregation)</li>
+<li><code>validateOnly: true</code> passes</li>
+<li>No direct aggregation on <code>MODEL.DATASET_*</code> with <code>GROUP BY</code> — use <code>FROM MODEL</code> + <code>AGG()</code> or detail export</li>
+<li>Sparse / FOJ composites: activate fill default (<code>isnull</code>/<code>ifnull</code>/<code>coalesce(公式, 字面量)</code> outermost) on inputs you reference — P28b; embedding an activated dep still expands fill</li>
+<li>Measure-as-dimension: every measure-derived dimension has a complete explicit entity key (<code>+d</code> preferred); multiple labels have equal independent keys; every output measure safely rolls up from <code>Q ∪ K</code>; label filters apply after the label exists — P66–P68</li>
+<li>Fine-grain CTE <code>WHERE</code> then outer <code>SUM</code>: use <code>SUMIF</code>/<code>SUM(iif)</code> with matching <code>{+d: …}</code> — not bare measure filters on the coarse query — P69</li>
+<li>Window placement: detail <code>OVER</code> under <code>columns:</code> then atomic agg; post-<code>GROUP-BY</code> composite / <code>{-d:}</code> / <code>{-df:}</code> — never <code>OVER</code> on atomic measures — P70–P71</li>
+<li>Two grain fields aliasing one physical column: inspect every emitted rollup <code>ON</code> clause for the right key (P72); <code>pk()</code> into a declared-dimension <code>sql:</code> dataset is the explicit-key fallback (P77)</li>
+<li>Cross-dataset <code>-df</code> rollup composites are FULL OUTER: guard partner-only rows with <code>&#39;{primary_measure} is not null&#39;:</code> (P73); partner temps may carry <code>max()</code> filler keys, so &quot;extra rows&quot; can look like valid self-pairs</li>
+<li>Never write same-object <code>{+d:x,-d:x}</code> / <code>{+d:x,-df:x}</code> — fail loudly, rewrite explicitly — P79</li>
+<li><code>-f</code> does not drop query population filters; non-grain blocked filters need <code>EXISTS</code> — P80</li>
+<li>Cross-grain time <code>dimension:</code> replacement needs calendar bridge + broadcast — P81</li>
+<li>Bare <code>{m:{+d:x}}</code> is fine grain only; outer <code>SUM</code>/<code>AVG</code>/… required to roll back (except MAD label bindings)</li>
+</ol>
+</main></html>

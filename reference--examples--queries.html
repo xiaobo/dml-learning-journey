@@ -1,0 +1,198 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query examples · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="query-examples">Query examples</h1>
+<p>The introductory examples use the <a href="reference--examples--shared-model.html">shared sales model</a>. Domain-specific examples require their named dependencies.</p>
+<h2 id="basic-queries">Basic queries</h2>
+<h3 id="total-sales">Total sales</h3>
+<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL
+</code></pre>
+<h3 id="sales-by-region">Sales by region</h3>
+<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+</code></pre>
+<h3 id="sales-this-month">Sales this month</h3>
+<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL WHERE dt_month = date(current_date, &#39;start of month&#39;)
+</code></pre>
+<h3 id="sales-this-month-by-region">Sales this month by region</h3>
+<pre><code class="language-sql">SELECT region, AGG(sales)
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY region
+</code></pre>
+<h3 id="detail-query--customer-payment-history">Detail query — customer payment history</h3>
+<pre><code class="language-sql">SELECT dt_date, transaction_id, transaction_type, raw_amount
+FROM MODEL.transactions
+WHERE transaction_type = &#39;payment&#39; AND customer = &#39;Jane Smith&#39;
+ORDER BY dt_date DESC
+</code></pre>
+<hr>
+<h2 id="time-modifiers">Time modifiers</h2>
+<h3 id="this-month-vs-last-month">This month vs last month</h3>
+<pre><code class="language-sql">SELECT dt_month,
+       AGG(sales) as this_month,
+       AGG(sales, &#39;pp&#39;) as last_month,
+       AGG(sales, &#39;pop&#39;) as mom_rate
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY dt_month
+</code></pre>
+<h3 id="this-month-vs-same-month-last-year">This month vs same month last year</h3>
+<pre><code class="language-sql">SELECT dt_month,
+       AGG(sales) as this_month,
+       AGG(sales, &#39;ya&#39;) as last_year_month,
+       AGG(sales, &#39;yoy&#39;) as yoy_rate
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY dt_month
+</code></pre>
+<h3 id="year-to-date-growth">Year-to-date growth</h3>
+<pre><code class="language-sql">SELECT dt_date,
+       AGG(sales, &#39;ytd&#39;) as ytd_sales,
+       AGG(sales, &#39;ytd&#39;, &#39;ya&#39;) as ytd_last_year,
+       AGG(sales, &#39;ytd&#39;, &#39;yoy&#39;) as ytd_growth
+FROM MODEL
+WHERE dt_date = date(current_date)
+GROUP BY dt_date
+</code></pre>
+<p>Note the <strong>stacking</strong>: <code>&#39;ytd&#39;, &#39;ya&#39;</code> means &quot;year-to-date one year ago&quot;.</p>
+<h3 id="rolling-12-month-total">Rolling 12-month total</h3>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+FROM MODEL
+GROUP BY dt_month
+ORDER BY dt_month DESC
+LIMIT 12
+</code></pre>
+<h3 id="specific-monthsquarters">Specific months/quarters</h3>
+<pre><code class="language-sql">-- August this year
+SELECT AGG(expense) FROM MODEL WHERE dt_month = date(current_date, &#39;start of year&#39;, &#39;+7 months&#39;)
+
+-- Q2 this year
+SELECT AGG(expense) FROM MODEL WHERE dt_quarter = date(current_date, &#39;start of year&#39;, &#39;+1 quarter&#39;)
+</code></pre>
+<h3 id="nested-modifiers-in-dml">Nested modifiers in <code>.dml</code></h3>
+<pre><code class="language-yaml"># In model.dml
+sales_ytd:
+    type: measure
+    formula: &#39;{sales: ytd}&#39;
+
+sales_ytd_last_year:
+    type: measure
+    formula: &#39;{sales: {ytd: ya}}&#39;
+</code></pre>
+<pre><code class="language-sql">-- In query
+SELECT dt_date, AGG(sales_ytd), AGG(sales_ytd_last_year)
+FROM MODEL
+WHERE dt_date = date(current_date)
+GROUP BY dt_date
+</code></pre>
+<p><strong>Key points</strong>: Time modifiers need a resolved time context and must satisfy macro prerequisites; time filters can supply context too. <code>yoy</code> and <code>pop</code> return decimal growth rates (0.15 = 15%). <code>pp</code> and <code>ya</code> return the absolute previous-period value. Prefer modifiers over manual date math.</p>
+<hr>
+<h2 id="rank-and-filters">Rank and filters</h2>
+<h3 id="top-10-products-by-sales">Top 10 products by sales</h3>
+<pre><code class="language-sql">SELECT product, AGG(sales)
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+ORDER BY AGG(sales) DESC
+LIMIT 10
+</code></pre>
+<h3 id="using-rank-modifier">Using rank modifier</h3>
+<pre><code class="language-sql">SELECT product, AGG(sales), AGG({sales: rank})
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+</code></pre>
+<p><code>{sales: rank}</code> returns the rank of each product&#39;s sales within the query result (descending).</p>
+<h3 id="rank-within-the-selected-period">Rank within the selected period</h3>
+<pre><code class="language-sql">SELECT product,
+       AGG(sales) as period_sales,
+       AGG({sales: {-d: dim_dt}}) as selected_period_sales,
+       AGG({sales: {-d: dim_dt, rank}}) as selected_period_rank
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+</code></pre>
+<p><code>{-d: dim_dt}</code> drops time grouping but retains the time filter, so this is a selected-period calculation, not an all-history rank. Use <code>-df</code> only when removing both the time grouping and that filter is the intended contract. Use <code>-d: dim_dt</code> (not <code>-d: dt_date</code>) when the query filters by a coarser grain like <code>dt_month</code> — <code>-d</code> can only remove a dimension field that is in the current query dimension, and <code>dim_dt</code> always refers to the active time field.</p>
+<h3 id="filtering-by-rank">Filtering by rank</h3>
+<pre><code class="language-sql">SELECT product, AGG(sales)
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+HAVING AGG({sales: rank}) &lt;= 10
+</code></pre>
+<p><code>HAVING</code> filters after aggregation, so <code>rank</code> is available there.</p>
+<h3 id="having-clause--customers-with-outstanding-balance">HAVING clause — customers with outstanding balance</h3>
+<pre><code class="language-sql">SELECT customer, AGG(outstanding)
+FROM MODEL
+GROUP BY customer
+HAVING AGG(outstanding) &gt; 0
+</code></pre>
+<p><strong>Key points</strong>: <code>rank</code> returns <code>RANK() OVER (ORDER BY measure DESC)</code>. <code>rank_asc</code> returns ascending rank. Use <code>-d</code> to remove time or other dimensions before ranking. Combine with <code>HAVING</code> for dynamic Top N filtering.</p>
+<h3 id="share-of-total-pot">Share of total (<code>pot</code>)</h3>
+<pre><code class="language-sql">SELECT product, AGG(sales) AS sales,
+       AGG(sales, &#39;rank&#39;) AS sales_rank,
+       AGG({sales: pot}) AS share_of_total
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product
+ORDER BY AGG(sales, &#39;rank&#39;)
+</code></pre>
+<p><code>pot</code> is <code>measure / grand</code>. Cumulative Pareto share is not a system fn-macro; use <code>OVER()</code> in Model Query SQL when you need a running total.</p>
+<h3 id="rfm-amp-co-occurrence-patterns">RFM &amp; co-occurrence patterns</h3>
+<p>For RFM analysis and co-occurrence analysis, see the worked <a href="reference--examples--aggregation.html">fine-grain aggregation examples</a>.</p>
+<hr>
+<h2 id="dimension-without-dt">Dimension without dt</h2>
+<h3 id="sales-by-region-all-time">Sales by region (all time)</h3>
+<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+</code></pre>
+<h3 id="product-share-by-region-no-time-grouping">Product share by region (no time grouping)</h3>
+<pre><code class="language-sql">SELECT region, product, AGG(sales)
+FROM MODEL
+GROUP BY region, product
+</code></pre>
+<h3 id="using--d-to-drop-time">Using <code>-d</code> to drop time</h3>
+<pre><code class="language-sql">SELECT region, product,
+       AGG(sales) as period_sales,
+       AGG({sales: {-d: dim_dt}}) as all_time_sales
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY region, product
+</code></pre>
+<p><code>{-d: dim_dt}</code> removes the time dimension from the measure&#39;s grain, so it evaluates across all time even though the query is filtered to this month. Use <code>-d: dim_dt</code> to drop the active time grain regardless of whether the query filters by <code>dt_date</code>, <code>dt_month</code>, etc.</p>
+<h3 id="period-conversion">Period conversion</h3>
+<pre><code class="language-sql">SELECT dt_year,
+       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter_at_quarter_grain
+FROM MODEL
+WHERE dt_year = &#39;2024-01-01&#39;
+GROUP BY dt_year
+</code></pre>
+<p><code>dim_dt as quarter</code> means the <code>pp</code> modifier operates at quarter grain, even though the query groups by year. The measure is evaluated at the pivoted grain (quarter), then the result is joined back to the query grain (year).</p>
+<blockquote>
+<p><strong>Note:</strong> <code>dim_dt as &lt;grain&gt;</code> is only useful when the pivoted grain differs from the query&#39;s time grain. If the query already groups by <code>dt_quarter</code>, then <code>dim_dt as quarter: pp</code> is rejected as unnecessary — use <code>AGG({sales: pp})</code> directly instead.</p>
+</blockquote>
+<p><strong>Key points</strong>: Queries without time filters analyze all historical data. <code>-d: dim_dt</code> removes the active time field from a measure&#39;s evaluation dimension (use <code>dim_dt</code> to target the active time field, not a specific field like <code>dt_date</code> — <code>-d</code> can only remove dimension fields that are in the current query dimension). <code>dim_dt as &lt;grain&gt;</code> changes the time granularity for one measure reference. Be careful with mixing: a measure without time may not be comparable to a measure with time in the same row.</p>
+<hr>
+<h2 id="comparison-patterns">Comparison patterns</h2>
+<h3 id="period-over-period">Period-over-period</h3>
+<pre><code class="language-sql">SELECT AGG(sales) as this_month, AGG(sales, &#39;pp&#39;) as last_month
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+</code></pre>
+<h3 id="growth-rate-by-account">Growth rate by account</h3>
+<pre><code class="language-sql">SELECT account, AGG(revenue) as current, AGG(revenue, &#39;pp&#39;) as previous
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY account
+HAVING AGG(revenue, &#39;pop&#39;) &gt; 0.10  -- 10% growth
+</code></pre>
+<h3 id="year-to-date-vs-last-year">Year to date vs last year</h3>
+<pre><code class="language-sql">SELECT AGG(sales, &#39;ytd&#39;) as this_ytd, AGG(sales, &#39;ytd&#39;, &#39;ya&#39;) as last_ytd
+FROM MODEL
+WHERE dt_date = date(current_date)
+GROUP BY dt_date
+</code></pre>
+<hr>
+<h2 id="conditional-counts">Conditional counts</h2>
+<p>Modifiers apply to <strong>measures</strong>, not columns. Use <code>{+d: product}</code> on the measure inside the condition:</p>
+<pre><code class="language-sql">-- Count of products with per-product sales above threshold
+SELECT DISTINCTCOUNTIF(product, AGG({sales: {+d: product}}) &gt; 1000) as prod_cnt FROM MODEL
+</code></pre>
+<p>Or define once in <code>.dml</code>: <code>formula: &#39;DISTINCTCOUNTIF({product}, {sales: {+d: product}} &gt; 1000)&#39;</code> then <code>SELECT AGG(high_sales_product_count) FROM MODEL</code>.</p>
+</main></html>

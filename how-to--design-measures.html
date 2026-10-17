@@ -1,0 +1,143 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Design a reusable measure · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="design-a-reusable-measure">Design a reusable measure</h1>
+<p>Use this guide after the <a href="how-to--build-analysis.html">analysis workflow</a> identifies a missing business calculation. Define its population and intermediate grain before choosing a formula.</p>
+<h2 id="metric-eligibility-predicates-in-intermediate-columns">Metric-eligibility predicates in intermediate columns</h2>
+<p>Use an intermediate column when a predicate defines which rows contribute to one metric while the dataset population remains meaningful. Do not classify predicates from names such as <code>state</code> or <code>delete_time</code>; the same-looking condition may instead define the permanent source population.</p>
+<pre><code class="language-yaml">columns:
+    valid_amount:
+        description: Row-level amount gated by validity checks
+        formula: &#39;iif(state = 1 and delete_time is null, prod_amount, null)&#39;
+measures:
+    total: SUM({valid_amount})
+</code></pre>
+<p><code>SUM</code> ignores NULL, so the aggregate value matches a filtered sum for groups that contain at least one accepted row. It is <strong>not generally equivalent</strong> to a source <code>WHERE</code>: a group containing only rejected rows disappears under <code>WHERE</code> but can remain as a row with <code>total = NULL</code> under the gate. Sibling counts, joins, windows, and downstream filters can also change.</p>
+<p>Use this rewrite only after proving rejected-only group behavior, sibling-metric gates, distinct/join/window population, and absent-vs-present-NULL equivalence. Otherwise retain a row-removing predicate at query/relationship scope or use a minimal documented dataset <code>sql:</code> escape for a permanent source invariant.</p>
+<p><strong>Decomposition chain example:</strong> <code>tax_rate_effective</code> (rate resolution) → <code>amount_excl_tax</code> (tax conversion) → <code>eligible_amount</code> (metric-specific gate) → <code>SUM({eligible_amount})</code> (measure). The compiler inlines these intermediate expressions; inspect generated SQL to verify lowering and population behavior.</p>
+<h2 id="derivative-measures">Derivative measures</h2>
+<p>Apply report-specific modifiers at the consumption site. Define a derivative measure in <code>.dml</code> only when the modified value must be reused everywhere (e.g. listed in a <code>type: materialize</code> object) or encoded as a named business metric. Use DMX references — <strong>never <code>AGG()</code></strong> in measure formulas:</p>
+<pre><code class="language-yaml">sales_last_month:
+    type: measure
+    formula: &#39;{sales: pp}&#39;
+
+sales_yoy_growth:
+    type: measure
+    formula: &#39;{sales: yoy}&#39;
+
+sales_by_product:
+    type: measure
+    formula: SUM({sales: {+d: product}})
+</code></pre>
+<p>These measures preserve their named transformation; evaluation still depends on the query context and modifier/filter rules.</p>
+<hr>
+<h2 id="ctes-and-multi-step-logic">CTEs and multi-step logic</h2>
+<p>If your SQL uses CTEs, translate them into one of:</p>
+<ol>
+<li><strong>Measures with modifiers</strong> (preferred) — if the CTE just adds a filter or dimension field</li>
+<li><strong>Column-macros</strong> — if the CTE computes a derived column</li>
+<li><strong>Separate queries</strong> — if the CTE genuinely produces an intermediate result set</li>
+</ol>
+<p><strong>Example</strong>: SQL with CTE that filters to &quot;completed orders&quot;</p>
+<pre><code class="language-sql">-- Original SQL
+WITH completed AS (
+    SELECT * FROM orders WHERE status = &#39;completed&#39;
+)
+SELECT product, SUM(amount) FROM completed GROUP BY product
+</code></pre>
+<pre><code class="language-yaml"># DML approach
+completed_sales:
+    type: measure
+    formula: SUM({amount: {+f: {status: &#39;completed&#39;}}})
+</code></pre>
+<pre><code class="language-sql">-- Model Query SQL: retain the row-removing population restriction
+SELECT product, AGG(completed_sales) FROM MODEL
+WHERE status = &#39;completed&#39;
+GROUP BY product
+</code></pre>
+<h2 id="dimension-constrained-measures">Dimension-constrained measures</h2>
+<blockquote>
+<p>⚠️ <strong>Measure <code>dimensions:</code> contains allowed dimensions.</strong> Each inner list is one allowed dimension; the outer list contains alternatives. It does not define dataset row identity or query grouping; those belong to dataset <code>dimension:</code> and query <code>GROUP BY</code> / <code>columns.dimension:</code> respectively. See <a title="Reference available in the development workspace">dimension roles</a>.</p>
+</blockquote>
+<p>Add this constraint only when the metric <strong>must</strong> be evaluated with a specific dimension:</p>
+<pre><code class="language-yaml"># &quot;Average order value per customer&quot; — customer_id is required during evaluation
+aov_per_customer:
+    type: measure
+    formula: DIVIDE({sales}, {number_of_transactions})
+    dimensions:
+        - [customer_id]    # ← the only allowed dimension
+</code></pre>
+<p>Other formulas wanting to use it must explicitly <code>{aov_per_customer: {+d: customer_id}}</code> to evaluate it with <code>customer_id</code>, then roll it up. Document the constraint clearly—it is powerful but can produce surprising results.</p>
+<h2 id="translate-sql-into-measures">Translate SQL into measures</h2>
+<p>Checklist to turn a metric spec or existing SQL (CTEs, JOINs) into DML measures and boring Model Query SQL (<code>FROM MODEL</code> + <code>AGG(...)</code>).</p>
+<p><strong>Start from dimensions, not SQL text:</strong></p>
+<ul>
+<li><strong>Final query dimension?</strong> (e.g. <code>[customer]</code> or <code>[customer, dt_month]</code>)</li>
+<li><strong>Intermediate evaluation dimension?</strong> (e.g. <code>[customer]</code> for first purchase)</li>
+<li>Map: evaluate directly on the dataset dimension → atomic measure; change an evaluation dimension → <code>+d</code> / <code>dimension</code>; constrain allowed dimensions → <strong>dimension-constrained measure</strong>. Confirm that intermediate and result grains are compatible. If logic truly needs JOIN/subquery and cannot be expressed in DML, stop and reassess—do not bypass Model Query SQL rules.</li>
+</ul>
+<p><strong>Dimension-constrained measures (encode CTE-like intermediate rows):</strong></p>
+<ul>
+<li>Define a measure with one allowed dimension: <code>dimensions: [[customer_id]]</code></li>
+<li>Roll up with <code>SUM({that_measure: {+d: customer_id}})</code> (or <code>AVG</code>, etc.)</li>
+<li><strong><code>dimensions:</code></strong> restricts validity; <strong><code>+d</code></strong> on that measure in another formula adds the required dimension field to its evaluation dimension</li>
+</ul>
+<pre><code class="language-yaml">first_month:
+    type: measure
+    description: first month with sales &gt; 0 (customer grain only)
+    formula: &#39;MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)&#39;
+    dimensions:
+        - [customer_id]
+
+first_month_sales_by_customer:
+    type: measure
+    description: sales in customer&#39;s first month (customer grain only)
+    formula: &#39;SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})&#39;
+    dimensions:
+        - [customer_id]
+
+first_month_sales_total:
+    type: measure
+    formula: &#39;SUM({first_month_sales_by_customer: {+d: customer_id}})&#39;
+</code></pre>
+<p>Inside a customer-restricted measure, <code>{sales: {+d: dt_month}}</code> is that customer&#39;s sales in that month.</p>
+<p>To <strong>group a report by</strong> <code>first_month</code> (query dimension = measure result) while aligning sibling measures with <code>+d: customer_id</code>, see measure-as-dimension: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>
+<p><strong>&quot;Exists / ever&quot; logic (retention, repeat):</strong></p>
+<ul>
+<li>Customer-level flag: <code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code> with <code>dimensions: [[customer_id]]</code></li>
+<li>Total with flag: <code>SUM({flag: {+d: customer_id}})</code></li>
+<li>Rate: <code>DIVIDE(total_flag, total_customers)</code></li>
+</ul>
+<p><strong>Turn CTEs into measure(s):</strong></p>
+<table>
+<thead>
+<tr>
+<th>CTE pattern</th>
+<th>DML approach</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>customer×month aggregation</td>
+<td><code>{sales: {+d: [customer, dt_month]}}</code></td>
+</tr>
+<tr>
+<td>first purchase month</td>
+<td><code>MINIF({dt_month}, …)</code> at customer grain</td>
+</tr>
+<tr>
+<td>per-customer flags</td>
+<td>customer-grain <code>MAXIF</code></td>
+</tr>
+<tr>
+<td>final KPI</td>
+<td><code>SUM({customer_measure: {+d: customer_id}})</code> and ratios</td>
+</tr>
+</tbody></table>
+<p>Target query shape: <code>SELECT AGG(kpi_1), AGG(kpi_2), ... FROM MODEL</code>.</p>
+<h2 id="d-in-distinctcountif--sumif-conditions-cross-grain-filtering"><code>+d</code> in DISTINCTCOUNTIF / SUMIF conditions (cross-grain filtering)</h2>
+<p>When counting entities at one grain while filtering at another, put <code>{+d: dimension_field}</code> on the <strong>measure</strong> in the condition — not on the column.</p>
+<ul>
+<li>Wrong: <code>DISTINCTCOUNTIF({entity: {+d: entity}}, …)</code> — invalid; modifiers only on measures</li>
+<li>Correct: <code>DISTINCTCOUNTIF({entity}, {sales: {+d: entity}} &gt; 0 AND …)</code></li>
+</ul>
+<p><strong>Cohort scope:</strong> define first purchase at an explicit entity grain and history/as-of scope, then compare it with the observation period. Reuse a named classifier only after its allowed dimensions and attachment grain are validated. Inlining a failing expression does not prove the semantics or bypass an incompatible grain. See <a href="explanation--measure-as-dimension.html">measure-as-dimension</a> for checked shapes and release defects.</p>
+<h2 id="backward-looking-repurchase-metrics">Backward-looking repurchase metrics</h2>
+<p>Define the business sentence first (who, observation month, window). Build customer-grain flags, then aggregate: <code>SUM({flag: {+d: customer_id}})</code> or <code>DISTINCTCOUNTIF(...)</code>. Review with the business owner before changing semantics.</p>
+</main></html>

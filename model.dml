@@ -1,0 +1,63 @@
+regions:
+  type: dataset
+  table: DIM_REGION
+  dimension: [region]
+  columns:
+    region:
+    manager:
+
+FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    customer:
+    dt_month:
+    status:
+    amount:
+    manager: 'pk(region).{regions}.manager'
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+
+average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+
+completed_sales:
+  type: measure
+  formula: '{sales: {+f: {status: completed}}}'
+
+within_slice_share:
+  type: measure
+  formula: 'DIVIDE({sales}, {sales: {-d: region}})'
+
+all_region_share:
+  type: measure
+  formula: 'DIVIDE({sales}, {sales: {-df: region}})'
+
+average_customer_sales:
+  type: measure
+  formula: 'AVG({sales: {+d: customer}})'
+
+sum_customer_sales:
+  type: measure
+  formula: 'SUM({sales: {+d: customer}})'
+
+max_customer_sales:
+  type: measure
+  formula: 'MAX({sales: {+d: customer}})'
+
+previous_sales:
+  type: measure
+  formula: '{sales: pp}'
+
+sales_change:
+  type: measure
+  formula: '{sales: pop}'
+
+previous_sales_filled:
+  type: measure
+  formula: 'ISNULL({sales: pp}, 0)'

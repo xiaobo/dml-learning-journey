@@ -1,0 +1,388 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC Error Codes Reference · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dmlc-error-codes-reference">DMLC Error Codes Reference</h1>
+<blockquote>
+<p><strong>Implementation note:</strong> kept in sync with Java error enums. Full tool response shapes: <a href="reference--mcp-contract.html">MCP Contract (CLI + MCP)</a>. Explain-change diagnostics: <a title="Reference available in the development workspace"><code>../../../dmlc_jdbc/docs/explain-change.md</code></a>.</p>
+</blockquote>
+<h2 id="path-display-convention">Path display convention</h2>
+<p>All user-visible paths (CLI stderr, MCP <code>message</code> / <code>details</code>, scrubbed logs) use <strong>forward slashes</strong> (<code>/</code>) on every platform:</p>
+<ul>
+<li>User input such as <code>..\data</code> or <code>../data</code> is normalized to <code>../data</code> in errors.</li>
+<li>Workspace placeholders use <code>&lt;workspaceFolder&gt;/relative/path</code> (never backslashes under the placeholder).</li>
+<li>Resolved filesystem paths prefer cwd-relative form when possible (<code>WorkspaceUtils.toUserFacingPath</code>).</li>
+</ul>
+<p>Internal resolution still uses <code>java.nio.file.Path</code>; only display and serialized error fields are normalized.</p>
+<h2 id="error-code-categories">Error Code Categories</h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Description</th>
+<th>CLI Exit Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INVALID_INPUT</td>
+<td>Input validation failed - user can fix and retry</td>
+<td>64</td>
+</tr>
+<tr>
+<td>VALIDATION</td>
+<td>User-level validation failed (parsed OK, but arguments are invalid)</td>
+<td>65</td>
+</tr>
+<tr>
+<td>NOT_FOUND</td>
+<td>Requested resource not found</td>
+<td>66</td>
+</tr>
+<tr>
+<td>CONFIG</td>
+<td>Configuration error (missing/invalid config, unknown connection id, etc.)</td>
+<td>78</td>
+</tr>
+<tr>
+<td>TIMEOUT</td>
+<td>Operation timed out - retry with different parameters</td>
+<td>69</td>
+</tr>
+<tr>
+<td>COMPILE</td>
+<td>Compilation failed (syntax / model error)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>EXECUTION</td>
+<td>Execution failed but may succeed on retry</td>
+<td>70</td>
+</tr>
+<tr>
+<td>INTERNAL</td>
+<td>Unexpected internal error - should be reported</td>
+<td>70</td>
+</tr>
+<tr>
+<td>BLOCKED</td>
+<td>Operation blocked by policy or state</td>
+<td>77</td>
+</tr>
+</tbody></table>
+<h2 id="error-codes">Error Codes</h2>
+<h3 id="file-io-errors">File I/O Errors</h3>
+<h4 id="file_not_found">FILE_NOT_FOUND</h4>
+<ul>
+<li><strong>Category</strong>: NOT_FOUND</li>
+<li><strong>Code</strong>: FILE_NOT_FOUND</li>
+<li><strong>Common Causes</strong>: File path is incorrect, file does not exist, file is outside workspace folder</li>
+<li><strong>Suggested Fixes</strong>: Verify file path is correct and within workspace folder</li>
+<li><strong>Example</strong>: <code>File not found: /path/to/file.dml</code></li>
+</ul>
+<h4 id="file_already_exists">FILE_ALREADY_EXISTS</h4>
+<ul>
+<li><strong>Category</strong>: BLOCKED</li>
+<li><strong>Code</strong>: FILE_ALREADY_EXISTS</li>
+<li><strong>Common Causes</strong>: Attempting to create a file that already exists without overwrite</li>
+<li><strong>Suggested Fixes</strong>: Use overwrite flag or choose a different file name</li>
+<li><strong>Example</strong>: <code>File already exists: /path/to/file.csv</code></li>
+</ul>
+<h4 id="unsupported_file_type">UNSUPPORTED_FILE_TYPE</h4>
+<ul>
+<li><strong>Category</strong>: INVALID_INPUT</li>
+<li><strong>Code</strong>: UNSUPPORTED_FILE_TYPE</li>
+<li><strong>Common Causes</strong>: Attempting to use an unsupported file format</li>
+<li><strong>Suggested Fixes</strong>: Use supported file type (parquet, csv, xlsx)</li>
+<li><strong>Example</strong>: <code>Unsupported file type: .txt. Supported types: .csv, .xlsx, .parquet</code></li>
+</ul>
+<h4 id="path_outside_workspace">PATH_OUTSIDE_WORKSPACE</h4>
+<ul>
+<li><strong>Category</strong>: BLOCKED</li>
+<li><strong>Code</strong>: PATH_OUTSIDE_WORKSPACE</li>
+<li><strong>Common Causes</strong>: File path is outside the workspace folder (including <code>../</code> traversal, absolute paths on another drive, or symlinks that resolve outside the workspace)</li>
+<li><strong>Suggested Fixes</strong>: Use a relative path within the workspace folder</li>
+<li><strong>Example</strong>: <code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code> (same message for read paths via <code>resolveFilename</code> and write paths via <code>resolveOutputPath</code>)</li>
+<li><strong>Path display</strong>: User-facing paths in errors and MCP/CLI payloads use forward slashes (<code>/</code>) on all platforms, including <code>&lt;workspaceFolder&gt;/relative/path</code> placeholders.</li>
+<li><strong>Notes</strong>: When a workspace folder is configured (MCP <code>workspace</code> / <code>workspaceRoots</code>, or CLI <code>WORKSPACE_FOLDER</code>), relative traversal outside that folder is blocked on both MCP and CLI. With multiple <code>workspaceRoots</code>, output paths may be absolute under any configured root.</li>
+<li><strong>Breaking change (list_models)</strong>: Unresolvable <code>dataFiles</code> entries now return <code>PATH_OUTSIDE_WORKSPACE</code> or <code>INVALID_PARAMS</code> and abort the tool instead of emitting a warning and continuing with partial results.</li>
+</ul>
+<h4 id="no_sheets_in_excel">NO_SHEETS_IN_EXCEL</h4>
+<ul>
+<li><strong>Category</strong>: INVALID_INPUT</li>
+<li><strong>Code</strong>: NO_SHEETS_IN_EXCEL</li>
+<li><strong>Common Causes</strong>: Excel file has no sheets or is corrupted</li>
+<li><strong>Suggested Fixes</strong>: Provide a valid Excel file with at least one sheet</li>
+<li><strong>Example</strong>: <code>Excel file has no sheets: /path/to/file.xlsx</code></li>
+</ul>
+<h3 id="connection-errors">Connection Errors</h3>
+<h4 id="connection_not_found">CONNECTION_NOT_FOUND</h4>
+<ul>
+<li><strong>Category</strong>: CONFIG</li>
+<li><strong>Code</strong>: CONNECTION_NOT_FOUND</li>
+<li><strong>Common Causes</strong>: Connection ID does not exist in connections.json</li>
+<li><strong>Suggested Fixes</strong>: List available connections and pick a valid connection id, or add connection to connections.json</li>
+<li><strong>Example</strong>: <code>Connection not found: production. Available connections: [dev, staging]</code></li>
+</ul>
+<h4 id="list_connections_error">LIST_CONNECTIONS_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: EXECUTION</li>
+<li><strong>Code</strong>: LIST_CONNECTIONS_ERROR</li>
+<li><strong>Common Causes</strong>: Failed to list available connections due to database or config error</li>
+<li><strong>Suggested Fixes</strong>: Check connection configuration and database accessibility</li>
+<li><strong>Example</strong>: <code>Failed to list connections: Connection refused</code></li>
+</ul>
+<h3 id="query-execution-errors">Query Execution Errors</h3>
+<h4 id="execution_error">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: EXECUTION</li>
+<li><strong>Code</strong>: EXECUTION_ERROR</li>
+<li><strong>Common Causes</strong>: Query execution failed due to SQL error, data issue, database problem, or stale materialize cache after model changes</li>
+<li><strong>Suggested Fixes</strong>: Check query syntax, data types, and database connectivity. If the message mentions obsolete materialize semver or <code>pls re-setup related model</code>, run <code>dmlc -s &lt;model.dml&gt; --connection=&lt;id&gt;</code> then retry the query with the same <code>--model</code>.</li>
+<li><strong>Example</strong>: <code>Execution failed: Column &#39;invalid_column&#39; does not exist</code></li>
+<li><strong>Example (materialize obsolete)</strong>: <code>materialize abort: procedure PROC_M__CACHED_SALES is obsolete since semver (...) is different from expect: ..., pls re-setup related model</code></li>
+</ul>
+<h4 id="execution_interrupted">EXECUTION_INTERRUPTED</h4>
+<ul>
+<li><strong>Category</strong>: EXECUTION</li>
+<li><strong>Code</strong>: EXECUTION_INTERRUPTED</li>
+<li><strong>Common Causes</strong>: Query was interrupted by user or system</li>
+<li><strong>Suggested Fixes</strong>: Retry the query</li>
+<li><strong>Example</strong>: <code>Query execution interrupted</code></li>
+</ul>
+<h4 id="timeout_error">TIMEOUT_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: TIMEOUT</li>
+<li><strong>Code</strong>: TIMEOUT_ERROR</li>
+<li><strong>Common Causes</strong>: Query took too long to execute</li>
+<li><strong>Suggested Fixes</strong>: Increase timeoutSeconds parameter or simplify query, consider adding materialize to improve performance</li>
+<li><strong>Example</strong>: <code>Query timed out after 30 seconds</code></li>
+</ul>
+<h3 id="compilation-errors">Compilation Errors</h3>
+<h4 id="compile_error">COMPILE_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: VALIDATION</li>
+<li><strong>Code</strong>: COMPILE_ERROR</li>
+<li><strong>Common Causes</strong>: DML syntax error, model validation error, SQL generation error; illegal modifier composition (e.g. same-dimension <code>+d</code> with <code>-d</code>/<code>-df</code> in one modifier object — language contract: fail loudly, see <a href="reference--semantics.html#45-modifier-composition">dml-core-spec §4.5</a> / pitfalls P79)</li>
+<li><strong>Suggested Fixes</strong>: Fix compilation errors, check model.dml exists in workspace folder, review generated SQL in error.details.generatedSql; for conflicting <code>+d</code>/<code>-d</code>/<code>-df</code>, rewrite to one explicit intent instead of relying on cancel</li>
+<li><strong>Example</strong>: <code>Compilation failed — see details.compilationErrors</code></li>
+<li><strong>Notes</strong>: The 2026-10-16 same-field <code>+d</code> conflict probes produce no error diagnostic and exit 0. The required rejection is not implemented in those cases. A future diagnostic needs its own verified structured code. See <a href="maintenance--release-evidence.html">release evidence</a>.</li>
+</ul>
+<h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
+<ul>
+<li><strong>Category</strong>: TIMEOUT</li>
+<li><strong>Code</strong>: COMPILE_TIMEOUT</li>
+<li><strong>Common Causes</strong>: Compilation took too long to complete</li>
+<li><strong>Suggested Fixes</strong>: Simplify DML model, reduce complexity, increase timeout</li>
+<li><strong>Example</strong>: <code>Compilation timed out after 30 seconds</code></li>
+</ul>
+<h4 id="validation_error">VALIDATION_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: VALIDATION</li>
+<li><strong>Code</strong>: VALIDATION_ERROR</li>
+<li><strong>Common Causes</strong>: Validation failed for parameters or configuration</li>
+<li><strong>Suggested Fixes</strong>: Fix invalid parameters or configuration</li>
+<li><strong>Example</strong>: <code>Validation failed — see details.validationErrors</code></li>
+</ul>
+<h3 id="generation-errors">Generation Errors</h3>
+<h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: NOT_FOUND</li>
+<li><strong>Code</strong>: MODEL_RESOLUTION_ERROR</li>
+<li><strong>Common Causes</strong>: Cannot find <code>&lt;FROM&gt;.dml</code> beside the SQL / under <code>--model=&lt;dir&gt;</code> / on the model path; or <code>--model=acme.dml</code> was used with <code>FROM MODEL</code> (file/FROM mismatch — exit 65); or <code>explain_change</code> was given a directory</li>
+<li><strong>Suggested Fixes</strong>: For query/compile/validate, pass a directory that contains the right <code>.dml</code>, or pass a file whose name matches <code>FROM</code>. For <code>explain_change</code> / <code>setup</code>, pass a <code>.dml</code> file. Or call <code>list_models</code>, then pass the directory containing <code>.dml</code> files as <code>run_query.model</code> for DML model queries only (not native SQL).</li>
+<li><strong>Example</strong>: <code>model file &quot;acme.dml&quot; does not match FROM &quot;MODEL&quot; (expected &quot;MODEL.dml&quot;).</code></li>
+</ul>
+<h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: VALIDATION</li>
+<li><strong>Code</strong>: FILTER_VALIDATION_ERROR</li>
+<li><strong>Common Causes</strong>: Filter syntax error or invalid field name</li>
+<li><strong>Suggested Fixes</strong>: Fix filter field name or syntax</li>
+<li><strong>Example</strong>: <code>Filter validation failed: invalid field &#39;dt_invalid&#39;</code></li>
+</ul>
+<h3 id="dimension-validation-errors">Dimension Validation Errors</h3>
+<h4 id="dimension_not_unique">DIMENSION_NOT_UNIQUE</h4>
+<ul>
+<li><strong>Category</strong>: VALIDATION</li>
+<li><strong>Code</strong>: DIMENSION_NOT_UNIQUE</li>
+<li><strong>Common Causes</strong>: The complete dataset dimension value combination occurs more than once, or a range-based lookup can match overlapping source rows</li>
+<li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>validateOnly</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
+<li><strong>Example</strong>: <code>Declared DML dataset dimension is not unique in dataset &#39;Order Line&#39; on this connection at validation time.</code></li>
+</ul>
+<h4 id="validation_query_failed">VALIDATION_QUERY_FAILED</h4>
+<ul>
+<li><strong>Category</strong>: EXECUTION</li>
+<li><strong>Code</strong>: VALIDATION_QUERY_FAILED</li>
+<li><strong>Common Causes</strong>: Validation query failed to execute</li>
+<li><strong>Suggested Fixes</strong>: Check connection configuration and database accessibility</li>
+<li><strong>Example</strong>: <code>Validation query failed: Connection refused</code></li>
+</ul>
+<h3 id="workspaceoperation-errors">Workspace/Operation Errors</h3>
+<h4 id="no_workspace">NO_WORKSPACE</h4>
+<ul>
+<li><strong>Category</strong>: BLOCKED</li>
+<li><strong>Code</strong>: NO_WORKSPACE</li>
+<li><strong>Common Causes</strong>: No workspace folder is set or workspace is not accessible</li>
+<li><strong>Suggested Fixes</strong>: Set workspace folder or check workspace permissions</li>
+<li><strong>Example</strong>: <code>No workspace folder configured</code></li>
+</ul>
+<h4 id="invalid_params">INVALID_PARAMS</h4>
+<ul>
+<li><strong>Category</strong>: VALIDATION</li>
+<li><strong>Code</strong>: INVALID_PARAMS</li>
+<li><strong>Common Causes</strong>: Invalid parameter name or value</li>
+<li><strong>Suggested Fixes</strong>: Fix parameter name or value, check valid options for the parameter</li>
+<li><strong>Example</strong>: <code>Invalid parameter: &#39;invalid_param&#39;. Valid options: [&#39;param1&#39;, &#39;param2&#39;]</code></li>
+</ul>
+<h4 id="file_export_error">FILE_EXPORT_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: EXECUTION</li>
+<li><strong>Code</strong>: FILE_EXPORT_ERROR</li>
+<li><strong>Common Causes</strong>: Failed to export data to file</li>
+<li><strong>Suggested Fixes</strong>: Retry with overwrite enabled, check file path and permissions</li>
+<li><strong>Example</strong>: <code>File export failed: Permission denied</code></li>
+</ul>
+<h3 id="general-errors">General Errors</h3>
+<h4 id="unexpected_error">UNEXPECTED_ERROR</h4>
+<ul>
+<li><strong>Category</strong>: INTERNAL</li>
+<li><strong>Code</strong>: UNEXPECTED_ERROR</li>
+<li><strong>Common Causes</strong>: Unexpected internal error occurred</li>
+<li><strong>Suggested Fixes</strong>: Report this error to the development team</li>
+<li><strong>Example</strong>: <code>Unexpected error: NullPointerException</code></li>
+</ul>
+<h2 id="protocol-errors-json-rpc">Protocol Errors (JSON-RPC)</h2>
+<h3 id="method_not_found">METHOD_NOT_FOUND</h3>
+<ul>
+<li><strong>Code</strong>: -32601</li>
+<li><strong>Common Causes</strong>: Requested method does not exist</li>
+<li><strong>Suggested Fixes</strong>: Check available tools and use a valid method name</li>
+<li><strong>Example</strong>: <code>Method not found: unknown_tool. Available tools: [list_connections, list_models, run_query, explain_change]</code></li>
+</ul>
+<h3 id="invalid_params-1">INVALID_PARAMS</h3>
+<ul>
+<li><strong>Code</strong>: -32602</li>
+<li><strong>Common Causes</strong>: Invalid parameters for the requested method</li>
+<li><strong>Suggested Fixes</strong>: Check parameter names and valid options for the method</li>
+<li><strong>Example</strong>: <code>Invalid params: missing tool name. Valid options: [list_connections, list_models, run_query, explain_change]</code></li>
+</ul>
+<h3 id="invalid_request">INVALID_REQUEST</h3>
+<ul>
+<li><strong>Code</strong>: -32600</li>
+<li><strong>Common Causes</strong>: Invalid JSON-RPC request format</li>
+<li><strong>Suggested Fixes</strong>: Check request format follows JSON-RPC 2.0 specification</li>
+<li><strong>Example</strong>: <code>Invalid Request: missing method</code></li>
+</ul>
+<h3 id="parse_error">PARSE_ERROR</h3>
+<ul>
+<li><strong>Code</strong>: -32700</li>
+<li><strong>Common Causes</strong>: Failed to parse JSON-RPC request</li>
+<li><strong>Suggested Fixes</strong>: Check JSON syntax and encoding</li>
+<li><strong>Example</strong>: <code>Parse error: Invalid JSON</code></li>
+</ul>
+<h3 id="internal_error">INTERNAL_ERROR</h3>
+<ul>
+<li><strong>Code</strong>: -32603</li>
+<li><strong>Common Causes</strong>: Internal JSON-RPC error occurred</li>
+<li><strong>Suggested Fixes</strong>: Report this error to the development team</li>
+<li><strong>Example</strong>: <code>Internal error</code></li>
+</ul>
+<h2 id="error-details-structure">Error Details Structure</h2>
+<p>Errors may include additional structured details in the <code>error.details</code> field:</p>
+<pre><code class="language-json">{
+  &quot;error&quot;: {
+    &quot;code&quot;: &quot;COMPILE_ERROR&quot;,
+    &quot;message&quot;: &quot;Compilation failed — see details.compilationErrors&quot;,
+    &quot;details&quot;: {
+      &quot;compilationErrors&quot;: [&quot;error message 1&quot;, &quot;error message 2&quot;],
+      &quot;generatedSql&quot;: &quot;SELECT AGG(sales) FROM MODEL WHERE dt_month = &#39;2025-01-01&#39;&quot;,
+      &quot;dimensionErrors&quot;: {
+        &quot;datasetA&quot;: &quot;Dimension is not unique&quot;
+      },
+      &quot;executionErrors&quot;: [&quot;execution error message&quot;],
+      &quot;validationErrors&quot;: [&quot;validation error message&quot;]
+    }
+  }
+}
+</code></pre>
+<h2 id="diagnostic-metadata-errordetails">Diagnostic metadata (<code>error.details</code>)</h2>
+<p>Internal recovery hints (when present) use unified names:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>exampleModel</code></td>
+<td>Suggested value for <code>params.model</code> on retry</td>
+</tr>
+<tr>
+<td><code>exampleModelCandidates</code></td>
+<td>Multiple candidate model dirs/files (truncated list)</td>
+</tr>
+<tr>
+<td><code>exampleModelCandidatesTotal</code></td>
+<td>Total candidates when list is truncated</td>
+</tr>
+<tr>
+<td><code>recovery</code></td>
+<td>Recovery class: <code>needs_model</code>, <code>needs_qualified_from</code>, <code>needs_both</code></td>
+</tr>
+<tr>
+<td><code>overlapSuggestedPath</code></td>
+<td>Workspace overlap hint when a path was resolved incorrectly (not the <code>model</code> tool param)</td>
+</tr>
+</tbody></table>
+<h2 id="next-actions">Next Actions</h2>
+<p>Errors may include actionable next steps in the <code>structuredContent.next.actions</code> field:</p>
+<pre><code class="language-json">{
+  &quot;next&quot;: {
+    &quot;actions&quot;: [
+      {
+        &quot;type&quot;: &quot;provide_model&quot;,
+        &quot;description&quot;: &quot;Provide model (directory or .dml file) for a DML model query and retry&quot;,
+        &quot;params&quot;: {
+          &quot;model&quot;: &quot;sql&quot;
+        }
+      },
+      {
+        &quot;type&quot;: &quot;list_models&quot;,
+        &quot;description&quot;: &quot;Run list_models first, then use the parent directory of a modelFiles entry as run_query.model&quot;
+      },
+      {
+        &quot;type&quot;: &quot;increase_timeout&quot;,
+        &quot;description&quot;: &quot;Increase timeout value&quot;,
+        &quot;params&quot;: {
+          &quot;timeoutSeconds&quot;: 60
+        }
+      }
+    ]
+  }
+}
+</code></pre>
+<h2 id="diagnostics-warning-types-non-fatal">Diagnostics warning types (non-fatal)</h2>
+<p>These appear in <code>structuredContent.diagnostics.warnings[]</code> (especially <code>explain_change</code> discovery). They use field <strong><code>type</code></strong> (not legacy <code>EXPLAIN_*</code> codes). They do <strong>not</strong> set <code>isError: true</code>.</p>
+<table>
+<thead>
+<tr>
+<th><code>type</code></th>
+<th>Meaning</th>
+<th>Agent action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>missing_dimensions</code></td>
+<td><code>dimensions</code> omitted; driver SQL not executed</td>
+<td>Pick axes from <code>candidateDimensions</code> and rerun with <code>dimensions</code></td>
+</tr>
+<tr>
+<td><code>missing_formula</code></td>
+<td><code>formula</code> omitted; factor attribution not executed</td>
+<td>Add <code>formula</code> when factor breakdown is needed</td>
+</tr>
+<tr>
+<td><code>REPEATED_DISCOVERY_CALL</code></td>
+<td><em>(P2, optional)</em> Same discovery params sent again</td>
+<td>Stop looping; enter full execution with dimensions</td>
+</tr>
+</tbody></table>
+<p><strong>Observations</strong> (same <code>diagnostics</code> object, field <strong><code>type</code></strong>): quality/context signals such as <code>narrow_dimension_breakdown</code>, <code>results_truncated</code> — not blockers; see <a title="Reference available in the development workspace">explain-change.md</a> §5.</p>
+</main></html>

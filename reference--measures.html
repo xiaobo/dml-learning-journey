@@ -1,0 +1,279 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure declarations · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="measure-declarations">Measure declarations</h1>
+<p>This page owns measure properties and formula forms. <a href="how-to--design-measures.html">Design measures</a> covers authoring decisions. <a href="reference--examples--measure-formulas.html">Formula examples</a> contains business patterns.</p>
+<h2 id="basic-syntax">Basic syntax</h2>
+<pre><code class="language-yaml">measure_name:
+    type: measure
+    description: Business description
+    dataset: dataset_name
+    formula: aggregation_expression
+    dimensions:                # optional allowed evaluation dimensions
+        - [customer_id]
+        - [customer_id, ...]   # listed fields remain required
+    prerequisite: validity_expression
+</code></pre>
+<p><code>formula:</code> is required. <code>dataset:</code> binds a top-level atomic measure to its source. A measure under a dataset&#39;s <code>measures:</code> block inherits that dataset. Composite measures reference other measures and omit <code>dataset:</code>.</p>
+<p><code>dimensions:</code> is an array of arrays. Each inner list is one alternative allowed evaluation dimension. A flat list fails with <code>string found, array expected</code>. An ellipsis permits additional fields, while every listed field remains required. The property constrains evaluation; it does not declare dataset identity or the query&#39;s grouping.</p>
+<p><code>prerequisite:</code> adds a grain-validity expression. The common metadata fields <code>description</code>, <code>abbr</code>, and <code>tags</code> are described in <a href="reference--model-structure.html#57-common-metadata-fields">model metadata fields</a>. <a href="how-to--design-measures.html">Design measures</a> covers how to choose these constraints.</p>
+<p>Notes:</p>
+<ul>
+<li>Apply query-specific filtering and grouping in the <strong>model query</strong> (SQL <code>WHERE</code>/<code>GROUP BY</code>, or DML format <code>filters:</code> / <code>columns: dimension:</code>) — not in one-off measures. Model Query rules: <a href="reference--model-query-sql.html">Model Query SQL</a>.</li>
+<li><code>dataset:</code> is only for <strong>atomic</strong> measures. Their formulas directly aggregate that dataset&#39;s rows or column expressions without referencing other measures. <strong>Composite</strong> measures reference other measures and must not declare <code>dataset:</code>. This remains true when all referenced measures use the same dataset. See <a href="reference--measures.html#measure-references">Measure References</a> and pitfalls <a href="reference--troubleshooting--models.html#p39"><code>P39</code></a>.</li>
+<li>Measures may return numeric, date or classifier values. Keep display formatting in the consumer; choose aggregation and type to match the business definition.</li>
+<li>For monetary or precision-sensitive raw fields, prefer casting once in an atomic measure (for example <code>SUM(CAST({amount} AS DECIMAL(38, 2)))</code>) and reusing that measure downstream.</li>
+<li>When business rules rely on <code>&gt; 0</code> / <code>&lt; 0</code> comparisons, ensure the base measure is already typed as intended (e.g. DECIMAL) before reusing it in <code>MINIF</code>/<code>MAXIF</code>/<code>DISTINCTCOUNTIF</code> conditions.</li>
+</ul>
+<hr>
+<h2 id="simple-aggregations">Simple aggregations</h2>
+<h3 id="count">COUNT</h3>
+<pre><code class="language-yaml">number_of_transactions:
+    type: measure
+    dataset: transactions
+    formula: count(distinct transaction_id)
+
+number_of_products:
+    type: measure
+    dataset: transactions
+    formula: count(distinct product)
+</code></pre>
+<h3 id="sum">SUM</h3>
+<pre><code class="language-yaml">amount:
+    type: measure
+    dataset: transactions
+    formula: SUM(CAST({raw_amount} AS DECIMAL(38, 2)))
+
+transaction_quantity:
+    type: measure
+    dataset: transactions
+    formula: SUM(quantity)
+</code></pre>
+<h3 id="maxmin">MAX/MIN</h3>
+<pre><code class="language-yaml">last_order_date:
+    type: measure
+    dataset: transactions
+    formula: MAX(dt_date)
+</code></pre>
+<h3 id="avg">AVG</h3>
+<pre><code class="language-yaml">avg_invoice_quantity:
+    type: measure
+    formula: &#39;AVG({invoice_quantity: {+d: transaction_id}})&#39;
+</code></pre>
+<hr>
+<h2 id="filtered-measures">Filtered measures</h2>
+<p>Use inline filters with <code>{+f: condition}</code>. Modifier syntax reference: <a href="reference--modifiers.html#22-function-modifiers">Function modifiers</a>.</p>
+<pre><code class="language-yaml">expense:
+    type: measure
+    dataset: transactions
+    formula: |-
+        {debit: {+f: {account_type: [&#39;Expense&#39;, &#39;Other Expense&#39;]}}}
+
+sales:
+    type: measure
+    description: Sales revenue from income accounts
+    formula: |-
+        {credit: {+f: {account_type: [&#39;Income&#39;, &#39;Other Income&#39;]}}}
+
+food_and_drink_expense:
+    type: measure
+    formula: |-
+        {expense: {+f: &quot;instr(account, &#39;Food &amp; drink&#39;) &gt; 0&quot;}}
+
+number_of_credit_card_transactions:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {credit_card : &#39;yes&#39;}}}
+
+number_of_unpaid_invoices:
+    type: measure
+    formula: |-
+        {number_of_invoices: {+f: &#39;open_balance &gt; 0&#39;}}
+</code></pre>
+<hr>
+<h2 id="measure-references">Measure references</h2>
+<p>Reference other measures in formulas:</p>
+<blockquote>
+<p><strong>Composite measures must not declare <code>dataset:</code>.</strong> If <code>formula:</code> references another measure, omit <code>dataset:</code>. Atomic measures use <code>dataset:</code> to bind the source rows or column expressions they aggregate without referencing other measures. Atomic examples below (<code>credit</code> / <code>debit</code>) keep <code>dataset:</code>; the composite <code>profit</code> omits it. See pitfalls <a href="reference--troubleshooting--models.html#p39"><code>P39</code></a>.</p>
+</blockquote>
+<pre><code class="language-yaml"># Base measures
+credit:
+    type: measure
+    dataset: transactions
+    formula: SUM(credit)
+
+debit:
+    type: measure
+    dataset: transactions
+    formula: SUM(debit)
+
+# Derived measure (composite — no dataset:)
+profit:
+    type: measure
+    formula: |-
+        {credit: {+f: {transaction_type: [&#39;Income&#39;,&#39;Other Income&#39;,&#39;Expense&#39;,&#39;Other Expense&#39;]}}} -
+        {debit: {+f: {transaction_type: [&#39;Income&#39;,&#39;Other Income&#39;,&#39;Expense&#39;,&#39;Other Expense&#39;]}}}
+</code></pre>
+<hr>
+<h2 id="measure-aliases">Measure aliases</h2>
+<p>Create aliases for existing measures:</p>
+<pre><code class="language-yaml">revenue: |-
+    {sales}
+
+income: |-
+    {sales}
+
+outgoing: |-
+    {expense}
+</code></pre>
+<hr>
+<h2 id="complex-formulas">Complex formulas</h2>
+<h3 id="conditional-aggregations">Conditional aggregations</h3>
+<p><code>SUMIF</code> / <code>DISTINCTCOUNTIF</code> / <code>MINIF</code> / <code>MAXIF</code> that reference other measures are composite: do not declare <code>dataset:</code> (even when a column in the formula “belongs” to a known dataset). Use <code>dataset:</code> only on a separate atomic measure if you need column-scoped aggregation. See <a href="reference--measures.html#measure-references">Measure References</a> and pitfalls <a href="reference--troubleshooting--models.html#p39"><code>P39</code></a>.</p>
+<pre><code class="language-yaml">incoming_payment:
+    type: measure
+    formula: |-
+        SUMIF({payment: {+d: customer}}, {customer} is not null)
+
+outgoing_payment:
+    type: measure
+    formula: |-
+        SUMIF({payment: {+d: vendor}}, {vendor} is not null)
+</code></pre>
+<h3 id="nested-aggregations">Nested aggregations</h3>
+<pre><code class="language-yaml">max_amount_per_invoice:
+    type: measure
+    formula: |-
+        MAX({sales: {+d: transaction_id}})
+
+daily_avg_sales:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: dt_date}}), distinctcount({dt_date}))
+
+weekly_avg_sales:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: dt_week}}), distinctcount({dt_week}))
+
+avg_sales_per_trx:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: transaction_id}}), distinctcount({transaction_id}))
+</code></pre>
+<h3 id="window-functions">Window functions</h3>
+<p><strong>Window placement</strong> — full contract: <a href="explanation--window-placement.html">Window placement</a>. Summary:</p>
+<table>
+<thead>
+<tr>
+<th>Intent</th>
+<th>Placement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Detail <code>OVER</code> (no <code>GROUP BY</code>; row attribute for later <code>DISTINCTCOUNTIF</code> / outer <code>SUM</code> / <code>LAG</code> gates)</td>
+<td><strong>Calculated column</strong> under <code>columns:</code>, then atomic agg</td>
+</tr>
+<tr>
+<td>Post-<code>GROUP-BY</code> rank / share / running total</td>
+<td>Transitional <strong>atomic</strong> agg + <strong>composite</strong> window / <code>{-d:}</code> / <code>{-df:}</code> / <code>grand</code> (no <code>dataset:</code>)</td>
+</tr>
+</tbody></table>
+<p>Atomic measures reject <code>OVER</code> (<code>window functions are not allowed in atomic measures</code>). Pitfalls: <a href="reference--troubleshooting--grain-and-joins.html#p70"><code>P70</code></a>, <a href="reference--troubleshooting--grain-and-joins.html#p71"><code>P71</code></a>.</p>
+<p><strong>Detail</strong> (bare partition cols under <code>columns:</code>):</p>
+<pre><code class="language-yaml">fact:
+    type: dataset
+    table: FACT_SALES
+    columns:
+        store_id:
+        prod_id:
+        qty:
+        net_qty: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+    measures:
+        sum_net_qty: &#39;SUM({net_qty})&#39;
+</code></pre>
+<p><strong>Post-aggregation</strong> (grain refs on the composite):</p>
+<pre><code class="language-yaml">total_sales:
+    type: measure
+    dataset: fact
+    formula: SUM({qty})
+
+region_rank:
+    type: measure
+    formula: &#39;rank() over (partition by {-d: product} order by {total_sales} desc)&#39;
+</code></pre>
+<p><strong>In Model Query SQL</strong> — prefer fn-macros from <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>rank_asc</code>, <code>pot</code>, <code>grand</code>) when they cover the pattern:</p>
+<pre><code class="language-sql">SELECT product, AGG(sales, &#39;rank&#39;) AS sales_rank
+FROM MODEL GROUP BY product
+
+SELECT product, AGG({sales: pot}) AS share
+FROM MODEL GROUP BY product
+</code></pre>
+<p>See <a href="reference--modifiers.html#22-function-modifiers">function modifiers</a> for macro categories and behavior.</p>
+<h3 id="isnull-and-iif">ISNULL and IIF</h3>
+<pre><code class="language-yaml">all_product_sales:
+    type: measure
+    description: Product sales including products with zero sales
+    formula: |-
+        SUM(isnull({sales: {+d: product}}, 0) * iif({DATASET_PRODUCT_SERVICE}.product is not null, 1, 0))
+
+all_customer_sales:
+    type: measure
+    description: Customer sales including customers with zero sales
+    formula: |-
+        SUM(isnull({sales: {+d: customer}}, 0) * iif({DATASET_CUSTOMER}.customer is not null, 1, 0))
+</code></pre>
+<h3 id="fill-default-when-row-missing">Fill default when row missing</h3>
+<p><strong>Feature:</strong> fill default when a joined / FOJ / materialize row is missing (blocks null contagion into further math).</p>
+<p><strong>Activate</strong> by wrapping the measure formula <strong>outermost</strong> with <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>.</p>
+<p>The default applies at <strong>use sites of that measure</strong> (query column, rename, <code>{m: pp}</code> / other dt modifiers, or embedded in another formula) when the site can be sparse (FOJ / <code>nullpk</code> / materialize wrap).</p>
+<p><strong>Two distinct rules (do not conflate):</strong></p>
+<ol>
+<li><strong>No invented outer wrap:</strong> mentioning a filled measure inside a composite does <strong>not</strong> by itself wrap that composite’s result column. Activate on the result if <em>its</em> column must be non-null when missing.</li>
+<li><strong>Embedding still expands:</strong> when a composite <strong>embeds</strong> an already-activated dependency (or a chain of formula refs into one), sparse FOJ use sites still expand fill at the caller of that embedding — e.g. <code>deep = {q2fp1} * 3</code> with <code>q2fp1 = {q2f} + 1</code> and <code>q2f = isnull(SUM(...), 0)</code> yields <code>(coalesce(dep, 0) + 1) * 3</code> on missing partner rows, not NULL. That is fill of the activated dep, not an automatic <code>isnull(deep, …)</code>.</li>
+</ol>
+<pre><code class="language-yaml">上期:
+    type: measure
+    formula: &#39;isnull({销售额: pp}, 0)&#39;   # activate
+
+上上期:
+    type: measure
+    formula: &#39;{上期: pp}&#39;                # use site → 0
+
+本期减上期:
+    type: measure
+    formula: &#39;{销售额} - {上期}&#39;         # 上期 use site → 0 (no contagion)
+
+本期减上期_fill:
+    type: measure
+    formula: &#39;isnull({销售额} - {上期}, 0)&#39;  # activate on result
+
+# Nested embed (activation on q2f; deep expands fill of q2f at FOJ)
+q2f:   { dataset: secondary, formula: &#39;isnull(SUM({q2}), 0)&#39; }
+q2fp1: { formula: &#39;{q2f} + 1&#39; }
+deep:  { formula: &#39;{q2fp1} * 3&#39; }
+</code></pre>
+<p><strong>Not activation</strong> (still may be null when the row is missing):</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Bare <code>{销售额: pp}</code></td>
+<td>Not activated</td>
+</tr>
+<tr>
+<td><code>isnull({a}, {b})</code> / <code>coalesce(a, b, 0)</code></td>
+<td>Measure complement, not <code>(公式, 字面量)</code></td>
+</tr>
+<tr>
+<td><code>isnull(…, 0) + 1</code> as the activated measure itself</td>
+<td>Eval-at-null on that measure (often → 1), not “row missing → 0” for <em>this</em> measure’s identity</td>
+</tr>
+<tr>
+<td>Result column never activated</td>
+<td>Dep may fill inside the formula body; the result column is not auto-wrapped at <em>its</em> further use sites unless activated</td>
+</tr>
+</tbody></table>
+<p>Same idea as MetricFlow <code>fill_nulls_with</code> / Looker post-agg <code>COALESCE</code>: declare on a measure; fill when <strong>that</strong> measure is used. DML does not create missing calendar rows — only fills when the joined column is null. Densify dates separately (calendar / FOJ grain). Pitfall: <a href="reference--troubleshooting--README.html">Troubleshooting index</a> P28b. Compiler notes (dmlc): <code>docs/fill-default-when-row-missing.md</code>.</p>
+</main></html>

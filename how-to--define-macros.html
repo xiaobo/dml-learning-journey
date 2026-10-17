@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Define a custom macro · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="define-a-custom-macro">Define a custom macro</h1>
+<p>Use a custom macro to reuse a time transformation or a formula over a caller-selected measure. Read the <a href="reference--modifiers.html">modifier reference</a> for invocation and composition rules.</p>
+<p><a id="27-custom-macro-definitions-dt-macro-and-fn-macro"></a></p>
+<h2 id="custom-macro-definitions-dt-macro-and-fn-macro">Custom macro definitions (dt-macro and fn-macro)</h2>
+<p>Users can define their own macros in <code>.dml</code> — both <code>dt-macro</code> (time-range shifts) and <code>fn-macro</code> (formula wrappers). Define once, reference by name in any measure or query, just like built-in modifiers.</p>
+<p><strong>Two macro types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Purpose</th>
+<th>Key property</th>
+<th><code>{measure}</code> placeholder</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt-macro</code></td>
+<td>Shift/expand the time window</td>
+<td><code>value:</code> (single-point shift) or <code>range:</code> <code>[start, end]</code></td>
+<td>No — operates on time context</td>
+</tr>
+<tr>
+<td><code>fn-macro</code></td>
+<td>Wrap the measure in a derived formula</td>
+<td><code>formula:</code> using <code>{measure}</code></td>
+<td>Yes — replaced by the caller&#39;s measure</td>
+</tr>
+</tbody></table>
+<p><strong>Custom dt-macro examples:</strong></p>
+<pre><code class="language-yaml">p4w:
+  type: dt-macro
+  description: Past 4 weeks (including current)
+  range:
+    - date({dim_dt}, &#39;-3 weeks&#39;)
+    - &#39;{dim_dt}&#39;
+
+p3y:
+  type: dt-macro
+  description: Past 3 years
+  range:
+    - dateadd({dim_dt.datetype}, 1 - {dim_dt.periods_per_year} * 3, {dim_dt})
+    - &#39;{dim_dt}&#39;
+</code></pre>
+<p><strong>Custom fn-macro examples:</strong></p>
+<pre><code class="language-yaml"># Average per period: roll up to time grain, divide by distinct periods
+avg_p_dt:
+  type: fn-macro
+  formula: |-
+    SUM({measure: {+d: dim_dt}}) / COUNT(DISTINCT {dim_dt})
+
+# Average over past 3 periods (stacks avg_p_dt with custom dt-macro p3p)
+p3p_avg:
+  type: fn-macro
+  formula: |-
+    {measure: {avg_p_dt, p3p}}
+
+# User-defined growth rate (same shape as built-in pop)
+my_pop:
+  type: fn-macro
+  description: User-defined period-over-period growth rate
+  formula: |-
+    divide({measure}, {measure: pp}) - 1
+</code></pre>
+<p><strong>Usage in measures:</strong></p>
+<pre><code class="language-yaml">P4W_active_customers:
+  type: measure
+  description: Active customers in past 4 weeks
+  formula: &#39;{active_customers: p4w}&#39;
+
+weekly_avg_sales_4w:
+  type: measure
+  formula: &#39;DIVIDE({sales: p4w}, IIF({weeks_since_launch} &gt;= 3, 4, {weeks_since_launch} + 1))&#39;
+
+avg_sales_3p:
+  type: measure
+  formula: &#39;{sales: p3p_avg}&#39;
+</code></pre>
+<p><strong>Key points:</strong></p>
+<ul>
+<li><code>dt-macro</code>: use <code>value:</code> for single-point shifts or <code>range:</code> for <code>[start, end]</code> date ranges. <code>{dim_dt}</code> resolves to the query&#39;s current time dimension; <code>{dim_dt.datetype}</code> to its type string (<code>&#39;week&#39;</code>, <code>&#39;month&#39;</code>, etc.); <code>{dim_dt.periods_per_year}</code> gives periods per year (52 for weeks, 12 for months, 4 for quarters).</li>
+<li><code>fn-macro</code>: use <code>formula:</code> with <code>{measure}</code> as placeholder for the caller&#39;s measure. Can stack other macros inside: <code>{measure: {avg_p_dt, p3p}}</code> applies <code>avg_p_dt</code> to the result of <code>p3p</code> time shift.</li>
+<li>Reference custom macros the same way as built-in modifiers: <code>{measure: p4w}</code>, <code>{measure: my_pop}</code>, or <code>AGG({sales: p3p_avg})</code>.</li>
+<li><code>prerequisite:</code> optionally constrains grain validity (e.g. only valid at month grain).</li>
+</ul>
+</main></html>

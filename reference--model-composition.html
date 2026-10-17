@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model composition and name resolution · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="model-composition-and-name-resolution">Model composition and name resolution</h1>
+<p>This reference defines same-file visibility, include scope, and logical versus physical names in dataset SQL.</p>
+<h2 id="same-file">Same file</h2>
+<p>The checked build resolves same-file forward references. A measure can precede its dataset or another measure. A calculated column can precede its dependency, and a <code>pk()</code> target dataset can appear later. Dependency-first order helps readers but is not a compilation requirement for these cases. Missing names and cycles remain errors.</p>
+<h2 id="includes">Includes</h2>
+<p>Each included file resolves from its own definitions and includes. A child cannot borrow a dataset defined only in its parent. A failed include invalidates the containing model. Include paths resolve relative to the including file first. Environment model paths are deployment inputs and do not declare dependencies.</p>
+<p>Session history does not extend a module&#39;s declared visibility. A reusable base model can own shared datasets and measures, with each report including that model.</p>
+<h2 id="logical-versus-physical-sql">Logical versus physical SQL</h2>
+<p>In dataset <code>sql:</code>, <code>FROM {Customers}</code> references the logical dataset. <code>FROM Customers</code> names a physical relation. Within column formulas, <code>{net_amount}</code> expands the model column, while bare <code>net_amount</code> is physical SQL. Reverse-generated SQL can deliberately retain physical references.</p>
+<h2 id="direct-query-files">Direct query files</h2>
+<p>For direct DML compilation, the query key must match the file stem: <code>report.dml</code> contains <code>report: {type: query, ...}</code>. A reusable model without a query is consumed by Model Query SQL; its FROM name follows the model filename (<a href="reference--model-query-sql.html#2-query-types">query discovery</a>).</p>
+<p>Evidence: <a href="maintenance--release-evidence.html">forward references and include isolation probes</a>. The current-source design documents are supporting evidence, not a replacement for checking the distributed build.</p>
+</main></html>

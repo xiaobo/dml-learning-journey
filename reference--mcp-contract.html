@@ -1,0 +1,262 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MCP Contract (CLI + MCP) · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="mcp-contract-cli--mcp">MCP Contract (CLI + MCP)</h1>
+<p>How agents and integrators should consume DMLC outputs across CLI and MCP surfaces. <strong>Implementation truth</strong> (Java paths, normalizer tables, drift notes): <a title="Reference available in the development workspace"><code>../../../dmlc_jdbc/docs/mcp-output-contract-v2.md</code></a>.</p>
+<p>Related: <a href="reference--error-codes.html">DMLC Error Codes Reference</a>, <a href="how-to--configure-mcp.html">Configure a DMLC MCP client</a>.</p>
+<hr>
+<h2 id="1-surfaces">1. Surfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Launch</th>
+<th>Machine-readable output</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CLI</strong></td>
+<td><code>dmlc -q</code>, <code>dmlc -e</code>, …</td>
+<td>stdout (format varies by mode)</td>
+</tr>
+<tr>
+<td><strong>MCP</strong></td>
+<td><code>dmlc --mcp</code></td>
+<td><code>tools/call.result.structuredContent</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="2-mcp-authoritative-for-agents">2. MCP (authoritative for agents)</h2>
+<ul>
+<li>Parse <strong><code>structuredContent</code></strong> for logic (<code>status</code>, <code>data</code>, <code>error</code>, <code>diagnostics</code>, <code>next</code>).</li>
+<li>Use <strong><code>content[0].text</code></strong> for human/model summary (SEP-1624); do not concatenate <strong><code>content[1]</code></strong> when <code>structuredContent</code> is available.</li>
+<li><strong><code>explain_change</code> MCP</strong>: <code>content[0].text</code> is a slim digest (Headline, Drill-down slice / <code>headline share=</code> when <code>analysisPath</code> is set, Top drivers and/or factors, <code>Filter</code> / <code>Analysis path</code> / <code>Dimensions</code>); <strong><code>next.actions</code></strong> is the sole recovery authority; <strong><code>diagnostics.warnings[].type</code></strong> / <strong><code>diagnostics.observations[].type</code></strong> for blockers vs context (CLI raw JSON uses the same shapes).</li>
+<li>Pass <strong><code>--no-content-mirror</code></strong> to omit <code>content[1]</code> JSON mirror and save tokens.</li>
+<li>Tool failures use JSON-RPC success + <strong><code>isError: true</code></strong> (SEP-1303).</li>
+</ul>
+<hr>
+<h2 id="3-cli-vs-mcp-deliberate-differences">3. CLI vs MCP: deliberate differences</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>CLI</th>
+<th>MCP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>explain-change</strong></td>
+<td>Raw <code>ExplainChange.analyze()</code> JSON on stdout; optional <code>-o</code>/<code>--output</code> file export (JSON only, CLI-only)</td>
+<td>v2 envelope via <code>McpErrorHandler</code> (inline JSON; use <code>run_query</code> with <code>outputFile</code> for large exports suggested in <code>next.actions</code>)</td>
+</tr>
+<tr>
+<td><strong>run_query output</strong></td>
+<td><code>--output-format</code> serializes to stdout when <code>-o</code>/<code>--output</code> is omitted (json/csv/tsv/jsonl/table); <code>xlsx</code> requires <code>--output</code></td>
+<td><code>outputFile</code> for exports; inline preview uses markdown table in <code>content[0].text</code></td>
+</tr>
+<tr>
+<td><strong>validate-only</strong></td>
+<td><code>--output-format=json</code> returns a validation report with <code>status</code>, <code>summary</code>, <code>checks[]</code>, generated SQL, diagnostics, next actions, and error</td>
+<td>Under <code>structuredContent.data.metadata</code> on success; failures use the shared envelope</td>
+</tr>
+<tr>
+<td><strong>compile</strong></td>
+<td>SQL on stdout (<code>dmlc -c</code>); <code>--output-format=json</code> includes diagnostics, artifacts, and <code>effectiveOutputOrder</code></td>
+<td>Read-only compile tool; successful structured data includes <code>effectiveOutputOrder</code></td>
+</tr>
+<tr>
+<td><strong>list_models</strong></td>
+<td>Not exposed as CLI mode</td>
+<td>MCP tool only</td>
+</tr>
+</tbody></table>
+<p>CLI remains optimized for scripting and pipes; MCP remains optimized for agent orchestration with stable schemas and recovery actions.</p>
+<hr>
+<h2 id="4-recovery">4. Recovery</h2>
+<p>Prefer <strong><code>structuredContent.next.actions</code></strong> over parsing warning text. Action <code>type</code> values use a stable public subset plus namespaced extensions (e.g. <code>run_query.retry_with_longer_timeout</code>).</p>
+<p>Implementation SoT for action normalization: <a title="Reference available in the development workspace"><code>mcp-output-contract-v2.md</code></a>. Confirm the live action catalog through <code>tools/list</code> because action types are extensible.</p>
+<p>Structured error codes: <a href="reference--error-codes.html">DMLC Error Codes Reference</a>.</p>
+<hr>
+<h2 id="5-two-failure-layers">5. Two failure layers</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>When</th>
+<th>Where to read</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Protocol error</strong></td>
+<td>Bad JSON-RPC, unknown method/tool</td>
+<td>JSON-RPC <code>error</code> — not tool <code>result</code></td>
+</tr>
+<tr>
+<td><strong>Tool result</strong></td>
+<td>Known tool returned</td>
+<td><code>result.structuredContent</code> + <code>result.isError</code></td>
+</tr>
+</tbody></table>
+<p><strong>JSON-RPC success ≠ business success.</strong> Check <code>structuredContent.status</code> and <code>structuredContent.error</code>.</p>
+<hr>
+<h2 id="6-envelope-handled-tool-call">6. Envelope (handled tool call)</h2>
+<pre><code class="language-json">{
+  &quot;content&quot;: [{ &quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;...&quot; }],
+  &quot;isError&quot;: false,
+  &quot;structuredContent&quot;: { }
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Agent rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>structuredContent</code></strong></td>
+<td><strong>Primary machine surface</strong> — always parse this first</td>
+</tr>
+<tr>
+<td><strong><code>content[0].text</code></strong></td>
+<td>Human summary; <code>run_query</code> preview may be a markdown table; <code>explain_change</code> is digest only</td>
+</tr>
+<tr>
+<td><strong><code>content[1].text</code></strong></td>
+<td>Optional JSON mirror of <code>structuredContent</code>; omit when host passes <code>--no-content-mirror</code> or payload &gt; ~1MB</td>
+</tr>
+<tr>
+<td><strong><code>isError</code></strong></td>
+<td><code>true</code> when tool returned an <code>errorCode</code> (expected failures still use structured content)</td>
+</tr>
+</tbody></table>
+<p>Do <strong>not</strong> concatenate all <code>content[].text</code> blocks or treat <code>content[0].text</code> as the only source of truth.</p>
+<hr>
+<h2 id="7-shared-structuredcontent-skeleton">7. Shared <code>structuredContent</code> skeleton</h2>
+<p>Tools share a common shape (normalizers may trim fields):</p>
+<pre><code class="language-json">{
+  &quot;status&quot;: &quot;ok&quot;,
+  &quot;data&quot;: {},
+  &quot;error&quot;: null,
+  &quot;diagnostics&quot;: {
+    &quot;warnings&quot;: [],
+    &quot;observations&quot;: []
+  },
+  &quot;next&quot;: {
+    &quot;actions&quot;: []
+  }
+}
+</code></pre>
+<h3 id="status-values"><code>status</code> values</h3>
+<table>
+<thead>
+<tr>
+<th><code>status</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ok</code></td>
+<td>Success</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>Truncated / <code>hasMore</code></td>
+</tr>
+<tr>
+<td><code>no_data</code></td>
+<td>Empty result set</td>
+</tr>
+<tr>
+<td><code>invalid_input</code></td>
+<td>Bad params, compile/validation errors</td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>Model/file not found</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>Query or compile timeout</td>
+</tr>
+<tr>
+<td><code>blocked</code></td>
+<td>Policy (workspace, overwrite, path)</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>Execution or internal failure</td>
+</tr>
+</tbody></table>
+<h3 id="error-object"><code>error</code> object</h3>
+<pre><code class="language-json">{
+  &quot;code&quot;: &quot;COMPILE_ERROR&quot;,
+  &quot;message&quot;: &quot;short message&quot;,
+  &quot;field&quot;: &quot;optional param name&quot;,
+  &quot;details&quot;: {
+    &quot;compilationErrors&quot;: [],
+    &quot;generatedSql&quot;: &quot;...&quot;
+  }
+}
+</code></pre>
+<p>For <code>COMPILE_ERROR</code>, read <strong><code>error.details.compilationErrors</code></strong> and any generated SQL in details — not only <code>message</code>.</p>
+<h3 id="diagnostics"><code>diagnostics</code></h3>
+<ul>
+<li><strong><code>warnings[]</code></strong>: actionable blockers (<code>type</code> field) — e.g. <code>missing_dimensions</code> on <code>explain_change</code></li>
+<li><strong><code>observations[]</code></strong>: quality/context (<code>narrow_dimension_breakdown</code>, <code>results_truncated</code>) — not blockers</li>
+<li>Cross-tool entries may still use legacy <strong><code>code</code></strong> (e.g. <code>JDBC_WARNING</code>)</li>
+</ul>
+<h3 id="nextactions"><code>next.actions</code></h3>
+<p><strong>Sole recovery authority.</strong> Prefer actions over parsing warning text or <code>content[0].text</code>.</p>
+<p><code>type</code> is <strong>not</strong> a closed set — handle unknown types gracefully. Common patterns:</p>
+<ul>
+<li><code>run_query.retry_with_longer_timeout</code></li>
+<li><code>run_query.rerun_with_output_file</code></li>
+<li><code>run_query.fix_query_or_model</code></li>
+<li><code>explain_change.drilldown_dimension</code></li>
+</ul>
+<p>Action normalization details: <a title="Reference available in the development workspace"><code>mcp-output-contract-v2.md</code></a>. Treat the live <code>tools/list</code> schema as authoritative when it differs.</p>
+<hr>
+<h2 id="8-per-tool-notes">8. Per-tool notes</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th><code>data</code> highlights</th>
+<th>Agent gotchas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>list_connections</code></strong></td>
+<td>Connection IDs</td>
+<td>Preflight step 1</td>
+</tr>
+<tr>
+<td><strong><code>list_models</code></strong></td>
+<td><code>workspaceFolder</code>, model paths</td>
+<td>Preflight step 2; reuse absolute paths</td>
+</tr>
+<tr>
+<td><strong><code>find_references</code></strong></td>
+<td><code>references[]</code> with <code>ownerLabel</code> / <code>ownerKind</code></td>
+<td>Cursor-based (<code>filePath</code> + zero-based <code>line</code>/<code>character</code>); use when IDE Peek lacks measure/column context</td>
+</tr>
+<tr>
+<td><strong><code>run_query</code></strong></td>
+<td>Rows, <code>metadata</code>, export paths</td>
+<td>Use <code>validateOnly</code> first; large results → <code>outputFile</code> via <code>next.actions</code></td>
+</tr>
+<tr>
+<td><strong><code>explain_change</code></strong></td>
+<td><code>metadata</code> (incl. <code>analysisPath</code>), <code>summary</code>, <code>summarySlice</code>, <code>drivers</code></td>
+<td>Slice KPIs live in <strong><code>summarySlice</code></strong> when <code>analysisPath</code> is set. Recovery via <code>next.actions</code> only; full schema in <a title="Reference available in the development workspace"><code>explain-change-variance</code> SKILL</a> + <a title="Reference available in the development workspace"><code>explain-change.md</code></a></td>
+</tr>
+</tbody></table>
+<p><strong>Shapes differ by tool</strong> — do not assume one universal <code>data</code> schema across tools.</p>
+<hr>
+<h2 id="9-agent-checklist-on-any-tool-error">9. Agent checklist on any tool error</h2>
+<ol>
+<li>Read <code>structuredContent.error.code</code> → <a href="reference--error-codes.html">DMLC Error Codes Reference</a></li>
+<li>Read <code>error.details</code> (especially <code>compilationErrors</code>, <code>generatedSql</code>)</li>
+<li>Apply first applicable <code>next.actions[]</code> entry (merge <code>params</code> into retry)</li>
+<li>If <code>diagnostics.warnings[].type</code> is <code>missing_dimensions</code> / <code>missing_formula</code>, fix params before retry — do not loop discovery</li>
+</ol>
+<p>Symptom-based compile fixes (patterns, not codes): <a href="reference--troubleshooting--README.html">Troubleshooting index</a>.</p>
+</main></html>

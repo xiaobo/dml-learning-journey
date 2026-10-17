@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Time context pitfalls · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="time-context-pitfalls">Time context pitfalls</h1>
+<p>These entries cover period values, comparison context, and missing history. <a href="reference--semantics.html">Evaluation semantics</a> owns the time-context contract.</p>
+<p><a id="p29"></a></p>
+<h2 id="p29-non-first-day-time-filters">P29. Non-first-day time filters</h2>
+<p><strong>Wrong</strong>: <code>dt_month = &#39;2024-01-15&#39;</code> or <code>dt_month = &#39;Jan 2024&#39;</code>.
+<strong>Fix</strong>: <code>dt_month = &#39;2024-01-01&#39;</code> — always first day.</p>
+<p><a id="p30"></a></p>
+<h2 id="p30-missing-current-day-in-past-n-days">P30. Missing current day in past-N-days</h2>
+<p><strong>Wrong</strong>: <code>dt_date BETWEEN date(current_date, &#39;-7 days&#39;) AND date(current_date, &#39;-1 day&#39;)</code>.
+<strong>Fix</strong>: <code>dt_date BETWEEN date(current_date, &#39;-6 days&#39;) AND date(current_date)</code> — 7 days including today.</p>
+<p><a id="p31"></a></p>
+<h2 id="p31-including-current-period-in-past-n-months">P31. Including current period in past-N-months</h2>
+<p><strong>Wrong</strong>: <code>dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;) AND date(current_date, &#39;start of month&#39;)</code>.
+<strong>Fix</strong>: <code>dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;) AND date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)</code> — exclude current (incomplete) month.</p>
+<p><a id="p32"></a></p>
+<h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. Using ytd modifier with full-period GROUP BY</h2>
+<p><strong>Wrong</strong>: <code>SELECT dt_year, AGG(sales, &#39;ytd&#39;) FROM MODEL GROUP BY dt_year</code>.
+<strong>Fix</strong>: <code>ytd</code> is cumulative. Use <code>dt_date</code> grain: <code>SELECT dt_date, AGG(sales, &#39;ytd&#39;) FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
+<p><a id="p33"></a></p>
+<h2 id="p33-period-to-date-with-date-range">P33. Period-to-date with date range</h2>
+<p><strong>Wrong</strong>: <code>WHERE dt_date BETWEEN date(current_date, &#39;start of year&#39;) AND date(current_date)</code> for YTD.
+<strong>Fix</strong>: <code>WHERE dt_date = date(current_date)</code> with <code>AGG(sales, &#39;ytd&#39;)</code> — modifier handles the range.</p>
+<hr>
+<h2 id="category-compilation-and-validation">Category: Compilation and Validation</h2>
+<p><a id="p59"></a></p>
+<h2 id="p59-yoy-without-column-probe">P59. YoY without column probe</h2>
+<p><strong>Wrong</strong>: <code>AGG(销售额, &#39;yoy&#39;)</code> when <code>去年同期出厂价金额</code> sums to zero.
+<strong>Fix</strong>: Detail query <code>SUM(去年同期出厂价金额)</code> before promising YoY narrative.</p>
+</main></html>

@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure formula examples · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="measure-formula-examples">Measure formula examples</h1>
+<p>These fragments require the datasets, columns, and measures named in each formula. They are examples rather than executable acceptance fixtures.</p>
+<p><a id="business-metrics-examples"></a></p>
+<h2 id="business-metric-examples">Business metric examples</h2>
+<h3 id="financial-metrics">Financial metrics</h3>
+<pre><code class="language-yaml">account_receivable:
+    type: measure
+    formula: |-
+        {amount: {+f: {account: &#39;Accounts Receivable (A/R)&#39;}}}
+
+outstanding:
+    type: measure
+    description: All unpaid amounts (including not yet due)
+    formula: |-
+        {open_balance}
+
+balance_due:
+    type: measure
+    description: Overdue amounts only (past due_date)
+    formula: |-
+        {open_balance: {+f: &#39;due_date &lt;= date(current_date)&#39;}}
+</code></pre>
+<h3 id="transaction-counts">Transaction counts</h3>
+<pre><code class="language-yaml">number_of_invoices:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : &#39;invoice&#39;}}}
+
+number_of_checks:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : &#39;check&#39;}}}
+
+number_of_received_checks:
+    type: measure
+    formula: |-
+        {number_of_checks: {+f: &#39;customer is not null&#39;}}
+</code></pre>
+<hr>
+<p>General modeling rules (naming, <code>description:</code>, <code>abbr</code>): <a title="Reference available in the development workspace">semantic review checks</a>. Pitfalls: <a href="reference--troubleshooting--README.html">Troubleshooting index</a> P1, P25.</p>
+<hr>
+<h2 id="common-patterns">Common patterns</h2>
+<h3 id="average-calculations">Average calculations</h3>
+<pre><code class="language-yaml">avg_invoice_value:
+    type: measure
+    formula: |-
+        divide({amount: {+f: {transaction_type: &#39;invoice&#39;}}}, {number_of_invoices})
+</code></pre>
+<h3 id="frequency-calculations">Frequency calculations</h3>
+<pre><code class="language-yaml">avg_bill_frequency:
+    type: measure
+    formula: |-
+        divide(sum({number_of_invoices: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
+</code></pre>
+<h3 id="year-over-year-metrics">Year-over-year metrics</h3>
+<pre><code class="language-yaml">annual_avg_revenue:
+    type: measure
+    formula: |-
+        divide(sum({revenue: {+d: dt_year}}), distinctcount({dt_year}))
+</code></pre>
+</main></html>

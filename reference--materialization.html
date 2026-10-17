@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Materialization declarations · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="materialization-declarations">Materialization declarations</h1>
+<p>This page owns <code>type: materialize</code>, its grouping key, attributes, and measure selection. <a href="how-to--design-materializations.html">Choose a materialization grain</a> covers design decisions. <a href="reference--examples--models.html#materialize">Materialization examples</a> shows declaration fragments.</p>
+<p><a id="55-materialize-definition-type-materialize"></a></p>
+<h2 id="materialize-definition-type-materialize">Materialize definition (<code>type: materialize</code>)</h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: materialize
+    parameters:                         # stored-procedure parameters
+        &lt;param&gt;: &lt;column_name&gt;
+    filters:                            # materialize-level filters
+        &lt;column&gt;: &lt;value&gt;
+
+    allows: [&lt;materialize_name&gt;]        # allowed materialize tables
+
+    dataset: &lt;dataset_name&gt;      # optional, for direct dataset materialize
+    dimension: [col1, col2]      # materialization grain — grain keys only
+    dimension_columns:           # functionally dependent attribute columns
+        &lt;col&gt;: &lt;formula&gt;          # (1:1 with grain keys, not grain themselves)
+
+    measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
+</code></pre>
+<p><strong><code>dimension:</code> vs <code>dimension_columns:</code></strong> — <code>dimension:</code> contains the materialization dimension: its dimension fields are the grain keys that uniquely identify a row (the compiler&#39;s <code>GROUP BY</code> keys). <code>dimension_columns:</code> lists attribute columns <strong>derivable from those grain keys</strong> — e.g. <code>store_name</code> depends on <code>store_id</code>, <code>region_code</code> depends on <code>store_id</code>. The compiler carries <code>dimension_columns:</code> through the <code>GROUP BY</code> without treating them as grain. Placing a derivable attribute in <code>dimension:</code> causes a compile error (&quot;can be derived from [...], should it be moved to dimension_columns instead?&quot;).</p>
+<p><strong>No-formula inheritance</strong> — a <code>dimension_columns:</code> entry without a <code>formula:</code> inherits the column from the source dataset. The column must exist in the source dataset&#39;s <code>columns:</code> (else &quot;not found from relate dataset(s)&quot;). When the materialize grain is <strong>coarser</strong> than the source dataset&#39;s dimension, the compiler checks derivability: a column that varies at the finer source grain fails with &quot;definition from dataset [...] cannot be derived from dimension [...], please advise&quot;. When the materialize grain <strong>matches</strong> the source dataset&#39;s dimension, any source column is accepted (1:1 row mapping).</p>
+<p><strong>Formula scope</strong> — when a <code>dimension_columns:</code> entry has a <code>formula:</code>, the formula may only reference pk() chain lookups and the materialization dimension&#39;s own fields — not source dataset columns or measures (errors &quot;not defined, did you mean …?&quot;).</p>
+<p><strong>Constraints</strong> — one of:</p>
+<ul>
+<li><code>dimension</code> + <code>measures</code> (measure-list form), or</li>
+<li><code>dataset</code> + <code>dimension</code> + <code>dimension_columns</code> (dataset-scoped form), or</li>
+<li><code>dataset</code> only (inherits grain from dataset).</li>
+</ul>
+<p><a href="reference--examples--models.html#materialize">Materialization examples</a> contains declaration patterns. There is no measure-level <code>materialize: true</code> flag — the compiler rejects it (<code>undefined modifier &#39;materialize&#39;</code>, see <a href="reference--troubleshooting--README.html">Troubleshooting index</a> P64). Declaration forms: this section, and dataset-level <code>materialize: &lt;name&gt;</code> in <a href="reference--model-structure.html#52-dataset-definition-type-dataset">model structure</a>.</p>
+</main></html>

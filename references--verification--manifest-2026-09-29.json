@@ -1,0 +1,284 @@
+{
+  "version": "0.3.16",
+  "build": "2026-09-24 09:24:42 Z",
+  "sha256": "dddae1854644ad88b1d72efa419fdb42844bdde3198c7c52f98b62b7e9fb0124",
+  "dialect": "mssql (default in these probes)",
+  "scope": "Strict compilation and emitted SQL shape; no live database/parity",
+  "cases": [
+    {
+      "name": "atomic_filter",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "when status = 1 then amount",
+        "group by region"
+      ]
+    },
+    {
+      "name": "composite_filter",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "when status = 1 then amount",
+        "when status = 1 then 1"
+      ]
+    },
+    {
+      "name": "atomic_filter_drill",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by region,\\s*customer",
+        "AVG\\("
+      ]
+    },
+    {
+      "name": "measure_filter",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "cannot use \\+f modifier with measure"
+    },
+    {
+      "name": "no_drill",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "cannot aggregate a measure w/o \\+d"
+    },
+    {
+      "name": "allows_grain",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "only \\[\\[customer\\]\\] are allowed"
+    },
+    {
+      "name": "label_plus",
+      "kind": "known-defect",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by COUNT\\(1\\)"
+      ]
+    },
+    {
+      "name": "label_max",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by customer",
+        "group by sales"
+      ]
+    },
+    {
+      "name": "label_dimension",
+      "kind": "known-defect",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "cannot parse"
+    },
+    {
+      "name": "label_bare",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "explicit \\+d or dimension: entity key"
+    },
+    {
+      "name": "atomic_window",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "window functions are not allowed in atomic measures"
+    },
+    {
+      "name": "detail_window",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "over \\(partition by customer\\)",
+        "SUM\\(net_amount\\)"
+      ]
+    },
+    {
+      "name": "detail_sql_window",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "SUM\\(amount\\) over",
+        "from FACT_SALES"
+      ]
+    },
+    {
+      "name": "composite_window",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "rank\\(\\) over \\(partition by region",
+        "group by region,\\s*customer"
+      ]
+    },
+    {
+      "name": "forward_measure",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "SUM\\(amount\\).*\\* 2"
+      ]
+    },
+    {
+      "name": "forward_dataset",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "left join CUSTOMERS"
+      ]
+    },
+    {
+      "name": "forward_column",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "SUM\\(.*amount.*2"
+      ]
+    },
+    {
+      "name": "stacking_yoy_ytd",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "full outer join",
+        "datefromparts",
+        " - 1 as value"
+      ]
+    },
+    {
+      "name": "stacking_ytd_yoy",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "full outer join",
+        "datefromparts",
+        " - 1 as value"
+      ]
+    },
+    {
+      "name": "filter_rollup",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by region,\\s*customer",
+        "cnt > 3"
+      ]
+    },
+    {
+      "name": "countif_one",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "COUNT\\(",
+        "when status = 1 then 1"
+      ]
+    },
+    {
+      "name": "cross_dataset",
+      "kind": "accepted",
+      "input": "report.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "full join",
+        "region is null and"
+      ]
+    },
+    {
+      "name": "include_isolation",
+      "kind": "rejected",
+      "input": "report.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "missing from this file"
+    },
+    {
+      "name": "detail_group",
+      "kind": "rejected",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 2,
+      "sqlPatterns": [],
+      "diagnosticPattern": "cannot aggregate directly on dataset"
+    },
+    {
+      "name": "detail_agg",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "MIN\\(dt_date\\)"
+      ]
+    },
+    {
+      "name": "time_filter_only",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "dateadd\\(year, -1",
+        "as growth"
+      ]
+    },
+    {
+      "name": "two_times",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by .*dt_year,\\s*.*dt_month"
+      ]
+    },
+    {
+      "name": "group_order",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "group by customer,\\s*region"
+      ]
+    },
+    {
+      "name": "time_filter_first",
+      "kind": "accepted",
+      "input": "query.sql",
+      "model": "model.dml",
+      "exit": 0,
+      "sqlPatterns": [
+        "status = 1"
+      ]
+    }
+  ]
+}

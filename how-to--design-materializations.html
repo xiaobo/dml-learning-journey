@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choose a materialization grain · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="choose-a-materialization-grain">Choose a materialization grain</h1>
+<p>Use a materialization when repeated queries can reuse stored aggregates at a stable grain. <a href="reference--materialization.html">Materialization reference</a> owns declaration syntax and eligibility.</p>
+<h2 id="performance-amp-materialize-design-principles">Performance &amp; <code>materialize</code> design principles</h2>
+<p>Quick checklist for improving query performance:</p>
+<ul>
+<li>Ensure time columns follow <code>dt_date/dt_week/dt_month/dt_quarter/dt_year</code> convention (first day of period).</li>
+<li>Prefer a small set of reusable measures (e.g. sales, qty) rather than many one-off measures.</li>
+<li>Keep Model Query SQL simple: <code>FROM MODEL</code>, select query dimension fields + <code>AGG(measure)</code>, then <code>GROUP BY</code>.</li>
+<li>When queries are slow due to repeated aggregation, add <code>materialize</code> at the right grain.</li>
+</ul>
+<p><strong>When to use <code>materialize</code>:</strong> queries repeatedly aggregate the same base data at a stable grain (e.g. monthly by product/store/category) and data is append-only or refreshable by period. Avoid when data is very small, the grain is ad-hoc, or model semantics are still being explored.</p>
+<p><strong>Grain design principles:</strong></p>
+<ol>
+<li><strong>Grain</strong> — fine enough for downstream rollups, not so fine it explodes row count. Common: DWD (daily + keys), DWS (month/quarter + analysis dims), ADS (report-ready).</li>
+<li>Store additive measures such as sales and quantity for downstream rollups. Do not sum distinct-customer counts across groups unless the customer sets are disjoint. Keep the entity key or verify a supported representation for the intended rollup.</li>
+<li>Put row-identity fields in <code>dimension:</code>. Put functionally dependent attributes, such as <code>category_name</code> derived from <code>category_id</code>, in <code>dimension_columns:</code>. See the <a href="reference--materialization.html">materialization declaration rules</a>.</li>
+</ol>
+<pre><code class="language-yaml">DWS_SALES_DATE_CATEGORY:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension:
+        - dt_date
+        - category_id
+        - cust_id
+    measures:
+        - 销售额
+        - 销售量
+</code></pre>
+<blockquote>
+<p><code>materialize</code> is a modeling-time optimization concept. Persisting a dataset into DuckDB as a physical table is a separate operation. See also: <a href="reference--examples--models.html#materialize">materialization examples</a> for worked examples.</p>
+</blockquote>
+</main></html>

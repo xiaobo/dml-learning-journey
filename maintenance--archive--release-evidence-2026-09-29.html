@@ -1,0 +1,141 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Release evidence and documentation audit · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="release-evidence-and-documentation-audit">Release evidence and documentation audit</h1>
+<p>Audit date: 2026-09-29. This is a record of observations, not a future capability specification.</p>
+<h2 id="executable-identity">Executable identity</h2>
+<ul>
+<li>Distribution: <code>scripts/dmlc-mcp/dmlc.exe</code> in this skill.</li>
+<li>Version: <code>0.3.16</code>; build: <code>2026-09-24 09:24:42 Z</code>; platform: <code>windows/amd64</code>.</li>
+<li>SHA-256: <code>dddae1854644ad88b1d72efa419fdb42844bdde3198c7c52f98b62b7e9fb0124</code>.</li>
+<li>Probes: default MSSQL output, CLI strict compilation and emitted SQL inspection.</li>
+<li>Not run: live database uniqueness, database execution/result parity, exhaustive MCP and other-dialect validation.</li>
+</ul>
+<p>The same semantic version can identify different builds. The executable fingerprint, not only <code>0.3.16</code>, bounds these observations. Current compiler source, repository tests and design documents helped locate rules; the released executable was used for the claims below.</p>
+<h2 id="reproduce">Reproduce</h2>
+<p>Run <a href="how-to--verify-reference.html">the verification suite</a>. It contains 29 complete cases, a manifest, diagnostic/SQL assertions and an explicit known-defect category. The command for a DML case is:</p>
+<pre><code class="language-powershell">dmlc.exe --compile --strict report.dml --output-format=json --output-dir=gen
+</code></pre>
+<p>For SQL cases, replace <code>report.dml</code> with <code>query.sql</code> and add <code>--model=model.dml</code>. Run inside a copy of the case directory so generated artifacts remain separate from reference sources. The runner does this automatically and preserves process output plus command arguments.</p>
+<h2 id="findings-and-corrected-guidance">Findings and corrected guidance</h2>
+<table>
+<thead>
+<tr>
+<th>Claim previously made</th>
+<th>Evidence / corrected reference</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+f</code> is illegal on measure references</td>
+<td><code>atomic_filter</code>, <code>composite_filter</code> pass; the latter filters both numerator and denominator. Predicate scope, not the mere presence of a measure target, determines legality</td>
+</tr>
+<tr>
+<td>Aggregate predicates belong in <code>+f</code></td>
+<td><code>measure_filter</code> rejects <code>{cnt} &gt; 3</code>; <code>filter_rollup</code> preserves the per-customer aggregate predicate before final SUM</td>
+</tr>
+<tr>
+<td><code>+f</code> with <code>+d</code> is always unsupported</td>
+<td><code>atomic_filter_drill</code> emits filtered customer totals followed by AVG at region grain</td>
+</tr>
+<tr>
+<td><code>SUM(iif(..., value, 0))</code> equals SUMIF</td>
+<td>No-match zero versus NULL differs; examples now use SUMIF unless zero is explicitly intended</td>
+</tr>
+<tr>
+<td><code>allows: ALL</code> allows arbitrary grain</td>
+<td><code>allows_grain</code> still rejects a closed measure-dimension mismatch. <code>allows</code> concerns materialization candidates</td>
+</tr>
+<tr>
+<td>Dataset/column/measure dependencies must be defined earlier</td>
+<td><code>forward_dataset</code>, <code>forward_column</code>, <code>forward_measure</code> pass; <code>include_isolation</code> rejects a child referring to a parent-only dataset</td>
+</tr>
+<tr>
+<td>Every classifier requires only <code>+d</code></td>
+<td><code>label_bare</code> diagnostic recognizes <code>+d</code> <strong>or</strong> <code>dimension:</code>; exact lowering support remains limited below</td>
+</tr>
+<tr>
+<td>Every valid classifier safely compiles</td>
+<td><code>label_max</code> preserves two stages; <code>label_plus</code> and <code>label_dimension</code> reproduce compiler defects</td>
+</tr>
+<tr>
+<td>Atomic OVER and composite OVER are interchangeable</td>
+<td><code>atomic_window</code> rejects; <code>detail_window</code> and <code>composite_window</code> verify the two supported placements</td>
+</tr>
+<tr>
+<td>Detail Model Query prohibits all windows/aggregates</td>
+<td><code>detail_sql_window</code> and <code>detail_agg</code> pass; <code>detail_group</code> rejects direct GROUP BY</td>
+</tr>
+<tr>
+<td>Time modifiers always require a visible grouped time field</td>
+<td><code>time_filter_only</code> resolves monthly context from WHERE and emits current/prior-year branches</td>
+</tr>
+<tr>
+<td>Multiple time fields / time predicate first are invalid</td>
+<td><code>two_times</code> and <code>time_filter_first</code> pass; prefer a clear time context rather than inventing grammar restrictions</td>
+</tr>
+<tr>
+<td>GROUP BY order must match SELECT</td>
+<td><code>group_order</code> passes but emits customer before region; consumers must inspect output order</td>
+</tr>
+<tr>
+<td><code>yoy,ytd</code> means growth rates accumulated over time</td>
+<td><code>stacking_yoy_ytd</code> and <code>stacking_ytd_yoy</code> emit identical SQL: compare YTD amounts across years</td>
+</tr>
+<tr>
+<td>Independent aggregation guarantees no wrong numbers</td>
+<td><code>cross_dataset</code> demonstrates NULL-safe FULL JOIN; declared keys, membership, lookup fan-out and NULL rules still need validation</td>
+</tr>
+<tr>
+<td>COUNTIF has only a two-argument form</td>
+<td><code>countif_one</code> emits conditional row counting</td>
+</tr>
+</tbody></table>
+<p>Additional editorial corrections: restored the missing classifier/window reference files; added include isolation and direct query/file naming rules; replaced unsafe modifier “normal form” rewrites with composition guidance; corrected a constant <code>pk()</code> argument being mislabeled as an arity error; separated time grouping removal from all-history scope; fixed macro-type labeling, PowerShell-version advice and contradictory examples. The skill entry now routes to topic owners and requires explicit validation evidence. Related migration references share the same composition rules.</p>
+<h2 id="language-contract-updates-2026-09-30">Language-contract updates (2026-09-30)</h2>
+<p>Documented against dmlc slice stack / <code>SLICES.md</code> product revisions. These are <strong>language contracts</strong>; bundled <code>dmlc.exe</code> 0.3.16 (2026-09-24) may still lag.</p>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Doc home</th>
+<th>Evidence / status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Same-object <code>+d</code> ∩ <code>-d</code>/<code>-df</code> → <strong>fail loudly</strong> (no cancel to bare <code>{m}</code> or residual <code>-f</code>)</td>
+<td><a href="reference--semantics.html#45-modifier-composition">modifier composition</a>, <a href="reference--modifiers.html">modifiers §2.3</a>, P79</td>
+<td><strong>Pending compiler</strong>; park <code>test_20f_plusd_minusd_intersect_compile_skip</code> (not a success baseline)</td>
+</tr>
+<tr>
+<td><code>{m:{+d:x}}</code> stops at fine grain; outer aggregate rolls back</td>
+<td><a href="reference--semantics.html#33-multi-level-aggregation-via-d">core spec §3.3</a>, <code>SKILL.md</code> silent drift</td>
+<td>Aligns with existing <code>SUM({m:{+d}})</code> examples; wording fixed (was easy to read as auto roll-up)</td>
+</tr>
+<tr>
+<td>Fill: activate outermost; embed of activated dep expands at FOJ; no invented outer wrap</td>
+<td><a href="reference--measures.html#fill-default-when-row-missing">measures Fill</a>, P28b</td>
+<td>dmlc <code>test_77</code> / <code>test_77d</code> / <code>test_77e</code> (+ <code>docs/fill-default-when-row-missing.md</code>)</td>
+</tr>
+<tr>
+<td><code>-f</code> does not change grouping; blocked non-grain query filter must still constrain population</td>
+<td><a href="reference--semantics.html">core spec §4.2.5</a>, P80</td>
+<td>dmlc <code>test_20h_minus_f_nongrain_block_filter</code></td>
+</tr>
+<tr>
+<td>Cross-grain time <code>dimension:</code> → calendar bridge + broadcast</td>
+<td><a href="reference--modifiers.html">modifiers <code>dimension:</code></a>, P81</td>
+<td>dmlc <code>test_07_dimension_replace_dt</code></td>
+</tr>
+<tr>
+<td>MAD label-pass filter after label exists (SQL often <code>WHERE</code> even if doc shows <code>HAVING</code>)</td>
+<td><a href="explanation--measure-as-dimension.html">measure-as-dimension</a>, <a href="reference--model-query-sql.html">model-query §3.9</a></td>
+<td>dmlc <code>test_82p_measure_as_dimension_label_or</code></td>
+</tr>
+</tbody></table>
+<h2 id="open-compiler-defects">Open compiler defects</h2>
+<ol>
+<li><strong>Count classifier accepted with invalid SQL.</strong> <a href="references--verification--label_plus--report.dml">label_plus/report.dml</a> classifies by <code>{cnt: {+d: customer}}</code>, with <code>cnt: COUNT(1)</code>. Strict compilation exits 0 with empty diagnostics and emits <code>GROUP BY COUNT(1)</code>. This is invalid MSSQL. A zero exit is insufficient; this shape is not a publishable supported example.</li>
+<li><strong>Replacement-dimension classifier lowering fails.</strong> <a href="references--verification--label_dimension--report.dml">label_dimension/report.dml</a> uses <code>{cnt: {dimension: [customer]}}</code>. The entity-key check accepts the form, but compilation exits 2 with generated <code>nullpk()</code> syntax and a parse diagnostic. Recognition of the syntax does not establish end-to-end support.</li>
+<li><strong>Same-dimension <code>+d</code>/<code>-d</code>/<code>-df</code> intersection</strong> may still be accepted or algebraically rewritten on older builds — language contract is fail-loudly; track until a structured diagnostic exists.</li>
+</ol>
+<p>The documentation changes do not fix these compiler defects. Keep their inputs and observed outcomes when reporting them upstream. Materialize classifiers, broader temporal classifiers and complete dialect parity remain outside this verification scope. The <a href="maintenance--improvement-plan.html">improvement plan</a> records future requirements separately.</p>
+<h2 id="publication-boundary">Publication boundary</h2>
+<p>Publish this material as a versioned reference with these limitations visible. Claims of exhaustive correctness, universal fail-closed behavior or all examples being verified would exceed the evidence. Refresh schema/macro reference copies from the intended release resources before a release upgrade; changing a copied schema alone cannot change the distributed binary.</p>
+</main></html>

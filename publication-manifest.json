@@ -1,0 +1,340 @@
+{
+  "files": [
+    {
+      "source": "explanation/visual-introduction/assets/generation.json",
+      "published": "assets--generation.json"
+    },
+    {
+      "source": "explanation/visual-introduction/assets/journey-planet.svg",
+      "published": "assets--journey-planet.svg"
+    },
+    {
+      "source": "explanation/visual-introduction/assets/little-worlds.png",
+      "published": "assets--little-worlds.png"
+    },
+    {
+      "source": "explanation/visual-introduction/compiler-observations.js",
+      "published": "compiler-observations.js"
+    },
+    {
+      "source": "explanation/visual-introduction/compiler-observations.json",
+      "published": "compiler-observations.json"
+    },
+    {
+      "source": "explanation/visual-introduction/course-data.js",
+      "published": "course-data.js"
+    },
+    {
+      "source": "explanation/visual-introduction/course-definitions.js",
+      "published": "course-definitions.js"
+    },
+    {
+      "source": "explanation/visual-introduction/course-i18n.js",
+      "published": "course-i18n.js"
+    },
+    {
+      "source": "explanation/visual-introduction/course-navigation.js",
+      "published": "course-navigation.js"
+    },
+    {
+      "source": "explanation/visual-introduction/course-zh.css",
+      "published": "course-zh.css"
+    },
+    {
+      "source": "explanation/visual-introduction/course.css",
+      "published": "course.css"
+    },
+    {
+      "source": "explanation/visual-introduction/course.js",
+      "published": "course.js"
+    },
+    {
+      "source": "explanation/visual-introduction/index.html",
+      "published": "index.html"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/compiler-observations.json",
+      "published": "lesson-files--compiler-observations.json"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/DIM_REGION.csv",
+      "published": "lesson-files--DIM_REGION.csv"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/expected.csv",
+      "published": "lesson-files--expected.csv"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/model.dml",
+      "published": "model.dml"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/query.sql",
+      "published": "lesson-files--query.sql"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/setup-mssql.sql",
+      "published": "lesson-files--setup-mssql.sql"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/START-HERE.txt",
+      "published": "lesson-files--START-HERE.txt"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/TABLE_SALES.csv",
+      "published": "lesson-files--TABLE_SALES.csv"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files.zip",
+      "published": "lesson-files.zip"
+    },
+    {
+      "source": "explanation/visual-introduction/locales/de.js",
+      "published": "locales--de.js"
+    },
+    {
+      "source": "explanation/visual-introduction/locales/en.js",
+      "published": "locales--en.js"
+    },
+    {
+      "source": "explanation/visual-introduction/locales/ja.js",
+      "published": "locales--ja.js"
+    },
+    {
+      "source": "explanation/visual-introduction/locales/zh.js",
+      "published": "locales--zh.js"
+    },
+    {
+      "source": "README.md",
+      "published": "docs.html"
+    },
+    {
+      "source": "tutorials/interactive-journey.md",
+      "published": "tutorials--interactive-journey.html"
+    },
+    {
+      "source": "explanation/core-concepts.md",
+      "published": "explanation--core-concepts.html"
+    },
+    {
+      "source": "tutorials/first-query.md",
+      "published": "tutorials--first-query.html"
+    },
+    {
+      "source": "explanation/visual-introduction.md",
+      "published": "explanation--visual-introduction.html"
+    },
+    {
+      "source": "explanation/dimensions.md",
+      "published": "explanation--dimensions.html"
+    },
+    {
+      "source": "reference/README.md",
+      "published": "reference--README.html"
+    },
+    {
+      "source": "how-to/build-analysis.md",
+      "published": "how-to--build-analysis.html"
+    },
+    {
+      "source": "how-to/design-measures.md",
+      "published": "how-to--design-measures.html"
+    },
+    {
+      "source": "how-to/design-materializations.md",
+      "published": "how-to--design-materializations.html"
+    },
+    {
+      "source": "how-to/define-macros.md",
+      "published": "how-to--define-macros.html"
+    },
+    {
+      "source": "how-to/write-model-metadata.md",
+      "published": "how-to--write-model-metadata.html"
+    },
+    {
+      "source": "how-to/compile-and-validate.md",
+      "published": "how-to--compile-and-validate.html"
+    },
+    {
+      "source": "how-to/troubleshoot-query.md",
+      "published": "how-to--troubleshoot-query.html"
+    },
+    {
+      "source": "how-to/review-model.md",
+      "published": "how-to--review-model.html"
+    },
+    {
+      "source": "how-to/configure-mcp.md",
+      "published": "how-to--configure-mcp.html"
+    },
+    {
+      "source": "how-to/verify-reference.md",
+      "published": "how-to--verify-reference.html"
+    },
+    {
+      "source": "reference/examples/README.md",
+      "published": "reference--examples--README.html"
+    },
+    {
+      "source": "reference/troubleshooting/README.md",
+      "published": "reference--troubleshooting--README.html"
+    },
+    {
+      "source": "maintenance/release-evidence.md",
+      "published": "maintenance--release-evidence.html"
+    },
+    {
+      "source": "explanation/measure-as-dimension.md",
+      "published": "explanation--measure-as-dimension.html"
+    },
+    {
+      "source": "explanation/window-placement.md",
+      "published": "explanation--window-placement.html"
+    },
+    {
+      "source": "explanation/philosophy-zh.md",
+      "published": "explanation--philosophy-zh.html"
+    },
+    {
+      "source": "maintenance/README.md",
+      "published": "maintenance--README.html"
+    },
+    {
+      "source": "maintenance/improvement-plan.md",
+      "published": "maintenance--improvement-plan.html"
+    },
+    {
+      "source": "reference/semantics.md",
+      "published": "reference--semantics.html"
+    },
+    {
+      "source": "02-syntax/system_macros.dml",
+      "published": "02-syntax--system_macros.dml"
+    },
+    {
+      "source": "reference/expressions.md",
+      "published": "reference--expressions.html"
+    },
+    {
+      "source": "reference/measures.md",
+      "published": "reference--measures.html"
+    },
+    {
+      "source": "reference/model-query-sql.md",
+      "published": "reference--model-query-sql.html"
+    },
+    {
+      "source": "reference/modifiers.md",
+      "published": "reference--modifiers.html"
+    },
+    {
+      "source": "reference/model-structure.md",
+      "published": "reference--model-structure.html"
+    },
+    {
+      "source": "reference/query-yaml.md",
+      "published": "reference--query-yaml.html"
+    },
+    {
+      "source": "reference/materialization.md",
+      "published": "reference--materialization.html"
+    },
+    {
+      "source": "reference/model-composition.md",
+      "published": "reference--model-composition.html"
+    },
+    {
+      "source": "reference/join-null-equality.md",
+      "published": "reference--join-null-equality.html"
+    },
+    {
+      "source": "reference/mcp-contract.md",
+      "published": "reference--mcp-contract.html"
+    },
+    {
+      "source": "reference/error-codes.md",
+      "published": "reference--error-codes.html"
+    },
+    {
+      "source": "02-syntax/dml_schema.yaml",
+      "published": "02-syntax--dml_schema.yaml"
+    },
+    {
+      "source": "02-syntax/dmx_variable_schema.yaml",
+      "published": "02-syntax--dmx_variable_schema.yaml"
+    },
+    {
+      "source": "02-syntax/dmx.md",
+      "published": "02-syntax--dmx.html"
+    },
+    {
+      "source": "reference/examples/models.md",
+      "published": "reference--examples--models.html"
+    },
+    {
+      "source": "references/verification/manifest-2026-09-29.json",
+      "published": "references--verification--manifest-2026-09-29.json"
+    },
+    {
+      "source": "reference/examples/shared-model.md",
+      "published": "reference--examples--shared-model.html"
+    },
+    {
+      "source": "reference/examples/queries.md",
+      "published": "reference--examples--queries.html"
+    },
+    {
+      "source": "reference/examples/aggregation.md",
+      "published": "reference--examples--aggregation.html"
+    },
+    {
+      "source": "reference/examples/measure-formulas.md",
+      "published": "reference--examples--measure-formulas.html"
+    },
+    {
+      "source": "reference/examples/advanced-measures.md",
+      "published": "reference--examples--advanced-measures.html"
+    },
+    {
+      "source": "reference/troubleshooting/queries.md",
+      "published": "reference--troubleshooting--queries.html"
+    },
+    {
+      "source": "reference/troubleshooting/models.md",
+      "published": "reference--troubleshooting--models.html"
+    },
+    {
+      "source": "reference/troubleshooting/tooling.md",
+      "published": "reference--troubleshooting--tooling.html"
+    },
+    {
+      "source": "reference/troubleshooting/grain-and-joins.md",
+      "published": "reference--troubleshooting--grain-and-joins.html"
+    },
+    {
+      "source": "reference/troubleshooting/migration.md",
+      "published": "reference--troubleshooting--migration.html"
+    },
+    {
+      "source": "reference/troubleshooting/time.md",
+      "published": "reference--troubleshooting--time.html"
+    },
+    {
+      "source": "maintenance/archive/release-evidence-2026-09-29.md",
+      "published": "maintenance--archive--release-evidence-2026-09-29.html"
+    },
+    {
+      "source": "references/verification/manifest.json",
+      "published": "references--verification--manifest.json"
+    },
+    {
+      "source": "references/verification/label_plus/report.dml",
+      "published": "references--verification--label_plus--report.dml"
+    },
+    {
+      "source": "references/verification/label_dimension/report.dml",
+      "published": "references--verification--label_dimension--report.dml"
+    }
+  ]
+}

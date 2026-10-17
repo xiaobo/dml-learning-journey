@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Join NULL equality · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="join-null-equality">Join NULL equality</h1>
+<p>DML distinguishes joins that combine independently grouped keys from joins that preserve a driving row. The join&#39;s purpose determines how NULL keys compare.</p>
+<h2 id="equality-by-join-purpose">Equality by join purpose</h2>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Typical SQL</th>
+<th>Equality in <code>ON</code></th>
+<th>NULL-key behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Combine keys from independent measure results, called key-union composition</td>
+<td><code>FULL OUTER JOIN</code>, or densification with <code>UNION</code> and <code>LEFT JOIN</code></td>
+<td>Ordinary <code>=</code></td>
+<td>NULL keys on different sides remain unmatched</td>
+</tr>
+<tr>
+<td>Attach attributes while preserving a driving row, including internal <code>nullpk</code> attachment</td>
+<td><code>LEFT JOIN</code></td>
+<td>NULL-safe equality</td>
+<td>Matching structural keys can attach even when a component is NULL</td>
+</tr>
+</tbody></table>
+<p>NULL-safe equality can use <code>&lt;=&gt;</code>, <code>IS NOT DISTINCT FROM</code>, or an equality test with an explicit both-NULL branch, depending on the dialect. A <code>LEFT JOIN</code> introduced for a particular calculation does not establish a global equality policy for every join.</p>
+<h2 id="output-with-null-alignment-keys">Output with NULL alignment keys</h2>
+<p>If both sides of a composition contain a NULL key, ordinary <code>=</code> leaves those groups unmatched. The output can contain two rows whose displayed key is NULL. <code>coalesce</code> in the key projection does not merge them.</p>
+<p>Non-NULL matching keys align normally. A presence filter can restrict the result to groups from a chosen source. That filter changes the output population, not the equality operator.</p>
+<p>An explicit expression such as <code>coalesce(region, &#39;UNKNOWN&#39;)</code> can make missing keys share a grouping value. The chosen sentinel then becomes part of the business key and can collide with a real value.</p>
+<h2 id="population-fill-and-densification">Population, fill, and densification</h2>
+<p>A presence measure identifies whether a source group exists. An arbitrary nullable business measure does not prove presence.</p>
+<p>Missing-row fill supplies a fallback measure value. Densification supplies missing entity or calendar rows. Neither operation establishes membership in a source population.</p>
+<h2 id="build-evidence">Build evidence</h2>
+<p>The <code>cross_dataset</code> probe on the 2026-10-16 build emits <code>full join ... on t2.region = t1.region</code>. Strict mode returns findings for key-union composition and nullable arithmetic. The <a href="maintenance--release-evidence.html">release evidence</a> records the executable identity and scope of that observation.</p>
+<p>The <a href="reference--semantics.html#34-cross-dataset-auto-join">core specification, cross-dataset auto-join</a> defines composition. <a title="Reference available in the development workspace">SKILL.md, semantic review</a> lists the checks for changed queries.</p>
+</main></html>

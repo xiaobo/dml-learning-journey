@@ -1,0 +1,9 @@
+id,region,customer,dt_month,status,amount
+1,North,A,2025-02-01,completed,10
+2,North,B,2025-02-01,returned,20
+3,South,C,2025-02-01,completed,30
+4,South,C,2025-02-01,completed,40
+5,North,A,2025-01-01,completed,8
+6,North,A,2025-01-01,completed,12
+7,South,C,2025-01-01,completed,20
+8,South,D,2025-01-01,completed,30

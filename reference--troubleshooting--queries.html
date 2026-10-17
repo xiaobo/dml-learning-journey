@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query syntax pitfalls · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="query-syntax-pitfalls">Query syntax pitfalls</h1>
+<p>These entries cover SQL and YAML queries. <a href="reference--model-query-sql.html">Model Query SQL</a> and <a href="reference--query-yaml.html">YAML queries</a> own the supported syntax.</p>
+<p><a id="p8"></a></p>
+<h2 id="p8-forgetting-agg-in-aggregation-queries">P8. Forgetting AGG() in aggregation queries</h2>
+<p><strong>Wrong</strong>: <code>SELECT product, sales FROM MODEL GROUP BY product</code>
+<strong>Fix</strong>: <code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></p>
+<p><a id="p9"></a></p>
+<h2 id="p9-adding-redundant-alias-on-agg">P9. Adding redundant alias on AGG()</h2>
+<p><strong>Wrong</strong>: <code>SELECT AGG(sales) as sales</code>
+<strong>Fix</strong>: <code>SELECT AGG(sales)</code> — auto-aliases to <code>sales</code></p>
+<p><a id="p10"></a></p>
+<h2 id="p10-using-subqueries">P10. Using subqueries</h2>
+<p><strong>Wrong</strong>: <code>SELECT * FROM MODEL WHERE sales &gt; (SELECT AVG(sales) FROM MODEL)</code>
+<strong>Fix</strong>: Use <code>HAVING</code> with a measure: <code>HAVING AGG(sales) &gt; AGG(avg_sales)</code></p>
+<p><a id="p11"></a></p>
+<h2 id="p11-using-joins">P11. Using JOINs</h2>
+<p><strong>Wrong</strong>: <code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.id = b.id</code>
+<strong>Fix</strong>: Use cross-dataset column-macros or <code>pk(...)</code> lookups in <code>.dml</code></p>
+<p><a id="p12"></a></p>
+<h2 id="p12-missing-time-context-for-time-modifiers">P12. Missing time context for time modifiers</h2>
+<p><strong>Wrong</strong>: <code>SELECT product, AGG({sales: yoy}) FROM MODEL GROUP BY product</code> (neither a grouped time field nor a time filter)</p>
+<p><strong>Rule</strong>: Resolve the time context and satisfy macro prerequisites. An explicit grouped time field is clearest; a time filter can also supply the context. Prefer one time grain for readability.</p>
+<p><strong>Time-context reference</strong>: <a href="reference--modifiers.html#21-time-modifiers">Time modifiers</a>.</p>
+<p><strong>Correct (monthly YoY)</strong>:</p>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY dt_month
+</code></pre>
+<p><strong>Correct (YTD at day grain)</strong>:</p>
+<pre><code class="language-sql">SELECT dt_date, AGG(sales, &#39;ytd&#39;) FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
+</code></pre>
+<p><a id="p13"></a></p>
+<h2 id="p13-mixing-time-granularities">P13. Mixing time granularities</h2>
+<p><strong>Guidance</strong>: Prefer one time grain. The checked build accepts <code>dt_year, dt_month</code> together; acceptance of multiple fields is not a guarantee that every macro combination has the intended context. Inspect the resolved time grain.</p>
+<p><a id="p14"></a></p>
+<h2 id="p14-adding-unnecessary-null-filters">P14. Adding unnecessary null filters</h2>
+<p><strong>Wrong</strong>: <code>WHERE customer is not null</code> when not explicitly requested.
+<strong>Fix</strong>: Only exclude nulls when the question specifically asks for it.</p>
+<p><a id="p15"></a></p>
+<h2 id="p15-using-between-for-single-periods">P15. Using BETWEEN for single periods</h2>
+<p><strong>Guidance</strong>: <code>dt_month = &#39;2024-01-01&#39;</code> clearly selects January. A date interval is valid when that interval is intended; use explicit bounds and check timestamp/end-day semantics.</p>
+<p><a id="p16"></a></p>
+<h2 id="p16-time-filter-order-is-a-style-convention">P16. Time-filter order is a style convention</h2>
+<p>Both predicate orders compile. Predicate order is a readability choice, not an engine requirement.</p>
+<p><a id="p17"></a></p>
+<h2 id="p17-using-order-by-without-need">P17. Using ORDER BY without need</h2>
+<p><strong>Wrong</strong>: Adding <code>ORDER BY</code> to every query.
+<strong>Fix</strong>: Only use ORDER BY for Top N or when the question explicitly asks for ranking.</p>
+<p><a id="p18"></a></p>
+<h2 id="p18-manual-growth-rate-calculation">P18. Manual growth rate calculation</h2>
+<p><strong>Wrong</strong>: <code>DIVIDE(AGG(sales), AGG(sales, &#39;ya&#39;)) - 1</code>
+<strong>Fix</strong>: <code>AGG(sales, &#39;yoy&#39;)</code> — built-in modifier.</p>
+<p><a id="p20"></a></p>
+<h2 id="p20-using-distinct-alone-for-existence-checks">P20. Using DISTINCT alone for existence checks</h2>
+<p><strong>Wrong</strong>: <code>SELECT DISTINCT customer FROM MODEL.transactions</code> for &quot;do we have any customers?&quot;
+<strong>Fix</strong>: <code>SELECT customer, dt_date, transaction_id FROM MODEL.transactions LIMIT 1</code> — return specific record.</p>
+<hr>
+<h2 id="category-dml-model-design">Category: DML Model Design</h2>
+<p><a id="p45"></a></p>
+<h2 id="p45-measure-in-a-detail-query">P45. Measure in a detail query</h2>
+<p><strong>Wrong</strong>: <code>dataset: DATASET_PRODUCTS</code> on a query that selects <code>total_cost:</code> (a measure).
+<strong>Fix</strong>: Remove <code>dataset:</code> for aggregate mode, or drop the measure from the detail query.</p>
+<p><a id="p46"></a></p>
+<h2 id="p46-bare-column-name-in-aggregate-query">P46. Bare column name in aggregate query</h2>
+<p><strong>Wrong</strong>: <code>prod_id:</code> with no <code>dataset:</code> when the column lives on <code>DATASET_PRODUCTS</code>.
+<strong>Fix</strong>: <code>prod_id: &quot;{DATASET_PRODUCTS}.prod_id&quot;</code>.</p>
+<p><a id="p47"></a></p>
+<h2 id="p47-mismatched-dimension-field-names-across-datasets">P47. Mismatched dimension field names across datasets</h2>
+<p><strong>Wrong</strong>: <code>DATASET_PT</code> uses dimension <code>id</code>; <code>DATASET_MC</code> uses <code>tag_id</code>.
+<strong>Fix</strong>: Align to one name (e.g. <code>tag_id</code>) and map warehouse columns in <code>columns:</code> (<code>tag_id: id</code>).</p>
+<p><a id="p48"></a></p>
+<h2 id="p48-mapping-used-as-a-dimension-field-in-dimension">P48. Mapping used as a dimension field in <code>dimension:</code></h2>
+<p><strong>Wrong</strong>: <code>- f_tag_id: {DATASET_PT}.id</code> under <code>columns: dimension:</code>.
+<strong>Fix</strong>: List <code>- f_tag_id</code> only; define <code>f_tag_id: |- …</code> formula separately.</p>
+<p><a id="p49"></a></p>
+<h2 id="p49-dimension-field-under-measures">P49. Dimension field under <code>measures:</code></h2>
+<p><strong>Wrong</strong>: <code>tag_id:</code> with a formula under dataset <code>measures:</code>.
+<strong>Fix</strong>: Declare grain under dataset <code>dimension:</code>; use measures only for aggregations.</p>
+<p><a id="p50"></a></p>
+<h2 id="p50-complex-filter-in-query-filters">P50. Complex filter in query <code>filters:</code></h2>
+<p><strong>Wrong</strong>: EXISTS subquery or multi-field PK chain in query <code>filters:</code>.
+<strong>Fix</strong>: Move predicate into the fact dataset&#39;s <code>sql:</code> WHERE clause.</p>
+<p><a id="p51"></a></p>
+<h2 id="p51-pk-chaining-parameter-count-mismatch">P51. PK chaining parameter count mismatch</h2>
+<p><strong>Wrong</strong>: <code>pk(1, tag_id).{DATASET_PRODUCTS}.state</code> when <code>DATASET_PRODUCTS</code> has composite PK <code>(brand_id, tag_id)</code>.
+<strong>Fix</strong>: <code>pk(brand_id, tag_id).{DATASET_PRODUCTS}.state</code> with all PK columns.</p>
+<p><a id="p52"></a></p>
+<h2 id="p52-manual-group-by-in-after">P52. Manual GROUP BY in <code>after:</code></h2>
+<p><strong>Wrong</strong>: Re-aggregating with <code>group by</code> in <code>after:</code> on a standard measure query.
+<strong>Fix</strong>: Let the query block aggregate measures. Omit <code>after:</code> for automatic dimension ordering. When custom ordering/limit requires it, reference <code>{QUERY}</code> and keep the block to presentation (<code>select * from {QUERY}</code> plus ORDER BY/TOP/LIMIT) unless unavoidable custom post-SQL is explicitly documented.</p>
+<hr>
+<p>Validated from Windows + MCP production runs. Generic CLI playbook: <a href="how-to--compile-and-validate.html">Use the dmlc CLI to check and run queries</a>. <strong><code>explain_change</code> pitfalls (P55–P58):</strong> <a title="Reference available in the development workspace"><code>../../explain-change-variance/SKILL.md</code></a> and <a title="Reference available in the development workspace"><code>../../explain-change-variance/references/how-to/three-moves-playbook.md</code></a>.</p>
+<p><a id="p60"></a></p>
+<h2 id="p60-subquery-for-max-date-in-aggregation-query">P60. Subquery for MAX date in aggregation query</h2>
+<p><strong>Wrong</strong>: <code>WHERE dt_month = (SELECT MAX(dt_month) FROM MODEL ...)</code>
+<strong>Fix</strong>: Hardcode probe month or <code>SELECT MAX(dt_month) FROM MODEL.&lt;dataset&gt;</code> detail query.</p>
+<p><a id="p61"></a></p>
+<h2 id="p61-aggregating-directly-on-dataset-with-group-by">P61. Aggregating directly on dataset with GROUP BY</h2>
+<p><strong>Wrong</strong>: <code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code>
+<strong>Symptom</strong>: <code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code>
+<strong>Fix</strong>: Either (a) define measures in <code>model.dml</code> and use <code>FROM MODEL</code> with <code>AGG()</code>, or (b) use inline measures via <code>/** dml ... **/</code> comment blocks for ad-hoc queries without editing <code>.dml</code> (see <a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures (<code>/** dml ... **/</code>)</a>)</p>
+</main></html>

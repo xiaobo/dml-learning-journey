@@ -1,0 +1,351 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YAML query declarations · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="yaml-query-declarations">YAML query declarations</h1>
+<p>This page owns <code>type: query</code>, columns, filters, materialization selection, and <code>after:</code>. The query consumes the same model measures as <a href="reference--model-query-sql.html">Model Query SQL</a>.</p>
+<blockquote>
+<p><strong>Filename constraint:</strong> When compiling a <code>.dml</code> file with <code>dmlc -c</code>, the <code>type: query</code> block name must match the filename (without <code>.dml</code>). For example, a file named <code>my_report.dml</code> must contain <code>my_report: type: query</code>, not <code>some_other_name: type: query</code>. The compiler rejects mismatches with: <code>query name should be &lt;filename&gt; (the same as filename) instead of &lt;block_name&gt;</code>.</p>
+</blockquote>
+<p><a id="41-basic-structure"></a></p>
+<h2 id="basic-structure">Basic structure</h2>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL              # optional: consider compatible materializations
+
+    columns:
+        dimension:
+            - dt_month
+            - product
+        sales:               # measure reference (no AGG needed)
+        sales_yoy:
+            formula: &#39;{sales: yoy}&#39;
+</code></pre>
+<p><code>columns:</code> is required. Its non-dimension keys name output columns; their values are formulas or direct measure references. An optional <code>dataset:</code> selects the dataset-query form and cannot be combined with <code>columns.dimension</code>.</p>
+<p>Query filters have these forms. Each key names a filter that measure-reference modifiers can address.</p>
+<table>
+<thead>
+<tr>
+<th>Value form</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td>Equality on the column with the same name</td>
+</tr>
+<tr>
+<td><code>&lt;column&gt;: [a, b]</code></td>
+<td>Membership in the listed values</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td>Named equality filter on an explicit column</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, range: [lo, hi]}</code></td>
+<td>Named inclusive range on an explicit column</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {visibility: hidden, default: on}</code></td>
+<td>Hidden filter with its default enabled</td>
+</tr>
+</tbody></table>
+<p>The <a href="#48-filter-placement-hierarchy">filter placement rules</a> define which stage receives each predicate.</p>
+<p><a id="42-detail-vs-aggregation"></a></p>
+<h2 id="detail-vs-aggregation">Detail vs aggregation</h2>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>How to specify</th>
+<th>Constraints</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Aggregation</td>
+<td>No <code>dataset:</code> key</td>
+<td>Measures allowed; compiler aggregates</td>
+</tr>
+<tr>
+<td>Detail</td>
+<td><code>dataset: DATASET_NAME</code></td>
+<td>No measures; raw columns only</td>
+</tr>
+</tbody></table>
+<pre><code class="language-yaml"># Detail query
+product_list:
+    type: query
+    dataset: DATASET_PRODUCTS
+    columns:
+        dimension:
+            - product
+</code></pre>
+<p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
+<h2 id="auto-join-of-multi-dataset-measures">Auto-join of multi-dataset measures</h2>
+<p>When an aggregate query references measures from <strong>different datasets</strong>, they compose through <strong>FULL OUTER JOIN</strong> semantics on the shared dimension fields: rows that exist in only one dataset still appear, with NULL for the other dataset&#39;s measures.</p>
+<p>The <strong>emitted</strong> join type follows the proven population contract. The compiler starts from <code>FULL OUTER JOIN</code> and reduces each join to the strongest type proven by query filters: <code>&quot;{primary_measure} is not null&quot;:</code> in <code>filters:</code> both prunes secondary-only rows and lowers the emitted join to <code>LEFT JOIN</code>; presence guards on both sides yield <code>INNER JOIN</code>. The guard matches a golden SQL <code>LEFT JOIN</code> only when valid primary groups cannot have a NULL primary measure. Prove that NULL/empty-group contract and inspect generated join types and output; otherwise the filter also deletes valid groups. Keep the guard out of <code>after:</code> so it remains visible to lineage, review, and reuse.</p>
+<p>The formula-as-key shape is required: <code>&quot;{expr}&quot;:</code> with an empty value. <code>name: {condition: …}</code> is schema-invalid.</p>
+<p><a id="44-column-references-in-dml-format"></a></p>
+<h2 id="column-references-in-dml-format">Column references in DML format</h2>
+<table>
+<thead>
+<tr>
+<th>Column type</th>
+<th>Syntax</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dimension field from same dataset</td>
+<td>bare name</td>
+<td><code>product:</code></td>
+</tr>
+<tr>
+<td>Dimension field from another dataset</td>
+<td><code>&quot;{DATASET}.column&quot;</code></td>
+<td><code>prod_id: &quot;{DATASET_PRODUCTS}.prod_id&quot;</code></td>
+</tr>
+<tr>
+<td>Measure</td>
+<td>bare name</td>
+<td><code>sales:</code></td>
+</tr>
+<tr>
+<td>Measure with modifier</td>
+<td><code>formula:</code></td>
+<td><code>sales_yoy: {sales: yoy}</code></td>
+</tr>
+</tbody></table>
+<p><strong>Pitfall</strong>: A bare column name in an aggregate query without <code>dataset:</code> will fail if the column lives on a specific dataset. Use <code>&quot;{DATASET}.column&quot;</code> form.</p>
+<p><a id="45-auto-aliasing-and-direct-reference"></a></p>
+<h2 id="auto-aliasing-and-direct-reference">Auto-aliasing and direct reference</h2>
+<p>A query column with no formula can resolve to a measure or dataset column by name match — this is <strong>auto-aliasing</strong>. Three levels exist:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Mechanism</th>
+<th>Example</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>column</code> (direct reference)</strong></td>
+<td>Dataset <code>columns:</code> entry with no formula; DML name = table column name</td>
+<td><code>prod_amount:</code></td>
+<td><code>SUM(prod_amount)</code> — name passed through as-is, no aliasing</td>
+</tr>
+<tr>
+<td><strong>Query column → measure (auto-aliasing)</strong></td>
+<td>Query column with no formula; column name = measure name</td>
+<td><code>revenue:</code> (measure <code>revenue</code> exists)</td>
+<td>Compiler substitutes the measure&#39;s <code>formula:</code> expression</td>
+</tr>
+<tr>
+<td><strong>Query column → dataset column (auto-aliasing)</strong></td>
+<td>Query column with no formula; column name = dataset column name, <strong>derivable from the query dimension</strong></td>
+<td><code>prod_name:</code> (dataset column via <code>pk({prod_id})</code> chain)</td>
+<td>Compiler resolves from dataset definition</td>
+</tr>
+</tbody></table>
+<p><strong>Key behaviors:</strong></p>
+<ul>
+<li><code>dmlc -c</code> does not validate dataset column existence against the table schema — a mismatched name compiles but produces runtime SQL errors. Use <code>validateOnly</code> (requires database connection) to catch mismatched names.</li>
+<li>When a query column name matches neither a measure nor a derivable dataset column, it errors as <code>not defined, add formula?</code>.</li>
+<li>When the query column name differs from the measure name, add an explicit formula (<code>display_name: &#39;{measure_name}&#39;</code>) or rename the measure with <code>abbr:</code> (<a title="Reference available in the development workspace">semantic review checks</a>).</li>
+<li>A dataset column that is <strong>not derivable</strong> from the query dimension (e.g., a raw fact column with no dimension-field dependency) errors with <code>cannot be derived from dimension [store_id]</code>.</li>
+<li>A pass-through column (no <code>formula:</code>) may carry metadata properties (<code>description:</code>, <code>visibility:</code>) in object form without requiring <code>formula:</code>. Example: <code>revenue: { description: &#39;Total revenue&#39; }</code> auto-aliases to measure <code>revenue</code> while attaching the description.</li>
+</ul>
+<p><a id="46-visibility-hidden"></a></p>
+<h2 id="visibility-hidden"><code>visibility: hidden</code></h2>
+<p>Hides a column from the final query output while keeping it available in intermediate temp tables.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Final SELECT</td>
+<td>Hidden columns are normally absent, but a hidden column referenced by a filter/HAVING may be carried into final output; inspect generated SQL before claiming exact output</td>
+</tr>
+<tr>
+<td>Intermediate temp tables</td>
+<td>Hidden columns <strong>remain</strong> available for JOIN conditions and <code>filters:</code></td>
+</tr>
+<tr>
+<td><code>filters:</code> referencing hidden dimension fields</td>
+<td>Compiles, but can strengthen optional joins and can force helper materialization; verify generated SQL</td>
+</tr>
+<tr>
+<td><code>after:</code> SQL referencing hidden dimension fields by name</td>
+<td><strong>Breaks</strong> — <code>query columns refer to nonexistence source column</code></td>
+</tr>
+<tr>
+<td>PK chain</td>
+<td><strong>Intact</strong> — no PK warning fires from <code>visibility: hidden</code> alone</td>
+</tr>
+</tbody></table>
+<p><strong>Guidance:</strong> Remove <code>visibility: hidden</code> if <code>after:</code> references the dimension field by name. Keep it if <code>after:</code> only uses measure columns. For contracted outputs, compile and confirm that no hidden helper reaches the final result; extra columns are acceptable only when the output contract explicitly allows them.</p>
+<p><strong>YAML forms that work:</strong> <code>- dim: {visibility: hidden}</code> or a nested map whose keys sit <strong>under</strong> the dim entry. Sibling <code>visibility:</code> at the same indent as the dim key (under-indent) is a schema lint error — write the inline or nested form instead. Always inspect compiled SELECT when using <code>dmlc -c</code> alone (schema lint runs in the editor / <code>dmlc --lint</code>).</p>
+<p><a id="47-query-dimension-format"></a></p>
+<h2 id="query-dimension-format">Query dimension format</h2>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - dt_month
+        - product
+        # Correct: list dimension field names only
+</code></pre>
+<p><strong>Wrong</strong>: Don&#39;t put cross-dataset column <strong>mappings</strong> among the query dimension fields. Define those formulas as separate query columns:</p>
+<pre><code class="language-yaml"># Wrong
+columns:
+    dimension:
+        - f_tag_id: {DATASET_PT}.id
+
+# Correct
+columns:
+    dimension:
+        - f_tag_id
+    f_tag_id: &quot;{DATASET_PT}.id&quot;
+</code></pre>
+<p><strong>Exception — measure-as-dimension:</strong> a query-dimension entry may bind a <strong>measure</strong> (usually with <code>+d</code>) so the query grain groups by that measure value:</p>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - first_purchase_month: &#39;{first_purchase_month: {+d: store_id}}&#39;
+    sales:
+</code></pre>
+<p>Declare the classification entity key explicitly with <code>+d</code> (preferred) or <code>dimension:</code>. Multiple independent fields are allowed when their complete keys match; ordinary output measures must safely roll up from <code>Q ∪ K</code>. Label-channel filters (formula <code>filters:</code> / Model Query <code>HAVING</code>) apply <strong>after</strong> the label exists — see <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. Do not use this exception for physical/<code>{DATASET}.col</code> mappings.</p>
+<p><a id="48-filter-placement-hierarchy"></a></p>
+<h2 id="filter-placement-hierarchy">Filter placement hierarchy</h2>
+<p>Filter placement is a semantic decision, not a syntax preference:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Where</th>
+<th>What goes here</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Query <code>filters:</code></td>
+<td>Query block</td>
+<td>Report-specific slices (channel, brand, date range)</td>
+</tr>
+<tr>
+<td>Intermediate column / measure</td>
+<td><code>.dml</code> dataset or top-level measure</td>
+<td>Metric-specific eligibility when rejected rows may remain in groups with NULL measures</td>
+</tr>
+<tr>
+<td>Dataset <code>sql:</code></td>
+<td>Dataset definition</td>
+<td>Permanent source-population invariants or constructs DML cannot express declaratively</td>
+</tr>
+</tbody></table>
+<p>Moving a source <code>WHERE</code> condition into a measure gate changes row existence unless rejected-only groups are impossible or contractually equivalent to present groups with NULL measures. Prove this explicitly; when it is false or unknown, keep a row-removing representation.</p>
+<p><strong>Structured range semantics:</strong> <code>range: [start, end]</code> in query <code>filters:</code> includes both endpoints at the declared <code>dt_&lt;grain&gt;</code>. For 2025 daily data use <code>[&#39;2025-01-01&#39;, &#39;2025-12-31&#39;]</code>; for monthly data use <code>[&#39;2025-01-01&#39;, &#39;2025-12-01&#39;]</code>. A dialect may implement this with an exclusive physical bound such as <code>&lt; dateadd(day, 1, end)</code>, but the DML input end remains the last included value.</p>
+<p><strong>List vs range — a common footgun:</strong> A bare list value <code>dim: [&#39;a&#39;, &#39;b&#39;]</code> compiles to <code>WHERE dim IN (&#39;a&#39;, &#39;b&#39;)</code> (exact match of those two values), <strong>not</strong> an inclusive range. For date dimensions this is a silent data-loss trap: <code>dt_date: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;]</code> returns only rows on those two days, not the full 2-year span. Always use <code>range: [start, end]</code> when you mean an inclusive interval:</p>
+<pre><code class="language-yaml"># Wrong — only 2 days of data
+filters:
+    dt_date: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;]
+
+# Right — full inclusive range
+filters:
+    dt_date:
+        range: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;]
+</code></pre>
+<p><strong>Common filter pitfalls</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td>Move to query <code>filters:</code>, measure formula, or <code>sql:</code> WHERE</td>
+</tr>
+<tr>
+<td><code>referred column {DATASET}.col is undefined</code> in query filter</td>
+<td>Use string form: <code>&quot;{DATASET}.col = value&quot;:</code></td>
+</tr>
+<tr>
+<td>Two-element list on a date dimension returns only 2 days</td>
+<td>Use <code>range: [start, end]</code> instead of bare list — <code>dim: [a, b]</code> compiles to <code>IN (a, b)</code>, not <code>BETWEEN</code></td>
+</tr>
+<tr>
+<td>Complex EXISTS / PK chain in query <code>filters:</code></td>
+<td>Use measure-input gating only for metric-specific eligibility. If the condition removes source population and migration still requires dataset <code>sql:</code>, record the minimal escape under the <a title="Reference available in the development workspace"><code>sql-to-dml-v2</code> native-first contract</a>.</td>
+</tr>
+</tbody></table>
+<p><a id="49-pk-chaining"></a></p>
+<h2 id="pk-chaining"><code>pk</code> chaining</h2>
+<pre><code class="language-yaml"># Single PK lookup
+formula: &#39;pk(customer_id).{DATASET_CUSTOMERS}.tier&#39;
+
+# Composite PK — all columns required
+formula: &#39;pk(brand_id, tag_id).{DATASET_PRODUCTS}.state&#39;
+</code></pre>
+<p><strong>Arity rule</strong>: the number of keys inside <code>pk(...)</code> must match the number of dimension fields in the target dataset&#39;s <code>dimension:</code>. A mismatch produces <code>expect N expr(s) to query dataset X using pk, but got M</code> (see <a href="reference--troubleshooting--README.html">Troubleshooting index</a> P65).</p>
+<p><strong>Nested chains</strong>: a column derived from one <code>pk()</code> chain may serve as the key in another <code>pk()</code> chain. The compiler traces the derive chain and emits the corresponding nested <code>LEFT JOIN</code>s. This is the native way to model &quot;lookup an attribute, then use that attribute to look up another attribute&quot; without <code>sql:</code> or <code>after:</code>.</p>
+<pre><code class="language-yaml"># fact dataset
+columns:
+    store_id:
+    # First hop: store_id → Dim Customer → hq_id
+    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
+    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
+    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+</code></pre>
+<p>Same-file forward references are supported in the checked build, including column dependencies and <code>pk()</code> targets. Keep dependency-first order for readability. Includes have a separate visibility boundary; see <a href="reference--model-composition.html">model composition</a>.</p>
+<p><a id="410-after-clause"></a></p>
+<h2 id="after-clause"><code>after:</code> clause</h2>
+<p><code>after:</code> is optional. Without it, the compiler orders ascending by the
+compiler-resolved <strong>visible output columns</strong> that represent the query dimension fields, in
+resolved dimension-field order. A hidden dimension field may therefore be ordered through a visible
+query-column alias rather than its authored field name. With no effective output
+dimension, no row order is promised. An omitted NULL-order modifier uses the target
+dialect&#39;s default.</p>
+<p>Any <code>after:</code> block takes ownership of the final result order. In particular,
+<code>select * from {QUERY}</code> without its own <code>ORDER BY</code> removes the compiler&#39;s default order.
+Use <code>after:</code> only when a business-significant custom direction, NULL ordering, tie-break,
+measure/expression order, or TOP/LIMIT differs from the default. Don&#39;t re-aggregate:</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    columns:
+        dimension: [product]
+        sales:
+    after: &#39;select * from {QUERY} ORDER BY sales DESC LIMIT 10&#39;
+</code></pre>
+<p>When <code>after:</code> is present, <code>{QUERY}</code> is mandatory: it names the compiled query result consumed by the post-query statement. “Ordering only” means no business logic beyond this wrapper plus ORDER BY/TOP/LIMIT. Structured compile output exposes the final decision as <code>effectiveOutputOrder</code>; semantic manifests expose the same object under each <code>queryContracts[]</code> entry. The upstream compiler emits a <code>redundant ORDER BY</code> warning when an authored order matches the query&#39;s default output order. Follow its contextual hint: remove only the redundant <code>ORDER BY</code> clause when other important <code>after:</code> processing remains; remove the entire block only when nothing else remains.</p>
+<p>The machine contract uses <code>status: known</code> with <code>source: default_dimension_order | explicit_after | none</code> and ordered <code>items</code> containing
+<code>expression</code>, <code>direction: asc | desc</code>, and <code>nullOrdering: dialect_default | first | last</code>. A manifest query that cannot compile uses
+<code>status: unavailable</code> (with a reason) and does not guess items. <code>explicit_after</code>
+is retained even when the post-query SQL has no <code>ORDER BY</code>, making the absence
+of a final order an explicit result of the authored block. For the <code>.sql</code> Model
+Query compile surface, the same <code>explicit_after</code> protocol bucket denotes an
+authored top-level <code>ORDER BY</code>; otherwise a compiled final order is classified as
+<code>default_dimension_order</code>.</p>
+<p><strong>Wrong</strong>: Re-aggregating with <code>group by</code> in <code>after:</code> on a standard measure query. Let the query block aggregate measures.</p>
+<p><a id="411-allows-all"></a></p>
+<h2 id="allows-all"><code>allows: ALL</code></h2>
+<p>To permit the compiler to consider all compatible materializations:</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - dt_date
+        sales:
+</code></pre>
+<p><code>allows:</code> controls eligible materializations. <code>ALL</code> permits candidates; <code>NONE</code> disables their use; explicit names constrain candidates. Eligibility still depends on grain and filter compatibility. It does not relax measure <code>dimensions:</code> or grant arbitrary query grain. See <a href="reference--materialization.html">materialization declarations</a>.</p>
+<p><a id="412-yaml-syntax-pitfalls"></a></p>
+<h2 id="yaml-syntax-pitfalls">YAML syntax pitfalls</h2>
+<ul>
+<li><strong>Quote formulas</strong> containing <code>:</code>, <code>{</code>, or <code>-</code>: <code>formula: &#39;SUMIF(...)&#39;</code></li>
+<li><strong>Dimension field under <code>measures:</code></strong>: Wrong — declare under <code>dimension:</code> only</li>
+<li><strong><code>dataset:</code> on composite measures</strong>: Wrong — omit <code>dataset:</code> when formula references other measures</li>
+<li><strong>Mismatched dimension field names across datasets</strong>: Align to one name (e.g. <code>tag_id</code>) and map in <code>columns:</code></li>
+</ul>
+</main></html>

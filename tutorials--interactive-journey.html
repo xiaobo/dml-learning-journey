@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build a regional report with the interactive tutorial · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="build-a-regional-report-with-the-interactive-tutorial">Build a regional report with the interactive tutorial</h1>
+<p>We will build a February sales report with completed sales, a previous-month comparison, average customer sales, and regional share. Open <a href="index.html">A small journey through DML</a> in a browser. Keep the page and its sibling files together for offline use.</p>
+<p>Use the button beneath the introduction to start or resume at your next incomplete chapter.</p>
+<p>The tutorial calculates invented rows in your browser. It does not compile arbitrary DML or connect to a database. Recorded companion queries include real compiler output. We will download a complete project at the end.</p>
+<h2 id="1-identify-each-source-row">1. Identify each source row</h2>
+<p>Read the four sales in chapter 1. Find the two North rows. Choose <code>[id]</code> as the source dimension and check your answer.</p>
+<p>The feedback explains why region is a grouping field rather than a unique source key. The progress indicator now shows one completed chapter.</p>
+<h2 id="2-find-an-atomic-measure">2. Find an atomic measure</h2>
+<p>Read the model declaration in chapter 2. Select the measure that sums a source column and check the answer. We now have reusable definitions for sales and row count.</p>
+<h2 id="3-reuse-measures-in-a-formula">3. Reuse measures in a formula</h2>
+<p>Read <code>DIVIDE({sales}, {cnt})</code> in chapter 3. For North, calculate 30 ÷ 2 = 15 and check your answer. The same formula gives 100 ÷ 4 = 25 for all four sales. A measure reference takes its value from the report&#39;s current grouping and filters.</p>
+<p>Expand the complete declaration to see how a composite measure reuses atomic measures without a <code>dataset:</code> property.</p>
+<h2 id="4-change-the-grouping">4. Change the grouping</h2>
+<p>Select <strong>All sales</strong>, <strong>By region</strong>, and <strong>By sale</strong> in chapter 4. Watch the query, result table, and average calculation change together. All sales gives 100 and an average of 25. The regional view gives North 30 and South 70.</p>
+<p>Click <code>average_sale</code> in the query to see its model declaration. Under <strong>References</strong>, open <code>sales</code> and then <code>amount</code> to trace the source column, or open <code>cnt</code> to see the row-count formula. Click a grouping field to inspect its column mapping. Close the definition with <strong>×</strong> or Escape.</p>
+<p>Answer the question about the source dimension. It remains <code>[id]</code> throughout. At source-key grain the checked compiler reports an aggregation-simplification finding; that simplification relies on the declared key being unique.</p>
+<h2 id="5-separate-compilation-from-execution">5. Separate compilation from execution</h2>
+<p>Follow the model-and-query diagram in chapter 5. Choose what a successful compile produces and check the answer. Then trace the separate checks: inspect compiled SQL, validate reached source keys and SQL planning on a connection, and compare executed results with an independent answer.</p>
+<h2 id="6-compare-report-filters-and-measure-filters">6. Compare report filters and measure filters</h2>
+<p>Open the eight-row source table in chapter 6. Our original four sales now belong to February. Four January rows provide comparison history. Inspect the complete extended model.</p>
+<p>Select <strong>North</strong> as the report region. The result shows <code>sales = 30</code> and <code>completed_sales = 10</code>: one North sale is returned. Find <code>+f</code> in the <code>completed_sales</code> definition, then check the chapter exercise.</p>
+<h2 id="7-choose-a-denominator">7. Choose a denominator</h2>
+<p>Keep <strong>North</strong> selected in chapter 7. With <code>-d: region</code>, the denominator is 30 and the share is 100%. Switch to <code>-df: region</code>. The denominator becomes 100 and the share becomes 30%.</p>
+<p>Inspect the recorded compiler query and its strict findings. Check the exercise about retaining an all-region denominator. The report still selects North; the denominator reference has a different filter context.</p>
+<h2 id="8-calculate-at-customer-grain">8. Calculate at customer grain</h2>
+<p>Select <strong>AVG</strong> in chapter 8. Find South customer C&#39;s total of 70 in stage 1. Stage 2 averages that one customer total, giving 70. Average transaction amount is 35 because it averages two source transactions.</p>
+<p>Switch the outer aggregate to <strong>SUM</strong>, then <strong>MAX</strong>. Observe both stages and the formula. Return to <strong>AVG</strong> and check the exercise.</p>
+<h2 id="9-compare-adjacent-months">9. Compare adjacent months</h2>
+<p>Read the two model definitions shown in chapter 9. <code>previous_sales</code> uses <code>{sales: pp}</code> for the previous month&#39;s value; <code>sales_change</code> uses <code>{sales: pop}</code> for growth. Select <strong>February 2025</strong>. North has sales of 30, previous sales of 20, and growth of 50%. South has sales of 70, previous sales of 50, and growth of 40%.</p>
+<p>Select <strong>January 2025</strong>. Previous sales and growth are NULL because the example has no December facts. Check which period <code>pp</code> requests. Inspect the recorded companion query before treating its expected strict findings as resolved.</p>
+<h2 id="10-break-and-repair-a-lookup-key">10. Break and repair a lookup key</h2>
+<p>In chapter 10, enable <strong>Add an invalid second North directory row</strong>. Four facts become six joined rows. North&#39;s amounts now sum to 60.</p>
+<p>Disable the duplicate. Four facts again produce four joined rows and North totals 30. Check the exercise about source uniqueness. The compiler snapshot does not inspect these physical records.</p>
+<p>To check the keys on a database connection, expand <strong>Catch the duplicate key with dmlc</strong> in chapter 10. Save its manager lookup query as <code>lookup.sql</code> beside the downloaded model. The query must reach <code>regions</code> for its dimension to be checked. Replace <code>default</code> with the connection containing your sample tables, then run:</p>
+<pre><code class="language-powershell">dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json
+</code></pre>
+<p>If that connection&#39;s <code>DIM_REGION</code> contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for <code>regions</code>. Correct the dataset dimension declaration or source data, then rerun validation. MCP clients use <code>run_query</code> with <code>validateOnly: true</code>. The browser toggle changes only this page&#39;s invented data. Validation reads the connected data, checks reached dataset dimensions, and probes the main query with EXPLAIN without executing its result rows.</p>
+<h2 id="11-make-missing-value-behavior-explicit">11. Make missing-value behavior explicit</h2>
+<p>In chapter 11, switch from <strong>Keep NULL</strong> to <strong>Use a literal zero fallback</strong>. The same January result groups remain. Only the prior-period value changes from NULL to 0.</p>
+<p>Read the filled measure formula and check what changes in January. The fallback supplies a value where that measure is used. It does not generate new calendar rows or decide the business meaning of missing history.</p>
+<h2 id="12-build-and-download-the-final-report">12. Build and download the final report</h2>
+<p>Chapter 12&#39;s <strong>Try it</strong> exercise asks you to build February&#39;s report for both regions. Select February, group by region, and include all regions. Select completed sales, previous sales, average customer sales, and all-region share. Sales is already selected.</p>
+<p>Compare <strong>Model notebook · model.dml</strong> with <strong>Your question · query.sql</strong> below the controls. The notebook excerpt shows your selected measures and their dependencies. Expand the complete notebook or download <code>model.dml</code> to inspect the source dataset declarations. The result table follows both panes.</p>
+<p>Choose <strong>Check chapter 12</strong> beside the report controls. If a setting is missing, follow the feedback and try again, or choose <strong>Show explanation</strong> for guidance. Completing this exercise marks the twelfth stop complete. The completed configuration shows these expected example values:</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>sales</th>
+<th>completed_sales</th>
+<th>previous_sales</th>
+<th>average_customer_sales</th>
+<th>all_region_share</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td>30</td>
+<td>10</td>
+<td>20</td>
+<td>15</td>
+<td>0.3</td>
+</tr>
+<tr>
+<td>South</td>
+<td>70</td>
+<td>70</td>
+<td>50</td>
+<td>70</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+<p>The browser formats shares as percentages. The model and downloaded expected-result CSV contain decimal shares.</p>
+<p>Choose <strong>Download the checked project</strong>. Extract the <a href="lesson-files.zip">project archive</a> to a writable directory. Open its <code>START-HERE.txt</code>. The archive contains the complete model, final query, source CSVs, expected result, recorded compiler output, and optional SQL Server setup with a calendar table.</p>
+<p>To save a different report configuration, choose <strong>Download my query.sql</strong>. Only the recorded companion queries have the included compiler evidence. Other builder combinations still need compilation and SQL inspection.</p>
+<h2 id="compile-the-downloaded-project">Compile the downloaded project</h2>
+<p>With <code>dmlc.exe</code> available, open a terminal in the extracted directory and run these commands:</p>
+<pre><code class="language-powershell">dmlc.exe --lint model.dml --output-format=json
+dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
+</code></pre>
+<p>Inspect the diagnostics and generated SQL. The recorded capstone query has a key-union join warning, <code>status: findings</code>, and exit 1. This is an expected observation, not a passed strict check. Check result membership, unmatched comparison keys, customer-grain aggregation, and the final projection before using the SQL.</p>
+<p>For optional database practice, use a new empty SQL Server database and review <code>setup-mssql.sql</code>. It creates the source tables and the calendar required by the time-comparison SQL. Validate the keys, execute the generated SQL, and compare every result value with <code>expected.csv</code>. This live database exercise has not been run as part of the documentation checks.</p>
+<p>For connection and validation commands, follow <a href="how-to--compile-and-validate.html">Compile and validate a query</a>. The <a href="reference--README.html">language reference</a> covers more advanced windows, classifiers, materializations, and model composition after this beginner project.</p>
+<h2 id="resume-or-restart">Resume or restart</h2>
+<p>Use the globe and language selector in the fixed header to switch between English, 中文, 日本語, and Deutsch. Each language keeps its own name, so you can find it without reading the current page language. The twelve lessons, questions, explanations, navigation, and feedback change together. Your answers, report settings, and completed chapters stay in place. The browser remembers your language separately from your progress. Code, field names, source values, and the downloadable project retain their original identifiers.</p>
+<p>The fixed header shows your current chapter. Use its arrows to move between lessons, or open the chapter title to see all twelve chapters and your completed count. A check mark identifies completed chapters. At the final chapter, the return arrow opens the introduction.</p>
+<p>Correct exercise answers save progress in this browser when local storage is available. Choose <strong>Resume learning</strong> in the chapter menu to find the next incomplete chapter. Progress stays on this device; the page sends no learner data to a server.</p>
+<p>Choose <strong>Reset progress</strong> at the bottom of the chapter menu to clear completed exercises. If browser storage is unavailable, the lessons still work for the current page session.</p>
+<p>Maintainers can reproduce the stored compiler checks from the skills workspace:</p>
+<pre><code class="language-powershell">node dml-dmx/scripts/verify-tutorial.cjs dml-dmx/scripts/dmlc-mcp/dmlc.exe
+</code></pre>
+<p>Translation catalogs live in <code>explanation/visual-introduction/locales/</code>. Run <code>node dml-dmx/scripts/check-visual-locales.cjs</code> after changing them to check coverage, placeholders, inline code, and links.</p>
+<p>The runner writes fresh observations to an OS temporary directory. Review a changed executable fingerprint, diagnostic, status, or SQL shape before updating the <a href="compiler-observations.json">stored observations</a>.</p>
+</main></html>

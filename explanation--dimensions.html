@@ -1,0 +1,216 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dimension semantics and derived grain · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dimension-semantics-and-derived-grain">Dimension semantics and derived grain</h1>
+<p>Use this guide to reason about dimension behavior when modeling datasets, writing measures, compiling queries, or diagnosing row multiplication. It explains the language model; the normative reference remains <a href="reference--semantics.html">DML evaluation semantics</a>.</p>
+<h2 id="1-the-object-model">1. The object model</h2>
+<p>A <strong>dimension field</strong> is one named DML field.</p>
+<p>A <strong>dimension</strong> is a list containing one or more dimension fields.</p>
+<p>Examples:</p>
+<pre><code class="language-text">[order_id]
+[order_id, line_id]
+[product_id, dt_month]
+</code></pre>
+<p>Each line above is one dimension. <code>[product_id, dt_month]</code> is one dimension containing two fields.</p>
+<p>Measure <code>dimensions:</code> has one additional list level because it can contain alternative allowed dimensions:</p>
+<pre><code class="language-yaml">dimensions:
+  - [customer_id]
+  - [account_id, dt_month]
+</code></pre>
+<p>The outer list contains two allowed dimensions. Each inner list is one dimension.</p>
+<p>A grand total has no dimension. In measure-modifier syntax, <code>{dimension: []}</code> clears the evaluation dimension to request that context; the empty list is an operation, not a zero-field dimension.</p>
+<h2 id="2-the-five-dimension-roles">2. The five dimension roles</h2>
+<p>The list structure is the same, but its DML location determines its behavior:</p>
+<table>
+<thead>
+<tr>
+<th>DML location</th>
+<th>Role</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dataset <code>dimension:</code></td>
+<td>Dataset dimension</td>
+<td>Declares the dimension fields whose complete value combination identifies one source row.</td>
+</tr>
+<tr>
+<td>Formula plus dimension modifiers</td>
+<td>Evaluation dimension</td>
+<td>Determines the dimension at which one measure reference is evaluated.</td>
+</tr>
+<tr>
+<td>Query <code>GROUP BY</code> or <code>columns.dimension</code></td>
+<td>Query dimension</td>
+<td>Groups the returned rows and determines what one result row represents.</td>
+</tr>
+<tr>
+<td>Materialize <code>dimension:</code></td>
+<td>Materialization dimension</td>
+<td>Defines the grouping and key of the materialized relation.</td>
+</tr>
+<tr>
+<td>Measure <code>dimensions:</code></td>
+<td>Allowed dimensions</td>
+<td>Constrains the alternative dimensions at which the measure may be evaluated. It does not declare source identity or query grouping.</td>
+</tr>
+</tbody></table>
+<p>These roles are not interchangeable. For example, adding <code>[region]</code> to a measure&#39;s <code>dimensions:</code> does not add <code>region</code> to a query result. The query still needs <code>GROUP BY region</code> or <code>columns.dimension: [region]</code>.</p>
+<h2 id="3-grain-is-derived-from-a-dimension">3. Grain is derived from a dimension</h2>
+<p><strong>Grain</strong> describes what one row represents after a dimension is applied in a specific context.</p>
+<table>
+<thead>
+<tr>
+<th>Context</th>
+<th>Dimension</th>
+<th>Derived grain</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Order-line dataset</td>
+<td><code>[order_id, line_id]</code></td>
+<td>One source row per order line</td>
+</tr>
+<tr>
+<td>Monthly product query</td>
+<td><code>[product_id, dt_month]</code></td>
+<td>One result row per product and month</td>
+</tr>
+<tr>
+<td>Customer evaluation</td>
+<td><code>[customer_id]</code></td>
+<td>One intermediate value per customer</td>
+</tr>
+<tr>
+<td>Monthly account materialization</td>
+<td><code>[account_id, dt_month]</code></td>
+<td>One materialized row per account and month</td>
+</tr>
+</tbody></table>
+<p>Dimension is the language contract; grain is the row meaning produced by that contract. Use grain to compare row meanings, reason about fan-out, or explain why two dimensions are incompatible. Do not use a desired reporting grain as a substitute for source-row identity.</p>
+<p>Adding a dimension field usually produces a finer grain, and removing one usually produces a coarser grain. That intuition is not sufficient proof of compatibility: field derivation, time relationships, measure constraints, and dataset boundaries still matter. Let the compiler validate the declared relationship.</p>
+<h2 id="4-dataset-dimension-source-row-identity">4. Dataset dimension: source-row identity</h2>
+<p>The dataset dimension contains the fields that identify one physical source row:</p>
+<pre><code class="language-yaml">Order Line:
+    type: dataset
+    table: tabOrderLine
+    dimension: [order_id, line_id]
+    columns:
+        order_id:
+        line_id:
+        product_id:
+        net_amount:
+</code></pre>
+<p>Uniqueness applies to the complete <code>[order_id, line_id]</code> value combination. <code>order_id</code> may repeat across lines, and <code>line_id</code> may repeat across orders, while the complete dataset dimension remains unique.</p>
+<p>Do not replace the physical identity with a repeatable business grouping. If the source contains several ledger entries for the same <code>[account_id, invoice_id]</code>, that list is not a valid dataset dimension even when reports commonly group by it. Use the physical entry key as the dataset dimension and <code>[account_id, invoice_id]</code> as a query or materialization dimension.</p>
+<p><code>pk(...)</code> relies on the target dataset dimension:</p>
+<ul>
+<li>the lookup arguments correspond to the target dimension fields;</li>
+<li>their arity and meaning must match that dimension;</li>
+<li>one lookup must match at most one target row.</li>
+</ul>
+<p>The compiler trusts this contract and may lower a lookup to a <code>LEFT JOIN</code>. Duplicate target keys can therefore multiply rows and measures. Adding <code>DISTINCT</code> or <code>GROUP BY</code> to compiled SQL does not repair the model contract.</p>
+<h2 id="5-query-dimension-result-grouping">5. Query dimension: result grouping</h2>
+<p>In Model Query SQL:</p>
+<pre><code class="language-sql">SELECT dt_month, product_id, AGG(net_sales)
+FROM MODEL
+GROUP BY dt_month, product_id
+</code></pre>
+<p>The query dimension is <code>[dt_month, product_id]</code>. Each result row represents one month and product value combination.</p>
+<p>In DML-format Query, the equivalent role is explicit:</p>
+<pre><code class="language-yaml">Monthly Product Sales:
+    type: query
+    columns:
+        dimension: [dt_month, product_id]
+        net_sales: &quot;{net_sales}&quot;
+</code></pre>
+<p>A query without grouping has no query dimension and returns a grand-total context when its measures permit one.</p>
+<p>When compatible measures come from different datasets, the compiler aggregates each measure independently to the query grain and then combines the results using shared dimension fields. This avoids the usual aggregate fan-out caused by joining detail rows first. It does not remove the need for valid dataset dimensions or unique <code>pk(...)</code> lookups.</p>
+<p>A query-dimension field may also be a <strong>measure-as-dimension</strong>: a measure result used as a query-dimension field (often bound with <code>{name: {+d: dim}}</code>). That is still a query-dimension role, not dataset <code>dimension:</code> identity. Authoring contract: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>
+<h2 id="6-evaluation-dimension-one-measure-reference">6. Evaluation dimension: one measure reference</h2>
+<p>The query dimension supplies the starting context for a measure reference. Formula structure, allowed dimensions, and modifiers determine its effective evaluation dimension.</p>
+<p>Given query dimension <code>[dt_month, region, brand]</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Measure reference</th>
+<th>Dimension operation</th>
+<th>Resulting evaluation dimension</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{sales}</code></td>
+<td>No dimension modifier</td>
+<td>Resolved target dimension</td>
+</tr>
+<tr>
+<td><code>{sales: {+d: customer_id}}</code></td>
+<td>Add dimension field <code>customer_id</code></td>
+<td><code>[dt_month, region, brand, customer_id]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {-d: brand}}</code></td>
+<td>Remove dimension field <code>brand</code></td>
+<td><code>[dt_month, region]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {dimension: [region]}}</code></td>
+<td>Replace the complete dimension</td>
+<td><code>[region]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {dimension: []}}</code></td>
+<td>Clear the dimension</td>
+<td>Grand-total context</td>
+</tr>
+</tbody></table>
+<p>These operations affect only that measure reference; they do not change the query <code>GROUP BY</code>.</p>
+<p><code>-d</code> removes a dimension field but retains a query filter on that field when the compiler pushes filters to the dataset. <code>-df</code> removes the field and blocks its related filter propagation for that reference. Use the latter when a denominator must include values excluded by the query filter. See <a href="reference--modifiers.html">Measure modifiers</a> for syntax and filter behavior.</p>
+<h2 id="7-allowed-dimensions-measure-validity">7. Allowed dimensions: measure validity</h2>
+<p>Measure <code>dimensions:</code> restricts valid evaluation dimensions when the business definition requires it:</p>
+<pre><code class="language-yaml">Revenue per Customer:
+    type: measure
+    formula: DIVIDE({net_sales}, {active_customers})
+    dimensions:
+      - [customer_id]
+</code></pre>
+<p><code>[customer_id]</code> is one closed allowed dimension. It constrains evaluation; it does not identify dataset rows and does not group query output.</p>
+<p>An ellipsis permits additional dimension fields while keeping the listed fields required:</p>
+<pre><code class="language-yaml">dimensions:
+  - [customer_id, ...]
+</code></pre>
+<p>This accepts compatible evaluation dimensions that contain <code>customer_id</code>. Omitting measure <code>dimensions:</code> permits any dimension compatible with the measure and its dataset dependencies.</p>
+<p>If a formula needs a required dimension field that the query does not provide, add it to the relevant measure reference with <code>+d</code> and perform the required outer aggregation. Do not add a query grouping merely to satisfy an intermediate calculation.</p>
+<h2 id="8-materialization-dimension-stored-output-identity">8. Materialization dimension: stored output identity</h2>
+<p>A materialization dimension declares the grouping and key of stored results:</p>
+<pre><code class="language-yaml">Monthly Account Balance:
+    type: materialize
+    dimension: [account_id, dt_month]
+    measures: [closing_balance]
+</code></pre>
+<p><code>dimension_columns:</code> are functionally dependent attributes carried with those keys. They are not additional fields in the materialization dimension. If an attribute is derivable from the materialization dimension, keep it in <code>dimension_columns:</code> rather than changing the stored row identity.</p>
+<h2 id="9-compatibility-and-validation">9. Compatibility and validation</h2>
+<p>Compilation checks the declared model contract:</p>
+<ul>
+<li>dimension fields resolve through the relevant datasets and column macros;</li>
+<li>evaluation dimensions satisfy measure <code>dimensions:</code> constraints;</li>
+<li>modifiers can produce a valid evaluation dimension;</li>
+<li>measures from different datasets support the query dimension;</li>
+<li>time modifiers have the required active time field.</li>
+</ul>
+<p>Compilation does not connect to live data and cannot prove dataset dimension uniqueness.</p>
+<p>Run <code>validateOnly</code> when current evidence is missing or stale. For the compiled query, it runs the generated dataset-key checks on the selected connection and checks database acceptance and planning of the main query through <code>EXPLAIN</code>; it does not execute the main result rows.</p>
+<p>Validation evidence covers the model and query contract, connection, and source state observed at validation time. A relevant model change, source refresh, key-policy change, or connection change makes that evidence stale.</p>
+<p>If validation reports <code>DIMENSION_NOT_UNIQUE</code>, fix the source key, dataset dimension, overlapping ranges, or source data. If a validation query cannot execute or returns a malformed result, handle <code>VALIDATION_QUERY_FAILED</code> separately; it is not evidence of duplicate keys.</p>
+<p>Validation proves neither business correctness nor parity with a trusted report. When migrating an existing query, compare both results on the same filters, time window, and query dimension.</p>
+<h2 id="10-authoring-workflow">10. Authoring workflow</h2>
+<p>The <a href="how-to--build-analysis.html">forward-analysis workflow</a> applies these roles to model and query changes. <a href="how-to--compile-and-validate.html">Use the dmlc CLI</a> covers compilation and live validation.</p>
+<h2 id="related-references">Related references</h2>
+<ul>
+<li>Quick orientation: <a href="explanation--core-concepts.html">DML, DMX, and Model Query</a></li>
+<li>Measure-as-dimension: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a></li>
+<li>Normative language semantics: <a href="reference--semantics.html">DML evaluation semantics</a></li>
+<li>Measures and allowed dimensions: <a href="reference--measures.html">Measure declarations</a></li>
+<li>Dimension modifiers: <a href="reference--modifiers.html">Measure modifiers</a></li>
+<li>Model Query syntax: <a href="reference--model-query-sql.html">Model Query SQL</a></li>
+<li>Failure patterns: <a href="reference--troubleshooting--README.html">Troubleshooting index</a></li>
+<li>Worked model/query examples: <a href="reference--examples--README.html">Examples by task</a></li>
+</ul>
+</main></html>

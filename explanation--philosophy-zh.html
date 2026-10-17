@@ -1,0 +1,507 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 理念与场景 · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-理念与场景">DML 理念与场景</h1>
+<blockquote>
+<p>DML的<strong>核心概念、设计哲学与适用场景</strong>。<br>用途：对外叙述、新人 onboarding、产品与工程对齐「DML 是什么 / 不是什么」。</p>
+</blockquote>
+<hr>
+<h2 id="1-一句话定位">1. 一句话定位</h2>
+<p><strong>DML 把「指标是什么意思」和「查询在数仓里怎么正确执行」绑成一份可版本化的代码资产，供人、BI 和 Agent 统一消费。</strong></p>
+<table>
+<thead>
+<tr>
+<th>问题域</th>
+<th>Palantir Ontology</th>
+<th>DML</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>核心问句</td>
+<td>组织如何在业务对象上<strong>决策并行动</strong>？</td>
+<td>组织如何<strong>稳定定义、计算、解释</strong>业务数字？</td>
+</tr>
+<tr>
+<td>闭环类型</td>
+<td>观察 → 决策 → <strong>行动</strong> → 写回源系统</td>
+<td>定义 → 编译 → <strong>查数</strong> → 解释变化</td>
+</tr>
+</tbody></table>
+<p>DML 不是「小 Palantir」，而是<strong>语义执行基础设施</strong>（Semantic Execution Layer）：在客户已有数仓之上，承担指标语义 + 查询编译 + 多终端消费。</p>
+<hr>
+<h2 id="2-核心概念">2. 核心概念</h2>
+<h3 id="21-概念总览">2.1 概念总览</h3>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>含义</th>
+<th>与 Ontology 的近似关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dataset（数据集）</strong></td>
+<td>业务实体绑定物理表，声明一个 dimension 与若干列</td>
+<td>Object 的<strong>分析切片</strong>（非可操作对象）</td>
+</tr>
+<tr>
+<td><strong>Measure（指标）</strong></td>
+<td>可复用度量，分 <strong>atomic</strong>（绑定 dataset）与 <strong>composite</strong>（引用其他 measure）</td>
+<td>常对应属性聚合或 KPI 定义</td>
+</tr>
+<tr>
+<td><strong>Dimension field（维度字段）</strong></td>
+<td>一个有名称的 DML 字段</td>
+<td>构成 dimension 的字段</td>
+</tr>
+<tr>
+<td><strong>Dimension（维度）</strong></td>
+<td>由一个或多个 dimension fields 组成的列表；按上下文承担 dataset、evaluation、query 或 materialization 角色；measure <code>dimensions:</code> 包含 allowed dimensions</td>
+<td>声明身份、计算、分组或输出 key</td>
+</tr>
+<tr>
+<td><strong>Grain（行粒度）</strong></td>
+<td>一行代表什么；仅在比较粗细、兼容性或 fan-out 时需要</td>
+<td>说明不同 dimension 上下文之间的行语义</td>
+</tr>
+<tr>
+<td><strong>DMX（指标表达式）</strong></td>
+<td>表达式语言：<code>{ref}</code>、修饰符、<code>pk()</code>、<code>{Dataset}.col</code> 等，支持跨数据集关联（凡 <code>format: formula</code> 处均可写）</td>
+<td>指标计算与跨集引用子语言</td>
+</tr>
+<tr>
+<td><strong>Materialize（物化）</strong></td>
+<td>预聚合层 / 存储过程</td>
+<td>语义模型与物理性能的桥梁</td>
+</tr>
+<tr>
+<td><strong>Query（模型查询）</strong></td>
+<td><strong>两种等价语法</strong>：<code>type: query</code>（DML format）与 Model Query SQL（<code>.sql</code>）</td>
+<td>消费层；语义相同</td>
+</tr>
+<tr>
+<td><strong>Compile &amp; Execute</strong></td>
+<td><code>dmlc</code> 编译为方言 SQL，经 JDBC/MCP 执行</td>
+<td>DML 的「运行时」是编译器 + 执行器</td>
+</tr>
+</tbody></table>
+<h3 id="22-两层结构--dmx">2.2 两层结构 + DMX</h3>
+<pre><code>① 模型定义（.dml YAML）  →  datasets（含 columns）、measures、materialize、dt/fn-macros
+② 模型查询（两种等价语法）  →  type: query（DML format）  ⇔  Model Query SQL（.sql）
+   DMX 贯穿 ① 与 ② — 表达式语言：{ref}、修饰符、pk()、{Dataset}.col
+</code></pre>
+<p><strong>分离原则：</strong> <em>测什么</em>（建模）与 <em>查什么</em>（消费）分开；建模与查询均共享 <strong>DMX</strong>。<br>同一笔模型查询用 YAML 或 SQL 书写，<strong>编译语义等价</strong>（见 <a href="reference--model-query-sql.html">Model Query SQL</a>）。</p>
+<p>语言细节见 <a href="explanation--core-concepts.html">DML, DMX, and Model Query</a>（含 DMX 概述、grain、system variables）。</p>
+<h3 id="23-measureatomic-与-composite">2.3 Measure：atomic 与 composite</h3>
+<p><strong>Measure</strong> 是单一领域类型（<code>type: measure</code>），按是否绑定 dataset 分为 <strong>atomic</strong>（绑定 dataset，使用列）与 <strong>composite</strong>（无 <code>dataset:</code>，引用其他 measure）两类。</p>
+<p><strong>建模纪律：</strong> 先 atomic 后 composite；不重复 <code>SUM()</code>；composite 不写 <code>dataset:</code>（pitfall P39）。</p>
+<p>完整定义、示例与 <code>dimensions:</code> 约束见 <a href="reference--measures.html">Measure declarations</a>。</p>
+<h3 id="231-dataset-列column-与-calculated-column">2.3.1 Dataset 列：column 与 calculated column</h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>YAML</th>
+<th>含义</th>
+<th>IDE hover</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>column</strong></td>
+<td><code>产品名称:</code>（无表达式）</td>
+<td>直接引用底层表列；编译器称 <strong>direct reference</strong></td>
+<td><code>column</code></td>
+</tr>
+<tr>
+<td><strong>calculated column</strong></td>
+<td><code>净额: amount - discount</code> 或多行块</td>
+<td>带公式/映射的派生列</td>
+<td><code>calculated column</code></td>
+</tr>
+</tbody></table>
+<h3 id="24-跨数据集引用dmx-语法">2.4 跨数据集引用（DMX 语法）</h3>
+<p><code>pk()</code>、<code>{Dataset}.column</code> 是 <strong>DMX</strong> 公式语法，可用于一切 <code>format: formula</code> 处（dataset 列、measure 公式、column-macros、query 列/filter、materialize 列）。</p>
+<pre><code class="language-yaml"># dataset 列 — DMX
+brand_name: pk({brand_id}).BASE_DICT_ITEM(dict_item_id).item_name
+
+# column-macros — 向 dataset 追加列，非独立领域对象
+column-macros:
+    DATASET_SALES:
+        客户城市: &#39;{DATASET_CUSTOMER}.city&#39;
+</code></pre>
+<p>完整 DMX 语法（引用、修饰符、函数）见 <a href="reference--modifiers.html">Measure modifiers</a>。</p>
+<p>与 Palantir <strong>Link Type</strong> 的差异：DMX 链是<strong>可编译的 join 表达式</strong>；Palantir 是<strong>可浏览、可治理的图边 + 应用 API</strong>。<code>pk()</code> 解决键对齐后的关联，<strong>不替代</strong>跨系统实体解析（golden record）。</p>
+<hr>
+<h2 id="3-设计哲学五条信念">3. 设计哲学（五条信念）</h2>
+<h3 id="31-语义必须可执行不能只可描述">3.1 语义必须可执行，不能只可描述</h3>
+<p>指标若不能编译为数仓 SQL、不能经 JDBC/MCP 消费，就只是文档。<br>反对「昂贵可视化」：高成本建模却没有信任、解释、测试（参见对比研究中 Palantir 社区 #6703「只读镜像」失败模式）。</p>
+<h3 id="32-像代码一样治理语义">3.2 像代码一样治理语义</h3>
+<p>Git、PR、LSP（lint / completion / rename）、<code>dml_schema.yaml</code> 校验。<br>按<strong>领域</strong>或<strong>可信状态</strong>拆分为多个 <code>.dml</code>，由入口文件 <code>includes</code> 组合——certified / preview 用不同根模型切换。<br>语义是<strong>工程资产</strong>，不是一次性 GUI 配置——相对 Palantir 用户苦求的 IaC，这是 DML 的刻意优势。</p>
+<h3 id="33-dimension-在各执行阶段的作用">3.3 Dimension 在各执行阶段的作用</h3>
+<p>DML 在不同语法位置使用 dimension 表达不同契约：</p>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>声明位置</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dataset dimension</strong></td>
+<td><code>dataset.dimension[]</code></td>
+<td>声明源行身份；完整 dimension 的值组合必须在被消费的数据上标识一行</td>
+</tr>
+<tr>
+<td><strong>Evaluation dimension</strong></td>
+<td>measure 公式 + 修饰符</td>
+<td>一个 measure reference 在哪个 dimension 上计算</td>
+</tr>
+<tr>
+<td><strong>Query dimension</strong></td>
+<td><code>GROUP BY</code> / <code>columns: dimension:</code></td>
+<td>本次分析使用哪个 dimension 分组</td>
+</tr>
+<tr>
+<td><strong>Materialization dimension</strong></td>
+<td>materialize <code>dimension:</code></td>
+<td>物化关系的输出分组 / key</td>
+</tr>
+<tr>
+<td><strong>Allowed dimensions</strong></td>
+<td>measure <code>dimensions:</code></td>
+<td>多个可选的有效 dimension；每个内层列表是一个 dimension，不声明 dataset 身份或 query 分组</td>
+</tr>
+</tbody></table>
+<p>Dimension 决定所在上下文的 grain，也就是一行代表什么。例如，dataset dimension <code>[ledger_entry_id]</code> 声明 ledger-entry grain；query dimension <code>[account, dt_month]</code> 由两个 dimension fields 组成，产生更粗的月度账户 grain。</p>
+<p>Measure 是聚合定义（如 <code>SUM({amount})</code>）。一个 measure reference 的 evaluation dimension 由 query dimension、公式和修饰符共同决定。Measure 可以用 <code>dimensions:</code> 限制 allowed dimensions；未设置时，可在 dataset 能力范围内的兼容 query dimension 上计算。</p>
+<pre><code class="language-yaml">销售额:
+    type: measure
+    dataset: Sales
+  # dimensions 未写 → 由 query dimension 和公式/修饰符决定 evaluation dimension
+    formula: SUM({出厂价金额})
+
+仅按产品可查的毛利:
+    type: measure
+    dataset: Sales
+    formula: SUM({毛利})
+    dimensions:
+      - [product_id]   # one allowed dimension
+</code></pre>
+<p>DML 会根据 query dimension 先聚合各 dataset，避免典型的“先一对多 join，后聚合”fan-out。这一保证以模型契约成立为前提：编译器信任 dataset <code>dimension:</code> 和 <code>pk(...)</code> 匹配唯一性。用 <code>validateOnly</code> 在目标连接上检查完整 dataset dimension 的唯一性；失败时修正 dimension 声明、source key/ranges 或源数据，而不是在编译 SQL 外加 <code>DISTINCT</code> / <code>GROUP BY</code>。</p>
+<h3 id="34-复杂派生留在模型里">3.4 复杂派生留在模型里</h3>
+<p>同比/环比、比率、多阶段聚合、快照 vs 流量、财务月——应留在 <code>.dml</code>，不散落到 BI calculated field、应用代码或临时 SQL。<br><strong>模型是权威</strong>，不是遗留系统的只读镜像。</p>
+<h3 id="35-agent-是平等消费者">3.5 Agent 是平等消费者</h3>
+<p>MCP <code>run_query</code>、<code>structuredContent</code>、<code>next.actions</code>、<code>explain_change</code>，以及模型内 <code>description</code> / Agent playbook——Agent 与分析师走<strong>同一语义入口</strong>，不绕路裸 SQL。</p>
+<h3 id="36-边界信念同样重要">3.6 边界信念（同样重要）</h3>
+<ul>
+<li><strong>不做</strong>写回、Action、现场运营 UI —— 属 Ontology kinetic 层。  </li>
+<li><strong>不替代</strong>数据集成、MDM、血缘平台 —— 但消费其产出（干净表、对齐的键）用于 <code>pk()</code> 与 datasets。  </li>
+<li><strong>Context Layer</strong>（新鲜度、关账状态、实体解析、策略）与语义层分工：DML 负责<strong>算对</strong>；敢不敢用、该用哪口径，需元数据与治理外挂或演进。  </li>
+<li><strong>可信分层（现行）</strong>：按领域或可信状态（certified / preview / experimental）<strong>拆多个 <code>.dml</code> 文件</strong>，入口模型用 <code>includes</code> 组合可见指标集；生产与预览通过不同 <code>--model</code> / MCP <code>model</code> 切换。</li>
+</ul>
+<hr>
+<h2 id="4-架构位置">4. 架构位置</h2>
+<pre><code class="language-mermaid">flowchart TB
+  subgraph consume[&quot;消费方&quot;]
+    direction LR
+    BI[&quot;BI / JDBC&quot;]
+    CLI[&quot;dmlc CLI&quot;]
+    MCP[&quot;MCP Agent&quot;]
+  end
+
+  subgraph dml[&quot;DML 语义执行层&quot;]
+    subgraph qsrc[&quot;查询来源&quot;]
+      direction LR
+      REQ[&quot;业务需求&quot;]
+      SQL[&quot;遗留 SQL&quot;]
+    end
+
+    MQ[&quot;② 模型查询&lt;br/&gt;type: query ⇔ Model Query SQL&quot;]
+    DEF[&quot;① 模型定义&lt;br/&gt;.dml · datasets · measures · materialize · DMX&quot;]
+    COMP[&quot;dmlc 融合编译&lt;br/&gt;物化选路 · 方言宏&quot;]
+
+    REQ --&gt; MQ
+    SQL --&gt;|&quot;rewrite · edit&quot;| MQ
+    DEF --&gt; COMP
+    MQ --&gt; COMP
+  end
+
+  subgraph physical[&quot;物理数据层&quot;]
+    SRC[&quot;ERP / CRM / 文件&quot;] --&gt; WH[(&quot;数仓 ODS/DWD/DWS&quot;)]
+  end
+
+  WH -.-&gt;|&quot;物理表引用&quot;| DEF
+  COMP --&gt;|&quot;方言 SQL 执行&quot;| WH
+  COMP --&gt; BI
+  COMP --&gt; CLI
+  COMP --&gt; MCP
+</code></pre>
+<p><strong>DML 在栈中的角色：</strong> 介于物理数仓与各类分析消费者之间的<strong>语义 IR + 编译执行层</strong>。模型定义承载可复用指标语义（含物化策略）；模型查询表达「查什么」——可来自业务需求或遗留 SQL 改写；编译器融合二者、自动选路物化表，下推为数仓方言 SQL 后供人、BI 与 Agent 统一消费。</p>
+<hr>
+<h2 id="5-适用场景">5. 适用场景</h2>
+<h3 id="51-强匹配-">5.1 强匹配 ✅</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>典型痛点</th>
+<th>DML 提供什么</th>
+<th>社区验证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>统一指标平台</strong></td>
+<td>同一 KPI 在 SQL、BI、API、Agent 各写一遍</td>
+<td>一份 <code>.dml</code>，多端编译</td>
+<td>三社区共识：口径发散是头号痛点</td>
+</tr>
+<tr>
+<td><strong>复杂数仓 + 多层聚合</strong></td>
+<td>不知查日表还是月表</td>
+<td>materialize + 自动选路</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>经营 / 财务分析</strong></td>
+<td>同比、财务月、期末/累计口径不一</td>
+<td>DMX 修饰符与时间语义</td>
+<td>日语社区：KPI 定義の未整理が精度低下原因</td>
+</tr>
+<tr>
+<td><strong>口径争议 / 定义可追溯</strong></td>
+<td>「这个数按什么定义算的？」「preview 还是正式？」</td>
+<td>Git 模型、<code>description</code>、<code>includes</code> 分入口 + <strong>编译 SQL</strong>（可审计公式与执行路径）</td>
+<td>三社区共识：口径不透明导致不信任</td>
+</tr>
+<tr>
+<td><strong>变化归因</strong></td>
+<td>「为什么比上月多了/少了？」「哪个维度贡献最大？」</td>
+<td><strong><code>explain_change</code></strong>（方差分解、维度 driver、可选 PVM/LMDI）</td>
+<td>三社区共识：「为什么变了」是 2026 前沿</td>
+</tr>
+<tr>
+<td><strong>Analytics Engineering</strong></td>
+<td>建仓后仍需语义层与 API</td>
+<td>语义与执行一体（<code>dmlc</code>）</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>AI 数据分析 Agent</strong></td>
+<td>幻觉列名、口径漂移</td>
+<td>MCP + 模型 metadata</td>
+<td>三社区共识：语义层是 Agent 必要条件</td>
+</tr>
+<tr>
+<td><strong>嵌入式 / 多租户分析</strong></td>
+<td>产品内嵌报表</td>
+<td><code>jdbc:dmlc:</code> + connections</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Agent 自助分析（指标定义 × 查询）</strong></td>
+<td>ChatBI「单轮问答」；JOIN 曖昧さ；LLM 手写日期出错</td>
+<td>公式自由 + 零 JOIN 查询 + 14+ 修饰符 + 编译校验</td>
+<td>三社区验证：16.7%→83% 精度提升（经语义层）</td>
+</tr>
+</tbody></table>
+<h3 id="52-可用但需补齐-">5.2 可用但需补齐 ⚠️</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>缺口</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>多源实体未对齐</td>
+<td><code>pk()</code> 需键已对齐</td>
+<td>先 MDM 或接 Context Layer</td>
+</tr>
+<tr>
+<td>关账 / 新鲜度敏感</td>
+<td>语义层不表达 pipeline 状态</td>
+<td>metadata + catalog；Agent 先 probe</td>
+</tr>
+<tr>
+<td>认证指标 / 运行时权限</td>
+<td>字段级 <code>publishStatus</code> 在路线图</td>
+<td><strong>现行：</strong> 按 certified/preview 等<strong>拆 <code>.dml</code> 文件</strong>，入口模型用 <code>includes</code> 组合；MCP/CLI 指定不同 <code>--model</code> 切换可信边界</td>
+</tr>
+</tbody></table>
+<h3 id="53-弱匹配-">5.3 弱匹配 ❌</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>跨系统 <strong>写回</strong>（工单、调度、审批）</td>
+<td>无 Action / kinetic 层</td>
+</tr>
+<tr>
+<td>非技术用户的 <strong>对象探索 + 点选运营</strong></td>
+<td>无 Object Explorer 类 UI</td>
+</tr>
+<tr>
+<td><strong>实体解析</strong>为主（三系统同一客户）</td>
+<td>非 golden record 平台</td>
+</tr>
+<tr>
+<td>单表简单 BI</td>
+<td>过重；直连即可</td>
+</tr>
+<tr>
+<td>仅指标文档、不执行</td>
+<td>用 glossary / catalog 即可</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-与-palantir-ontology-对照">6. 与 Palantir Ontology 对照</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Palantir Ontology</th>
+<th>DML</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>隐喻</td>
+<td>组织 <strong>API + 操作系统</strong></td>
+<td>分析 <strong>编译器 + 语义 IR</strong></td>
+</tr>
+<tr>
+<td>核心动词</td>
+<td>create / update / <strong>act</strong></td>
+<td>define / compile / query / <strong>explain</strong></td>
+</tr>
+<tr>
+<td>关系</td>
+<td>Link Type（可浏览、可权限）</td>
+<td><code>pk()</code> / <code>{Dataset}.col</code>（可编译）</td>
+</tr>
+<tr>
+<td>治理</td>
+<td>运行时 RBAC、Ontology 分支</td>
+<td>Git + LSP +（演进）认证发布</td>
+</tr>
+<tr>
+<td>典型用户</td>
+<td>运营决策者、FDE、平台团队</td>
+<td>数据平台、分析工程、Agent 集成</td>
+</tr>
+<tr>
+<td>与遗留系统</td>
+<td>渐进吸收 + Action 写回</td>
+<td>语义权威 + 编译到现有数仓</td>
+</tr>
+</tbody></table>
+<p><strong>叠用关系：</strong> 数仓 / Ontology 产出干净表与对齐键 → DML 在其上建可治理指标层与 Agent 查数面。二者互补，非替代。</p>
+<hr>
+<h2 id="7-对外叙述模板">7. 对外叙述模板</h2>
+<h3 id="电梯稿中文">电梯稿（中文）</h3>
+<blockquote>
+<p>DML 是企业指标与查询的<strong>语义执行层</strong>。用开放 YAML 定义数据集、指标和物化策略，由 dmlc 编译到 Snowflake、Postgres、DuckDB 等，经 JDBC 与 MCP 为 BI 与 AI Agent 提供统一口径。它不在 ERP 里下单或改工单，但让「收入、同比、归因」在全公司<strong>只算一种、说得清、测得住</strong>。</p>
+</blockquote>
+<h3 id="与-ontology-的一句话区分">与 Ontology 的一句话区分</h3>
+<blockquote>
+<p><strong>Ontology 管名词怎么运营；DML 管数字怎么定义与执行。</strong></p>
+</blockquote>
+<h3 id="英文对外">英文（对外）</h3>
+<blockquote>
+<p>DML is a versioned semantic execution layer for metrics: define once in YAML, compile to your warehouse, consume via JDBC and MCP. It closes the read-analytics loop (define → query → explain), not the operational loop (observe → act → write back).</p>
+</blockquote>
+<hr>
+<h2 id="8-语义层工具链dml-视角">8. 语义层工具链（DML 视角）</h2>
+<p>完整实践见团队讨论与路线图；此处列最小集合：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>DML 对应</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>定义</td>
+<td><code>.dml</code> + Git + LSP + <code>dml_schema.yaml</code></td>
+</tr>
+<tr>
+<td>编译执行</td>
+<td><code>dmlc</code>（<code>-c</code> / <code>-q</code> / <code>-s</code>）+ dialect macros</td>
+</tr>
+<tr>
+<td>消费</td>
+<td>JDBC、<code>dmlc</code> CLI、MCP（<code>run_query</code>、<code>list_models</code>）</td>
+</tr>
+<tr>
+<td>信任</td>
+<td>lint、脚本测试、路线图中的 golden test / explain</td>
+</tr>
+<tr>
+<td>Agent 元数据</td>
+<td><code>description</code>、<a href="how-to--write-model-metadata.html">Write model metadata</a></td>
+</tr>
+</tbody></table>
+<p><strong>上线自检（节选）：</strong> 核心指标是否在 <code>.dml</code>？是否统一 MCP/JDBC 入口？headline 指标是否有 <code>description</code>？争议时能否给出 SQL + 命中逻辑？</p>
+<hr>
+<h2 id="9-相关文档">9. 相关文档</h2>
+<table>
+<thead>
+<tr>
+<th>文档</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="explanation--philosophy-zh.html">DML 理念与场景</a></td>
+<td>核心概念、哲学、场景（本文）</td>
+</tr>
+<tr>
+<td><a title="Reference available in the development workspace">DML 竞品对比研究</a></td>
+<td>语义层竞品与产品演进</td>
+</tr>
+<tr>
+<td><a title="Reference available in the development workspace">DML 产品定位与价值主张</a></td>
+<td>商业价值与购买方</td>
+</tr>
+<tr>
+<td><a title="Reference available in the development workspace">DML 用户研究与痛点分析</a></td>
+<td>一线用户痛点，含 Palantir / Ontology 场景</td>
+</tr>
+<tr>
+<td><a title="Reference available in the development workspace">DML 产品路线图建议</a></td>
+<td>Must / Should / Later</td>
+</tr>
+<tr>
+<td><a title="Reference available in the development workspace">SKILL.md</a></td>
+<td>语言与工具入口</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-修订记录">10. 修订记录</h2>
+<table>
+<thead>
+<tr>
+<th>日期</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2026-08</td>
+<td>区分 dimension 在 dataset、measure、query 和 materialize 中的语义；补充 dataset dimension uniqueness 与 <code>validateOnly</code> 契约；刷新 §9 文档链接</td>
+</tr>
+<tr>
+<td>2026-06</td>
+<td>§5.1 新增社区验证列；新增「Agent 自助分析」强匹配场景行</td>
+</tr>
+<tr>
+<td>2026-06</td>
+<td>初版：从 Palantir 对比研究与定位文档提炼；迁入 <code>skills/dml-dmx/01-concepts/</code></td>
+</tr>
+<tr>
+<td>2026-06</td>
+<td>对齐三层结构（modeling / query / DMX）；atomic/composite 与 DMX 语法改为链接 canonical 文档</td>
+</tr>
+</tbody></table>
+</main></html>

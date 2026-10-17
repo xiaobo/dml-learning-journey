@@ -1,0 +1,82 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model definition pitfalls · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="model-definition-pitfalls">Model definition pitfalls</h1>
+<p>These entries cover definitions, names, lookups, and metadata. <a href="reference--model-structure.html">Model structure</a> and <a href="reference--measures.html">measure declarations</a> own declaration syntax.</p>
+<p><a id="p21"></a></p>
+<h2 id="p21-agg-in-measure-formulas">P21. AGG() in measure formulas</h2>
+<p><strong>Wrong</strong>: <code>sales: AGG({amount})</code> in <code>.dml</code>
+<strong>Fix</strong>: <code>sales: SUM({amount})</code> — use SQL aggregation functions in <code>.dml</code></p>
+<p><a id="p22"></a></p>
+<h2 id="p22-cross-dataset-references-without-lookup">P22. Cross-dataset references without lookup</h2>
+<p><strong>Wrong</strong>: <code>profit: SUM({sales.amount} - {costs.amount})</code> across datasets.
+<strong>Fix</strong>: Use column-macros with <code>{DATASET}.column</code> or <code>pk(...)</code> lookups.</p>
+<p><a id="p22b"></a></p>
+<h2 id="p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">P22b. Joining a <code>table:</code>-owned physical table in another dataset&#39;s <code>sql:</code></h2>
+<p><strong>Wrong</strong>: <code>Policy</code> has <code>table: policy</code>, and another dataset&#39;s <code>sql:</code> does <code>from policy</code> / <code>join policy</code>.
+<strong>Fix</strong>: Use the dataset, not the physical table: <code>from {Policy}</code> / <code>join {Policy}</code>. For attributes without a SQL join, use <code>pk(...).{Policy}.Col</code>. <code>{Policy}</code> in <code>sql:</code> is a table-source substitution (compiler rewrites it to the dataset query name); it is not a column expression. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
+<p><a id="p23"></a></p>
+<h2 id="p23-missing-dataset-on-atomic-measures">P23. Missing <code>dataset:</code> on atomic measures</h2>
+<p><strong>Wrong</strong>: <code>sales: type: measure, formula: SUM({amount})</code> — no dataset.
+<strong>Fix</strong>: <code>sales: type: measure, dataset: transactions, formula: SUM({amount})</code></p>
+<p><a id="p24"></a></p>
+<h2 id="p24-overly-specific-measure-names">P24. Overly specific measure names</h2>
+<p><strong>Wrong</strong>: <code>sales_q1_2024_north</code>, <code>sales_john_doe</code>.
+<strong>Fix</strong>: Generic measures + query filters.</p>
+<p><a id="p25"></a></p>
+<h2 id="p25-not-documenting-edge-cases">P25. Not documenting edge cases</h2>
+<p><strong>Wrong</strong>: Measure without description that &quot;excludes returns&quot; or &quot;includes zeros&quot;.
+<strong>Fix</strong>: Always add <code>description:</code> for non-obvious behavior. For agent-facing models, document the dataset dimension and row meaning, scope flags, and misleading names—<a href="how-to--write-model-metadata.html">Write model metadata</a>.</p>
+<p><a id="p27"></a></p>
+<h2 id="p27-mixing-dimension-constrained-measures-with-incompatible-queries">P27. Mixing dimension-constrained measures with incompatible queries</h2>
+<p><strong>Wrong</strong>: Selecting <code>sales_by_product</code> (allowed dimension <code>[product]</code>) and <code>total_sales</code> in a query whose query dimension is <code>[dt_month]</code>.
+<strong>Fix</strong>: Ensure every measure permits the query dimension and that their row meanings are grain-compatible, or use separate queries.</p>
+<p><a id="p28"></a></p>
+<h2 id="p28-using-d-when-group-by-suffices">P28. Using <code>+d</code> when <code>GROUP BY</code> suffices</h2>
+<p><strong>Wrong</strong>: Creating <code>sales_by_region: SUM({sales: {+d: region}})</code>.
+<strong>Fix</strong>: <code>sales: SUM({amount})</code> + query: <code>SELECT region, AGG(sales) FROM MODEL GROUP BY region</code></p>
+<p><a id="p28b"></a></p>
+<h2 id="p28b-null-contagion-when-a-joined-row-is-missing">P28b. Null contagion when a joined row is missing</h2>
+<p><strong>Wrong</strong>: <code>profit: &#39;{revenue} - {costs}&#39;</code> — if either side has no row for the slice (FOJ / sparse dt), that input is null and the difference becomes null.</p>
+<p><strong>Fix — fill default when row missing</strong> (<a href="reference--measures.html#fill-default-when-row-missing">missing-row fill</a>):</p>
+<ol>
+<li><strong>Activate</strong> sparse inputs with outermost <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>:</li>
+</ol>
+<pre><code class="language-yaml">revenue: &#39;isnull(SUM({amount}), 0)&#39;   # or wrap the existing measure formula outermost
+costs: &#39;isnull(SUM({cost}), 0)&#39;
+profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
+</code></pre>
+<ol start="2">
+<li>If the <strong>result column</strong> itself must be non-null when its grain row is missing, activate on the result:</li>
+</ol>
+<pre><code class="language-yaml">profit: &#39;isnull({revenue} - {costs}, 0)&#39;
+</code></pre>
+<p><strong>Not enough / not activation:</strong> <code>isnull({a}, {b})</code>, <code>coalesce(a, b, 0)</code>, bare <code>{m: pp}</code>, or expecting an unrelated outer composite to gain an automatic <code>isnull</code> wrap. Embedding an <strong>already-activated</strong> dependency in a composite still expands that dep’s fill at sparse FOJ use sites (see <a href="reference--measures.html#fill-default-when-row-missing"><code>measures.md</code> Fill default</a>).</p>
+<p><a id="p28c"></a></p>
+<h2 id="p28c-null-safe-on-on-composition-foj-key-union">P28c. Null-safe ON on composition FOJ (<em>key-union</em>)</h2>
+<p><strong>Wrong</strong>: Expecting multi-arm FOJ / densify to treat <code>NULL</code> dimension keys as one shared “unknown” entity (Power Query–style null-safe merge), or rewriting composition ON to null-safe so both arms’ empty keys collapse into one row with both measures filled.</p>
+<p><strong>Fix</strong>: Composition uses <strong>bare <code>=</code></strong> (<a href="reference--join-null-equality.html">join NULL equality</a>). Empty keys stay unmatched per arm. For a single unknown bucket, author an explicit sentinel (<code>coalesce(dim, &#39;…&#39;)</code>) into the grain. Keep null-safe for <em>row-preserving</em> LEFT / <code>nullpk</code> only. Population ≠ ON: use presence / <code>{primary} is not null</code> when the report should drop secondary-only keys.</p>
+<hr>
+<h2 id="category-time-handling">Category: Time Handling</h2>
+<p><a id="p37"></a></p>
+<h2 id="p37-modifiers-on-columns">P37. Modifiers on columns</h2>
+<p><strong>Wrong</strong>: <code>{customer_id: {+d: customer_id}}</code> in a formula.
+<strong>Fix</strong>: Put drill-down on the measure being evaluated: <code>{sales: {+d: customer_id}}</code>. Other modifiers such as input <code>+f</code> also have column forms; this is not a ban on all column modifiers.</p>
+<p><a id="p38"></a></p>
+<h2 id="p38-unquoted-yaml-formulas">P38. Unquoted YAML formulas</h2>
+<p><strong>Wrong</strong>: <code>formula: SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})</code> without quotes when the value contains <code>:</code>, <code>{</code>, or <code>-</code>.
+<strong>Fix</strong>: <code>formula: &#39;SUMIF(...)&#39;</code></p>
+<p><a id="p39"></a></p>
+<h2 id="p39-dataset-on-composite-measures">P39. <code>dataset:</code> on composite measures</h2>
+<p><strong>Wrong</strong>: Composite measure that references other measures still has <code>dataset:</code>.
+<strong>Fix</strong>: Omit <code>dataset:</code> when the formula references other measures; keep <code>dataset:</code> on atomic measures only.</p>
+<p><a id="p40"></a></p>
+<h2 id="p40-measure-cannot-be-redefined--duplicate-formula">P40. Measure cannot be redefined / duplicate formula</h2>
+<p><strong>Wrong</strong>: <code>SELECT AGG(sales) AS sales</code> or <code>AGG(x) AS x</code> when <code>sales</code> / <code>x</code> already exist as measures.
+<strong>Fix</strong>: Use <code>SELECT AGG(sales)</code> with no alias, or a neutral alias (<code>AS sales_value</code>). If the compiler says <code>use existing measure &quot;X&quot;</code>, use <code>AGG(X)</code> instead of re-expressing the formula.</p>
+<p><a id="p41"></a></p>
+<h2 id="p41-dml--syntax-in-model-query-sql">P41. DML <code>{...}</code> syntax in Model Query SQL</h2>
+<p><strong>Wrong</strong>: <code>SELECT {dt_month}, AGG({sales}) FROM MODEL</code> — braces are for <code>.dml</code> formulas only.
+<strong>Fix</strong>: <code>SELECT dt_month, AGG(sales) FROM MODEL</code>. Use <code>AGG({sales: pop})</code> only for <strong>modifier</strong> form in queries.</p>
+<p><a id="p42"></a></p>
+<h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. Bare name vs <code>{col}</code> inside <code>.dml</code> formulas</h2>
+<p><strong>Wrong (meaning):</strong> Treating <code>formula: calc_amt * 2</code> as “forgot braces” / a compiler hole. Bare <code>calc_amt</code> binds as a <strong>physical</strong> table column (SQL pass-through).
+<strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: &#39;{calc_amt} * 2&#39;</code>. Leave physical columns bare: <code>net: amount - discount</code>. Canonical: <a title="Reference available in the development workspace">reference-scope checks</a>; <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
+</main></html>

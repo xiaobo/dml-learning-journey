@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Use the dmlc CLI to check and run queries · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="use-the-dmlc-cli-to-check-and-run-queries">Use the dmlc CLI to check and run queries</h1>
+<p>Use this guide to capture compiler evidence, validate source keys, and execute a Model Query. Read flags from the selected executable&#39;s <code>--help</code> and <code>--advanced-help</code>. For the JSON fields, see <a href="reference--mcp-contract.html">MCP and CLI response contracts</a>.</p>
+<h2 id="1-identify-the-executable-and-model">1. Identify the executable and model</h2>
+<p>Record the executable path, version, build timestamp, and SHA-256 before comparing behavior with a documented build.</p>
+<pre><code class="language-powershell">$dmlc = (Resolve-Path scripts/dmlc-mcp/dmlc.exe).Path
+&amp; $dmlc --version
+Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
+&amp; $dmlc --help
+</code></pre>
+<p>These commands start in the <code>dml-dmx</code> directory. For subsequent commands, use the directory containing your model and query.</p>
+<p>Match the model filename with the SQL <code>FROM</code> name. For <code>model.dml</code>, use <code>FROM MODEL</code>. For <code>acme.dml</code>, use <code>FROM acme</code>. Pass <code>--model=model.dml</code> to select a file, or pass its containing directory for filename discovery. See <a href="reference--model-query-sql.html#2-query-types">query discovery</a>.</p>
+<h2 id="2-lint-and-strict-compile">2. Lint and strict-compile</h2>
+<p>Lint the model, then strict-compile the consumer query.</p>
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --output-format=json
+&amp; $dmlc --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
+</code></pre>
+<p>Inspect the process exit code after each command. Read the JSON status, diagnostics, notes, emitted SQL, and output order. Check the generated grouping, joins, predicates, aliases, and projected columns against the query contract.</p>
+<p>If strict compilation returns findings, preserve the warning and emitted SQL. Resolve the intended population and NULL behavior before changing the query. Removing <code>--strict</code> does not make the strict check pass.</p>
+<p>Use <code>--output-dir</code> for compile artifacts. Use <code>--output</code> for commands whose help documents a named output file. These flags are not interchangeable.</p>
+<h2 id="3-capture-json-without-changing-its-encoding">3. Capture JSON without changing its encoding</h2>
+<p>For query result files, use the product output flag.</p>
+<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql -o outputs/result.json --overwrite
+</code></pre>
+<p>For lint or compile evidence, capture stdout separately from stderr. A Node.js argument array avoids shell quoting and gives explicit UTF-8 decoding. Save this script as <code>compile.cjs</code> beside the model and query.</p>
+<pre><code class="language-javascript">const fs = require(&#39;node:fs&#39;);
+const { spawnSync } = require(&#39;node:child_process&#39;);
+const result = spawnSync(process.argv[2], [
+	&#39;--compile&#39;, &#39;--strict&#39;, &#39;query.sql&#39;, &#39;--model=model.dml&#39;,
+	&#39;--output-format=json&#39;, &#39;--output-dir=gen&#39;
+], { encoding: &#39;utf8&#39;, cwd: __dirname });
+if (result.error) throw result.error;
+fs.writeFileSync(&#39;compile.stdout.json&#39;, result.stdout);
+fs.writeFileSync(&#39;compile.stderr.txt&#39;, result.stderr);
+const report = JSON.parse(result.stdout);
+console.log(JSON.stringify({ processExit: result.status, report }, null, 2));
+process.exitCode = result.status ?? 1;
+</code></pre>
+<p>Run it with the selected executable.</p>
+<pre><code class="language-powershell">node compile.cjs $dmlc
+</code></pre>
+<p>If JSON parsing fails, retain the raw streams and process exit. Diagnose that failure before interpreting it as a language error.</p>
+<p>In Windows PowerShell 5.1, run commands separately because <code>&amp;&amp;</code> is unsupported. Avoid merging stderr into JSON stdout. If you need to suppress stderr interactively, use <code>2&gt;$null</code> in PowerShell.</p>
+<h2 id="4-validate-source-keys-and-database-acceptance">4. Validate source keys and database acceptance</h2>
+<p>If the target connection is configured, run validate-only before trusted execution or when relevant validation evidence becomes stale.</p>
+<pre><code class="language-powershell">&amp; $dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
+</code></pre>
+<p>Replace <code>default</code> with the intended connection. Inspect <code>status</code>, <code>summary</code>, <code>checks</code>, <code>generatedSql</code>, <code>diagnostics</code>, <code>next</code>, and <code>error</code>.</p>
+<p>Confirm that compilation, reached-dataset key checks, and the generated SQL&#39;s <code>EXPLAIN</code> probe pass. Validate-only does not execute the main result rows or establish business correctness.</p>
+<p>If <code>DIMENSION_NOT_UNIQUE</code> appears, fix the complete dataset key, source ranges, or source data. Do not patch generated SQL with <code>DISTINCT</code> to conceal duplicate keys. If a validation query fails to execute, handle <code>VALIDATION_QUERY_FAILED</code> separately.</p>
+<p>Re-run validation after a relevant model, query contract, connection, or source-state change. If a prerequisite is missing, record the check as <code>not run</code> and name the missing prerequisite.</p>
+<h2 id="5-execute-and-compare-results">5. Execute and compare results</h2>
+<p>Run the consumer query on the validated connection.</p>
+<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --connection=default -o outputs/result.json --overwrite
+</code></pre>
+<p>Check keys, row multiplicity, NULLs, and all measures. If an independent result exists, compare both queries on the same source snapshot and scope.</p>
+<p>If a DuckDB cache is locked, identify the process and connection that owns it. Use another configured connection only when it represents the intended source. Do not change source data merely to avoid a lock.</p>
+<h2 id="use-mcp-for-an-integrated-client">Use MCP for an integrated client</h2>
+<p>Read the live <code>tools/list</code> schema before calling MCP tools. Use <code>run_query</code> with <code>validateOnly: true</code> for live preflight. Resolve <code>outputFile</code> relative to the MCP <code>workspaceFolder</code>.</p>
+<p>For setup, follow <a href="how-to--configure-mcp.html">MCP setup and detection</a>. For variance attribution, follow <a title="Reference available in the development workspace">explain-change-variance</a>. For specific failures, use <a href="reference--troubleshooting--README.html">pitfalls</a> and <a href="reference--error-codes.html">error codes</a>.</p>
+</main></html>

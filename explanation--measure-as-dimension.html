@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure-as-dimension · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="measure-as-dimension">Measure-as-dimension</h1>
+<p>Measure-as-dimension calculates a label per entity, then groups metrics by that label. The label has a query-dimension role. It does not identify source rows.</p>
+<h2 id="entity-keys-and-evaluation-stages">Entity keys and evaluation stages</h2>
+<p>Classification needs a complete entity key because a label belongs to an entity at a particular grain. Let <code>Q</code> be the ordinary report fields and <code>K</code> the entity key. With <code>+d: K</code>, the classifier is evaluated at <code>Q ∪ K</code>. The compiler attaches the label by the complete key, then aggregates ordinary metrics at <code>Q</code> plus the label.</p>
+<p>Given atomic <code>sales: SUM({amount})</code>, this query fragment groups customers by their sales value.</p>
+<pre><code class="language-yaml">report:
+  type: query
+  columns:
+    dimension:
+      - sales_bucket: &#39;{sales: {+d: customer}}&#39;
+    total_sales: &#39;SUM({sales: {+d: customer}})&#39;
+</code></pre>
+<p>The explicit outer <code>SUM</code> adds the sales of customers with the same label. This example uses the sales value itself as the label. A business bucket requires its own classifier definition and verification.</p>
+<p>The classification use site requires an explicit key. A bare <code>{measure}</code> is rejected. A finer stage inside the measure definition or a sibling metric does not supply the missing key.</p>
+<p>The 2026-10-16 build compiles the checked <code>+d: customer</code> and <code>dimension: [customer]</code> count classifiers to customer aggregation followed by label grouping. These probes establish the checked forms only.</p>
+<h2 id="population-and-reaggregation">Population and reaggregation</h2>
+<p>Classification scope, entity membership, and report scope are separate decisions. <code>-d</code> retains time filters, so removing time grouping does not imply lifetime classification. A NULL label can be a valid bucket. It does not prove that an entity is absent, and classification does not create inactive entities.</p>
+<p>Multiple labels need compatible complete entity keys and independent definitions. Additive amounts can be summed from entity grain. Ratios, averages, and distinct counts need components that preserve their definitions across reaggregation.</p>
+<h2 id="label-channel-filters">Label-channel filters</h2>
+<p>A filter over a classifier label or sibling measures at label grain belongs after classification. DML queries can express such a predicate under <code>filters:</code>, for example <code>&quot;{首购月} is not null OR {销售额} &gt; 0&quot;:</code>.</p>
+<p>Model Query can represent a measure predicate as <code>HAVING</code>. The semantic stage matters more than that keyword: compiled SQL commonly uses <code>WHERE</code> on the relation produced by classification. Moving the predicate before classification changes the population used to calculate the label.</p>
+<h2 id="build-evidence-and-limitations">Build evidence and limitations</h2>
+<p>The 2026-10-16 build of <code>0.3.16</code> emits two-stage SQL for the checked sales-value and <code>COUNT(1)</code> classifiers. Both explicit-key forms pass strict compilation.</p>
+<p>The 2026-09-24 build emitted invalid <code>GROUP BY COUNT(1)</code> for the count classifier with <code>+d</code> and failed its replacement-dimension form. Those defects do not reproduce in the current probes.</p>
+<p>The checks inspect compilation and SQL shape. They do not establish database execution or result parity. <a href="maintenance--release-evidence.html">Release evidence</a> records complete inputs and build identities.</p>
+<p>This feature covers query <code>columns.dimension</code>. It does not establish support for classifiers in <code>materialize.dimension_columns</code>. That capability remains deferred in the <a href="maintenance--improvement-plan.html">improvement plan</a>. Temporal classifier combinations and SQL round trips need separate evidence.</p>
+</main></html>

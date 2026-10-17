@@ -1,0 +1,183 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model structure · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="model-structure">Model structure</h1>
+<p>This page owns model-level fields, datasets, column macros, and common metadata. The <a href="02-syntax--dml_schema.yaml">DML schema</a> defines structural validation. <a href="reference--model-composition.html">Model composition</a> owns include visibility and name resolution.</p>
+<p><a id="51-model-level-fields"></a></p>
+<h2 id="model-level-fields">Model-level fields</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>includes</code></td>
+<td><code>string[]</code></td>
+<td>Paths to other <code>.dml</code> files to merge (symbols are unioned)</td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td><code>string</code></td>
+<td>Target SQL dialect (e.g. <code>duckdb</code>, <code>mssql</code>)</td>
+</tr>
+<tr>
+<td><code>column-macros</code></td>
+<td><code>object</code></td>
+<td>Shared column definitions across multiple datasets</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td><code>object</code> | <code>string</code></td>
+<td>A dataset, measure, dt-macro, fn-macro, materialize, or query</td>
+</tr>
+</tbody></table>
+<p><strong>Object name pattern</strong>: any string except reserved keywords (<code>includes</code>, <code>column-macros</code>, <code>datasets</code>, <code>measures</code>, <code>columns</code>, <code>dimensions[dt]</code>, <code>dt-macros</code>, <code>fn-macros</code>, <code>materializes</code>, <code>queries</code>, <code>dialects</code>, and singular forms).</p>
+<p><strong>Simplified measure definition</strong>: a top-level mapping value that is a bare string is treated as a measure formula shorthand:</p>
+<pre><code class="language-yaml">sales: SUM({amount})
+# equivalent to:
+sales:
+    type: measure
+    formula: SUM({amount})
+</code></pre>
+<p><a id="52-dataset-definition-type-dataset"></a></p>
+<h2 id="dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: dataset
+    table: &lt;table_name&gt;          # required (or sql:)
+    # sql: &lt;SELECT ...&gt;          # alternative to table: — derived dataset
+    dimension: [col1, col2]      # dataset grain dimensions
+    materialize: &lt;name&gt;          # optional, declare a materialize table for this dataset
+    # or:
+    # materialize:
+    #     name: &lt;name&gt;
+    #     parameters:
+    #         &lt;param&gt;: &lt;value&gt;
+    columns:                     # required
+        col1:                    # direct column (pass-through)
+        col2: expr               # calculated column (inline expression)
+        col3:                    # full column definition
+            abbr: &lt;short&gt;        # abbreviation for display
+            description: &lt;text&gt;
+            formula: expr        # calculated column (block form)
+            # source: expr       # alternative to formula: data-source verification formula
+            prerequisite: &lt;expr&gt; # column-level grain constraint
+    dimensions[dt]:              # optional explicit time metadata; coarser standard dt_* fields may be system-derived
+        dt_date: date
+        dt_month: month
+    measures:                    # atomic measures (inherit enclosing dataset; no dataset:)
+        &lt;measure_name&gt;: &lt;formula or full definition&gt;
+            abbr: &lt;short&gt;
+            description: &lt;text&gt;
+</code></pre>
+<p><strong>Constraints</strong>:</p>
+<ul>
+<li>Exactly one of <code>table:</code> or <code>sql:</code> (mutually exclusive).</li>
+<li><strong><code>table:</code> is exclusive.</strong> <code>table: policy</code> means dataset <code>Policy</code> owns that physical table. Other datasets must not <code>FROM</code> / <code>JOIN</code> the physical name in <code>sql:</code>. Write <code>from {Policy}</code> / <code>join {Policy}</code> (the compiler substitutes the dataset query name), or look up attributes with <code>pk(...).{Policy}.Col</code> and omit that join. To share a table without ownership, use <code>sql: select * from &lt;table&gt;</code> instead of <code>table:</code>.</li>
+<li><strong>Fact-table pattern:</strong> dimension datasets (<code>Claim</code>, <code>Policy</code>) use <code>table:</code>; a fact that only needs those attributes can stay on an unowned source table and look up via <code>pk()</code>, instead of joining the owned table in <code>sql:</code>.</li>
+<li><strong>Visibility:</strong> same-file forward dataset/measure/column references are supported in the checked build. Included files must resolve through their own definitions/includes, not through their parent. See <a href="reference--model-composition.html">model composition</a>.</li>
+<li>For direct file compilation, name the query after the file stem (<code>report.dml</code> → <code>report</code>).</li>
+<li><code>allows:</code> selects eligible materializations (<code>ALL</code>, <code>NONE</code>, or explicit names); it does not override measure dimensions.</li>
+<li><code>columns:</code> is required for the illustrated measure-query form.</li>
+<li><code>dimensions[dt]</code> values are enums: <code>year</code>, <code>quarter</code>, <code>month</code>, <code>week</code>, <code>date</code>, <code>hour</code>.</li>
+<li><code>materialize:</code> accepts either a scalar name or an object with required <code>name:</code> and optional
+<code>parameters:</code>. Both forms define the same dataset-scoped materialize identity.</li>
+</ul>
+<p><strong>Column definition shapes</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>YAML</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Direct</td>
+<td><code>amount:</code> (null)</td>
+<td>Pass-through to underlying table column</td>
+</tr>
+<tr>
+<td>Calculated (inline)</td>
+<td><code>net: amount - discount</code> (string)</td>
+<td>Derived column via expression</td>
+</tr>
+<tr>
+<td>Calculated (block)</td>
+<td><code>net: { formula: amount - discount }</code></td>
+<td>Derived column with metadata</td>
+</tr>
+<tr>
+<td>Verified</td>
+<td><code>net: { source: amount - discount }</code></td>
+<td>Compiler verifies formula matches underlying value</td>
+</tr>
+</tbody></table>
+<p><strong>Brace binding in formulas</strong> (same rule as <a title="Reference available in the development workspace">reference-scope checks</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Form in a <code>formula:</code></th>
+<th>Binds as</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Bare <code>amount</code></td>
+<td><strong>Physical</strong> (native) table column — compiler passes the name through to SQL</td>
+<td><code>net: amount - discount</code> when both are Direct columns</td>
+</tr>
+<tr>
+<td><code>{calc_amt}</code></td>
+<td><strong>Calculated</strong> column (or measure / column-macro) — DMX expands the definition</td>
+<td><code>doubled: &#39;{calc_amt} * 2&#39;</code></td>
+</tr>
+</tbody></table>
+<p>Bare names on calculated columns mean &quot;treat this identifier as a native SQL column,&quot; which can appear to work via SELECT-alias order but does <strong>not</strong> expand the calculated definition. Brace when the formula should reuse that definition.</p>
+<p>Dependency-first ordering is a readability convention. A forward <code>pk()</code> target in the same file compiled successfully in the checked release; unresolved names can instead indicate a missing include, misspelling, or include visibility violation. See <a href="reference--model-composition.html">model composition</a>.</p>
+<p><a id="56-column-macros"></a></p>
+<h2 id="column-macros">Column-macros</h2>
+<p>Column-macros define columns shared across multiple datasets:</p>
+<pre><code class="language-yaml">column-macros:
+    datasets: [tx, orders]       # scoped datasets
+    columns:                     # shared column definitions
+        region: &#39;{stores}.region&#39;  # cross-dataset lookup
+    dimensions[dt]:
+        dt_month: month
+
+    # OR per-dataset scope:
+    &lt;dataset_name&gt;:
+        &lt;col&gt;: &lt;formula&gt;
+</code></pre>
+<p><a id="57-common-metadata-fields"></a></p>
+<h2 id="common-metadata-fields">Common metadata fields</h2>
+<p>Metadata support is object-specific; consult the matching schema definition:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>abbr</code></td>
+<td><code>string</code></td>
+<td>SQL-safe short name for internal use only — temp tables, joins, and <code>materialize</code> output. Never appears in final query column aliases (those use the business name key or an explicit <code>AS</code> alias)</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>string</code></td>
+<td>Human-readable description</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>Free-form tags</td>
+</tr>
+<tr>
+<td><code>prerequisite</code></td>
+<td><code>string</code> (formula)</td>
+<td>Grain validity constraint (measures, columns, dt-macros, fn-macros)</td>
+</tr>
+</tbody></table>
+</main></html>

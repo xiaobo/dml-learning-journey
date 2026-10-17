@@ -1,0 +1,241 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configure a DMLC MCP client · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="configure-a-dmlc-mcp-client">Configure a DMLC MCP client</h1>
+<p>Use this guide when the <strong>DMLC MCP server</strong> is not available or you see errors like &quot;tool not found&quot; / &quot;server not configured&quot;. Host config samples: <code>dmlc --mcp --help</code>. After the server is up, ask dmlc (<code>tools/list</code>, then <code>validateOnly</code>) — <a title="Reference available in the development workspace"><code>../SKILL.md</code> §2</a>.</p>
+<blockquote>
+<p>This document is the canonical MCP <strong>setup/detection</strong> reference. See the <a href="#quick-setup-checklist">setup checklist</a> for the shortest task list.</p>
+</blockquote>
+<h2 id="general-mcp-setup-other-ides--clients">General MCP setup (other IDEs / clients)</h2>
+<p>For <strong>generic MCP setup</strong> across environments, use these external guides:</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://mcpez.com/integrations">MCPEZ Integrations</a></td>
+<td>Cursor, VS Code, Claude Desktop, Zed, Continue, Replit — setup steps, config examples</td>
+</tr>
+<tr>
+<td><a href="https://docs.cursor.com/context/model-context-protocol">Cursor MCP docs</a></td>
+<td>Native MCP in Cursor, install links</td>
+</tr>
+<tr>
+<td><a href="https://docs.augmentcode.com/setup-augment/mcp">Augment Code MCP</a></td>
+<td>VS Code/JetBrains extension: Settings Panel, Import from JSON, remote servers</td>
+</tr>
+<tr>
+<td><a href="https://docs.augmentcode.com/cli/integrations">Auggie CLI MCP</a></td>
+<td><code>~/.augment/settings.json</code>, <code>auggie mcp add</code> commands</td>
+</tr>
+<tr>
+<td><a href="https://modelcontextprotocol.io/quickstart/user">MCP official quickstart</a></td>
+<td>Connect to local servers (Claude Desktop)</td>
+</tr>
+<tr>
+<td><a href="https://mcpez.com/troubleshooting">MCPEZ troubleshooting</a></td>
+<td>Server not connecting, env vars, permissions</td>
+</tr>
+</tbody></table>
+<p><strong>Config file locations by environment:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>Config path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cursor (project)</td>
+<td><code>&lt;workspace&gt;/.cursor/mcp.json</code></td>
+</tr>
+<tr>
+<td>Cursor (global)</td>
+<td><code>~/.cursor/mcp.json</code></td>
+</tr>
+<tr>
+<td>Windsurf</td>
+<td><code>~/.codeium/windsurf/mcp_config.json</code></td>
+</tr>
+<tr>
+<td>Augment Code (VS Code / JetBrains)</td>
+<td>Extension-managed: Augment panel → Settings → MCP (no file path)</td>
+</tr>
+<tr>
+<td>Auggie CLI</td>
+<td><code>~/.augment/settings.json</code></td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td><code>.mcp/config.json</code> (project root)</td>
+</tr>
+<tr>
+<td>Claude Desktop (macOS)</td>
+<td><code>~/Library/Application Support/Claude/claude_desktop_config.json</code></td>
+</tr>
+<tr>
+<td>Claude Desktop (Windows)</td>
+<td><code>%APPDATA%\Claude\claude_desktop_config.json</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="1-detect-your-ide-for-dmlc-config-path">1. Detect your IDE (for DMLC config path)</h2>
+<p>MCP config paths differ by IDE. Use one of these to identify the active environment:</p>
+<p><strong>Windows (PowerShell)</strong></p>
+<pre><code class="language-powershell">$env:TERM_PROGRAM
+Get-Process | Where-Object {$_.ProcessName -match &quot;cursor|windsurf|code&quot;} | Select-Object ProcessName
+</code></pre>
+<p><strong>macOS/Linux</strong></p>
+<pre><code class="language-bash">echo &quot;TERM_PROGRAM: $TERM_PROGRAM&quot;
+ps aux | grep -E &quot;(cursor|windsurf|code)&quot; | grep -v grep
+</code></pre>
+<p><strong>Typical mapping:</strong> <code>TERM_PROGRAM=vscode</code> + Cursor process → Cursor; + Windsurf process → Windsurf; + Augment extension → Augment Code (VS Code); VS Code alone → VS Code.</p>
+<h2 id="2-detect-whether-dmlc-mcp-is-installed">2. Detect whether DMLC MCP is installed</h2>
+<p><strong>Goal:</strong> Find the actual server id and tool names (do not guess).</p>
+<ol>
+<li><p><strong>Check MCP registry</strong></p>
+<ul>
+<li><strong>Cursor:</strong> <code>C:\Users\&lt;you&gt;\.cursor\projects\&lt;project&gt;\mcps\</code> (or <code>~/.cursor/projects/&lt;project&gt;/mcps/</code> on macOS/Linux). Each server is a folder; tools are JSON descriptors under <code>tools/</code>.</li>
+<li><strong>Augment Code:</strong> Augment panel → Settings → MCP section. Servers are listed there; no file-based registry.</li>
+</ul>
+</li>
+<li><p><strong>Read tool schemas</strong></p>
+<ul>
+<li>Confirm the server id (folder name).</li>
+<li>List tool names from filenames under <code>tools/</code>.</li>
+<li>Prefer servers with DML tools: <code>list_models</code>, <code>run_query</code>, <code>list_connections</code>, <code>generate_model</code>, etc.</li>
+</ul>
+</li>
+</ol>
+<h2 id="3-verify-the-server-works">3. Verify the server works</h2>
+<ol>
+<li>Call a low-risk tool: <code>list_connections</code>, <code>list_models</code>, or similar.</li>
+<li>Use the <strong>exact</strong> server id and <code>toolName</code> from the descriptors.</li>
+<li>Build arguments from the tool’s JSON schema — do not invent parameter names.</li>
+</ol>
+<p><strong>Errors:</strong></p>
+<ul>
+<li><strong>&quot;Tool not found&quot;</strong> → wrong server id or tool name; re-check descriptors.</li>
+<li><strong>Connection/transport errors</strong> → server not starting; proceed to installation.</li>
+</ul>
+<h2 id="4-how-to-call-mcp-tools-correctly">4. How to call MCP tools correctly</h2>
+<ul>
+<li><strong>Always:</strong> Read the tool schema JSON first; use exact server id and <code>toolName</code>; match parameter structure (required vs optional).</li>
+<li><strong>Never:</strong> Guess parameter names; assume server name (e.g. always <code>dmlc-mcp</code>) without checking descriptors.</li>
+</ul>
+<h2 id="5-install--enable-dmlc-mcp-server">5. Install / enable DMLC MCP server</h2>
+<p>Use when no suitable DMLC server appears or all DML tool calls fail.</p>
+<h3 id="51-prerequisites">5.1 Prerequisites</h3>
+<ul>
+<li>Obtain the <code>dmlc</code> app-image from <a title="Reference available in the development workspace">scripts</a> (e.g. <code>dmlc.exe</code> on Windows).</li>
+</ul>
+<h3 id="52-add-server-to-mcp-config">5.2 Add server to MCP config</h3>
+<p>Edit the config file for your environment (see table above). Example:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;dmlc-mcp&quot;: {
+      &quot;command&quot;: &quot;D:\\absolute\\path\\to\\dmlc-mcp\\dmlc.exe&quot;,
+      &quot;args&quot;: [&quot;--mcp&quot;],
+      &quot;cwd&quot;: &quot;D:\\absolute\\path\\to\\your\\workspace&quot;,
+      &quot;env&quot;: {
+        &quot;WORKSPACE_FOLDER&quot;: &quot;D:\\absolute\\path\\to\\your\\workspace&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>Important:</strong></p>
+<ul>
+<li>Use <strong>absolute paths</strong> only — avoid <code>${workspaceFolder}</code> placeholders.</li>
+<li>Set both <code>cwd</code> and <code>WORKSPACE_FOLDER</code> to the workspace root.</li>
+</ul>
+<h3 id="53-restart-and-verify">5.3 Restart and verify</h3>
+<ol>
+<li>Restart your IDE or MCP client (configs load at startup).</li>
+<li>Verify: Cursor → check <code>mcps/</code> for a folder matching your server id; confirm <code>tools/</code> descriptors exist.</li>
+<li>Call <code>list_connections</code> or <code>list_models</code> to confirm tools work.</li>
+</ol>
+<h3 id="54-augment-code-specific-guide">5.4 Augment Code (specific guide)</h3>
+<p>Augment Code runs as a VS Code or JetBrains extension. DMLC uses <strong>local stdio</strong> (command + args), not Easy MCP or remote HTTP/SSE.</p>
+<p><strong>Option A: Import from JSON</strong></p>
+<ol>
+<li>Open the Augment panel in VS Code or JetBrains.</li>
+<li>Click the options menu (⋮) → <strong>Settings</strong>.</li>
+<li>In the MCP section, click <strong>Import from JSON</strong>.</li>
+<li>Paste and edit (use your absolute paths):</li>
+</ol>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;dmlc-mcp&quot;: {
+      &quot;command&quot;: &quot;D:\\absolute\\path\\to\\dmlc-mcp\\dmlc.exe&quot;,
+      &quot;args&quot;: [&quot;--mcp&quot;],
+      &quot;env&quot;: {
+        &quot;WORKSPACE_FOLDER&quot;: &quot;D:\\absolute\\path\\to\\your\\workspace&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<ol start="5">
+<li>Click <strong>Save</strong>. Restart or reload Augment if needed.</li>
+<li>Verify DMLC tools appear in the Agent (e.g. <code>list_connections</code>, <code>list_models</code>).</li>
+</ol>
+<p><strong>Option B: Settings Panel (GUI)</strong></p>
+<ol>
+<li>Augment panel → options menu → <strong>Settings</strong> → MCP section.</li>
+<li>Click <strong>+</strong> next to MCP.</li>
+<li><strong>Name:</strong> <code>dmlc-mcp</code></li>
+<li><strong>Command:</strong> full path to <code>dmlc.exe</code> plus <code>--mcp</code> (e.g. <code>D:\path\to\dmlc-mcp\dmlc.exe --mcp</code>), or use separate command/args fields if the UI provides them.</li>
+<li><strong>Environment variables:</strong> add <code>WORKSPACE_FOLDER</code> = your workspace root path.</li>
+<li>Save and restart/reload Augment.</li>
+</ol>
+<p><strong>Option C: Auggie CLI</strong></p>
+<p>Edit <code>~/.augment/settings.json</code> or use:</p>
+<pre><code class="language-bash">auggie mcp add dmlc-mcp --command &quot;D:\path\to\dmlc-mcp\dmlc.exe&quot; --args &quot;--mcp&quot; -e WORKSPACE_FOLDER=&quot;D:\path\to\workspace&quot;
+</code></pre>
+<p>Then run Auggie; DMLC tools will be available.</p>
+<p><strong>Reference:</strong> <a href="https://docs.augmentcode.com/setup-augment/mcp">Augment Code MCP docs</a> · <a href="https://docs.augmentcode.com/cli/integrations">Auggie CLI integrations</a></p>
+<h2 id="6-dmlc-troubleshooting-quick-reference">6. DMLC troubleshooting quick reference</h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Server folder missing under <code>mcps/</code></td>
+<td>MCP not loaded; re-check config path, restart client</td>
+</tr>
+<tr>
+<td>&quot;Tool not found&quot;</td>
+<td>Server id or <code>toolName</code> mismatch; copy exact names from descriptor JSONs</td>
+</tr>
+<tr>
+<td>&quot;Executable not found&quot; / spawn failures</td>
+<td>Verify <code>command</code> path; <code>dmlc.exe</code> must exist at configured location</td>
+</tr>
+<tr>
+<td>Path / data resolution errors</td>
+<td>Use absolute paths; set <code>WORKSPACE_FOLDER</code> and <code>cwd</code> to workspace root</td>
+</tr>
+<tr>
+<td>Server loads but tools error at runtime</td>
+<td>Check client logs; reduce to smallest failing call (e.g. <code>list_models</code>) and iterate</td>
+</tr>
+</tbody></table>
+<p>For general MCP issues (Node.js, npx, env vars, permissions), see <a href="https://mcpez.com/troubleshooting">MCPEZ troubleshooting</a>.</p>
+<h2 id="quick-setup-checklist">Quick setup checklist</h2>
+<p><strong>Prerequisites:</strong> IDE MCP config access · <code>dmlc</code> executable path · workspace absolute path</p>
+<ol>
+<li>Add server to the <a href="#52-add-server-to-mcp-config">MCP config</a> — absolute <code>command</code>, <code>cwd</code>, <code>WORKSPACE_FOLDER</code></li>
+<li>Restart IDE/client</li>
+<li>Verify: <code>list_connections</code> → <code>list_models</code> → <code>run_query</code> with <code>validateOnly: true</code></li>
+</ol>
+<p><strong>Common failures:</strong> relative paths in config · wrong server id/tool name · not restarting after config changes</p>
+<h2 id="related-docs">Related docs</h2>
+<ul>
+<li>Docs home: <code>README.md</code></li>
+<li>Skill setup context: <code>../SKILL.md</code></li>
+</ul>
+</main></html>

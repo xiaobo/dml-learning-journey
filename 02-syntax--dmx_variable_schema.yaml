@@ -1,0 +1,232 @@
+# DMX variable schema
+# Schema for embedded formula modifier expressions.
+# 注意：本文件中的 dimension 修饰符（+d/-d/-df/dimension）是【运行时求值粒度变换】，
+# 与 dml_schema.yaml 中 dataset/materialize 的 dimension:（粒度声明）和 measure 的 dimensions:（粒度约束）含义不同，
+# 辨析见 ../SKILL.md 的 Semantic contract 表。
+
+# 样例：
+# { 销售额 }
+# { 销售额: mat }
+# { 销售额: pop }
+# { 库存量: lastday }
+
+# { 销售额: {-d: brand} }
+# { 销售额: {-df: brand} }
+# { 销售额: {dimension: [category, brand]} }
+# { 销售额: {+f: 核心单品} }
+# { 销售额: {+f: {品牌: 洗衣粉, 客户属性: KA}} }
+# { 销售额: {-f: 产品} }
+# { 销售额: {-f: [产品, 门店]} }
+
+
+# {store_flag: Dim Store}
+# ==> {store_flag: {ds: Dim Store}}
+# ==> {Dim Store}.store_flag
+
+# {store_flag: {ds: Dim Store, anchor: '{store_id}'}}
+# pk({store_id}).{Dim Store}.store_flag
+
+$id: "#/definitions/dmx"
+$schema: "http://json-schema.org/draft-07/schema#"
+x-dmx-modifier-use: { role: measure_modifier, target_kinds: [ measure_modifier ], "on": modifier_token }
+x-dml-formula-defaults: &formula_refs_in_modifier_target_measure_scope
+  refs:
+    - { role: dmx_variable, target_kinds: [ dmx_variable ], match_values: [ dim_dt ] }
+    - { role: column_name, target_kinds: [ column_name ], datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive }, skip_values: [ dim_dt ] }
+    - role: measure_name
+      target_kinds: [ measure, atomic_measure ]
+      skip_values: [ dim_dt ]
+# modifier_target_measure = explicit measure_ref for nested modifiers, otherwise the enclosing
+# measure definition for a standalone modifier in a measure formula.
+# The document model records that target; the work-unit model resolves its recursive dataset closure.
+# x-dml-anchor:    modifier property key — { kind: measure_modifier, "on": mapping_key }
+# x-dml-reference: payload references — filter_name (+f/-f name), column_name (+f object keys, +d/-d/dimension)
+# +f string: filter_name when matching query.filters key in enclosing query; else filter expression (formula_curly).
+type: object
+additionalProperties: false
+minProperties: 1
+maxProperties: 1
+patternProperties: 
+  # 列名称（需要预先定义）
+  ".*":
+    anyOf:
+      # dt-macro / fn-macro 名称（modifier 简写为宏名）
+      - type: [string, "null"]
+        x-dmx-modifier-shape: macro_use
+        x-dml-reference:
+          - { role: dt_macro_name, target_kinds: [ dt_macro ], "on": scalar }
+          - { role: fn_macro_name, target_kinds: [ fn_macro ], "on": scalar }
+      
+      # 或 列操作
+      - type: object
+        x-dmx-modifier-shape: modifier_map
+        # 未声明的 modifier key 按 macro_use 解析为 dt-macro / fn-macro
+        additionalProperties: true
+        allOf:  
+          # dim_dt 最多只出现一次
+          - oneOf:
+            - required: ['dim_dt']
+            - required: ['dim_dt as hour']
+            - required: ['dim_dt as date']
+            - required: ['dim_dt as week']
+            - required: ['dim_dt as month']            
+            - required: ['dim_dt as quarter']
+            - required: ['dim_dt as year']            
+            - not: 
+                anyOf: 
+                  - required: ['dim_dt']
+                  - required: ['dim_dt as hour']
+                  - required: ['dim_dt as date']
+                  - required: ['dim_dt as week']
+                  - required: ['dim_dt as month']
+                  - required: ['dim_dt as quarter']
+                  - required: ['dim_dt as year']
+          # +d、dimension 中最多出现一个
+          - oneOf:
+            - required: ['+d']
+            - required: ['dimension']
+            - not: {anyOf: [{required: ['+d']}, {required: ['dimension']}]}           
+          # -d、dimension 中最多出现一个
+          - oneOf:
+            - required: ['-d']
+            - required: ['dimension']
+            - not: {anyOf: [{required: ['-d']}, {required: ['dimension']}]}
+          # -df、dimension 中最多出现一个
+          - oneOf:
+              - required: ['-df']
+              - required: ['dimension']
+              - not: {anyOf: [{required: ['-df']}, {required: ['dimension']}]}
+        properties: 
+          # 重新指定获取数据时使用的日期范围
+          dim_dt:
+            description: Override the date range used when fetching measure data.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          # 重新指定获取数据时使用的日期类型和日期范围
+          dim_dt as hour:
+            description: 'Re-anchor measure at hour grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          dim_dt as date:
+            description: 'Re-anchor measure at date grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          dim_dt as week:
+            description: 'Re-anchor measure at week grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          dim_dt as month:
+            description: 'Re-anchor measure at month grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          dim_dt as quarter:
+            description: 'Re-anchor measure at quarter grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+          dim_dt as year:
+            description: 'Re-anchor measure at year grain: evaluate the anchor payload, then join the calendar.'
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dim_dt'
+
+          # 重新指定获取数据时使用的维度
+          # 添加一个或多个维度列
+          +d:
+            description: Add one or more dimension fields to the measure context's evaluation dimension.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dimension_modifier_payload'
+          # 减少一个或多个维度列
+          -d:
+            description: Remove one or more dimension fields from the measure context's evaluation dimension.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dimension_modifier_payload'
+          # 减少一个或多个维度列，同时阻断相关filter下推
+          -df:
+            description: Remove dimension fields and stop their related filters from propagating.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dimension_modifier_payload'
+          # 指定维度列
+          dimension:
+            description: Replace the measure context's evaluation dimension with the exact list of dimension fields.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            $ref: '#/$defs/dimension_modifier_payload'
+
+          # 重新指定获取数据时使用的筛选条件
+          # 按名称添加一个或多个筛选条件
+          +f: 
+            description: Add named query filters or inline filter expressions.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            oneOf:
+              # 单个筛选名称（引用 enclosing query.filters 中定义的 filter_name）
+              - type: string
+                x-dml-reference: { role: filter_name, target_kinds: [ filter_name ], scope: { from: enclosing_query }, "on": scalar }
+              # 筛选名称列表
+              - type: array
+                uniqueItems: true
+                items:
+                  type: string
+                  x-dml-reference: { role: filter_name, target_kinds: [ filter_name ], scope: { from: enclosing_query }, "on": sequence_item }
+              # 内联筛选（mapping key = 列名）
+              - type: object
+                additionalProperties: false
+                patternProperties:
+                  ".*":
+                    x-dml-reference: { role: column_name, target_kinds: [ column_name ], "on": mapping_key, datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive } }
+                    # 取值范围
+                    oneOf: 
+                      # 单个数字
+                      - type: number
+                      # 数字列表
+                      - {type: array, uniqueItems: true, items: {type: number}}
+                      # 单个字符串或公式
+                      - {type: string, format: formula, x-dml-formula: *formula_refs_in_modifier_target_measure_scope }
+                      # 字符串列表
+                      - {type: array, uniqueItems: true, items: {type: string}}
+                      # 取值范围
+                      - {$ref: '#/$defs/range'}
+
+          # 取消筛选条件（filter_name 或 column_name）
+          -f:
+            description: Remove named query filters or dataset columns from the measure context.
+            x-dml-anchor: { kind: measure_modifier, "on": mapping_key }
+            oneOf:
+              # 单个筛选名称或列名
+              - type: string
+                x-dml-reference:
+                  - { role: filter_name, target_kinds: [ filter_name ], scope: { from: enclosing_query }, "on": scalar }
+                  - { role: column_name, target_kinds: [ column_name ], "on": scalar, datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive } }
+              # 筛选名称或列名列表
+              - type: array
+                uniqueItems: true
+                items:
+                  type: string
+                  x-dml-reference:
+                    - { role: filter_name, target_kinds: [ filter_name ], scope: { from: enclosing_query }, "on": sequence_item }
+                    - { role: column_name, target_kinds: [ column_name ], "on": sequence_item, datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive } }
+
+$defs:
+  dimension_modifier_payload:
+    anyOf:
+      - { type: string, x-dml-reference: [ { role: dmx_variable, target_kinds: [ dmx_variable ], "on": scalar, match_values: [ dim_dt ] }, { role: column_name, target_kinds: [ column_name ], "on": scalar, datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive }, skip_values: [ dim_dt ] } ] }
+      - { type: array, items: { type: string, x-dml-reference: [ { role: dmx_variable, target_kinds: [ dmx_variable ], "on": sequence_item, match_values: [ dim_dt ] }, { role: column_name, target_kinds: [ column_name ], "on": sequence_item, datasets: { from: modifier_target_measure, resolve_measure_datasets: recursive }, skip_values: [ dim_dt ] } ] } }
+
+  dim_dt:
+    anyOf:
+      # 默认值为日期值
+      - {type: string, format: 'formula', x-dml-formula: *formula_refs_in_modifier_target_measure_scope }
+      - type: object
+        additionalProperties: false
+        properties:
+          # 日期值
+          value: {type: string, format: 'formula', x-dml-formula: *formula_refs_in_modifier_target_measure_scope }
+          # 日期范围
+          range: {$ref: '#/$defs/range'}  
+
+  range:
+    type: array
+    uniqueItems: true
+    items: 
+      oneOf:  
+        - {type: string, format: formula, x-dml-formula: *formula_refs_in_modifier_target_measure_scope }
+        - type: number
+    minItems: 2
+    maxItems: 2

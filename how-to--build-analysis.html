@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build an analysis · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="build-an-analysis">Build an analysis</h1>
+<p>Use this workflow to add reusable measures and a query that consumes them. For a first compilation, follow <a href="tutorials--first-query.html">Compile your first model query</a>. For syntax lookup, use <a href="reference--model-query-sql.html">Model Query</a>.</p>
+<h2 id="phase-1-define-the-required-answer">Phase 1: Define the required answer</h2>
+<p>Record the report contract before writing SQL.</p>
+<ol>
+<li>Decide whether the answer needs source rows or grouped measures.</li>
+<li>List the fields that identify one result row.</li>
+<li>State the time range, comparison period, and report filters.</li>
+<li>Separate report filters from conditions that define a business measure.</li>
+<li>Record the source population, NULL behavior, and required output columns.</li>
+<li>List assumptions that could change the conclusion.</li>
+</ol>
+<p>For business analysis, apply the assumption checks in <a title="Reference available in the development workspace">data-analysis</a> at this stage and after execution.</p>
+<h2 id="phase-2-draft-the-consumer-query">Phase 2: Draft the consumer query</h2>
+<p>Write the intended <code>SELECT</code>, <code>WHERE</code>, and <code>GROUP BY</code> before adding measures. Use existing business names wherever possible.</p>
+<pre><code class="language-sql">SELECT
+	dt_month,
+	渠道,
+	AGG(销售额),
+	AGG({销售额: yoy}) AS 销售额_yoy,
+	AGG(同店销售额)
+FROM MODEL
+WHERE dt_month = &#39;2025-03-01&#39;
+GROUP BY dt_month, 渠道
+</code></pre>
+<p>Keep report grouping, time windows, and channel slices in the query. Put reusable definitions, such as same-store eligibility, in the model. Add sorting or a row limit when the requested result depends on it. Predicate order does not change grammar acceptance.</p>
+<p>Use a distinct alias for each modified measure reference. Check emitted output columns because the compiler can change their order or omit a requested time field on a known defective shape. See <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<h2 id="phase-3-find-missing-measure-definitions">Phase 3: Find missing measure definitions</h2>
+<p>For each <code>AGG(...)</code> in the draft, inspect the target model.</p>
+<ol>
+<li>Reuse a measure when its definition matches the requested metric.</li>
+<li>If a similar measure has different semantics, preserve the distinction in its name and description.</li>
+<li>Add a measure when the draft needs a reusable business definition.</li>
+<li>Keep a report-only slice in the query unless the slice defines the metric itself.</li>
+</ol>
+<p>Trace dependencies to atomic measures. For a same-store metric, the dependencies can include a customer-month amount, a customer-month eligibility calculation, and an outer rollup.</p>
+<h2 id="phase-4-extend-the-model">Phase 4: Extend the model</h2>
+<p>Define dependencies before their consumers where that order helps readers. Same-file forward references are supported in the checked cases.</p>
+<ol>
+<li>Declare the complete source-row identity on each dataset.</li>
+<li>Define atomic measures from dataset columns.</li>
+<li>Add measure <code>dimensions:</code> when a business calculation requires a particular evaluation dimension.</li>
+<li>Add <code>+d</code> at the reference that needs a finer evaluation dimension.</li>
+<li>Use an explicit outer aggregate to combine intermediate values.</li>
+<li>Define composite ratios from the required components.</li>
+<li>Add descriptions that state population, grain, and NULL behavior.</li>
+</ol>
+<p>Test dimension-constrained measures with queries that include the required fields. A filter on <code>dt_month</code> does not by itself satisfy a closed <code>[customer, dt_month]</code> evaluation dimension.</p>
+<p>For model patterns, see <a href="reference--measures.html">Measures</a>. For descriptions and names, follow <a href="how-to--write-model-metadata.html">Write model metadata</a>.</p>
+<h2 id="phase-5-validate-the-model-and-query">Phase 5: Validate the model and query</h2>
+<p>Use the selected <code>dmlc.exe</code> as the source of truth for uncertain behavior. Record its path, version, build timestamp, and dialect.</p>
+<ol>
+<li>Lint the changed model.</li>
+<li>Strict-compile a minimal query for each new calculation.</li>
+<li>Strict-compile the complete consumer query.</li>
+<li>Inspect diagnostics, notes, SQL, grouping, joins, filters, aliases, and output order.</li>
+<li>If a relevant connection is available, run validate-only before trusted execution.</li>
+<li>Execute a representative slice and compare results with the report contract.</li>
+<li>If an independent SQL or report result exists, compare row multiplicities, keys, NULLs, and all measures on the same source snapshot.</li>
+</ol>
+<pre><code class="language-powershell">dmlc --lint model.dml --output-format=json
+dmlc --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
+dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
+</code></pre>
+<p>Run the final command only when <code>default</code> is the intended configured connection. <a href="how-to--compile-and-validate.html">Use the dmlc CLI</a> covers output capture and validation failures.</p>
+<p>Check each semantic rule against the actual formula. A same-store count cannot exceed a comparable total count when both use the same population. A subset amount can exceed the total when excluded rows contain negative values. Missing prior-year input can produce NULL, zero, or another declared fallback. Do not assume every YoY metric returns zero.</p>
+<p>If a strict warning remains, retain the finding and its SQL. An emitted query is not a passed strict compile. If live checks are unavailable, record <code>not run</code> and the missing prerequisite.</p>
+<p>For analytical conclusions, run queries that could disprove each headline claim. Keep that evidence with the report.</p>
+<h2 id="phase-6-review-the-final-artifacts">Phase 6: Review the final artifacts</h2>
+<p>Follow <a href="how-to--review-model.html">Phase 6 technical review</a> after the applicable Phase 5 checks pass. Supply the model, consumer query, original report contract, compiler identity, and validation evidence.</p>
+<p>Re-run affected checks after fixes. Keep business-definition changes visible and return to Phase 4 when a proposed optimization changes the metric.</p>
+<h2 id="deliver-the-model-and-query">Deliver the model and query</h2>
+<p>Save the reusable model, consumer SQL, and validation evidence together. Record remaining findings and checks that were not run. Use <a title="Reference available in the development workspace">data-analysis</a> for exports, dashboards, and the analytical narrative.</p>
+</main></html>

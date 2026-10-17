@@ -1,0 +1,326 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model examples · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="model-examples">Model examples</h1>
+<p>These fragments cover query dimensions, fill, materializations, and multi-dataset grain. They require the model objects named in each example.</p>
+<h2 id="dimension-modifiers">Dimension modifiers</h2>
+<p><strong>Business question</strong>: What is the share of each product within its category?</p>
+<h3 id="product-share-within-category">Product share within category</h3>
+<pre><code class="language-sql">SELECT category, product,
+       AGG(sales) as product_sales,
+       AGG({sales: {dimension: [category]}}) as category_total
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<p>Here <code>{sales: {dimension: [category]}}</code> drops <code>product</code> and <code>region</code>, so <code>sales</code> is evaluated at category-only grain.</p>
+<h3 id="using-pot-percentage-of-total">Using <code>pot</code> (percentage of total)</h3>
+<p><code>pot</code> drops <strong>all</strong> dimensions, giving each row&#39;s share of the grand total:</p>
+<pre><code class="language-sql">SELECT category, product,
+       AGG(sales) as product_sales,
+       AGG({sales: pot}) as share_of_grand_total
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<p>For share within a parent dimension (e.g. product / category total), use the <code>dimension</code> modifier instead:</p>
+<pre><code class="language-sql">-- Share of category (product / category total)
+SELECT category, product,
+       AGG(sales) as product_sales,
+       DIVIDE(AGG(sales), AGG({sales: {dimension: [category]}})) as category_share
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<h3 id="hidden-dimension-fields">Hidden dimension fields</h3>
+<p>Sometimes a dataset has dimensions that should not be exposed to end users but are needed for internal calculations.</p>
+<pre><code class="language-yaml">transactions:
+    type: dataset
+    dimension:
+        - dt_date
+        - product
+        - region
+    columns:
+        dt_date:
+        product:
+        region:
+        transaction_id:          # internal dimension, not for analysis
+        amount:
+</code></pre>
+<p><code>transaction_id</code> can still be used in <code>+d</code> modifiers but won&#39;t clutter the MODEL table.</p>
+<h3 id="moving-annual-total-mat">Moving annual total (MAT)</h3>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+FROM MODEL
+WHERE dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;)
+                   AND date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)
+GROUP BY dt_month
+</code></pre>
+<p><code>mat</code> computes a rolling 12-month total ending at each <code>dt_month</code>.</p>
+<p><strong>Key points</strong>: <code>+d</code> drills down — appends a dimension field to the evaluation dimension, aggregates at that finer grain, then rolls back up. <code>-d</code> removes dimension fields (roll up). <code>dimension: [list]</code> replaces the entire evaluation dimension. Use these to create share calculations, parent/child ratios, and grain-shifted comparisons.</p>
+<hr>
+<h2 id="combo-columns">Combo columns</h2>
+<p><strong>Business question</strong>: For each product, show the minimum invoice quantity where the invoice was paid.</p>
+<h3 id="conditional-aggregation">Conditional aggregation</h3>
+<pre><code class="language-yaml">min_paid_qty:
+    type: measure
+    dataset: transactions
+    formula: MINIF({quantity}, {is_paid} = 1)
+</code></pre>
+<pre><code class="language-sql">SELECT product, AGG(min_paid_qty)
+FROM MODEL
+GROUP BY product
+</code></pre>
+<h3 id="calendar-densification-vs-fill-default">Calendar densification vs fill default</h3>
+<p><strong>Densify</strong> (every date appears): ensure a calendar / spine grain exists, e.g. flag on <code>Dim Calendar</code>, then query at that grain.</p>
+<pre><code class="language-yaml">Dim Calendar:
+    type: dataset
+    table: DML_CALENDAR
+    dimension:
+        - dt_date
+    columns:
+        dt_date:
+        has_data:
+            source: &#39;1&#39;
+</code></pre>
+<p><strong>Fill default when row missing</strong> (block null contagion after join / FOJ): activate with outermost <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>. Applies at <strong>use sites</strong> of that measure only — see <a href="reference--measures.html#fill-default-when-row-missing">missing-row fill</a>.</p>
+<pre><code class="language-yaml">daily_sales:
+    type: measure
+    formula: &#39;isnull(SUM({sales: {+d: dt_date}}), 0)&#39;   # activate
+</code></pre>
+<p>Do not rely on <code>SUM(isnull({sales: {+d: dt_date}}, 0))</code> alone to fix <strong>missing join rows</strong> for later composites — activate the measure you will reference, or activate the composite result.</p>
+<p><strong>Key points</strong>: <code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> for conditional single-value aggregations. Sparse <strong>dates</strong> → densify; sparse <strong>measure rows after join</strong> → fill default at use sites (P28b).</p>
+<h3 id="allows-all-for-materialization-selection"><code>allows: ALL</code> for materialization selection</h3>
+<p>See <a href="reference--query-yaml.html#411-allows-all"><code>allows: ALL</code></a> for syntax and example. <code>allows: ALL</code> permits compatible materialization candidates; it does not relax measure grain constraints.</p>
+<hr>
+<h2 id="materialize">Materialize</h2>
+<p><strong>Business question</strong>: A dashboard queries monthly sales, yoy growth, and MAT for the past 24 months every hour. The underlying dataset is very large.</p>
+<h3 id="solution-materialize">Solution: Materialize</h3>
+<p>Define the measures, then a materialization object that pre-aggregates them at a fixed grain:</p>
+<pre><code class="language-yaml">sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+
+sales_yoy:
+    type: measure
+    formula: &#39;{sales: yoy}&#39;
+
+sales_mat:
+    type: measure
+    formula: &#39;{sales: mat}&#39;
+
+DWS_SALES_DATE_PRODUCT:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension:
+        - dt_date
+        - product
+    measures:
+        - sales
+        - sales_yoy
+        - sales_mat
+</code></pre>
+<p>A dataset can also declare its own materialization inline (<code>materialize: &lt;name&gt;</code> on the dataset) — see <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>; the standalone object form is documented in <a href="reference--materialization.html">materialization declarations</a>.</p>
+<blockquote>
+<p>⚠️ There is <strong>no</strong> measure-level <code>materialize: true</code> flag. The compiler rejects it with <code>undefined modifier &#39;materialize&#39;</code> (verified with <code>dmlc -c</code>). Materialization is declared via <code>type: materialize</code> or dataset-level <code>materialize: &lt;name&gt;</code> — never on a measure.</p>
+</blockquote>
+<h3 id="how-it-works">How it works</h3>
+<ol>
+<li>The compiler registers the materialization and pre-aggregates the listed measures at the declared <code>dimension:</code> grain</li>
+<li>Queries referencing those measures at a compatible grain become candidates to be served from the materialized table instead of scanning raw data (subject to <code>allows:</code> — see <a href="reference--query-yaml.html">Query definition (<code>type: query</code>)</a>)</li>
+<li>The materialization is refreshed through its stored procedure (<code>parameters:</code>), not in real time</li>
+</ol>
+<h3 id="query-with-non-materialized-filter">Query with non-materialized filter</h3>
+<pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
+FROM MODEL
+WHERE region = &#39;North&#39;
+GROUP BY dt_month, product, region
+</code></pre>
+<p>If the materialization grain is <code>dt_date + product</code> (no <code>region</code>), this query cannot be served from it. Consider materializing at multiple grains if needed.</p>
+<h3 id="when-to-materialize">When to materialize</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Materialize?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Measure scanned frequently, raw data very large</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Measure used in dashboards with strict SLA</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Measure queried ad-hoc, rarely</td>
+<td>No (overhead not worth it)</td>
+</tr>
+<tr>
+<td>Measure grain = raw data grain</td>
+<td>No (no aggregation benefit)</td>
+</tr>
+<tr>
+<td>Measure involves complex window functions</td>
+<td>Yes</td>
+</tr>
+</tbody></table>
+<p><strong>Key points</strong>: materialization is declared with a <code>type: materialize</code> object (grain via <code>dimension:</code>, measures via <code>measures:</code>), not on the measure itself. Materialized measures are still referenced normally in queries (<code>AGG(sales)</code>). See <a href="reference--materialization.html#55-materialize-definition-type-materialize">Materialize definition (<code>type: materialize</code>)</a> and <a href="how-to--design-materializations.html">materialization design</a>.</p>
+<h3 id="materialize-as-etl-replacement">Materialize as ETL replacement</h3>
+<p><strong>Business question</strong>: A stored procedure builds a fact table (<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>) and a report then consumes <code>RPT_X</code>. Can the stored procedure be replaced by DML?</p>
+<h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">Solution: Model the ETL pipeline as a materialize object</h3>
+<p>Instead of treating <code>RPT_X</code> as an externally built <code>table:</code> dataset, model the <strong>entire pipeline</strong>: raw source as a <code>table:</code> dataset, enrichment via <code>pk()</code> chains, and <code>RPT_X</code> as a <code>type: materialize</code> that pre-aggregates from the enriched source.</p>
+<pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure&#39;s #temp tables)
+Dim Customer:
+    type: dataset
+    table: MDM_STORE
+    dimension: [store_id]
+    columns:
+        store_id:
+        store_name:
+        hq_id:
+
+Dim Org:
+    type: dataset
+    table: MDM_ORG
+    dimension: [org_id]
+    columns:
+        org_id:
+        emp_name:
+
+# 2. Source fact dataset with pk() chain enrichment
+#    (replaces the stored procedure&#39;s SELECT ... LEFT JOIN ...)
+raw_sales:
+    type: dataset
+    table: RAW_SALES
+    dimension: [dt_month, store_id, prod_id]
+    columns:
+        dt_month:
+        store_id:
+        prod_id:
+        amt:
+        # pk() chain enrichment replaces LEFT JOINs
+        store_name: pk({store_id}).{Dim Customer}.store_name
+        hq_id: pk({store_id}).{Dim Customer}.hq_id
+        # nested pk() chain: hq_id → Dim Customer → ... (hq_id is itself a pk result)
+        hq_name: pk({hq_id}).{Dim Customer}.store_name
+        # three-hop chain: store → hq_id → org_id → emp_name
+        hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+        hq_emp: pk({hq_org_id}).{Dim Org}.emp_name
+    measures:
+        sales: SUM({amt})
+
+# 3. Materialize replaces INSERT INTO RPT_X
+#    Grain keys (dt_month, store_id, prod_id) go in dimension:.
+#    Functionally dependent attributes (store_name, hq_name, hq_emp) go in
+#    dimension_columns: — the compiler rejects derivable attributes in dimension:.
+RPT_X:
+    type: materialize
+    parameters:
+        dt_month: range
+    dimension:
+        - dt_month
+        - store_id
+        - prod_id
+    dimension_columns:
+        store_name:
+        hq_name:
+        hq_emp:
+    measures:
+        - sales
+
+# 4. Report query consumes the materialize
+report:
+    type: query
+    allows:
+        - RPT_X
+    filters:
+        dt_month: { range: [&#39;2024-01-01&#39;, &#39;2024-03-01&#39;] }
+    columns:
+        dimension: [dt_month, store_name]
+        sales: &#39;{sales}&#39;
+</code></pre>
+<p><strong>When to use this pattern</strong>:</p>
+<ul>
+<li>The golden SQL is a stored procedure with <code>INSERT INTO ... SELECT ... FROM raw JOIN dims</code>.</li>
+<li>The stored procedure&#39;s temp tables map cleanly to dimension datasets with <code>pk()</code> chain lookups.</li>
+<li>The stored procedure&#39;s <code>INNER JOIN</code> population restrictions become measure gates (see <a title="Reference available in the development workspace"><code>sql-to-dml-v2/references/filter-layers.md</code></a> §&quot;Measure gates for INNER JOIN population restrictions&quot;).</li>
+</ul>
+<p><strong>Caveats</strong>:</p>
+<ul>
+<li>Stored procedures that use <code>@month</code> (last balance month) to refresh all historical months&#39; master data cannot be exactly reproduced with <code>pk()</code> chains that join on <code>archive_month</code> (per-month master data). Document this as a known limitation requiring E2 live parity.</li>
+<li><code>CROSS APPLY</code> table-valued functions and <code>CASE WHEN</code> key remapping require <code>sql:</code> escapes on dimension datasets (see <a title="Reference available in the development workspace"><code>sql-to-dml-v2/references/curation.md</code></a> §sql: escape on dimension datasets).</li>
+</ul>
+<hr>
+<h2 id="uneven-dimensions">Uneven dimensions</h2>
+<p><strong>Business question</strong>: Compare sales by region with inventory by warehouse. They share <code>dt_date</code> and <code>product</code> but not <code>region</code> or <code>warehouse</code>.</p>
+<h3 id="the-challenge">The challenge</h3>
+<p>You cannot directly compare measures from datasets with completely different dimensions unless you align them.</p>
+<pre><code class="language-yaml">sales:
+    type: dataset
+    table: fact_sales
+    dimension:
+        - dt_date
+        - product
+        - region
+        - customer
+    columns:
+        dt_date:
+        product:
+        region:
+        customer:
+        amount:
+
+inventory:
+    type: dataset
+    table: fact_inventory
+    dimension:
+        - dt_date
+        - product
+        - warehouse
+    columns:
+        dt_date:
+        product:
+        warehouse:
+        units:
+
+total_sales:
+    type: measure
+    dataset: sales
+    formula: SUM({amount})
+
+total_inventory:
+    type: measure
+    dataset: inventory
+    formula: SUM({units})
+</code></pre>
+<h3 id="common-grain-by-product-and-date">Common grain: by product and date</h3>
+<pre><code class="language-sql">SELECT dt_date, product, AGG(total_sales), AGG(total_inventory)
+FROM MODEL
+WHERE dt_date = date(current_date)
+GROUP BY dt_date, product
+</code></pre>
+<p>This works because both measures share <code>dt_date</code> and <code>product</code>. The model implicitly handles the missing dimensions.</p>
+<h3 id="if-you-need-region--warehouse-in-the-same-query">If you need region + warehouse in the same query</h3>
+<p>You generally <strong>cannot</strong> group by both <code>region</code> and <code>warehouse</code> because <code>total_inventory</code> has no <code>region</code> and <code>total_sales</code> has no <code>warehouse</code>.</p>
+<p><strong>Option 1</strong>: Two separate queries</p>
+<pre><code class="language-sql">-- Sales by region
+SELECT dt_date, region, AGG(total_sales) FROM MODEL GROUP BY dt_date, region
+
+-- Inventory by warehouse
+SELECT dt_date, warehouse, AGG(total_inventory) FROM MODEL GROUP BY dt_date, warehouse
+</code></pre>
+<p><strong>Option 2</strong>: Use modifiers to drop incompatible dimensions</p>
+<pre><code class="language-sql">SELECT dt_date, region,
+       AGG(total_sales) as sales,
+       AGG({total_inventory: {-d: warehouse}}) as inventory_dropped_warehouse
+FROM MODEL
+GROUP BY dt_date, region
+</code></pre>
+<p><code>{-d: warehouse}</code> removes <code>warehouse</code> from inventory&#39;s grain, so inventory is evaluated at <code>dt_date + product</code> grain and can be joined with sales at <code>dt_date + region + product</code> grain. But this is usually semantically questionable — be careful.</p>
+<h3 id="minus-dim_dt-pattern">Minus dim_dt pattern</h3>
+<pre><code class="language-sql">SELECT product, region,
+       AGG(total_sales) as period_sales,
+       AGG({total_sales: {-d: dim_dt}}) as all_time_sales
+FROM MODEL
+WHERE dt_month = date(current_date, &#39;start of month&#39;)
+GROUP BY product, region
+</code></pre>
+<p><strong>Key points</strong>: Measures from different datasets can be queried together if they share enough dimensions. If dimensions don&#39;t align, use separate queries or carefully apply <code>-d</code> modifiers. Dropping dimensions to force compatibility can produce misleading results — document your intent.</p>
+</main></html>

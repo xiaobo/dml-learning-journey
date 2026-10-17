@@ -1,0 +1,225 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grain and join pitfalls · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="grain-and-join-pitfalls">Grain and join pitfalls</h1>
+<p>These entries cover evaluation grain, classifier attachment, windows, source membership, and join behavior. <a href="reference--join-null-equality.html">Join NULL equality</a> owns equality rules.</p>
+<h2 id="filter-placement-errors">Filter placement errors</h2>
+<p><strong>Symptoms</strong>: <code>[filters]: not supported</code>, <code>cannot derive from dimension</code>, <code>referred column … is undefined</code></p>
+<p><strong>Cause</strong>: Predicates left in the wrong layer after <code>--to-dml</code> — <code>filters:</code> on a dataset (the schema rejects <code>filters:</code> on datasets entirely), dim scoping duplicated in fact <code>sql:</code>, or query filter shorthand on cross-dataset attributes.</p>
+<p><strong>Fix</strong>: Classify each predicate by semantic scope (<a href="reference--query-yaml.html#48-filter-placement-hierarchy">Filter placement hierarchy</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Move to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td>Query <code>filters:</code>, measure formula, or <code>sql:</code> WHERE (datasets don&#39;t support <code>filters:</code> at all)</td>
+</tr>
+<tr>
+<td>Lifecycle/attribute predicate repeated in every fact branch</td>
+<td>Query <code>filters:</code> only when it is report-varying; keep a row-removing representation when it defines permanent population</td>
+</tr>
+<tr>
+<td>Numeric/link predicate in fact <code>sql:</code> WHERE</td>
+<td>Use an intermediate metric gate only after proving rejected-only groups, sibling metrics, joins/windows, and absent-vs-present-NULL semantics</td>
+</tr>
+<tr>
+<td><code>referred column {DATASET}.col is undefined</code> in query filter</td>
+<td>String form: <code>&quot;{DATASET}.col = value&quot;:</code></td>
+</tr>
+<tr>
+<td>Two-element list <code>dt_date: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;]</code> returns only 2 days</td>
+<td>Bare list compiles to <code>IN (...)</code> exact match, not a range. Use <code>dt_date: { range: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;] }</code> for inclusive intervals</td>
+</tr>
+<tr>
+<td>Branch-specific date window</td>
+<td>Declare <code>dt_date</code> on that dataset; query <code>filters: dt_date: range: [...]</code></td>
+</tr>
+</tbody></table>
+<h3 id="alternative-lookup-eligibility-can-strengthen-joins">Alternative lookup eligibility can strengthen joins</h3>
+<p>An eligibility rule such as “matches the target dimension <strong>or</strong>, failing that, an indirect dimension” uses two optional relationships. If the derived flag is placed in query <code>filters:</code>, compiled SQL may make one lookup required (<code>INNER JOIN</code>) or lower the <code>AND</code>/<code>OR</code> expression in a way that no longer preserves fallback semantics.</p>
+<p>Prefer this shape:</p>
+<pre><code class="language-yaml">target_state: pk({snapshot_month}, {customer_id}).{TARGET_CUSTOMER}.state
+customer_is_eligible: |-
+  iif({target_state} = 1, 1,
+    iif(pk({customer_id}).{INDIRECT_CUSTOMER}.customer_id is not null, 1, 0))
+included_amount: iif({customer_is_eligible} = 1, {amount}, null)
+
+measures:
+  amount: SUM({included_amount})
+</code></pre>
+<p>Then inspect the generated SQL: both lookups must remain <code>LEFT JOIN</code>, the fallback must remain inside <code>CASE</code>, and any output-group guard should reuse a selected primary measure (<code>HAVING AGG(amount) is not null</code>) so it does not leak an extra hidden column into the result. Treat non-unique keys and target/indirect overlap as diagnostics; DML relationships should not silently reproduce accidental fanout.</p>
+<p>This section records compiler-facing behavior. SQL-migration acceptance, multiplicity classification, and evidence gates are owned by <a title="Reference available in the development workspace"><code>sql-to-dml</code>&#39;s native-first contract</a>; do not maintain a second policy here.</p>
+<p><a id="p43"></a></p>
+<h2 id="p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> vs <code>{-d: dim_dt}</code> (different SQL shape)</h2>
+<p><strong>Wrong</strong>: Using <code>{-d: dim_dt}</code> when golden SQL uses a separate GROUP BY CTE at reduced grain.
+<strong>Fix</strong>: Match structure: <code>{dimension: [cols]}</code> forces a separate aggregation CTE; <code>{-d: dim_dt}</code> uses window <code>OVER (PARTITION BY …)</code>. See <a href="#p44">P44</a> and <a href="reference--troubleshooting--queries.html#p45">P45</a>.</p>
+<p><a id="p44"></a></p>
+<h2 id="p44-window-share-vs--d-dim">P44. Window share vs <code>{-d: dim}</code></h2>
+<p><strong>Wrong</strong>: Stocking draft <code>divide({m}, {m_minus_dim_X})</code> from <code>--to-dml</code> as final business DML.
+<strong>Fix</strong>: Use <code>divide({m}*1.0, {m: {-d: dim}})</code> in query <code>columns:</code> or measures. Migration detail: <a title="Reference available in the development workspace"><code>sql-to-dml</code> curation <code>{-df:}</code> ratio pattern</a>.</p>
+<hr>
+<p>Equivalent to Model Query SQL; YAML-specific pitfalls. Full rules: <a href="reference--query-yaml.html">YAML query declarations</a>.</p>
+<p><a id="p62"></a></p>
+<h2 id="p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">P62. Treating measure <code>dimensions:</code> as dataset identity or query grouping</h2>
+<p><strong>Symptom</strong>: <code>dimensions: [[region]]</code> is written on a measure expecting the query output to be grouped by <code>region</code> (like dataset <code>dimension:</code>); the query instead compiles with no such grouping or fails with a different query dimension.
+<strong>Wrong mental model</strong>: measure <code>dimensions:</code> declares dataset row identity or drives query grouping.
+<strong>Correct mental model</strong>: measure <code>dimensions:</code> contains <strong>allowed dimensions</strong>. Each inner list is one dimension; the outer list contains alternatives. Dataset identity belongs to dataset <code>dimension:</code>; grouping belongs to query <code>GROUP BY</code> / <code>columns.dimension:</code>.
+<strong>Fix</strong>: Remove measure <code>dimensions:</code> unless the metric truly requires those allowed dimensions; put result grouping in the query (<code>GROUP BY</code> / <code>columns.dimension:</code>).</p>
+<pre><code class="language-yaml"># Wrong: expecting dimensions: to produce GROUP BY region
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    dimensions:
+        - [region]
+
+# Right: no dimensions: lock; grouping lives in the query
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+# SELECT region, AGG(sales) FROM MODEL GROUP BY region
+</code></pre>
+<p>See the dimension-role contract in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p><a id="p64"></a></p>
+<h2 id="p64-materialize-true-on-a-measure">P64. <code>materialize: true</code> on a measure</h2>
+<p><strong>Symptom</strong>: <code>ERROR error during processing [ref null]: undefined modifier &#39;materialize&#39;</code> at compile time; the measure is silently dropped (<code>0 measure(s) processed</code>).
+<strong>Wrong</strong>: adding <code>materialize: true</code> to a measure definition, expecting the compiler to pre-aggregate it. There is no measure-level materialize flag (verified with <code>dmlc -c</code>, dmlc 0.3.16).
+<strong>Fix</strong>: declare materialization with a top-level <code>type: materialize</code> object (<code>parameters:</code> + <code>dimension:</code> + <code>measures:</code>), or dataset-level <code>materialize: &lt;name&gt;</code> — never on a measure. See <a href="reference--materialization.html#55-materialize-definition-type-materialize">Materialize definition (<code>type: materialize</code>)</a> and <a href="reference--examples--models.html#materialize">materialization examples</a>.</p>
+<pre><code class="language-yaml"># Wrong
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    materialize: true   # ← undefined modifier &#39;materialize&#39;
+
+# Right
+DWS_SALES:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension: [dt_date, product]
+    measures: [sales]
+</code></pre>
+<p><a id="p66"></a></p>
+<h2 id="p66-measure-as-dimension-without-an-explicit-entity-key">P66. Measure-as-dimension without an explicit entity key</h2>
+<p><strong>Symptom</strong>: compilation requires an explicit <code>+d</code> or <code>dimension:</code> entity key. Prefer <code>+d</code> and read the release limitations before using the replacement-dimension form.
+<strong>Wrong</strong>: using a bare measure and expecting another output measure to supply or imply its entity grain.
+<strong>Fix</strong>: declare the complete entity key at the dimension use site. Inline scalar wrappers are valid when their measure inputs carry the explicit key. See <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>
+<pre><code class="language-yaml"># Wrong
+dimension:
+    - payment_day
+
+# Right, inline scalar
+dimension:
+    - payment_day: &#39;cast({authorization_ts: {+d: payment_id}} as date)&#39;
+</code></pre>
+<p><a id="p67"></a></p>
+<h2 id="p67-incompatible-or-dependent-measure-derived-dimensions">P67. Incompatible or dependent measure-derived dimensions</h2>
+<p><strong>Symptom</strong>: compilation reports incompatible classification keys or a dependency between labels.
+<strong>Wrong</strong>: one label uses <code>{+d: store_id}</code> while another uses <code>{+d: customer_id}</code>, or one label refers to another label declared by the same query.
+<strong>Fix</strong>: make independent labels use the same complete entity key. Key order may differ. Model a separate relation or reusable business measure when labels truly live at different grains.</p>
+<p><a id="p68"></a></p>
+<h2 id="p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">P68. Output measure cannot be rolled up from the classification grain</h2>
+<p><strong>Symptom</strong>: compilation reports missing aggregation or that reaggregation is impossible.
+<strong>Wrong</strong>: expose <code>{sales: {+d: store_id}}</code> directly as an output, sum already-computed distinct counts, or average ratios without defining the intended weighting.
+<strong>Fix</strong>: surround a finer-grain reference with the intended aggregation, such as <code>SUM({sales: {+d: store_id}})</code>. For ratios, roll up components and recompute. For distinct, median, percentile, and similar measures, preserve suitable inputs/states or define a separate supported measure; otherwise accept the compile error.</p>
+<p><a id="p69"></a></p>
+<h2 id="p69-fine-grain-where-hung-on-coarse-query-filters">P69. Fine-grain <code>WHERE</code> hung on coarse query <code>filters:</code></h2>
+<p><strong>Symptom</strong>: CTE aggregates at (G) (e.g. product×region), filters (<code>cnt &gt; 3</code>), then <code>SUM</code>s to (Q) (e.g. product). Draft/<code>--to-dml</code> emits query dimension (Q) only with <code>filters: &quot;cnt &gt; 3&quot;</code> and <code>SUM({total: {+d: region}})</code>. Compile/fusion may turn this into product-level <code>HAVING COUNT(1) &gt; 3</code> — wrong population.</p>
+<p><strong>Wrong</strong>:</p>
+<pre><code class="language-yaml">filters:
+  &quot;cnt &gt; 3&quot;:                 # cnt is not defined at product-only grain
+columns:
+  dimension: [product]
+  grand_total: &#39;SUM({total: {+d: region}})&#39;
+</code></pre>
+<p><strong>Also wrong</strong>: <code>SUM({total: {+d: region, +f: &#39;{cnt} &gt; 3&#39;}})</code> uses an aggregate measure in an input predicate. The diagnostic refers to the predicate, not a general ban on applying <code>+f</code> to measure references. See the <a href="reference--modifiers.html#22-function-modifiers">capability table</a>.</p>
+<p><strong>Fix</strong> — filter inside the roll-up at the shared fine grain:</p>
+<pre><code class="language-yaml">grand_total: |-
+  SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+# No accepted fine rows -&gt; NULL; ELSE 0 would change that result.
+</code></pre>
+<p>Keep query <code>filters:</code> for report/<code>HAVING</code> scope only. See <a href="reference--examples--aggregation.html#26-multi-level-aggregation-with-d">Multi-level aggregation with <code>+d</code></a>a.</p>
+<p><a id="p70"></a></p>
+<h2 id="p70-over-on-an-atomic-measure">P70. <code>OVER</code> on an atomic measure</h2>
+<p><strong>Symptom</strong>: <code>window functions are not allowed in atomic measures</code>, or (older binaries) exit 0 with illegal <code>SUM(…) OVER (…) … GROUP BY</code> missing partition columns.</p>
+<p><strong>Wrong</strong>:</p>
+<pre><code class="language-yaml">measures:
+  净购进量: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+</code></pre>
+<p><strong>Fix</strong>: <strong>window placement</strong> — detail OVER under <code>columns:</code>, then atomic agg:</p>
+<pre><code class="language-yaml">columns:
+  net_qty: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+measures:
+  sum_net_qty: &#39;SUM({net_qty})&#39;
+</code></pre>
+<p>Post-<code>GROUP-BY</code> rank/share stays a <strong>composite</strong> (no <code>dataset:</code>) with <code>{-d:}</code> / <code>{-df:}</code>. Contract: <a href="explanation--window-placement.html">Window placement</a>.</p>
+<p><a id="p71"></a></p>
+<h2 id="p71-bare-col-in-measure-partition-by">P71. Bare <code>{col}</code> in measure <code>PARTITION BY</code></h2>
+<p><strong>Symptom</strong>: <code>… reference is not allowed in PARTITION BY</code> / Hint about <code>{dimension:}</code> or <code>{-d:}</code>.</p>
+<p><strong>Wrong</strong> (on a measure): <code>SUM({total}) over (partition by {product})</code>.
+<strong>Fix</strong>:</p>
+<ul>
+<li>Detail row window → move to <code>columns:</code> and keep bare <code>{product}</code> there.</li>
+<li>Post-aggregation window → <code>partition by {-d: region}</code> or <code>{dimension: product}</code> on a composite measure.</li>
+</ul>
+<p>Do not put <code>{-d:}</code> under dataset <code>columns:</code> for a detail window — that branch uses bare column refs.</p>
+<hr>
+<p>Verified on dmlc 0.3.16 (basket-affinity migration, dual product roles). These compile clean and silently change semantics — always inspect the emitted <code>ON</code> clauses.</p>
+<p><a id="p72"></a></p>
+<h2 id="p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. Two grain fields aliasing one column mis-anchor cross-dataset rollups</h2>
+<p><strong>Symptom</strong>: strict compile passes, diagnostics empty, but a ratio is wrong — e.g. lift denominator is <code>left_count * left_count</code> instead of <code>left_count * right_count</code>.</p>
+<p><strong>Wrong</strong>: a dataset exposes two fields backed by one physical column (<code>left_product_id: &#39;{product_id}&#39;</code>, <code>right_product_id: &#39;{product_id}&#39;</code>), and a second-role rollup <code>{sold_baskets: {-df: [left_product_id]}}</code> (or <code>{dimension: [month, store, right_product_id]}</code>) is expected to join on <code>right_product_id</code>. The compiler re-aliases the reduced temp&#39;s key and joins it on the <strong>first</strong> role&#39;s key (<code>support.product = pair.left_product_id</code>).</p>
+<p><strong>Fix</strong>: look up each role with <code>pk()</code> into a <code>sql:</code> dataset that groups the source at <code>(shared dims, product_id)</code> with a declared <code>dimension:</code> (P77); <code>pk()</code> keys are positional and explicit, so left and right cannot collapse. Or keep <code>-df</code> rollups only at grains with no alias collision. Verify in compiled SQL: two separate joins, <code>… product_id = t.left_product_id</code> and <code>… product_id = t.right_product_id</code>.</p>
+<p><a id="p73"></a></p>
+<h2 id="p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. <code>-df</code> rollup composites emit partner-only rows — and can fabricate key values</h2>
+<p><strong>Symptom</strong>: a measure rolled up from another dataset compiles to a <code>FULL OUTER JOIN</code> composite; rows that exist only in the rolled-up partner emit output rows. The partner temp may project <code>max(&lt;col&gt;)</code> fillers for grain fields it lacks, so an orphan <code>(month, store, product)</code> row can surface as <code>left = right = product</code> — a fabricated self-pair, not just NULLs.</p>
+<p><strong>Fix</strong>: keep a selected primary measure that is NULL on partner-only rows and guard the query with a formula-keyed filter:</p>
+<pre><code class="language-yaml">filters:
+    &#39;{pair_basket_count} is not null&#39;:      # formula as key, empty value
+</code></pre>
+<p>This compiles to a join-back <code>WHERE &lt;primary&gt; IS NOT NULL</code> — and the proven presence also reduces the emitted <code>FULL OUTER JOIN</code> to <code>LEFT JOIN</code>. Judge the final join type in emitted SQL, not the composition template. Prove the contract first: a valid primary group must never have a NULL primary measure, and the guard only holds when partner-only rows lack it. (Complements <a href="reference--modifiers.html#23-dimension-modifiers">Dimension modifiers</a>b.)</p>
+<p><a id="p74"></a></p>
+<h2 id="p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">P74. Two <code>table:</code> datasets on one physical table — merge quirks and silent <code>-df</code> grain loss</h2>
+<p><strong>Symptom</strong>: <code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code> — then, if the two datasets&#39; column sets differ, <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code> and the rollup silently aggregates at a <strong>coarser</strong> grain (e.g. <code>pk(store_id)</code> instead of <code>pk(store_id, left_id)</code>).</p>
+<p><strong>Verified (dmlc 0.3.16)</strong>: two <code>table:</code> datasets on one table do <strong>not</strong> crash per se — the minimal symmetric case compiles, and a role-playing second dataset even anchors <code>-df</code> correctly (<code>right_id = t1.right_id</code>). The datasets are merged into one <code>#TEMP</code> via self-join on the pk. But adding a column to only one side makes the merge drop the other dataset&#39;s alias fields from <code>-df</code> resolution. (An earlier &quot;duplicate <code>table:</code> → NPE&quot; report was mis-attributed; the crash was P75&#39;s filter shape.)</p>
+<p><strong>Fix</strong>: prefer one <code>table:</code> dataset per physical table with alias columns. If you must role-play, keep the column sets identical and verify every rollup temp&#39;s <code>pk(...)</code> in emitted SQL — a warning here is a semantic error, not a nit.</p>
+<p><a id="p75"></a></p>
+<h2 id="p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">P75. Measure guard filters in query <code>filters:</code> — shape and failure mode</h2>
+<p><strong>Right</strong>: <code>&#39;{measure} is not null&#39;:</code> — the entire formula is the key, value empty. This is the way to prune FOJ orphan rows at the query grain.</p>
+<p><strong>Wrong</strong>: <code>my_measure: {condition: &#39;...&#39;}</code> → schema error (<code>condition</code> is not a filter property). <code>my_measure: &#39;&lt;expr&gt;&#39;</code> treats the key as a column name; when it resolves to a measure, <code>Query.treat_filters</code> can NPE instead of emitting a diagnostic.</p>
+<p><strong>Fix</strong>: use the bare-formula key and make sure the referenced measure resolves at the query grain; an unresolvable measure reference fails with NPE, not a readable error.</p>
+<p><a id="p76"></a></p>
+<h2 id="p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">P76. <code>-df</code> / <code>-d</code> arguments are declared grain field names, not source columns</h2>
+<p><strong>Symptom</strong>: <code>column(s) [x] has been specified as -d/-df, but not in dimension [...]</code> after renaming a query dimension through a binding (<code>columns.dimension: [..., new_name: &#39;{col}&#39;]</code>).</p>
+<p><strong>Cause</strong>: the binding synthesizes an internal field (<code>new_name__&lt;query&gt;</code>); modifiers remove fields by their <strong>grain</strong> names, and the underlying column name no longer exists in the grain.</p>
+<p><strong>Fix</strong>: pass the declared grain field names to <code>-df</code> / <code>-d</code> / <code>dimension:</code>. If a field must stay removable by name, keep it on the dataset under that name.</p>
+<p><a id="p77"></a></p>
+<h2 id="p77-pk-into-an-aggregate-relation-sql-target--dataset-on-the-wrapper">P77. <code>pk()</code> into an aggregate relation: <code>sql:</code> target + <code>dataset:</code> on the wrapper</h2>
+<p><strong>Symptom</strong>: <code>dataset must be specified when aggregate non-measure column, did you mean &lt;SupportDataset&gt;?</code> on <code>MAX(pk(...).{Support}.col)</code>.</p>
+<p><strong>Rules</strong>:</p>
+<ul>
+<li><code>pk()</code> targets datasets (or the raw <code>TABLE(pk_cols)</code> form) — a <strong>measure cannot be a pk() target</strong>. An aggregate lookup value (e.g. <code>count(distinct …)</code> at a coarser grain) therefore needs a <code>sql:</code> dataset with a declared <code>dimension:</code>; it compiles to an indexed temp that joins like any dimension.</li>
+<li>The wrapping aggregate measure iterates rows of the <strong>consuming</strong> dataset — set <code>dataset:</code> to it (<code>dataset: BasketProductPair</code>, not the support dataset).</li>
+<li>A golden <code>INNER JOIN</code> on a guaranteed-match support lowers to <code>LEFT JOIN</code>; acceptable only when the lookup keys are produced by the same population — note the reasoning in the escape ledger.</li>
+</ul>
+<p><a id="p79"></a></p>
+<h2 id="p79-same-dimension-d-with--d---df">P79. Same-dimension <code>+d</code> with <code>-d</code> / <code>-df</code></h2>
+<p><strong>Wrong</strong>: <code>{销量: {+d: 门店, -d: 门店}}</code> or <code>{销量: {+d: 门店, -df: 门店}}</code> accepted and rewritten to bare <code>{销量}</code> or <code>{-f: 门店}</code>.</p>
+<p><strong>Why</strong>: no unique silent reading; canceling hides typos; for <code>AVG</code> the fine stage differs from a bare reference; when the output grain already contains the field, <code>-df</code> ≠ <code>-f</code>.</p>
+<p><strong>Fix</strong>: express one intended evaluation stage. Use a bare reference, an explicit fine-grain reference with an outer aggregate, or a removal modifier. Different fields can still coexist. The 2026-10-16 build accepts the checked conflicts without diagnostics and repeats regional totals before an outer sum. This violates the required rejection contract. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a> and <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p><a id="p80"></a></p>
+<h2 id="p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> drops a non-grain query filter from the report row set</h2>
+<p><strong>Wrong</strong>: query filter <code>{store_id}=1</code> while a measure uses <code>{-f: store_id}</code> and <code>store_id</code> is not in the output grain → filter silently omitted → FOJ partner rows from the unfiltered arm appear.</p>
+<p><strong>Fix</strong>: <code>-f</code> only removes the filter from <strong>measure evaluation</strong>; query filters still define population. When the blocked filter cannot reference an output column, constrain rows with a correlated <code>EXISTS</code> / semi-join. Do not change grouping via <code>-f</code> alone.</p>
+<p><a id="p81"></a></p>
+<h2 id="p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">P81. Cross-grain <code>dimension:</code> time replacement without calendar broadcast</h2>
+<p><strong>Wrong</strong>: <code>{销量: {dimension: [dt_quarter]}}</code> on a <code>dt_month</code> query becomes a single scalar attach or fails to resolve <code>dt_quarter</code> from a month CTE.</p>
+<p><strong>Fix</strong>: evaluate at quarter grain (calendar bridge from month/date), then broadcast the quarter total onto each month row in that quarter (<code>nullpk(pk(dt_month).CAL.dt_quarter)</code> pattern). Additive <code>SUM</code> may re-aggregate months; non-additive measures need fact-level coarse grain.</p>
+<p><a id="p78"></a></p>
+<h2 id="p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">P78. A <code>sql:</code> escape must bake its own population/window predicates</h2>
+<p><strong>Symptom</strong>: query <code>dt_*</code> range filters do <strong>not</strong> push inside a <code>sql:</code> block&#39;s text — they land on the outer <code>WHERE</code> of the compiled derived temp. Inside a self-join escape an unbounded inner leg silently widens the population (e.g. right-leg rows outside the report window form pairs).</p>
+<p><strong>Fix</strong>: bake permanent population predicates (<code>line_status = &#39;SOLD&#39;</code>) and symmetric window bounds into the escape&#39;s inner query so every leg/branch sees identical eligibility; let query <code>filters:</code> handle report scope on the outer keys. And when the escape reads a <code>table:</code>-owned physical table, reference <code>from {Dataset}</code> (P22b) — never the raw table name.</p>
+</main></html>

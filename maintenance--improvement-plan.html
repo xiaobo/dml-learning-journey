@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML and DMX improvement plan · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-and-dmx-improvement-plan">DML and DMX improvement plan</h1>
+<p>This plan records proposed compiler and validation work from SQL-to-DML curation. Requirements below are goals. They do not establish released behavior. <a href="maintenance--release-evidence.html">Release evidence</a> records observations from the selected executable.</p>
+<h2 id="current-decisions-and-evidence">Current decisions and evidence</h2>
+<p>Cross-dataset composition uses FULL OUTER JOIN semantics. Proven presence filters can restrict the population, and the compiler can reduce the emitted join type. Join equality, membership, and missing-row fill remain separate contracts.</p>
+<p>The earlier plan permitted NULL-safe composition. The current <a href="reference--join-null-equality.html">join NULL equality contract</a> supersedes that policy: key-union composition uses ordinary <code>=</code>, while designated row-preserving attachment uses NULL-safe equality. The 2026-10-16 <code>cross_dataset</code> probe emits ordinary equality.</p>
+<p>Query measure-as-dimension has checked <code>+d</code> and <code>dimension:</code> classifier forms on the 2026-10-16 build. Classifiers in <code>materialize.dimension_columns</code> remain deferred. The concept pages and the atomic-versus-composite <code>+f</code> corrections already exist.</p>
+<p>The 2026-10-16 audit also records strict join warnings, an omitted output field in <code>two_times</code>, and accepted same-field modifier conflicts that require a rejection diagnostic. These observations replace stale claims that the current classifier probes reproduce the September defects.</p>
+<h2 id="relationship-validation-requirements">Relationship validation requirements</h2>
+<p>For every migrated join, the validation evidence must identify the following facts.</p>
+<ul>
+<li>Source join type and equality operator.</li>
+<li>DML alignment fields and their complete evaluation grain.</li>
+<li>Observed nullable-key behavior.</li>
+<li>Presence measures that establish required source membership.</li>
+<li>Complete dataset-key uniqueness.</li>
+<li>Output multiplicity and missing-row fill.</li>
+<li>Parity with an independent result when one is available.</li>
+</ul>
+<p>A LEFT population requires a primary presence signal that is non-NULL for every valid primary group. An INNER population requires sound membership signals for both sides. An arbitrary nullable business value is insufficient.</p>
+<p>Validation cases must include matched keys, unmatched keys on each side, NULL keys, and duplicate keys. Nullable source equality must be compared with emitted equality at each join site. No blanket acceptance of NULL-to-NULL matching applies to ordinary composition.</p>
+<p>The proposed evidence manifest contains these fields.</p>
+<pre><code class="language-yaml">relationship:
+  source_join: left
+  source_equality: ordinary
+  dml_composition: full_outer
+  alignment_keys: []
+  primary_presence_measure:
+  secondary_presence_measure:
+  nullable_key_status: unknown
+  uniqueness_status: not_run
+  null_semantics_acceptance: missing
+  multiplicity_status: not_run
+</code></pre>
+<p>The migration workflow must reject missing or contradictory required evidence. Missing live prerequisites remain <code>not_run</code>.</p>
+<h2 id="filter-and-aggregation-requirements">Filter and aggregation requirements</h2>
+<p>Atomic-measure <code>+f</code> is supported in checked cases. Composite propagation is valid only when the predicate is intended for every atomic dependency. <code>+f</code> combined with <code>+d</code> must retain all filtered components at the requested fine grain.</p>
+<p>The validation suite must distinguish no-match NULL from an explicit <code>ELSE 0</code>. Non-distributive outer calculations must retain the required intermediate grain. A fine-grain aggregate predicate must remain at its declared stage.</p>
+<p>The language contract requires rejection when <code>+d</code> intersects either <code>-d</code> or <code>-df</code> in the same modifier object. Query filters must still constrain the report population when a reference blocks their propagation. Missing-row fill at a dependency use site must not create an unrelated outer fill.</p>
+<h2 id="generated-sql-requirements">Generated SQL requirements</h2>
+<p>Strict compilation must diagnose invalid or incomplete SQL, including these cases.</p>
+<ul>
+<li>SQL that does not parse in the selected dialect.</li>
+<li>Unresolved DML tokens outside comments and string literals.</li>
+<li>Invalid mixtures of aggregate and non-aggregate projections.</li>
+<li>Missing or incorrectly bound columns.</li>
+<li>Logical dataset names emitted as physical relations.</li>
+<li>Missing, renamed, or reordered output columns that violate the declared contract.</li>
+<li>Abnormal termination instead of a structured diagnostic.</li>
+</ul>
+<p>The current <code>two_times</code> case needs explicit output-contract coverage. Success with one requested time field omitted is not an accepted query result.</p>
+<h2 id="grain-classifier-and-ownership-requirements">Grain, classifier, and ownership requirements</h2>
+<p>A grouped-row window count must preserve both stages: group source rows at the fine grain, then count those groups at the requested partition. A coarse constant one does not preserve that meaning.</p>
+<p>Classifier validation must distinguish the label value, complete entity key, membership population, and report grouping. NULL can be a valid classifier value. A NULL label alone does not prove absence.</p>
+<p>Name resolution must retain source ownership. Ambiguous-reference diagnostics must identify the reference site, selected owner, competing candidates, and final name. A logical CTE name must not silently bind to a physical table.</p>
+<h2 id="deferred-materialization-and-sql-alternatives">Deferred materialization and SQL alternatives</h2>
+<p>Measure classifiers in <code>materialize.dimension_columns</code> require a separate design for entity keys, functional dependencies, inherited names, and downstream relationships. Curated fixtures must not depend on this capability before it is verified.</p>
+<p>When a supported native form cannot preserve a required contract, the proposed alternative may use a focused SQL dataset for source restrictions, physical windows, explicit joins, aggregate support, deduplication, or a keyless row bag. Each exception needs its invariant, rejected native attempts, reproducer, compiler evidence, owner, and review date.</p>
+<h2 id="delivery-and-acceptance">Delivery and acceptance</h2>
+<p>Prioritize structured diagnostics and output-contract checks, then relationship evidence, grouped windows, classifier membership, and ownership defects. Update <code>--simplify</code>, <code>--to-dml</code>, and migration evidence after the relevant contracts pass.</p>
+<p>Completion requires executable regression evidence for the intended build, explicit live-validation status, and parity evidence where an independent result exists. Documentation updates alone do not complete compiler work. Materialize classifiers remain outside acceptance until a separate design is approved.</p>
+</main></html>

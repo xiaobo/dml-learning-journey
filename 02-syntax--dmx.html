@@ -1,0 +1,126 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>dmx.md · DML</title><link rel="stylesheet" href="docs.css"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><details>
+    <summary>datoml表达式说明</summary>
+    <div class="note">
+
+<ol>
+<li><p>维度、指标引用:</p>
+<ul>
+<li>引用指标和所属数据集中的列：<code>{指标名}</code>，<code>{列名}</code></li>
+<li>引用关联数据集中的列：<ul>
+<li><code>{dataset名称}.列名</code> (通过关联数据集的主键列和本数据集中的同名列关联)</li>
+<li><code>pk({列1}, {列2}).{dataset名称}.列名</code> (指定本数据集中的关联列名)</li>
+</ul>
+</li>
+<li>引用关联表中的字段：<code>pk({列1}, {列2}).表名(主键字段1，主键字段2).字段</code></li>
+<li>DMX 运行时变量：<ul>
+<li><code>{dim_dt}</code> — 当前查询的时间维度；运行时解析为 <code>dt_date</code>、<code>dt_week</code>、<code>dt_month</code>、<code>dt_quarter</code> 或 <code>dt_year</code>，也可作为维度修饰符参数。也可直接使用 <code>{dt_date}</code> / <code>{dt_week}</code> / <code>{dt_month}</code> / <code>{dt_quarter}</code> / <code>{dt_year}</code></li>
+<li><code>{measure}</code> — fn-macro 的调用指标占位符；宏展开时替换为调用方正在修饰的指标，仅在 fn-macro 的 <code>formula</code> 中使用</li>
+</ul>
+</li>
+<li>指标作维度：把命名指标放进 <code>columns.dimension</code>，按算出的标签分组（获客月、分层等）。<strong>使用处</strong>必须写 <code>{标签: {+d: 实体}}</code>（或 <code>dimension:</code>）；运行时先在实体层级计算标签和指标，然后再将指标聚合到标签层级</li>
+</ul>
+</li>
+<li><p>指标修饰：<code>{指标名: 修饰符}</code></p>
+<ul>
+<li><p>维度修饰符：对指标维度进行调整（+d，-d）或指定（dimension）后引用；</p>
+<ul>
+<li><code>+d: dim</code> — 维度下钻：在「查询粒度 ∪ {dim}」上求值；滚回查询粒度须显式外层聚合（指标作维度的标签绑定除外）</li>
+<li><code>-d: dim</code> — 维度上卷：从查询维度移除指定维度，获取更粗粒度上的指标聚合值（筛选仍可下推）</li>
+<li><code>-df: dim</code> — 维度上卷并阻断筛选：去掉该维分组，并阻断该维相关筛选下推</li>
+<li><code>-f: name</code> — 仅移除筛选：从<strong>度量求值</strong>中去掉指定名称或列相关的筛选；<strong>不改变分组</strong>。查询级筛选仍约束报表行集</li>
+<li><code>dimension: [dims]</code> — 替换维度集：用指定维度列表替换后获取指标值</li>
+<li><strong>禁止</strong>同一修饰对象内 <code>+d</code> 与 <code>-d</code>/<code>-df</code> 维名相交（会编译报错）；不同维可共存</li>
+</ul>
+</li>
+<li><p>业务限定修饰符: 为指标添加额外的筛选条件</p>
+<ul>
+<li><code>+f: condition</code> — 添加筛选条件：在计算指标值时额外添加筛选</li>
+</ul>
+</li>
+<li><p>修饰符可叠加使用，遵循从左到右的生效顺序：</p>
+<ul>
+<li>e.g.  <code>AGG({sales: {ytd, ya}})</code> / <code>AGG(sales, &#39;ytd&#39;, &#39;ya&#39;)</code> 等价于 <code>当年至今累计的去年同期值</code></li>
+<li>语法格式为<code>AGG(指标名, 修饰符1, 参数1(可选), 修饰符2...)</code>或<code>AGG({指标名: {修饰符1: 参数1(可选), 修饰符2}})</code></li>
+</ul>
+</li>
+<li><p>时间修饰符（dt-macro，返回绝对值）：</p>
+<ul>
+<li><code>dim_dt</code> — 时间维度引用：会落地到查询中的实际时间相关列，支持通过 as hour/date/week/month/quarter/year 进行期间类型转换</li>
+<li>ytd: 当年至今 (year-to-date), 支持的时间维度包含日，月，季</li>
+<li>qtd: 当季至今 (quarter-to-date), 支持的时间维度为日，月</li>
+<li>mtd: 当月至今 (month-to-date), 支持的时间维度为日</li>
+<li>wtd: 当周至今 (week-to-date), 支持的时间维度为日</li>
+<li>mat: 滚动年度总计 (moving annual total)</li>
+<li>ya:  去年同期 (year ago)</li>
+<li>pp:  上期值（last period）, 可作为上季度last quarter，上月last month等</li>
+<li>ppp: 上上期（上上季度，上上月）</li>
+<li>p3m: 过往3个月，含当月（共3个月） (previous 3 month)</li>
+<li>p6m: 过往6个月，含当月（共6个月） (previous 6 month)</li>
+<li>p2y: 过往2年，含当期 (previous 2 year)</li>
+<li>p3y: 过往3年，含当期 (previous 3 year)</li>
+<li>p5y: 过往5年，含当期 (previous 5 year)</li>
+</ul>
+</li>
+<li><p>增长率修饰符（fn-macro，返回小数）：</p>
+<ul>
+<li>yoy: 同比增长率 (year-over-year)：divide({measure}*1.0, {measure: ya}) - 1，返回小数</li>
+<li>pop: 环比增长率 (period-over-period)：divide({measure}*1.0, {measure: pp}) - 1，返回小数</li>
+<li>mom: 月环比增长率 (month-over-month)，pop在月粒度的别名</li>
+</ul>
+</li>
+<li><p>函数修饰符（fn-macro）：</p>
+<ul>
+<li>firstday: 期初值 (period opening value)，指标在期间第一天的值</li>
+<li>lastday: 期末值 (period closing value)，指标在期间最后一天的值</li>
+<li>lastmonth: 当前期间内最后一月</li>
+<li>grand: 总计，丢弃所有维度：{measure: {dimension: []}}</li>
+<li>pot: 占总计百分比 (percentage of total)：divide({measure}*1.0, {measure: grand})</li>
+<li>rank: 降序排名 (rank descending)，1 = 最大值</li>
+<li>rank_asc: 升序排名 (rank ascending)，1 = 最小值</li>
+<li>today: 今日值</li>
+<li>yesterday: 昨日值</li>
+<li>current_month: 当月值</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>期间相关：</p>
+<ul>
+<li>使用期间的第一天指代整个期间</li>
+<li>期间字段名通常使用dt_date/dt_month/dt_quarter/dt_year代表完整期间，模型中只需定义一个期间字段，系统会自动生成其他后续期间字段定义而无需手动定义</li>
+<li>当引用指标时使用了时间修饰符，需要可解析的期间上下文并满足宏的 prerequisite；查询维度或期间筛选均可提供上下文</li>
+<li>时间筛选条件使用目标期间即可，无需包含时间修饰符指定的期间，比如当使用pop时，指定当期即可，无需在筛选条件中包含上期，使用yoy时，也无需在筛选条件中包含去年同期</li>
+</ul>
+</li>
+<li><p>使用datoml函数：</p>
+<ul>
+<li>AGG(指标名): 返回指标值，指标名可以在独立的DML模型文件中定义，也可以是本SQL中的聚合列，仅在查询SQL中使用，当在SQL中通过AGG函数引用指标时，如果没有指定输出字段名，则默认指标名为输出字段名</li>
+<li>AGG(指标名, 修饰符, 参数...) / AGG({指标名: 修饰符}): 同上，返回修饰后的指标值，<ul>
+<li>如 AGG([销售额], &#39;+d&#39;, prod_id), AGG({销售额: {+d: prod_id}}) 均为合法表达式 ==&gt; 注意前者写法中 prod_id 为列名，无需引号包围，也无需转义；后者写法中 prod_id 为以列名为内容的字符串，在列名中不含特殊字符的情况下，可以无需引号包围，否则需要引号包围，且内部特殊字符需要转义</li>
+<li>如 AGG([销售额], &#39;+f&#39;, prod_id = &#39;1&#39;), AGG({销售额: {+f: &#39;prod_id = &#39;&#39;1&#39;&#39;&#39;}}) 均为合法表达式 ==&gt; 注意前者写法中 prod_id = &#39;1&#39; 为筛选表达式，无需引号包围，也无需转义；后者写法中 prod_id = &#39;1&#39; 为以筛选表达式为内容的字符串，需要引号包围，且内部特殊字符需要转义</li>
+</ul>
+</li>
+<li>DIVIDE(分子表达式, 分母表达式): 安全除法并使用浮点数格式，在分母表达式值为0时返回NULL, 相当于 <code>分子表达式*1.0 / nullif(分母表达式, 0)</code></li>
+<li>DISTINCTCOUNT(表达式): 排重计数，相当于 <code>count(distinct 表达式)</code></li>
+<li>SUMIF(表达式, 条件): 条件求和，相当于 <code>sum(case when 条件 then 表达式 end)</code></li>
+<li>COUNTIF(条件): 返回满足条件的行数，相当于 <code>count(case when 条件 then 1 end)</code></li>
+<li>COUNTIF(表达式, 条件): 统计满足条件且表达式值不为NULL的行数，相当于 <code>count(case when 条件 then 表达式 end)</code></li>
+<li>DISTINCTCOUNTIF(表达式, 条件): 条件排重计数（不含NULL，多行值相同记为一行），相当于 <code>count(distinct case when 条件 then 表达式 end)</code></li>
+<li>AVGIF(表达式, 条件): 条件平均，相当于 <code>avg(case when 条件 then 表达式 end)</code></li>
+<li>MAXIF(表达式, 条件): 条件最大值，相当于 <code>max(case when 条件 then 表达式 end)</code></li>
+<li>MINIF(表达式, 条件): 条件最小值，相当于 <code>min(case when 条件 then 表达式 end)</code></li>
+</ul>
+</li>
+<li><p>支持sqlite-style的date函数:</p>
+<ul>
+<li>date(表达式, 修饰字符串, 修饰字符串, ...), 支持如下修饰字符串:<ul>
+<li>NNN day(s)/week(s)/month(s)/quarter(s)/year(s): 取所在日期的后N天/星期/月/季/年，当N为负数时，取所在日期的前N天/星期/月/季/年</li>
+<li>start of week/month/quarter/year: 取所在星期/月/季/年的第一天，其中星期的第一天为星期一</li>
+<li>weekday N: 取所在星期的第N天，其中N=1时为星期一，N=7时为星期日</li>
+</ul>
+</li>
+</ul>
+ </div>
+</details></li>
+</ol>
+</main></html>
