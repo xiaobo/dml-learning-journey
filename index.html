@@ -97,8 +97,8 @@
 		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
 	</style>
-	<link rel="stylesheet" href="course.css">
-	<link rel="stylesheet" href="course-zh.css">
+	<link rel="stylesheet" href="course.css?v=ca50f748cf">
+	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
 </head>
 <body>
 	<a class="skip" href="#journey" data-i18n="common.text1">Skip to the introduction</a>
@@ -316,11 +316,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		</section>
 		<footer><p data-i18n="common.text7">DML defines. DMX expresses. Model Query selects and groups.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compiler observations</a> · <a href="explanation--visual-introduction.html">Original text introduction</a> · <a href="assets--generation.json">Art direction</a> · Works offline</p></footer>
 	</main>
-	<script src="locales--en.js"></script>
-	<script src="locales--zh.js"></script>
-	<script src="locales--ja.js"></script>
-	<script src="locales--de.js"></script>
-	<script src="course-i18n.js"></script>
+	<script src="locales--en.js?v=c6267cea08"></script>
+	<script src="locales--zh.js?v=9b71bcf04c"></script>
+	<script src="locales--ja.js?v=6f65d85bff"></script>
+	<script src="locales--de.js?v=9e6768ffd6"></script>
+	<script src="course-i18n.js?v=24836a51f9"></script>
 	<script>
 		(() => {
 			const i18n = window.SmallJourneyI18n, t = i18n.t;
@@ -371,11 +371,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 			document.addEventListener('course-language-change',() => render(document.querySelector('input[name="grouping"]:checked').value));
 		})();
 	</script>
-	<script src="course-data.js"></script>
-	<script src="course-definitions.js"></script>
-	<script src="compiler-observations.js"></script>
-	<script src="course-rewards.js"></script>
-	<script src="course.js"></script>
-	<script src="course-navigation.js"></script>
+	<script src="course-data.js?v=1f5a9b7f83"></script>
+	<script src="course-definitions.js?v=6b2311cc3d"></script>
+	<script src="compiler-observations.js?v=a809bd1b4d"></script>
+	<script src="course-rewards.js?v=445824a005"></script>
+	<script src="course.js?v=a524ea830c"></script>
+	<script src="course-navigation.js?v=f54cb359cf"></script>
 </body>
 </html>
