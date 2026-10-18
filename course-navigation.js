@@ -63,7 +63,6 @@
 				else link.removeAttribute('aria-current');
 			}
 		}
-		document.dispatchEvent(new CustomEvent('course-chapter-view',{detail:{chapter:chapters[current]?.id || 'journey'}}));
 	}
 	let scheduled = false;
 	function schedule() {

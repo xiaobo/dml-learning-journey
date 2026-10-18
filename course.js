@@ -1,5 +1,17 @@
 (function () {
 	'use strict';
+	// Remove only this tutorial's retired analytics data; keep learning preferences.
+	function clearRetiredAnalytics() {
+		if (location.hostname !== 'xiaobo.github.io' || !location.pathname.startsWith('/dml-learning-journey/')) return;
+		try {
+			localStorage.removeItem('dml-analytics-choice-v1');
+			for (const part of document.cookie.split(';')) {
+				const name = part.split('=')[0].trim();
+				if (name.startsWith('dmljourney_')) document.cookie = name+'=; Max-Age=0; Path=/; SameSite=Lax; Secure';
+			}
+		} catch { /* Storage can be unavailable; the tutorial still works. */ }
+	}
+	clearRetiredAnalytics();
 	const data = window.SmallJourneyCourse;
 	const snapshots = window.SmallJourneyObservations;
 	const $ = id => document.getElementById(id);
@@ -39,7 +51,6 @@
 	}
 	function finishChapter(id) {
 		const first = !completed.has(id); completed.add(id); updateProgress();
-		if (first) document.dispatchEvent(new CustomEvent('course-chapter-complete',{detail:{chapter:id,completed:completed.size}}));
 		return first;
 	}
 	function updateStops(trail) {
