@@ -1,0 +1,84 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Read the website analytics · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><link rel="stylesheet" href="course-analytics.css?v=0b44611822"><script defer src="course-analytics.js?v=78bd810354"></script><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="read-the-website-analytics">Read the website analytics</h1>
+<p>The published tutorial and supporting HTML guides use Google Analytics 4 property <code>G-MVE2VY7REB</code>. The measurement ID is public; no API secret belongs in the website.</p>
+<h2 id="check-collection">Check collection</h2>
+<ol>
+<li>Open the published website at <code>https://xiaobo.github.io/dml-learning-journey/</code>.</li>
+<li>Choose <strong>Allow statistics</strong> in the optional analytics panel. Local previews never load Google Analytics. Browsers requesting Do Not Track or Global Privacy Control are excluded.</li>
+<li>Open the property&#39;s <strong>Realtime</strong> report in Google Analytics and look for the visit. An ad blocker or network restriction can prevent collection.</li>
+<li>Complete a previously unfinished chapter and inspect the <code>chapter_complete</code> event. Reloading saved progress and checking an already completed answer do not send another completion.</li>
+<li>Click <strong>Analytics settings</strong> in the footer to change the choice. Declining disables future measurement and removes this tutorial&#39;s prefixed analytics cookies; lesson progress remains intact. It does not erase events already collected.</li>
+</ol>
+<p>Visitor and session numbers cover measured browsers that allow analytics. They are not a census of all readers or distinct people. Do not treat a pageview as a unique visitor.</p>
+<h2 id="read-learning-activity">Read learning activity</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Meaning</th>
+<th>Properties</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>page_view</code></td>
+<td>Google&#39;s normal pageview measurement</td>
+<td>Public page URL and fixed page title</td>
+</tr>
+<tr>
+<td><code>tutorial_begin</code></td>
+<td>Click the entry link to chapter 1</td>
+<td><code>course_language</code></td>
+</tr>
+<tr>
+<td><code>tutorial_resume</code></td>
+<td>Click the entry link to resume an unfinished course</td>
+<td><code>course_language</code></td>
+</tr>
+<tr>
+<td><code>tutorial_review</code></td>
+<td>Click the entry link after the course is complete</td>
+<td><code>course_language</code></td>
+</tr>
+<tr>
+<td><code>chapter_view</code></td>
+<td>Reach a chapter; once per chapter per document load</td>
+<td><code>chapter_id</code>, <code>chapter_number</code>, <code>course_language</code></td>
+</tr>
+<tr>
+<td><code>chapter_complete</code></td>
+<td>Newly complete a chapter; once per chapter per document load</td>
+<td><code>chapter_id</code>, <code>chapter_number</code>, <code>course_language</code></td>
+</tr>
+<tr>
+<td><code>tutorial_complete</code></td>
+<td>Newly reach all twelve completed chapters</td>
+<td><code>course_language</code></td>
+</tr>
+<tr>
+<td><code>language_change</code></td>
+<td>Change the tutorial language</td>
+<td><code>previous_language</code>, <code>course_language</code></td>
+</tr>
+<tr>
+<td><code>tutorial_download</code></td>
+<td>Request a query, model, or checked project download</td>
+<td><code>download_type</code>, <code>course_language</code></td>
+</tr>
+</tbody></table>
+<p>Downloads count clicks, not proof that the file finished downloading. Completions indicate passing these exercises, not independently verified DML proficiency. A learner who starts collecting midway through the course may have a completion event without earlier measured chapters.</p>
+<p>In <strong>Admin → Custom definitions</strong>, register event-scoped dimensions for <code>chapter_id</code>, <code>course_language</code>, and <code>download_type</code> to use these properties in breakdown reports. Use <code>tutorial_complete</code> as a key event if course completion is the goal.</p>
+<p>Compare chapter reach with chapter completion to identify possible drop-off. Check language and device breakdowns before changing a chapter: low completion can also mean a returning learner, a short visit, or unmeasured activity.</p>
+<h2 id="keep-event-counts-distinct">Keep event counts distinct</h2>
+<p>The integration leaves ordinary <code>page_view</code> collection to Google&#39;s tag. It does not send manual pageviews for chapter changes. Chapter activity is recorded as the separate <code>chapter_view</code> event.</p>
+<p>GA4 Enhanced Measurement can also generate pageviews from browser history changes. If the desired definition is one pageview per document load, disable <strong>Page changes based on browser history events</strong> under the Web stream&#39;s Enhanced Measurement pageview settings. The code cannot override that property-level setting with <code>send_page_view: false</code> alone.</p>
+<p>Enhanced Measurement may independently record downloads as <code>file_download</code>. Use <code>tutorial_download</code> for this site&#39;s explicitly classified downloads; do not add the two event totals together.</p>
+<h2 id="preserve-collection-boundaries">Preserve collection boundaries</h2>
+<p>The integration loads only on HTTPS under <code>xiaobo.github.io/dml-learning-journey/</code>, after a visitor allows statistics. It does not queue activity from before that choice. It sends no chosen answer, model text, report contents, account ID, or complete referrer URL. Referrers are reduced to their external origin; page query strings and fragments are omitted from the configured location. Google may still derive browser/device and session information using its tag and analytics cookies.</p>
+<p>Google Signals and ad personalization signals are disabled; advertising consent categories are denied. This integration does not insert advertisements. Analytics uses a <code>dmljourney</code> cookie prefix to keep its cookies separate from other projects on the same host.</p>
+<p>Run these checks before deployment:</p>
+<pre><code class="language-powershell">node dml-dmx/scripts/check-visual-analytics.cjs
+node dml-dmx/scripts/check-visual-locales.cjs
+node dml-dmx/scripts/check-docs.cjs
+</code></pre>
+<p>The analytics check simulates the tag queue without transmitting test events to Google.</p>
+<p>Sources: <a href="https://support.google.com/analytics/answer/11397207">Google&#39;s cookie documentation</a>, <a href="https://developers.google.com/analytics/devguides/collection/ga4/views">pageview measurement</a>, and <a href="https://developers.google.com/tag-platform/security/guides/consent">consent mode</a>.</p>
+</main></html>

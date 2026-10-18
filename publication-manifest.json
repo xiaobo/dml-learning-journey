@@ -21,6 +21,14 @@
       "published": "compiler-observations.json"
     },
     {
+      "source": "explanation/visual-introduction/course-analytics.css",
+      "published": "course-analytics.css"
+    },
+    {
+      "source": "explanation/visual-introduction/course-analytics.js",
+      "published": "course-analytics.js"
+    },
+    {
       "source": "explanation/visual-introduction/course-data.js",
       "published": "course-data.js"
     },
@@ -331,6 +339,10 @@
     {
       "source": "references/verification/manifest.json",
       "published": "references--verification--manifest.json"
+    },
+    {
+      "source": "maintenance/site-analytics.md",
+      "published": "maintenance--site-analytics.html"
     },
     {
       "source": "references/verification/label_plus/report.dml",

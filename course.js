@@ -37,7 +37,11 @@
 		try { localStorage.setItem(storageKey,JSON.stringify([...completed])); } catch {}
 		document.dispatchEvent(new Event('course-progress-change'));
 	}
-	function finishChapter(id) { const first = !completed.has(id); completed.add(id); updateProgress(); return first; }
+	function finishChapter(id) {
+		const first = !completed.has(id); completed.add(id); updateProgress();
+		if (first) document.dispatchEvent(new CustomEvent('course-chapter-complete',{detail:{chapter:id,completed:completed.size}}));
+		return first;
+	}
 	function updateStops(trail) {
 		trail.setAttribute('aria-label',t('stops',{n:completed.size,total:chapterIds.length}));
 		for (const stop of trail.children) stop.classList.toggle('visited',completed.has(stop.dataset.stopChapter));
