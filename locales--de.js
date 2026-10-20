@@ -10,7 +10,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text1": "01 / Die Zeilen",
     "identity.text2": "Verstehe zuerst,<br>was eine Zeile bedeutet.",
     "identity.text3": "Der Reisende zählte vier Verkäufe.<br>Jeder brauchte einen eigenen Namen.",
-    "identity.text4": "Ein Datensatz bildet eine Quelltabelle im Modell ab. <code>dimension: [id]</code> deklariert den vollständigen Schlüssel der Quellzeile: hier ein Verkauf, den <code>id</code> identifiziert.",
+    "identity.text4": "Ein Dataset bildet eine Quelltabelle im Modell ab. <code>dimension: [id]</code> deklariert den vollständigen Quellschlüssel: Hier identifiziert <code>id</code> jede Verkaufszeile.",
     "identity.text5": "Zwei Verkäufe können dieselbe Region haben. <code>region</code> eignet sich zum Gruppieren, reicht aber als Quellschlüssel nicht aus.",
     "identity.text6": "Finde die beiden North-Verkäufe: gleiche Region, verschiedene IDs. Ein Quellschlüssel muss jede Zeile identifizieren.",
     "identity.text7": "Vier erfundene Verkäufe · TABLE_SALES",
@@ -20,16 +20,16 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "model.text2": "Bewahre die Definitionen<br>in einem Notizbuch auf.",
     "model.text3": "„Wie nennen wir die Summe?“<br>Der Reisende schrieb: sales.",
     "model.text4": "DML definiert das Modell in YAML. <code>FACT_SALES</code> benennt unser Dataset; <code>TABLE_SALES</code> ist seine physische Quelltabelle. Kennzahlen benennen wiederverwendbare Geschäftsberechnungen.",
-    "model.text5": "Atomare Kennzahlen sind an einen Datensatz gebunden. Sie aggregieren dessen Zeilen oder Spaltenausdrücke, ohne andere Kennzahlen zu referenzieren. Hier summiert <code>sales</code> die Beträge; <code>cnt</code> zählt die Zeilen.",
+    "model.text5": "Atomare Kennzahlen sind an ein Dataset gebunden. Sie aggregieren dessen Zeilen oder Spaltenausdrücke, ohne andere Kennzahlen zu verwenden. Hier summiert <code>sales</code> die Beträge; <code>cnt</code> zählt die Zeilen.",
     "model.text6": "Die Namen im Modell verstehen",
-    "model.text7": "Ungeklammerte Namen in Modellformeln verweisen auf physische SQL-Objekte.",
+    "model.text7": "In diesem Kurs bezeichnet <code>FACT_</code> Datasets mit Geschäftsvorgängen, <code>DIM_</code> Datasets zum Nachschlagen von Attributen und <code>TABLE_</code> physische Tabellen. Feld- und Kennzahlnamen folgen <code>lower_snake_case</code>.",
     "model.text8": "Wiederverwendbare Berechnungen gehören ins Modell, Berichtsgruppen und Filter in die Abfrage. Siehe <a href=\"explanation--core-concepts.html\">DML, DMX und Model Query</a>.",
     "model.text9": "model.dml · das wiederverwendbare Modell",
     "expressions.text1": "03 / DMX",
     "expressions.text2": "Eine Berechnung kann<br>Bekanntes wiederverwenden.",
     "expressions.text3": "Der Reisende suchte den durchschnittlichen Verkaufsbetrag. Summe und Anzahl waren schon im Modell vorhanden.",
-    "expressions.text4": "DMX ist die Ausdruckssyntax in einer Formel. <code>{sales}</code> verweist auf eine Kennzahldefinition, keinen festen Gesamtwert. Der Wert hängt von Gruppierung und Filtern des Berichts ab.",
-    "expressions.text5": "<code>average_sale</code> ist zusammengesetzt, weil es andere Kennzahlen verwendet. Bei einem Nenner von null liefert <code>DIVIDE</code> NULL, also keinen verfügbaren Wert.",
+    "expressions.text4": "DMX ist die Ausdruckssyntax innerhalb einer Formel. Die geschweiften Klammern in <code>{sales}</code> verweisen auf die Kennzahldefinition im Modell. Der Wert ergibt sich aus der Gruppierung und den Filtern dieser Referenz.",
+    "expressions.text5": "<code>average_sale</code> ist zusammengesetzt, weil es andere Kennzahlen verwendet. Bei einem Nenner von 0 liefert <code>DIVIDE</code> NULL, also keinen verfügbaren Wert.",
     "expressions.text6": "Dieselbe Formel ergibt für North 30 ÷ 2 = 15, für alle vier Verkäufe 100 ÷ 4 = 25.",
     "expressions.text7": "Die Formel in DMX",
     "expressions.text8": "<strong>sales</strong>Beträge summieren.",
@@ -39,7 +39,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grouping.text1": "04 / Model Query",
     "grouping.text2": "Dieselben Kennzahlen.<br>Eine andere Sicht.",
     "grouping.text3": "Der Reisende richtete das Fernrohr auf die Regionen.",
-    "grouping.text4": "Die Abfrage bestimmt, was eine Ergebniszeile darstellt. <code>AGG(sales)</code> fordert die benannte Kennzahl an; <code>SUM({amount})</code> bleibt im Modell. Die Gruppierung ändert sich, die Modelldefinitionen bleiben gleich.",
+    "grouping.text4": "Die Abfragedimension ist die Berichtsgruppierung: Sie bestimmt die Bedeutung einer Ergebniszeile. <code>AGG(sales)</code> fordert eine benannte Kennzahl an; <code>SUM({amount})</code> bleibt im Modell. Die Definitionen bleiben unverändert.",
     "grouping.text5": "Bei PivotTables entspricht <code>GROUP BY region</code> etwa dem Einfügen von region unter „Zeilen“. <code>AGG</code> gehört zu Model Query und ist keine Standard-SQL-Funktion.",
     "grouping.text6": "Berichtsgruppierung wählen",
     "grouping.label1": "Alle Verkäufe",
@@ -67,7 +67,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "filters.text1": "06 / Bericht und Kennzahl filtern",
     "filters.text2": "Welche Verkäufe beantworten<br>welche Frage?",
     "filters.text3": "Zwischen den Belegen fand der Reisende einen zurückgegebenen Verkauf.",
-    "filters.text4": "Unsere vier Verkäufe haben nun Monat, Kunde und Status. Vier Januarverkäufe dienen dem Vergleich. Wähle <strong>North</strong>: Umsatz 30, abgeschlossener Umsatz 10.",
+    "filters.text4": "Unsere vier Verkäufe haben nun Monat, Kunde und Status. Vier Januarverkäufe dienen dem Vergleich. Wähle <strong>North</strong>: Umsatz 30, davon 10 aus abgeschlossenen Verkäufen.",
     "filters.text5": "Alle acht Verkäufe ansehen",
     "filters.text6": "Vollständiges Modell für Kapitel 6–12 ansehen",
     "filters.text7": "model.dml · eine wiederverwendbare Kennzahl",
@@ -76,16 +76,16 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text1": "07 / Den Nenner klar benennen",
     "shares.text2": "Dreißig von wie viel?",
     "shares.text3": "Ein Anteil braucht einen Teil und ein Ganzes.",
-    "shares.text4": "Lass <strong>North</strong> ausgewählt. Wechsle von <code>-d</code> zu <code>-df</code>. Der Nenner wechselt von 30 auf 100, der Anteil von 100% auf 30%.",
+    "shares.text4": "Wähle hier <strong>North</strong> und wechsle von <code>-d</code> zu <code>-df</code>. Der Nenner wechselt von 30 zu 100, der Anteil von 100 % zu 30 %.",
     "shares.label1": "Berichtsregion",
     "shares.text5": "Alle Regionen",
     "shares.label2": "Nenner-Modifikator",
-    "shares.text6": "-d: region · Filter behalten",
-    "shares.text7": "-df: region · Filter entfernen",
+    "shares.text6": "-d: region · Regionsfilter behalten",
+    "shares.text7": "-df: region · Regionsfilter entfernen",
     "shares.text8": "Der Nenner",
     "shares.text9": "<span id=\"share-context\"></span><span>Februar bleibt in beiden Kontexten fest.</span>",
     "shares.text10": "Model Query ansehen",
-    "shares.text11": "<code>-d</code> entfernt die Regionsgruppierung des Nenners, behält aber den Filter. <code>-df</code> entfernt auch diesen Filter. Eine Änderung des Nenners lässt Februar und die ausgewählten Berichtsregionen unverändert. Anteile sind im Modell Dezimalwerte und werden hier als Prozentwerte angezeigt.",
+    "shares.text11": "Nur die Auswertung des Nenners ändert sich. Februarfilter, Quellschlüssel und Bericht-GROUP BY bleiben gleich. Ohne zugehörigen Regionsfilter liefern beide hier denselben Nenner. Die Anteile sind Dezimalwerte und werden hier als Prozent angezeigt.",
     "grain.text1": "08 / Auf einer Zwischenebene rechnen",
     "grain.text2": "Umsatz je Kunde summieren.<br>Dann den Durchschnitt bilden.",
     "grain.text3": "Beide Februarverkäufe von South gehören Kunde C. Der Durchschnitt je Verkauf ist 35, die Summe dieses einen Kunden 70. Probiere <strong>SUM</strong> und <strong>MAX</strong>: North wird 30 bzw. 20, South bleibt 70. Kehre vor der Antwort zu <strong>AVG</strong> zurück.",
@@ -95,15 +95,15 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text6": "MAX · Höchster Kundenumsatz",
     "grain.text7": "Stufe 1 · region + customer",
     "grain.text8": "Stufe 2 · region",
-    "grain.text9": "Granularität bedeutet, was eine Zeile darstellt. <code>+d: customer</code> ergänzt customer zur Auswertungsgranularität der Kennzahl. Das äußere AVG, SUM oder MAX fasst die Kundensummen zu einem Wert je Region zusammen. GROUP BY im Bericht bleibt unverändert.",
+    "grain.text9": "<code>d</code> = dimension; <code>+d: customer</code> ergänzt customer zur Auswertungsdimension dieser Referenz. Das äußere AVG, SUM oder MAX fasst die Kundensummen wieder zur Abfragedimension zusammen. Quellschlüssel und Bericht-GROUP BY bleiben unverändert.",
     "grain.text10": "Model Query ansehen",
-    "grain.text11": "Vergleiche <a href=\"explanation--dimensions.html\">Quell-, Auswertungs- und Ergebnisdimensionen</a>.",
+    "grain.text11": "Vergleiche <a href=\"explanation--dimensions.html\">Quell-, Abfrage- und Auswertungsdimension</a>: Quellschlüssel, Ergebnisgruppierung und Zwischenberechnung.",
     "time.text1": "09 / Zeiträume vergleichen",
     "time.text2": "Einen Monat zurückblicken.",
     "time.text3": "Der Reisende legte die Januarseiten neben den Februar.",
     "time.text4": "Im <strong>Februar</strong> hat North Umsatz 30 und Vorperiodenumsatz 20. Das Wachstum ist 30 ÷ 20 − 1 = 50%. Wechsle zu <strong>Januar</strong>: Ohne Dezemberdaten sind die Vergleichswerte NULL. Kehre vor der Antwort zu <strong>Februar</strong> zurück.",
     "time.text5": "model.dml · Vergleichskennzahlen",
-    "time.text6": "<code>pp</code> fordert den Vorperiodenwert an, <code>pop</code> berechnet die Wachstumsrate. Das Beispiel nutzt das Standardfeld <code>dt_month</code> mit Monatsanfangsdaten. Siehe <a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">Zeitkontext</a>.",
+    "time.text6": "In <code>{sales: pp}</code> ist sales die Kennzahl und <code>pp</code> der Modifikator für den Vorperiodenwert. Bei Monatsvergleichen ist das der Vormonat. <code>pop</code> liefert aktueller Wert / Vorperiodenwert − 1 als Dezimalzahl. Siehe <a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">Zeitkontext</a>.",
     "time.label1": "Aktueller Monat",
     "time.text7": "Februar 2025",
     "time.text8": "Januar 2025",
@@ -116,21 +116,21 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.text5": "Februarzeilen nach dem Lookup",
     "lookups.text6": "Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate-only</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>DIMENSION_NOT_UNIQUE</code>.",
     "lookups.text7": "Doppelte Schlüssel mit dmlc erkennen",
-    "lookups.text8": "Speichere die Abfrage für die Datenbankübung als <code>lookup.sql</code> neben <code>model.dml</code> im heruntergeladenen Projekt. Die Auswahl von manager führt zum Dataset regions.",
+    "lookups.text8": "Speichere die Abfrage für die Datenbankübung als <code>lookup.sql</code> neben <code>model.dml</code> im heruntergeladenen Projekt. Die Auswahl von manager führt zum Dataset DIM_REGION.",
     "lookups.text9": "Führe die Validierung mit der Verbindung aus, die deine Beispieltabellen enthält. Ersetze <code>default</code> durch deren Verbindungs-ID.",
-    "lookups.text10": "Enthält DIM_REGION dort beide North-Einträge, erwarte <code>DIMENSION_NOT_UNIQUE</code> für regions. Korrigiere die Dimensionsdeklaration oder Quelldaten und validiere erneut. Das MCP-Pendant ist <code>run_query</code> mit <code>validateOnly: true</code>.",
+    "lookups.text10": "Enthält TABLE_REGION dort beide North-Einträge, erwarte <code>DIMENSION_NOT_UNIQUE</code> für DIM_REGION. Korrigiere die Dimensionsdeklaration oder Quelldaten und validiere erneut. Das MCP-Pendant ist <code>run_query</code> mit <code>validateOnly: true</code>.",
     "lookups.text11": "Die Validierung prüft beobachtete Schlüssel und die Hauptabfrage mit EXPLAIN; sie führt den Bericht nicht zur Ergebnisgewinnung aus. Der Browserschalter ändert nur die erfundenen Daten dieser Seite, nicht deine Datenbank.",
     "missing.text1": "11 / Fehlende Werte verstehen",
-    "missing.text2": "Eine leere Seite<br>ist nicht automatisch null.",
-    "missing.text3": "Wähle <strong>Durch den festen Wert 0 ersetzen</strong>. Beide Januarzeilen bleiben erhalten; die Vorperiodenwerte wechseln von NULL auf 0. NULL bedeutet hier, dass kein Vorperiodenwert vorliegt. Das Ersetzen beweist keinen Dezemberumsatz von null.",
+    "missing.text2": "Ein fehlender Wert<br>ist nicht automatisch 0.",
+    "missing.text3": "Wähle <strong>Durch den festen Wert 0 ersetzen</strong>. Beide Januarzeilen bleiben erhalten; die Vorperiodenwerte wechseln von NULL auf 0. NULL bedeutet hier, dass kein Vorperiodenwert vorliegt. Das Ersetzen belegt keinen tatsächlichen Dezemberumsatz von 0.",
     "missing.label1": "Fehlender Vorperiodenwert",
     "missing.text4": "NULL beibehalten",
     "missing.text5": "Durch den festen Wert 0 ersetzen",
     "missing.text6": "Das äußerste <code>ISNULL(..., 0)</code> liefert überall, wo die Kennzahl verwendet wird, einen festen Ersatzwert. Es erzeugt keine neuen Monate oder Kunden.",
     "capstone.text1": "12 / Deinen Bericht erstellen",
     "capstone.text2": "Notizbuch und Frage<br>zusammenbringen.",
-    "capstone.text3": "Probiere es · Kannst du den Februarbericht für beide Regionen erstellen?",
-    "capstone.text4": "Eine Zeile je Region, mit Umsatz, abgeschlossenem Umsatz, Vormonatsumsatz, Durchschnitt je Kunde und Anteil an allen Regionen. Stelle die Auswahl unten ein und prüfe den Bericht, um Kapitel 12 abzuschließen.",
+    "capstone.text3": "Probiere es · Erstelle den Februarbericht für beide Regionen.",
+    "capstone.text4": "Wähle Februar 2025, alle Regionen und eine Zeile je Region. Nimm diese fünf Kennzahlen auf: sales, completed_sales, previous_sales, average_customer_sales und all_region_share. Klicke anschließend auf „Antwort abgeben“.",
     "capstone.label1": "Berichtsmonat",
     "capstone.text5": "Februar 2025",
     "capstone.text6": "Januar 2025",
@@ -142,7 +142,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text10": "Enthaltene Kennzahlen",
     "capstone.label4": "sales · erforderlich",
     "capstone.label5": "sales_change · optional",
-    "capstone.text11": "North: Umsatz 30, abgeschlossen 10, Vormonat 20, Durchschnitt je Kunde 15, Anteil 30%. South: Umsatz 70, abgeschlossen 70, Vormonat 50, Durchschnitt je Kunde 70, Anteil 70%.",
+    "capstone.text11": "North: Umsatz 30, Umsatz abgeschlossener Verkäufe 10, Vormonatsumsatz 20, durchschnittlicher Umsatz je Kunde 15, Anteil am Gesamtumsatz 30 %. South: Umsatz 70, Umsatz abgeschlossener Verkäufe 70, Vormonatsumsatz 50, durchschnittlicher Umsatz je Kunde 70, Anteil am Gesamtumsatz 70 %.",
     "capstone.text12": "Öffne für die Ausführung außerhalb des Browsers START-HERE.txt. Lege die Beispieltabellen in einer leeren Übungsdatenbank an, prüfe das Modell, kompiliere streng und prüfe das SQL. Dokumentiere die Befunde vor Live-Validierung und Ergebnisvergleich.",
     "capstone.text13": "Die Vorschau berechnet unsere Beispieldaten, kein beliebiges DML. Compilerbelege liegen nur für die aufgezeichneten Begleitabfragen vor; andere Kombinationen benötigen eigene Prüfungen. Die Seite verbindet sich nicht mit einer Datenbank.",
     "capstone.text14": "Geprüftes Projekt herunterladen",
@@ -183,9 +183,21 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.queryNote": "Die Abfrage verwendet diese Definitionen. Die Berichtseinstellungen bestimmen Gruppierung und Filter.",
     "identity.fields": "<code>id</code> = Verkaufs-ID, <code>region</code> = Verkaufsregion, <code>amount</code> = Verkaufsbetrag.",
     "model.notation": "<code>{amount}</code> referenziert die Modellspalte <code>amount</code>. Ein leerer Spalteneintrag verweist auf die gleichnamige physische Spalte.",
-    "filters.notation": "<code>{sales: ...}</code> verwendet sales mit verändertem Kontext. Hier fügt <code>+f</code> dieser Kennzahlreferenz den Statusfilter hinzu.",
+    "filters.notation": "Ein <strong>Modifikator</strong> legt fest, wie diese Referenz berechnet wird. In <code>{sales: ...}</code> steht vor dem Doppelpunkt die Kennzahl, dahinter die Modifikatoreinstellung. Hier ergänzt <code>+f</code> den Filter status = completed; die Definition von sales bleibt unverändert.",
     "common.modelCodeLabel": "model.dml · Kennzahldefinition",
-    "common.queryCodeLabel": "query.sql · Berichtsfrage"
+    "common.queryCodeLabel": "query.sql · Berichtsfrage",
+    "filters.memory": "<code>f</code> = filter, <code>+</code> = hinzufügen. Die Formel bedeutet: sales mit einem zusätzlichen Filter auf abgeschlossene Verkäufe.",
+    "syntax.summary": "Zwei Schreibweisen für Modifikatoren",
+    "syntax.named": "<code>{sales: pp}</code> verwendet einen benannten Modifikator: sales für die Vorperiode. Das folgt in Kapitel 9.",
+    "syntax.configured": "<code>{sales: {+f: {status: completed}}}</code> verwendet Einstellungen mit einem Wert: die Bedingung status = completed hinzufügen. Die Klammern nach dem Doppelpunkt enthalten diese Einstellungen.",
+    "syntax.reference": "Weitere Formen stehen unter <a href=\"reference--modifiers.html\">Modifikatorregeln und Beispiele</a>.",
+    "shares.memory": "<code>d</code> = dimension, <code>f</code> = filter. <code>-d</code> entfernt das genannte Feld aus der Auswertungsgruppierung; <code>-df</code> entfernt zusätzlich die zugehörigen Filter. Das gilt nur für diese Referenz.",
+    "recall.summary": "Diese Zeichen helfen weiter · Kurzreferenz",
+    "recall.intro": "Lies zuerst den Kennzahlnamen, dann die Berechnungseinstellung dieser Referenz. Dies sind Merkhilfen, keine zusätzliche Syntax oder Rechenoperationen.",
+    "recall.roles": "Quelldimension <code>dimension: [id]</code>: Quellzeilen identifizieren. Abfragedimension <code>GROUP BY region</code>: Ergebniszeilen gruppieren. Auswertungsdimension mit <code>+d: customer</code>: Kundensummen als Zwischenwerte berechnen.",
+    "recall.symbol": "Zeichen",
+    "recall.meaning": "Bedeutung auffrischen",
+    "capstone.submitHelp": "Die Vorschau aktualisiert sich sofort. Klicke auf „Antwort abgeben“, um deine Einstellungen prüfen zu lassen."
   },
   "ui": {
     "pageTitle": "Eine kleine Reise durch DML",
@@ -203,31 +215,31 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "resume": "Weiterlernen",
     "review": "Deinen Bericht ansehen",
     "reset": "Fortschritt zurücksetzen",
-    "checkChapter": "Kapitel {n} prüfen",
+    "checkChapter": "Antwort abgeben",
     "hint": "Erklärung anzeigen",
     "tryQuestion": "Probiere es · {question}",
     "chooseAnswer": "Wähle zuerst eine Antwort.",
-    "hintAnswer": "{why} Wähle eine Antwort und prüfe sie, um das Kapitel abzuschließen.",
+    "hintAnswer": "{why} Wähle eine Antwort und klicke auf „Antwort abgeben“, um sie prüfen zu lassen.",
     "wrongAnswer": "Versuche es noch einmal. {why}",
     "replayCelebration": "Noch einmal feiern",
     "award": "Richtig! Kapitel {n} abgeschlossen.",
     "chapterComplete": "Kapitel {n} abgeschlossen.",
     "journeyComplete": "Deine Reise ist abgeschlossen.",
     "ready": "Dein Regionsbericht ist fertig.",
-    "finalHint": "Wähle Februar 2025, Nach Region, Alle Regionen und die fünf geforderten Kennzahlen. sales_change ist optional. Die Vorschau folgt deinen Einstellungen. Prüfe den Bericht, um Kapitel 12 abzuschließen.",
-    "finalIssues": "Zum Abschließen des Berichts: {issues}.",
+    "finalHint": "Wähle Februar 2025, „Nach Region“, „Alle Regionen“ und alle fünf geforderten Kennzahlen. sales_change ist optional. Klicke danach auf „Antwort abgeben“.",
+    "finalIssues": "Passe noch Folgendes an: {issues}.",
     "selectFebruary": "Februar 2025 auswählen",
     "groupRegion": "nach Region gruppieren",
     "includeAll": "alle Regionen einschließen",
-    "includeMeasures": "{names} einschließen",
+    "includeMeasures": "Kennzahlen {names} auswählen",
     "finalCorrect": "Richtig. Deine Einstellungen entsprechen dem Berichtsziel. Vergleiche die Vorschauwerte und prüfe anschließend die aufgezeichneten Compilerbefunde unten.",
     "finalReview": "Du hast den Abschlussbericht bereits erstellt. Baue ihn hier zur Wiederholung noch einmal auf.",
     "downloadQuery": "Meine query.sql herunterladen",
     "averageTransaction": "Durchschnitt je Verkauf",
-    "customerSales": "Kundenumsatz",
+    "customerSales": "Umsatzsumme je Kunde",
     "januarySales": "Januarumsatz",
-    "filterNorth": "North hat Umsatz 30, aber nur 10 abgeschlossenen Umsatz.",
-    "filterSouth": "Bei South sind beide Verkäufe abgeschlossen; Umsatz und abgeschlossener Umsatz betragen jeweils 70.",
+    "filterNorth": "North hat Umsatz 30, davon 10 aus abgeschlossenen Verkäufen.",
+    "filterSouth": "Bei South sind beide Verkäufe abgeschlossen; sales und completed_sales betragen daher jeweils 70.",
     "filterExplanation": "WHERE wählt die Berichtszeilen. +f begrenzt nur die Eingaben von completed_sales; sales enthält weiter zurückgegebene Verkäufe.",
     "denominatorAll": "{n} über alle Regionen.",
     "denominatorRegion": "{region}: {n}.",
@@ -250,9 +262,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "averageSale": "Verkauf {id}",
     "averageNote": "{calculations}. Die Formel wird für jede Ergebnisgruppe ausgewertet.",
     "compileSimplified": "Auf der Ebene des Quellschlüssels [id] vereinfacht dmlc die Aggregation zu einem Zeilenausdruck und meldet einen strengen Befund. Das setzt eindeutige id-Werte in den Quelldaten voraus.",
-    "compileRegional": "Die Regionsabfrage besteht die strenge Kompilierung mit dem geprüften dmlc-Build.",
-    "compileTotal": "Die Gesamtabfrage besteht die strenge Kompilierung mit dem geprüften dmlc-Build.",
-    "definitionHint": "Klicke auf ein Feld oder eine Kennzahl in der Abfrage, um die Definition zu sehen.",
+    "compileRegional": "Die regionale Abfrage dieses Vier-Zeilen-Modells besteht die strikte Kompilierung im geprüften dmlc-Build.",
+    "compileTotal": "Die Gesamtabfrage dieses Vier-Zeilen-Modells besteht die strikte Kompilierung im geprüften dmlc-Build.",
+    "definitionHint": "Kurzinfo beim Überfahren oder Fokussieren; gepunktete Namen öffnen die Definition.",
     "definitionOpen": "Definition von {name} anzeigen",
     "definitionClose": "Definition schließen",
     "definitionColumn": "Spalte",
@@ -262,11 +274,55 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "definitionRegion": "Die leere Spaltendeklaration verweist auf TABLE_SALES.region. GROUP BY region gruppiert damit die Verkäufe nach Region.",
     "definitionId": "Diese Spalte verweist auf TABLE_SALES.id. FACT_SALES deklariert dimension: [id], sodass jede Quellzeile einen Verkauf darstellt.",
     "definitionAmount": "Diese Spalte verweist auf TABLE_SALES.amount, den Betrag jedes Verkaufs.",
-    "definitionSales": "Summiert amount im aktuellen Gruppierungs- und Filterkontext des Berichts.",
-    "definitionCnt": "Zählt die Quellzeilen im aktuellen Gruppierungs- und Filterkontext des Berichts.",
-    "definitionAverageSale": "Dividiert sales durch cnt im aktuellen Kontext. Bei cnt = 0 gibt DIVIDE NULL zurück.",
+    "definitionSales": "Summiert amount gemäß Auswertungsgruppierung und gültigen Filtern dieser Referenz.",
+    "definitionCnt": "Zählt Quellzeilen gemäß Auswertungsgruppierung und gültigen Filtern dieser Referenz.",
+    "definitionAverageSale": "Teilt sales durch cnt im Kontext dieser Referenz. Bei cnt = 0 liefert DIVIDE den Wert NULL.",
     "startLearning": "Kapitel {n} beginnen",
-    "resumeChapter": "Mit Kapitel {n} fortfahren"
+    "resumeChapter": "Mit Kapitel {n} fortfahren",
+    "helpDataset": "Dataset",
+    "helpSyntax": "Syntax",
+    "helpCustomer": "Kundenkennung. Eine Gruppierung nach customer bildet Gruppen pro Kunde statt pro Verkauf.",
+    "helpMonth": "Verkaufsmonat, gespeichert als erster Tag des Monats. Er liefert hier den Monatskontext.",
+    "helpStatus": "Verkaufsstatus. completed_sales schränkt seine eigenen Eingaben anhand dieser Spalte ein.",
+    "helpManager": "Sucht den Verantwortlichen über region in DIM_REGION. Dessen vollständiger deklarierter Schlüssel ist [region].",
+    "helpCompleted": "Verwendet sales erneut und ergänzt mit +f die Statusbedingung completed für diese Referenz.",
+    "helpWithinShare": "Teilt sales durch einen Nenner ohne region-Gruppierung. Der Filter für ausgewählte Regionen bleibt im Nenner aktiv.",
+    "helpAllShare": "Teilt sales durch einen Nenner ohne region-Gruppierung und zugehörigen Filter. Der Monatsfilter bleibt erhalten.",
+    "helpCustomerAverage": "Summiert Verkäufe je Region und Kunde und bildet mit AVG daraus den Durchschnitt je Region.",
+    "helpCustomerSum": "Berechnet zunächst Kundensummen und summiert sie mit SUM je Region.",
+    "helpCustomerMax": "Berechnet zunächst Kundensummen und wählt mit MAX die größte je Region.",
+    "helpPrevious": "Verwendet sales mit pp für den Vorperiodenwert. Im Monatskontext ist das der Vormonat.",
+    "helpChange": "pop berechnet aktuell / vorher − 1. Das Ergebnis ist ein Dezimalwert: 0.5 wird hier als 50% angezeigt.",
+    "helpFilled": "Ersetzt einen fehlenden Vorperiodenwert durch 0. Erzeugt keine Quellzeilen und belegt keinen tatsächlichen Nullumsatz.",
+    "helpFact": "Das Dataset FACT_SALES liest TABLE_SALES. Seine Quelldimension [id] identifiziert jede Verkaufszeile.",
+    "helpRegions": "Das Dataset DIM_REGION liest TABLE_REGION. Sein Schlüssel [region] muss eindeutig sein: Eine Region darf beim Lookup höchstens eine Zielzeile liefern.",
+    "helpDirectoryRegion": "Die Verzeichnisspalte region entspricht TABLE_REGION.region und ist dessen vollständiger deklarierter Schlüssel.",
+    "helpDirectoryManager": "Die Verzeichnisspalte manager entspricht TABLE_REGION.manager, dem zurückgegebenen Attribut.",
+    "helpDimension": "Hier deklariert dimension den vollständigen Quellzeilenschlüssel. Abfragegruppierung und Auswertungsdimension haben andere Aufgaben.",
+    "helpAgg": "Fordert eine Modellkennzahl in der Abfragegruppierung an. AGG gehört zu Model Query und ist keine Standard-SQL-Aggregatfunktion.",
+    "helpDivide": "Teilt den ersten Wert durch den zweiten; bei einem Nenner von 0 wird NULL zurückgegeben.",
+    "helpIsnull": "Verwendet bei NULL den Ersatzwert. Das erzeugt weder neue Ergebnisgruppen noch neue Quelldaten.",
+    "helpSum": "Addiert Werte der aktuellen Auswertungsgruppe. SUM({amount}) summiert Quellbeträge; ein äußeres SUM kann Zwischensummen zusammenfassen.",
+    "helpCount": "COUNT(1) zählt Quellzeilen unter Gruppierung und Filtern dieser Referenz, nicht unterschiedliche Kunden.",
+    "helpAvg": "Hier mittelt das äußere AVG die durch +d berechneten Kundensummen zu einem Wert je Berichtsgruppe.",
+    "helpMax": "Hier wählt das äußere MAX die größte Kundensumme als einen Wert je Berichtsgruppe.",
+    "helpPk": "Schlägt ein Attribut über den vollständigen deklarierten Zielschlüssel nach. Die Quelldaten müssen dessen Eindeutigkeit erfüllen.",
+    "helpPlusFilter": "f = filter. +f ergänzt eine Bedingung für die Eingaben dieser Kennzahlreferenz; andere gültige Filter bleiben erhalten.",
+    "helpPlusDimension": "d = dimension. +d ergänzt ein Feld zur Auswertungsdimension; ein explizites äußeres Aggregat fasst die feineren Werte wieder zusammen.",
+    "helpMinusDimension": "−d entfernt das angegebene Feld aus der Auswertungsgruppierung dieser Referenz. Zugehörige Filter, Quellschlüssel und Bericht-GROUP BY bleiben erhalten.",
+    "helpMinusBoth": "−df entfernt das angegebene Feld aus der Auswertungsgruppierung und dessen zugehörige Filter. Andere Filter, hier der Monat, bleiben erhalten.",
+    "helpPp": "pp = previous period (Vorperiode): fordert deren Wert an. Die Vorperiode von Februar ist hier Januar.",
+    "helpPop": "pop = period-over-period growth: aktuell / vorher − 1. Liefert einen Dezimalwert, der hier als Prozentwert angezeigt wird.",
+    "helpGroupBy": "Legt die Abfragedimension fest: die Gruppierungsfelder der Ergebniszeilen. Ändert den deklarierten Quellschlüssel nicht.",
+    "helpWhere": "Legt Eingabebedingungen des Berichts fest. Ein Kennzahlmodifikator kann sie für eine einzelne Referenz anpassen.",
+    "helpFromModel": "Löst Namen anhand des gewählten Modells auf, einschließlich seiner Felder und wiederverwendbaren Kennzahlen.",
+    "recallLink": "Zeichenübersicht",
+    "submitChapter": "Antwort für Kapitel {n} abgeben",
+    "submitInstruction": "Wähle eine Antwort. Klicke danach auf „Antwort abgeben“, um sie prüfen zu lassen.",
+    "submitSelected": "Antwort ausgewählt. Klicke jetzt auf „Antwort abgeben“.",
+    "helpSourceTable": "Physische Tabelle",
+    "helpTableSales": "Die physische Verkaufstabelle, die FACT_SALES liest. Tabellen- und Datasetnamen sind getrennt.",
+    "helpTableRegion": "Das physische Regionsverzeichnis, das DIM_REGION liest. Die Quellzeilen müssen den deklarierten Schlüssel [region] erfüllen."
   },
   "chapters": [
     "Die Zeilen",
@@ -284,103 +340,103 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
   ],
   "quizzes": {
     "identity": {
-      "question": "Welcher deklarierte Quellschlüssel identifiziert jeden Verkauf in diesem Modell?",
+      "question": "Welchen Schlüssel deklariert das Modell für die einzelnen Verkaufszeilen?",
       "options": [
         "[region]",
         "[id]",
         "[amount]"
       ],
-      "why": "Das Modell deklariert [id] als Quellidentität. region wiederholt sich. amount ist bei diesen vier Zeilen zufällig eindeutig, aber nicht der deklarierte Schlüssel."
+      "why": "dimension: [id] legt den Quellschlüssel fest. region kommt mehrfach vor. amount ist in diesen vier Zeilen zwar eindeutig, wurde aber nicht als Schlüssel deklariert."
     },
     "model": {
-      "question": "Welche Definition ist eine atomare Kennzahl auf FACT_SALES?",
+      "question": "Welche Definition ist eine atomare Kennzahl des Datasets FACT_SALES?",
       "options": [
         "sales: SUM({amount})",
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales ist an FACT_SALES gebunden und aggregiert amount, ohne andere Kennzahlen zu referenzieren. average_sale ist zusammengesetzt, weil es sales und cnt referenziert, auch wenn beide FACT_SALES verwenden. GROUP BY legt die Gruppierung der Abfrage fest."
+      "why": "sales gehört zu FACT_SALES und summiert amount, ohne andere Kennzahlen zu verwenden. average_sale verwendet sales und cnt und ist deshalb zusammengesetzt. GROUP BY ist eine Abfragegruppierung, keine Kennzahl."
     },
     "expressions": {
       "question": "Für North gilt sales = 30 und cnt = 2. Was ergibt DIVIDE({sales}, {cnt})?",
       "options": [
-        "25, der Durchschnitt aller vier Verkäufe",
-        "30, die Summe für North",
-        "15, der Durchschnitt für North"
+        "25, der durchschnittliche Betrag aller vier Verkäufe",
+        "30, der Gesamtbetrag für North",
+        "15, der durchschnittliche Verkaufsbetrag für North"
       ],
-      "why": "Die Formel verwendet Kennzahlen im aktuellen Berichtskontext. North ergibt 30 / 2 = 15, alle vier Verkäufe ergeben 100 / 4 = 25."
+      "why": "Für North teilt die Formel den Umsatz 30 durch die Anzahl 2: Das ergibt 15 je Verkauf. Der Durchschnitt über alle vier Verkäufe wäre 100 / 4 = 25."
     },
     "grouping": {
-      "question": "Welche Dimension hat das Quelldataset nach der Gruppierung nach region?",
+      "question": "Die Abfrage gruppiert nach region. Welche Quelldimension bleibt in FACT_SALES deklariert?",
       "options": [
         "[region]",
         "[id]",
         "[]"
       ],
-      "why": "Die Gruppierung ändert die Ergebnisgranularität, nicht die Identität der Quellzeilen [id]."
+      "why": "GROUP BY region erzeugt eine Ergebniszeile je Region. Der Quellschlüssel bleibt dimension: [id]; er identifiziert weiterhin die einzelnen Verkaufszeilen."
     },
     "compiler": {
       "question": "Was liefert eine erfolgreiche Kompilierung in dieser Übung?",
       "options": [
         "Geprüfte Ergebniszeilen aus der Datenbank",
         "Generiertes SQL zur Prüfung",
-        "Den Beweis, dass jeder Quellschlüssel eindeutig ist"
+        "Den Nachweis, dass die deklarierten Schlüssel in den Quelldaten eindeutig sind"
       ],
-      "why": "Kompilierung erzeugt SQL. Live-Validierung und Ergebnisvergleich benötigen eine Datenbank und getrennte Belege."
+      "why": "Der Compiler erzeugt SQL, ohne die Datenbankabfrage auszuführen. Die Schlüssel in den Quelldaten prüfst du mit --validate-only und einer Datenbankverbindung; die Ergebniswerte musst du anschließend gesondert vergleichen."
     },
     "filters": {
-      "question": "Warum kann North im Februar sales = 30 und completed_sales = 10 zeigen?",
+      "question": "Warum hat North im Februar sales = 30, aber completed_sales = 10?",
       "options": [
-        "+f filtert nur die Eingaben von completed_sales; die andere Kennzahl nutzt beide Verkäufe",
-        "Ein Berichts-WHERE entfernt die Rückgabe aus allen Kennzahlen",
-        "completed_sales ändert den Dataset-Schlüssel"
+        "+f berücksichtigt für completed_sales nur abgeschlossene Verkäufe; sales summiert weiterhin beide Verkäufe",
+        "Ein WHERE-Filter der Abfrage schließt den Verkauf mit Status returned für alle Kennzahlen aus",
+        "completed_sales ändert den Quellschlüssel des Datasets"
       ],
-      "why": "completed_sales wendet +f nur auf diese Kennzahl an. Ein status-Filter im Berichts-WHERE würde auch sales ändern."
+      "why": "completed_sales verwendet sales mit dem zusätzlichen Filter status = completed: So bleibt der Betrag 10. sales summiert weiterhin 10 + 20 = 30. Ein status-Filter im WHERE der Abfrage würde auch sales einschränken."
     },
     "shares": {
-      "question": "Welcher Nenner behält in einem Bericht nur für North die Umsätze aller Regionen?",
+      "question": "Der Bericht zeigt nur North im Februar. Welcher Nenner berechnet trotzdem den Februarumsatz aller Regionen?",
       "options": [
         "{sales: {-d: region}}",
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df entfernt für diese Referenz die region-Gruppierung und den zugehörigen Filter. -d behält den region-Filter."
+      "why": "-df entfernt für diesen Nenner die Gruppierung nach region und die zugehörigen Regionsfilter: Er beträgt 100. -d behält die Regionsfilter und ergibt hier 30. Der Februarfilter, der Quellschlüssel und das GROUP BY des Berichts bleiben unverändert."
     },
     "grain": {
-      "question": "South hat zwei Verkäufe von 30 und 40, beide für Kunde C. Wie hoch ist der Durchschnitt je Kunde?",
+      "question": "In South entfallen beide Februarverkäufe (30 und 40) auf Kunde C. Wie hoch ist der durchschnittliche Umsatz je Kunde?",
       "options": [
         "35",
         "70",
         "2"
       ],
-      "why": "Zuerst pro Kunde summieren: C = 70. Dann den Durchschnitt dieser einen Kundensumme bilden. Der Durchschnitt der beiden Quelltransaktionen wäre 35."
+      "why": "Zuerst den Umsatz je Kunde summieren: C = 30 + 40 = 70. Es gibt hier nur diesen einen Kunden, also beträgt auch der Kundendurchschnitt 70. 35 wäre der Durchschnitt je Verkauf."
     },
     "time": {
-      "question": "Welchen Zeitraum fordert pp auf Monatsgranularität im Februar an?",
+      "question": "Der Bericht vergleicht Monate und zeigt Februar 2025. Für welchen Monat liefert {sales: pp} den Umsatz?",
       "options": [
         "Januar 2025",
         "Februar 2024",
-        "Alle früheren Zeiträume zusammen"
+        "Alle früheren Monate zusammen"
       ],
-      "why": "pp fordert den Vorperiodenwert auf der aktiven Monatsgranularität an. Es ist ein Wert, keine Wachstumsrate."
+      "why": "pp bedeutet previous period: Bei Monatsvergleichen ist die Vorperiode von Februar 2025 der Januar 2025. {sales: pp} liefert dessen Umsatz; {sales: pop} liefert die Wachstumsrate."
     },
     "lookups": {
-      "question": "Was ändert sich, wenn DIM_REGION zwei Zeilen für North enthält?",
+      "question": "TABLE_REGION enthält zwei Zeilen mit region = North. Was kann dadurch beim Lookup passieren?",
       "options": [
-        "Der Compiler entfernt Duplikate automatisch",
-        "Der Lookup kann passende Faktzeilen vervielfachen",
-        "Nichts, weil dimension nur Dokumentation ist"
+        "Der Compiler entfernt die doppelten Einträge automatisch",
+        "North-Verkäufe können im verbundenen Ergebnis mehrfach erscheinen",
+        "Nichts, denn die Deklaration dimension hat keine Auswirkung auf die Berechnung"
       ],
-      "why": "Der deklarierte Schlüssel muss zur Eindeutigkeit der Quelldaten passen. Doppelte Lookup-Ziele können Zeilen und Beträge vervielfachen. Mit Datenbankverbindung erkennt --validate-only die nicht eindeutige regions-Dimension und meldet DIMENSION_NOT_UNIQUE."
+      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate-only den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE."
     },
     "missing": {
-      "question": "Was ändert sich im Januar, nachdem fehlende Vorperiodenumsätze durch 0 ersetzt wurden?",
+      "question": "Im Januarbericht ersetzt ISNULL({sales: pp}, 0) fehlende Vormonatswerte. Was ändert sich in der Anzeige?",
       "options": [
         "Zusätzliche Dezemberzeilen erscheinen",
-        "Die beiden vorhandenen Regionszeilen zeigen 0 statt NULL",
-        "Die Quelldaten beweisen nun einen Dezemberumsatz von null"
+        "In den beiden vorhandenen Regionszeilen steht beim Vormonatswert 0 statt NULL",
+        "Die Quelldaten belegen jetzt, dass der Dezemberumsatz 0 war"
       ],
-      "why": "Der feste Ersatzwert liefert 0, wo die Vorperiodenkennzahl keinen Wert hat. Beide Januargruppen bleiben; es kommen keine Dezemberzeilen oder Quellfakten hinzu."
+      "why": "Nur der fehlende Vormonatswert wird durch 0 ersetzt. Die zwei Januarzeilen und ihre Januarumsätze bleiben erhalten. Es entstehen keine Dezemberzeilen, und es ist damit nicht belegt, dass der tatsächliche Dezemberumsatz 0 war."
     }
   }
 };

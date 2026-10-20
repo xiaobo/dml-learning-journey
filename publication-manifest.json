@@ -61,10 +61,6 @@
       "published": "lesson-files--compiler-observations.json"
     },
     {
-      "source": "explanation/visual-introduction/lesson-files/DIM_REGION.csv",
-      "published": "lesson-files--DIM_REGION.csv"
-    },
-    {
       "source": "explanation/visual-introduction/lesson-files/expected.csv",
       "published": "lesson-files--expected.csv"
     },
@@ -83,6 +79,10 @@
     {
       "source": "explanation/visual-introduction/lesson-files/START-HERE.txt",
       "published": "lesson-files--START-HERE.txt"
+    },
+    {
+      "source": "explanation/visual-introduction/lesson-files/TABLE_REGION.csv",
+      "published": "lesson-files--TABLE_REGION.csv"
     },
     {
       "source": "explanation/visual-introduction/lesson-files/TABLE_SALES.csv",
@@ -127,6 +127,10 @@
     {
       "source": "explanation/visual-introduction.md",
       "published": "explanation--visual-introduction.html"
+    },
+    {
+      "source": "reference/modifiers.md",
+      "published": "reference--modifiers.html"
     },
     {
       "source": "explanation/dimensions.md",
@@ -229,8 +233,16 @@
       "published": "reference--model-query-sql.html"
     },
     {
-      "source": "reference/modifiers.md",
-      "published": "reference--modifiers.html"
+      "source": "reference/examples/aggregation.md",
+      "published": "reference--examples--aggregation.html"
+    },
+    {
+      "source": "02-syntax/dmx_variable_schema.yaml",
+      "published": "02-syntax--dmx_variable_schema.yaml"
+    },
+    {
+      "source": "reference/join-null-equality.md",
+      "published": "reference--join-null-equality.html"
     },
     {
       "source": "reference/model-structure.md",
@@ -249,10 +261,6 @@
       "published": "reference--model-composition.html"
     },
     {
-      "source": "reference/join-null-equality.md",
-      "published": "reference--join-null-equality.html"
-    },
-    {
       "source": "reference/mcp-contract.md",
       "published": "reference--mcp-contract.html"
     },
@@ -263,10 +271,6 @@
     {
       "source": "02-syntax/dml_schema.yaml",
       "published": "02-syntax--dml_schema.yaml"
-    },
-    {
-      "source": "02-syntax/dmx_variable_schema.yaml",
-      "published": "02-syntax--dmx_variable_schema.yaml"
     },
     {
       "source": "02-syntax/dmx.md",
@@ -287,10 +291,6 @@
     {
       "source": "reference/examples/queries.md",
       "published": "reference--examples--queries.html"
-    },
-    {
-      "source": "reference/examples/aggregation.md",
-      "published": "reference--examples--aggregation.html"
     },
     {
       "source": "reference/examples/measure-formulas.md",

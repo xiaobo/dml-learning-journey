@@ -97,7 +97,7 @@
 		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
 	</style>
-	<link rel="stylesheet" href="course.css?v=ca50f748cf">
+	<link rel="stylesheet" href="course.css?v=17885b6a74">
 	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
 </head>
 <body>
@@ -166,7 +166,7 @@
 				<p class="story" data-i18n="model.text3">"What shall we call the total?"<br>The traveler wrote: sales.</p>
 				<p data-i18n="model.text4">DML defines the model in YAML. <code>FACT_SALES</code> names our dataset; <code>TABLE_SALES</code> is its physical source table. Measures name reusable business calculations.</p>
 				<p data-i18n="model.text5">Atomic measures bind to one dataset and aggregate its rows or column expressions without referencing other measures. Here, <code>sales</code> sums amounts; <code>cnt</code> counts rows.</p>
-				<details><summary data-i18n="model.text6">Read the model names</summary><p data-i18n="model.text7">Bare names in model formulas refer to physical SQL objects.</p><p data-i18n="model.text8">Keep a reusable calculation in the model. Choose report grouping and filters in the query. See <a href="explanation--core-concepts.html">DML, DMX, and Model Query</a>.</p></details>
+				<details><summary data-i18n="model.text6">Read the model names</summary><p data-i18n="model.text7">This tutorial uses <code>FACT_</code> for fact datasets, <code>DIM_</code> for attribute datasets, and <code>TABLE_</code> for physical tables. Field and measure names use <code>lower_snake_case</code>.</p><p data-i18n="model.text8">Keep a reusable calculation in the model. Choose report grouping and filters in the query. See <a href="explanation--core-concepts.html">DML, DMX, and Model Query</a>.</p></details>
 			</div>
 			<div><p class="code-label" data-i18n="model.text9">model.dml · the reusable model</p><pre><code>FACT_SALES:
   type: dataset
@@ -184,7 +184,7 @@
 			<div>
 				<span class="chapter-no" data-i18n="expressions.text1">03 / DMX</span><h2 id="expressions-title" data-i18n="expressions.text2">A calculation can<br>reuse what is known.</h2>
 				<p data-i18n="expressions.text3">The traveler wanted an average sale. The model already had the total and the count.</p>
-				<p data-i18n="expressions.text4">DMX is the expression syntax inside a formula. <code>{sales}</code> references a measure definition, not a fixed total. Its value depends on the report's grouping and filters.</p>
+				<p data-i18n="expressions.text4">DMX is the expression syntax inside a formula. Braces in <code>{sales}</code> reference the model's measure definition. Its value is calculated for this reference's grouping and filters.</p>
 				<p data-i18n="expressions.text5"><code>average_sale</code> is a composite measure because it reuses measures. For a zero denominator, <code>DIVIDE</code> returns NULL, meaning no value is available.</p>
 				<p class="small" data-i18n="expressions.text6">For North, the same formula gives 30 ÷ 2 = 15. For all four sales, it gives 100 ÷ 4 = 25.</p>
 			</div>
@@ -198,7 +198,7 @@
 		</section>
 		<section class="chapter full" id="grouping" aria-labelledby="grouping-title">
 			<span class="chapter-no" data-i18n="grouping.text1">04 / Model Query</span><h2 id="grouping-title" data-i18n="grouping.text2">The same measures.<br>A different view.</h2>
-			<div class="explorer-intro"><p class="story" data-i18n="grouping.text3">The traveler turned the telescope toward the regions.</p><p data-i18n="grouping.text4">A query chooses what one result row represents. <code>AGG(sales)</code> requests the named measure; <code>SUM({amount})</code> stays in the model. The grouping changes; the model definitions stay the same.</p><p class="small" data-i18n="grouping.text5">If you know PivotTables, <code>GROUP BY region</code> is like putting region in Rows. <code>AGG</code> is specific to Model Query; it is not a standard SQL function.</p></div>
+			<div class="explorer-intro"><p class="story" data-i18n="grouping.text3">The traveler turned the telescope toward the regions.</p><p data-i18n="grouping.text4">The query dimension is the report's grouping: it decides what one result row represents. <code>AGG(sales)</code> requests a named measure; <code>SUM({amount})</code> stays in the model. The model definitions stay the same.</p><p class="small" data-i18n="grouping.text5">If you know PivotTables, <code>GROUP BY region</code> is like putting region in Rows. <code>AGG</code> is specific to Model Query; it is not a standard SQL function.</p></div>
 			<fieldset id="grouping-controls"><legend data-i18n="grouping.text6">Choose the report grouping</legend><div class="choices">
 				<label class="choice"><input type="radio" name="grouping" value="all"><span data-i18n="grouping.label1">All sales</span></label>
 				<label class="choice"><input type="radio" name="grouping" value="region" checked><span data-i18n="grouping.label2">By region</span></label>
@@ -214,7 +214,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 				</div>
 			</div>
 			<div class="grain-note"><p id="grain-note">Each result row represents one region. The source dataset still has dimension: [id].</p><p class="small" id="average-note" role="status">North: 30 ÷ 2 = 15. South: 70 ÷ 2 = 35. The formula is evaluated for each result group.</p></div>
-			<p class="small" id="compiler-note" style="margin-top:14px">The regional query passes strict compilation on the checked dmlc build.</p>
+			<p class="small" id="compiler-note" style="margin-top:14px">The regional query for this four-row model passes strict compilation on the checked dmlc build.</p>
 			<p class="small" style="margin-top:14px" data-i18n="grouping.text11">The browser calculates these four-row examples locally. This explorer does not compile DML, execute SQL, or fetch database records.</p>
 			<noscript><p>JavaScript is disabled. The regional example remains visible. For all sales together, sales = 100 and average_sale = 25. By sale, sales and average_sale both equal that row's amount.</p></noscript>
 		</section>
@@ -233,7 +233,9 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 			<details><summary data-i18n="filters.text6">Inspect the complete model used in chapters 6–12</summary><pre class="model-preview"><code id="full-model"></code></pre></details>
 			<p class="code-label" style="margin-top:24px" data-i18n="filters.text7">model.dml · a reusable measure</p><pre><code>completed_sales:
   type: measure
-  formula: '{sales: {+f: {status: completed}}}'</code></pre><p class="small notation-note" data-i18n="filters.notation"><code>{sales: ...}</code> reuses sales with a modified context. Here, <code>+f</code> adds the status filter to this measure reference.</p>
+  formula: '{sales: {+f: {status: completed}}}'</code></pre><p class="notation-note" data-i18n="filters.notation">A <strong>modifier</strong> tells the model how to calculate this reference. In <code>{sales: ...}</code>, the measure comes before the colon and the modifier settings after it. Here <code>+f</code> adds the completed-status filter; the sales definition stays unchanged.</p>
+			<p class="small notation-note" data-i18n="filters.memory"><code>f</code> = filter; <code>+</code> = add. Read this formula as: sales, with an extra completed-status filter.</p>
+			<details class="syntax-note"><summary data-i18n="syntax.summary">Two ways to write modifier settings</summary><p data-i18n="syntax.named"><code>{sales: pp}</code> uses a named modifier. Read it as: sales, for the previous period. We will try this in chapter 9.</p><p data-i18n="syntax.configured"><code>{sales: {+f: {status: completed}}}</code> uses settings with a value: add the condition status = completed. The braces after the colon hold those settings.</p><p class="small" data-i18n="syntax.reference">See <a href="reference--modifiers.html">modifier rules and examples</a> when you need more forms.</p></details>
 			<div class="lab-controls"><label class="control"><span data-i18n="filters.label1">Report region</span><select id="filter-region" aria-label="Report region" data-i18n-aria-label="filters.a11y1"><option value="all" data-i18n="filters.text8">All regions</option><option>North</option><option>South</option></select></label></div>
 			<div class="explorer-grid"><pre><code id="filter-query"></code></pre><div class="paper-panel lesson-table" id="filter-result" aria-label="Filtered sales result" data-i18n-aria-label="filters.a11y2"></div></div>
 			<p class="context-note" id="filter-note" role="status">Report WHERE selects the report's rows. +f restricts the inputs to completed_sales. The other measure still includes returned sales.</p>
@@ -241,18 +243,18 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 		</section>
 		<section class="chapter full" id="shares" aria-labelledby="shares-title">
 			<span class="chapter-no" data-i18n="shares.text1">07 / Keep the denominator explicit</span><h2 id="shares-title" data-i18n="shares.text2">Thirty out of what?</h2>
-			<p class="story" data-i18n="shares.text3">A share needs both a part and a whole.</p><p class="lesson-start" data-i18n="shares.text4">Keep <strong>North</strong> selected. Switch from <code>-d</code> to <code>-df</code>. Expect the denominator to change from 30 to 100, and the share from 100% to 30%.</p>
+			<p class="story" data-i18n="shares.text3">A share needs both a part and a whole.</p><p class="notation-note" data-i18n="shares.memory"><code>d</code> = dimension, <code>f</code> = filter. <code>-d</code> removes grouping; <code>-df</code> also removes its related filter, for this reference only.</p><p class="lesson-start" data-i18n="shares.text4">Select <strong>North</strong> here. Switch from <code>-d</code> to <code>-df</code>. Expect the denominator to change from 30 to 100, and the share from 100% to 30%.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="shares.label1">Report region</span><select id="share-region" aria-label="Share report region" data-i18n-aria-label="shares.a11y1"><option>North</option><option>South</option><option value="all" data-i18n="shares.text5">All regions</option></select></label><label class="control"><span data-i18n="shares.label2">Denominator modifier</span><select id="share-mode" aria-label="Denominator modifier" data-i18n-aria-label="shares.a11y2"><option value="keep" data-i18n="shares.text6">-d: region · keep the filter</option><option value="remove" data-i18n="shares.text7">-df: region · remove its filter</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · measure definition</p><pre><code id="share-formula"></code></pre><div class="stage-board"><div class="paper-panel"><h3 data-i18n="shares.text8">The denominator</h3><p id="share-denominator" role="status" data-i18n="shares.text9"><span id="share-context"></span><span>February stays fixed in both contexts.</span></p></div><div class="paper-panel lesson-table" id="share-result"></div></div>
 			<details><summary data-i18n="shares.text10">See the Model Query</summary><pre><code id="share-query"></code></pre></details>
-			<p class="small" data-i18n="shares.text11"><code>-d</code> removes region grouping for the denominator but keeps its filter. <code>-df</code> also removes that filter. Changing the denominator keeps February and the report's selected regions unchanged. Shares are decimal values displayed as percentages here.</p><div class="compiler-observation" data-probe="shares"></div>
+			<p class="small" data-i18n="shares.text11">Only the denominator's evaluation changes. February, the source key, and the report GROUP BY stay unchanged. Without a related region filter, both modifiers give the same denominator here. Model shares are decimals, displayed here as percentages.</p><div class="compiler-observation" data-probe="shares"></div>
 		</section>
 		<section class="chapter full" id="grain" aria-labelledby="grain-title">
 			<span class="chapter-no" data-i18n="grain.text1">08 / Calculate at an intermediate grain</span><h2 id="grain-title" data-i18n="grain.text2">Sum each customer's sales.<br>Then take the average.</h2>
 			<p class="lesson-start" data-i18n="grain.text3">South's two February sales both belong to customer C. Its average transaction is 35; its one customer's total is 70. Try <strong>SUM</strong>, then <strong>MAX</strong>. North changes to 30, then 20. South stays at 70. Return to <strong>AVG</strong> before checking your answer.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">Outer aggregate</span><select id="grain-operation" aria-label="Outer aggregate" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · average customer sales</option><option value="SUM" data-i18n="grain.text5">SUM · total customer sales</option><option value="MAX" data-i18n="grain.text6">MAX · largest customer total</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · measure definition</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">Stage 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">Stage 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
-			<p class="context-note" data-i18n="grain.text9">Grain means what one row represents. <code>+d: customer</code> adds customer to the measure's evaluation grain. The outer AVG, SUM, or MAX combines those customer totals into one value per region. The report's GROUP BY stays unchanged.</p><details><summary data-i18n="grain.text10">See the Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Compare <a href="explanation--dimensions.html">source, evaluation, and result dimensions</a>.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> adds customer to the evaluation dimension for this reference. The outer AVG, SUM or MAX combines customer totals back to the query dimension. The source key and report GROUP BY stay unchanged.</p><details><summary data-i18n="grain.text10">See the Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Compare <a href="explanation--dimensions.html">source, query, and evaluation dimensions</a>: source identity, result grouping, and intermediate calculation.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
 		</section>
 		<section class="chapter full" id="time" aria-labelledby="time-title">
 			<span class="chapter-no" data-i18n="time.text1">09 / Compare periods</span><h2 id="time-title" data-i18n="time.text2">Look back one month.</h2>
@@ -261,7 +263,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
   type: measure
   formula: '{sales: pp}'</code></pre><pre><code>sales_change:
   type: measure
-  formula: '{sales: pop}'</code></pre></div><p class="small" data-i18n="time.text6"><code>pp</code> requests the previous period's value. <code>pop</code> calculates its growth rate. This example uses the standard <code>dt_month</code> field with dates at month start. See <a href="explanation--core-concepts.html#3-time-context-and-dim_dt">time context</a>.</p></div>
+  formula: '{sales: pop}'</code></pre></div><p class="small" data-i18n="time.text6">In <code>{sales: pp}</code>, sales is the measure and <code>pp</code> is the previous-period modifier. The month context makes that the previous month. <code>pop</code> returns current / previous − 1 as a decimal rate. See <a href="explanation--core-concepts.html#3-time-context-and-dim_dt">time context</a>.</p></div>
 			<p class="lesson-start" data-i18n="time.text4">In <strong>February</strong>, North has 30 in sales and 20 in previous sales. Its growth is 30 ÷ 20 − 1 = 50%. Switch to <strong>January</strong>. Expect NULL comparisons because the example has no December history. Return to <strong>February</strong> before checking your answer.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="time.label1">Current month</span><select id="time-month" aria-label="Current month" data-i18n-aria-label="time.a11y1"><option value="2025-02-01" data-i18n="time.text7">February 2025</option><option value="2025-01-01" data-i18n="time.text8">January 2025</option></select></label></div>
 			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.queryCodeLabel">query.sql · report question</p><pre><code id="time-query"></code></pre></div><div class="paper-panel lesson-table" id="time-result"></div></div><p class="context-note" data-i18n="time.text9">Keep the query filtered to the target month. The model's measures calculate the previous value and growth rate.</p><div class="compiler-observation" data-probe="time"></div>
@@ -269,22 +271,22 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 		<section class="chapter full" id="lookups" aria-labelledby="lookups-title">
 			<span class="chapter-no" data-i18n="lookups.text1">10 / Attach an attribute</span><h2 id="lookups-title" data-i18n="lookups.text2">A lookup needs<br>one matching destination.</h2>
 			<p class="lesson-start" data-i18n="lookups.text3">The regional directory names Ada for North and Lin for South. The model looks up the manager through the directory's complete key, <code>[region]</code>. Add an invalid duplicate North entry and inspect the joined rows.</p>
-			<pre><code>regions:
+			<pre><code>DIM_REGION:
   type: dataset
-  table: DIM_REGION
+  table: TABLE_REGION
   dimension: [region]
   columns:
     region:
     manager:
 
 # Inside FACT_SALES.columns:
-manager: 'pk(region).{regions}.manager'</code></pre>
+manager: 'pk(region).{DIM_REGION}.manager'</code></pre>
 			<div class="lab-controls"><label class="answer-option"><input type="checkbox" id="duplicate-key"><span data-i18n="lookups.label1">Add an invalid second North directory row</span></label></div><div class="stage-board"><div class="paper-panel"><h3 data-i18n="lookups.text4">Regional directory</h3><div class="lesson-table" id="lookup-directory"></div></div><div class="paper-panel"><h3 data-i18n="lookups.text5">February rows after lookup</h3><div class="lesson-table" id="lookup-rows"></div></div></div><p class="context-note" id="lookup-note" role="status"></p>
 			<p class="small" data-i18n="lookups.text6">The duplicate toggle deliberately violates the declared key. Ordinary compilation does not read source rows. With a database connection, <code>dmlc --validate-only</code> checks the complete dataset dimensions reached by the query and reports <code>DIMENSION_NOT_UNIQUE</code> when the declared key is not unique.</p>
-			<details><summary data-i18n="lookups.text7">Catch the duplicate key with dmlc</summary><p data-i18n="lookups.text8">For database practice, save this query as <code>lookup.sql</code> beside the downloaded project's <code>model.dml</code>. Selecting manager makes the query reach the regions dataset.</p><pre><code>SELECT manager, AGG(sales)
+			<details><summary data-i18n="lookups.text7">Catch the duplicate key with dmlc</summary><p data-i18n="lookups.text8">For database practice, save this query as <code>lookup.sql</code> beside the downloaded project's <code>model.dml</code>. Selecting manager makes the query reach the DIM_REGION dataset.</p><pre><code>SELECT manager, AGG(sales)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY manager</code></pre><p data-i18n="lookups.text9">Run validation on the connection containing your sample tables. Replace <code>default</code> with that connection's ID.</p><pre><code>dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json</code></pre><p data-i18n="lookups.text10">If that connection's DIM_REGION contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for regions. Correct the dataset dimension declaration or source data, then rerun validation. The MCP equivalent is <code>run_query</code> with <code>validateOnly: true</code>.</p><p class="small" data-i18n="lookups.text11">Validation checks observed keys and probes the main query with EXPLAIN; it does not execute the report's result rows. This browser toggle changes only the invented data on this page, not your database.</p></details>
+GROUP BY manager</code></pre><p data-i18n="lookups.text9">Run validation on the connection containing your sample tables. Replace <code>default</code> with that connection's ID.</p><pre><code>dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json</code></pre><p data-i18n="lookups.text10">If that connection's TABLE_REGION contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for DIM_REGION. Correct the dataset dimension declaration or source data, then rerun validation. The MCP equivalent is <code>run_query</code> with <code>validateOnly: true</code>.</p><p class="small" data-i18n="lookups.text11">Validation checks observed keys and probes the main query with EXPLAIN; it does not execute the report's result rows. This browser toggle changes only the invented data on this page, not your database.</p></details>
 			<div class="compiler-observation" data-probe="lookup"></div>
 		</section>
 		<section class="chapter full" id="missing" aria-labelledby="missing-title">
@@ -295,13 +297,13 @@ GROUP BY manager</code></pre><p data-i18n="lookups.text9">Run validation on the 
 		<section class="chapter full" id="capstone" aria-labelledby="capstone-title">
 			<span class="chapter-no" data-i18n="capstone.text1">12 / Build your report</span><h2 id="capstone-title" data-i18n="capstone.text2">Bring the notebook<br>and the question together.</h2>
 			<form class="chapter-check final-check" id="capstone-check" aria-labelledby="capstone-question">
-			<fieldset><legend id="capstone-question" data-i18n="capstone.text3">Try it · Can you build February's report for both regions?</legend>
-			<p class="lesson-start" data-i18n="capstone.text4">Use one row per region and include sales, completed sales, previous-month sales, average customer sales, and share of all regions. Set the controls below, then check your report to complete chapter 12.</p>
+			<fieldset><legend id="capstone-question" data-i18n="capstone.text3">Try it · Build a February 2025 report for North and South.</legend>
+			<p class="lesson-start" data-i18n="capstone.text4">Show one row per region with sales, completed sales, previous-month sales, average sales per customer, and each region's share of sales across all regions. Choose the settings below, then click Submit answer.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="capstone.label1">Report month</span><select id="final-month" aria-label="Report month" data-i18n-aria-label="capstone.a11y1"><option value="2025-02-01" data-i18n="capstone.text5">February 2025</option><option value="2025-01-01" data-i18n="capstone.text6">January 2025</option></select></label><label class="control"><span data-i18n="capstone.label2">Report grouping</span><select id="final-group" aria-label="Report grouping" data-i18n-aria-label="capstone.a11y2"><option value="region" data-i18n="capstone.text7">By region</option><option value="all" data-i18n="capstone.text8">All sales together</option></select></label><label class="control"><span data-i18n="capstone.label3">Report region filter</span><select id="final-region" aria-label="Report region filter" data-i18n-aria-label="capstone.a11y3"><option value="all" data-i18n="capstone.text9">All regions</option><option>North</option><option>South</option></select></label></div>
 			<fieldset><legend data-i18n="capstone.text10">Measures to include</legend><div class="metric-options" id="final-measures"><label><input type="checkbox" value="sales" checked disabled><span data-i18n="capstone.label4">sales · required</span></label><label><input type="checkbox" value="completed_sales">completed_sales</label><label><input type="checkbox" value="previous_sales">previous_sales</label><label><input type="checkbox" value="average_customer_sales">average_customer_sales</label><label><input type="checkbox" value="all_region_share">all_region_share</label><label><input type="checkbox" value="sales_change"><span data-i18n="capstone.label5">sales_change · optional</span></label></div></fieldset>
 			</fieldset>
-			<div class="actions"><button type="submit" id="check-final">Check chapter 12</button><button type="button" class="secondary" id="final-hint">Show explanation</button></div>
-			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North: sales 30, completed 10, previous 20, average customer sales 15, share 30%. South: sales 70, completed 70, previous 50, average customer sales 70, share 70%.</p><p data-i18n="capstone.text12">To run it outside the browser, open the project's START-HERE.txt. Create the sample tables in an empty practice database, lint the model, strict-compile the query, and inspect the generated SQL. Record strict findings before moving on to live validation and result comparison.</p></div>
+			<p class="answer-submit-note" data-i18n="capstone.submitHelp">Choose the report settings above, then click Submit answer to check them.</p><div class="actions"><button type="submit" id="check-final">Submit answer</button><button type="button" class="secondary" id="final-hint">Show explanation</button></div>
+			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North: sales 30, completed sales 10, previous-month sales 20, average sales per customer 15, share 30%. South: sales 70, completed sales 70, previous-month sales 50, average sales per customer 70, share 70%.</p><p data-i18n="capstone.text12">To run it outside the browser, open the project's START-HERE.txt. Create the sample tables in an empty practice database, lint the model, strict-compile the query, and inspect the generated SQL. Record strict findings before moving on to live validation and result comparison.</p></div>
 			</form>
 			<div class="explorer-grid final-preview">
 				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">Model notebook · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">Excerpt of selected measures and any measures they reference. Updates with your choices.</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">Read the complete model notebook</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download data-i18n="capstone.notebookDownload">Download model.dml</a></details></div>
@@ -314,12 +316,13 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="capstone.text17">Run the compiler tutorial</a><a href="reference--README.html" data-i18n="capstone.text18">Explore the language reference</a><a href="tutorials--interactive-journey.html" data-i18n="capstone.text19">Read the exercise guide</a></div>
 			<details><summary data-i18n="capstone.text20">Apply this to your own report</summary><ol><li><span data-i18n="capstone.step1">State what one source row and one result row represent. Check the complete source key.</span></li><li><span data-i18n="capstone.step2">Name each measure's inputs, filters, time period, and intermediate grain.</span></li><li><span data-i18n="capstone.step3">For ratios, state what belongs in the denominator. For missing values, choose a business meaning before filling them.</span></li><li><span data-i18n="capstone.step4">Compile and inspect SQL, validate on the target connection, then compare keys, duplicate rows, NULLs, and every measure with an independent result.</span></li></ol><p data-i18n="capstone.text21">Start with <a href="how-to--build-analysis.html">Build a model from a business question</a>. Use <a href="how-to--design-measures.html">Design a reusable measure</a> for new calculations.</p></details>
 		</section>
+		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Keep these symbols close · quick reference</summary><p data-i18n="recall.intro">Read a reference as: measure, then how to calculate it this time. These are memory cues, not extra syntax or arithmetic.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Symbol</th><th data-i18n="recall.meaning">Recall its meaning</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.</p><p class="small" data-i18n="syntax.reference">See <a href="reference--modifiers.html">modifier rules and examples</a> when you need more forms.</p></details>
 		<footer><p data-i18n="common.text7">DML defines. DMX expresses. Model Query selects and groups.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compiler observations</a> · <a href="explanation--visual-introduction.html">Original text introduction</a> · <a href="assets--generation.json">Art direction</a> · Works offline</p></footer>
 	</main>
-	<script src="locales--en.js?v=c6267cea08"></script>
-	<script src="locales--zh.js?v=9b71bcf04c"></script>
-	<script src="locales--ja.js?v=6f65d85bff"></script>
-	<script src="locales--de.js?v=9e6768ffd6"></script>
+	<script src="locales--en.js?v=fd2174c140"></script>
+	<script src="locales--zh.js?v=37958c8d65"></script>
+	<script src="locales--ja.js?v=ad9935b19a"></script>
+	<script src="locales--de.js?v=0c87b7746f"></script>
 	<script src="course-i18n.js?v=24836a51f9"></script>
 	<script>
 		(() => {
@@ -371,11 +374,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 			document.addEventListener('course-language-change',() => render(document.querySelector('input[name="grouping"]:checked').value));
 		})();
 	</script>
-	<script src="course-data.js?v=1f5a9b7f83"></script>
-	<script src="course-definitions.js?v=6b2311cc3d"></script>
-	<script src="compiler-observations.js?v=a809bd1b4d"></script>
+	<script src="course-data.js?v=f376cc3f21"></script>
+	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="compiler-observations.js?v=cf09a54540"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=40ab9abd61"></script>
-	<script src="course-navigation.js?v=f54cb359cf"></script>
+	<script src="course.js?v=3b675d296b"></script>
+	<script src="course-navigation.js?v=5181d006d7"></script>
 </body>
 </html>

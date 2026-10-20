@@ -11,7 +11,7 @@ The browser preview uses local arithmetic. It does not execute dmlc or a databas
    dmlc.exe --lint model.dml --output-format=json
    dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
 4. Inspect the output JSON and gen SQL files. The recorded capstone query has
-   status findings and exit 1 because of a key-union join warning. That is not a
+   status findings and exit 1 because of key-union join and simplification warnings. That is not a
    passed strict check. Inspect unmatched keys and query membership before use.
    The SQL combines current and previous month values and customer-level AVG.
 5. The stored compiler observations identify the checked executable and SQL.
@@ -20,7 +20,7 @@ The browser preview uses local arithmetic. It does not execute dmlc or a databas
 
 Optional SQL Server practice exercise:
 - Use a NEW, EMPTY practice database. Review setup-mssql.sql before running it.
-- Run setup-mssql.sql in that database. It creates TABLE_SALES, DIM_REGION, and
+- Run setup-mssql.sql in that database. It creates TABLE_SALES, TABLE_REGION, and
   a daily DML_CALENDAR for December 2024 through February 2025.
 - The amount column is decimal so ratios retain fractional values.
 - Inspect and execute the generated SQL in the same database and session.
@@ -38,7 +38,7 @@ Files:
 model.dml             Complete model used in chapters 6-12
 query.sql             Checked final report query
 TABLE_SALES.csv        Eight invented source rows
-DIM_REGION.csv        Two unique regional lookup rows
+TABLE_REGION.csv        Two unique regional lookup rows
 setup-mssql.sql       Optional SQL Server practice setup, including calendar
 expected.csv          Expected arithmetic for the final report
 compiler-observations.json  Recorded compiler output, findings, and build identity

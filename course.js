@@ -131,10 +131,18 @@
 		});
 		const actions = document.createElement('div'); actions.className = 'actions';
 		const check = document.createElement('button'); check.type = 'submit'; check.textContent = t('checkChapter',{n:index+1});
+		const submitNote = document.createElement('p'); submitNote.className = 'answer-submit-note'; submitNote.id = quiz.chapter+'-submit-note'; submitNote.setAttribute('role','status');
+		check.setAttribute('aria-describedby',submitNote.id);
+		function updateSubmitNote() {
+			submitNote.hidden = feedback.dataset.kind === 'correct';
+			submitNote.textContent = t(form.querySelector('input:checked') ? 'submitSelected' : 'submitInstruction');
+			check.setAttribute('aria-label',t('submitChapter',{n:index+1}));
+		}
 		const hint = document.createElement('button'); hint.type = 'button'; hint.className = 'secondary'; hint.textContent = t('hint');
 		const feedback = document.createElement('div'); feedback.className = 'feedback'; feedback.setAttribute('role','status'); feedback.setAttribute('aria-atomic','true');
-		hint.addEventListener('click',() => { clearFeedback(form,feedback); feedback.dataset.kind = 'hint'; feedback.textContent = t('hintAnswer',{why:i18n.quiz(quiz).why}); });
-		form.addEventListener('change',() => clearFeedback(form,feedback));
+		hint.addEventListener('click',() => { clearFeedback(form,feedback); feedback.dataset.kind = 'hint'; feedback.textContent = t('hintAnswer',{why:i18n.quiz(quiz).why}); updateSubmitNote(); });
+		form.addEventListener('change',() => { clearFeedback(form,feedback); updateSubmitNote(); });
+		form.addEventListener('reset',() => requestAnimationFrame(updateSubmitNote));
 		form.addEventListener('submit',event => {
 			event.preventDefault(); const selected = form.querySelector('input:checked');
 			clearFeedback(form,feedback);
@@ -144,14 +152,16 @@
 				const first = finishChapter(quiz.chapter); reward(form,feedback,quiz,index,first);
 				showCompletion(feedback,first);
 			} else { feedback.textContent = t('wrongAnswer',{why:i18n.quiz(quiz).why}); feedback.dataset.kind = 'wrong'; feedback.dataset.state = 'retry'; }
+			updateSubmitNote();
 		});
-		actions.append(check,hint); form.append(fieldset,actions,feedback); $(quiz.chapter).append(form);
+		actions.append(check,hint); form.append(fieldset,submitNote,actions,feedback); $(quiz.chapter).append(form);
 		if (completed.has(quiz.chapter)) reward(form,feedback,quiz,index);
 		function translateQuiz() {
 			const words = i18n.quiz(quiz);
 			legend.textContent = t('tryQuestion',{question:words.question});
 			[...form.querySelectorAll('.answer-option')].forEach((label,i) => { label.lastChild.textContent = words.options[i]; });
 			check.textContent = t('checkChapter',{n:index+1}); hint.textContent = t('hint');
+			updateSubmitNote();
 			const kind = feedback.dataset.kind;
 			if (kind === 'correct') reward(form,feedback,quiz,index);
 			else if (kind === 'choose') feedback.textContent = t('chooseAnswer');
@@ -335,18 +345,21 @@
 		const pre = document.createElement('pre'); pre.textContent = item.query+'\n\n'+item.diagnostics.map(d => d.severity+': '+d.message).join('\n')+'\n\n'+item.sql;
 		details.append(summary,label,pre); element.append(details);
 	}
-	const bind = (ids,fn) => ids.forEach(id => $(id).addEventListener('change',fn));
+	function contentChanged(chapter) { document.dispatchEvent(new CustomEvent('course-content-change',{detail:{chapter}})); }
+	const bind = (ids,fn) => ids.forEach(id => $(id).addEventListener('change',() => { fn(); contentChanged($(id).closest('.chapter').id); }));
 	bind(['filter-region'],filters); bind(['share-region','share-mode'],shares); bind(['grain-operation'],grain); bind(['time-month'],time); bind(['duplicate-key'],lookups); bind(['missing-mode'],missing); bind(['final-month','final-group','final-region','final-measures'],finalReport);
 	filters(); shares(); grain(); time(); lookups(); missing(); finalReport(); updateProgress();
 	if (completed.has('capstone')) { $('final-feedback').textContent = t('finalReview'); $('final-feedback').dataset.kind = 'review'; }
 	function translateCourse() {
 		filters(); shares(); grain(); time(); lookups(); missing(); finalReport(false); updateProgress();
 		$('check-final').textContent = t('checkChapter',{n:12}); $('final-hint').textContent = t('hint'); $('download-query').textContent = t('downloadQuery');
+		$('check-final').setAttribute('aria-label',t('submitChapter',{n:12}));
 		$('course-finish').querySelector('h3').textContent = t(completed.size === chapterIds.length ? 'journeyComplete' : 'ready');
 		if (!$('course-finish').hidden) rewards.decorate($('course-finish'),11,true);
 		const feedback = $('final-feedback'), kind = feedback.dataset.kind;
 		if (kind === 'hint' || kind === 'correct' || kind === 'review') feedback.textContent = t({hint:'finalHint',correct:'finalCorrect',review:'finalReview'}[kind]);
 		if (kind === 'issues') $('capstone-check').dispatchEvent(new Event('submit',{cancelable:true}));
+		contentChanged(null);
 	}
 	translateCourse(); document.addEventListener('course-language-change',translateCourse);
 })();

@@ -22,13 +22,13 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "model.text4": "DML は YAML でモデルを定義します。<code>FACT_SALES</code> はデータセット名、<code>TABLE_SALES</code> は物理的な元テーブルです。メジャーは再利用できる業務計算に名前をつけます。",
     "model.text5": "原子メジャーは1つのデータセットに結び付き、その行または列の式を集計します。他のメジャーは参照しません。ここでは <code>sales</code> が金額を合計し、<code>cnt</code> が行数を数えます。",
     "model.text6": "モデル内の名前を確認する",
-    "model.text7": "モデルの式で裸の名前を使うと、物理SQLオブジェクトを指します。",
+    "model.text7": "この教材では、<code>FACT_</code> はファクトデータセット、<code>DIM_</code> は属性データセット、<code>TABLE_</code> は物理テーブルを表します。フィールドとメジャーは <code>lower_snake_case</code> で命名します。",
     "model.text8": "再利用する計算はモデルに、レポートのグループ化とフィルターはクエリに置きます。<a href=\"explanation--core-concepts.html\">DML・DMX・Model Query</a> を参照してください。",
     "model.text9": "model.dml · 再利用するモデル",
     "expressions.text1": "03 / DMX",
     "expressions.text2": "すでにある定義を<br>計算に生かそう。",
     "expressions.text3": "旅人は 1 件あたりの平均売上を知りたくなりました。モデルには、すでに合計と件数があります。",
-    "expressions.text4": "DMX は式の構文です。<code>{sales}</code> は固定の合計値ではなくメジャーの定義を参照します。値はレポートのグループ化やフィルターによって変わります。",
+    "expressions.text4": "DMX は数式内の式の構文です。<code>{sales}</code> の波括弧はモデルのメジャー定義を参照し、その値はこの参照のグループ化とフィルターで計算されます。",
     "expressions.text5": "<code>average_sale</code> は他のメジャーを再利用する複合メジャーです。分母がゼロの場合、<code>DIVIDE</code> は値がないことを示す NULL を返します。",
     "expressions.text6": "同じ式でも、North では 30 ÷ 2 = 15、全 4 件では 100 ÷ 4 = 25 になります。",
     "expressions.text7": "DMX で書いた式",
@@ -39,7 +39,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grouping.text1": "04 / Model Query",
     "grouping.text2": "同じメジャーを、<br>別の視点から。",
     "grouping.text3": "旅人は望遠鏡を地域に向けました。",
-    "grouping.text4": "クエリは結果の 1 行が何を表すかを決めます。<code>AGG(sales)</code> は名前つきメジャーを要求し、<code>SUM({amount})</code> はモデルに置きます。グループ化が変わっても、モデルの定義は同じです。",
+    "grouping.text4": "クエリ次元はレポートのグループ化で、結果の1行が何を表すかを決めます。<code>AGG(sales)</code> は名前付きメジャーを要求し、<code>SUM({amount})</code> はモデルに置きます。モデル定義は変わりません。",
     "grouping.text5": "ピボットテーブルなら、<code>GROUP BY region</code> は region を「行」に置く操作に似ています。<code>AGG</code> は Model Query 独自の関数で、標準 SQL の関数ではありません。",
     "grouping.text6": "レポートのグループ化を選ぶ",
     "grouping.label1": "全売上",
@@ -76,7 +76,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text1": "07 / 分母を明確に",
     "shares.text2": "30 は、何に対する割合？",
     "shares.text3": "割合には、部分と全体の両方が必要です。",
-    "shares.text4": "<strong>North</strong> のまま、<code>-d</code> から <code>-df</code> に切り替えましょう。分母は 30 から 100 に、割合は 100% から 30% に変わります。",
+    "shares.text4": "ここで <strong>North</strong> を選び、<code>-d</code> から <code>-df</code> に切り替えます。分母は30から100へ、割合は100%から30%へ変わります。",
     "shares.label1": "レポートの地域",
     "shares.text5": "全地域",
     "shares.label2": "分母の修飾子",
@@ -85,7 +85,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text8": "分母",
     "shares.text9": "<span id=\"share-context\"></span><span>どちらのコンテキストも 2 月のままです。</span>",
     "shares.text10": "Model Query を見る",
-    "shares.text11": "<code>-d</code> は分母の地域グループ化を外しますが、そのフィルターは残します。<code>-df</code> はそのフィルターも外します。分母を変えても、2月のフィルターとレポートで選択した地域は変わりません。モデルの割合は小数で、このページでは百分率で表示します。",
+    "shares.text11": "変わるのは分母の評価だけです。2月のフィルター、ソースキー、レポートの GROUP BY は変わりません。関連する地域フィルターがなければ、この例の分母は両者で同じです。比率は小数で返り、ここでは百分率で表示します。",
     "grain.text1": "08 / 中間の粒度で計算",
     "grain.text2": "顧客ごとに売上を合計し、<br>その平均を取る。",
     "grain.text3": "South の 2 月の 2 件は、どちらも顧客 C の売上です。明細平均は 35、顧客の合計は 70。<strong>SUM</strong>、<strong>MAX</strong> を試すと North は 30、20 に変わり、South は 70 のままです。回答前に <strong>AVG</strong> に戻しましょう。",
@@ -95,15 +95,15 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text6": "MAX · 最大の顧客売上",
     "grain.text7": "段階 1 · region + customer",
     "grain.text8": "段階 2 · region",
-    "grain.text9": "粒度とは「1 行が何を表すか」です。<code>+d: customer</code> はメジャーの評価粒度に customer を加えます。外側の AVG・SUM・MAX が顧客ごとの合計を地域ごとの値にまとめます。レポートの GROUP BY は変わりません。",
+    "grain.text9": "<code>d</code> = dimension（次元）。<code>+d: customer</code> はこの参照の評価次元に customer を追加します。外側の AVG・SUM・MAX で顧客別合計をクエリ次元に戻します。ソースキーと GROUP BY は変わりません。",
     "grain.text10": "Model Query を見る",
-    "grain.text11": "<a href=\"explanation--dimensions.html\">元データ・評価・結果の次元</a>を比べてみましょう。",
+    "grain.text11": "<a href=\"explanation--dimensions.html\">ソース次元・クエリ次元・評価次元</a>を比較します。それぞれ元の行の識別、結果のグループ化、中間計算を担います。",
     "time.text1": "09 / 期間を比べる",
     "time.text2": "ひと月前を振り返ろう。",
     "time.text3": "旅人は 1 月のページを、2 月の隣に置きました。",
     "time.text4": "<strong>2 月</strong>の North の売上は 30、前期売上は 20。増加率は 30 ÷ 20 − 1 = 50% です。<strong>1 月</strong>に切り替えると、12 月の履歴がないため比較値は NULL になります。回答前に<strong>2 月</strong>へ戻しましょう。",
     "time.text5": "model.dml · 比較メジャー",
-    "time.text6": "<code>pp</code> は前期の値、<code>pop</code> は増加率を求めます。この例では月初の日付を持つ標準の <code>dt_month</code> を使います。<a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">時間コンテキスト</a>を参照してください。",
+    "time.text6": "<code>{sales: pp}</code> の sales はメジャー、<code>pp</code> は前期値を求める修飾子です。この例は月単位なので前月になります。<code>pop</code> は当期 ÷ 前期 − 1 の小数比率を返します。<a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">時間コンテキスト</a>も参照してください。",
     "time.label1": "対象月",
     "time.text7": "2025 年 2 月",
     "time.text8": "2025 年 1 月",
@@ -116,9 +116,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.text5": "参照後の 2 月の行",
     "lookups.text6": "この切り替えは意図的に宣言したキーに違反します。通常のコンパイルでは元データを読みません。接続先で <code>dmlc --validate-only</code> を実行すると、参照先データセットの完全な次元を検証し、一意でなければ <code>DIMENSION_NOT_UNIQUE</code> を報告します。",
     "lookups.text7": "dmlc で重複キーを検出",
-    "lookups.text8": "データベースで試すときは、ダウンロードした <code>model.dml</code> と同じ場所に <code>lookup.sql</code> を保存します。manager を選ぶことで regions データセットが参照されます。",
+    "lookups.text8": "データベースで試すときは、ダウンロードした <code>model.dml</code> と同じ場所に <code>lookup.sql</code> を保存します。manager を選ぶことで DIM_REGION データセットが参照されます。",
     "lookups.text9": "サンプルテーブルがある接続先で検証します。<code>default</code> をその接続 ID に置き換えてください。",
-    "lookups.text10": "接続先の DIM_REGION に North が 2 件あれば、regions に対する <code>DIMENSION_NOT_UNIQUE</code> が想定されます。次元の宣言か元データを修正し、再検証してください。MCP では <code>run_query</code> に <code>validateOnly: true</code> を指定します。",
+    "lookups.text10": "接続先の TABLE_REGION に North が 2 件あれば、DIM_REGION に対する <code>DIMENSION_NOT_UNIQUE</code> が想定されます。次元の宣言か元データを修正し、再検証してください。MCP では <code>run_query</code> に <code>validateOnly: true</code> を指定します。",
     "lookups.text11": "検証では実際のキーを調べ、EXPLAIN で主クエリを検査します。レポート結果の行は取得しません。この切り替えはページ内の架空データだけを変更し、データベースは変えません。",
     "missing.text1": "11 / 欠損の意味を考える",
     "missing.text2": "空白のページは、<br>ゼロとは限らない。",
@@ -129,8 +129,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "missing.text6": "最も外側の <code>ISNULL(..., 0)</code> は、このメジャーを使う場所で定数の代替値を返します。新しい月や顧客を作るものではありません。",
     "capstone.text1": "12 / レポートを作る",
     "capstone.text2": "ノートと問いを、<br>ひとつにつなげよう。",
-    "capstone.text3": "やってみよう · 両地域の 2 月のレポートを作れますか？",
-    "capstone.text4": "地域ごとに 1 行とし、売上・完了済み売上・前月売上・顧客あたりの平均売上・全地域に対する割合を含めます。下の設定を調整してレポートを確認し、第 12 章を完了しましょう。",
+    "capstone.text3": "やってみよう · North と South の 2025 年 2 月のレポートを作りましょう。",
+    "capstone.text4": "地域ごとに 1 行で、sales（売上合計）、completed_sales（完了済み売上）、previous_sales（前月売上）、average_customer_sales（顧客別売上合計の平均）、all_region_share（全地域の売上に占める割合）を表示します。下で設定し、「答え合わせ」を押してください。sales_change は任意です。",
     "capstone.label1": "レポートの月",
     "capstone.text5": "2025 年 2 月",
     "capstone.text6": "2025 年 1 月",
@@ -183,9 +183,21 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.queryNote": "クエリはこれらの定義を再利用します。グループ化とフィルターはレポートの設定で決まります。",
     "identity.fields": "<code>id</code> = 売上ID、<code>region</code> = 地域、<code>amount</code> = 売上金額。",
     "model.notation": "<code>{amount}</code> はモデル列 <code>amount</code> を参照します。空の列定義は同名の物理列に対応します。",
-    "filters.notation": "<code>{sales: ...}</code> はコンテキストを変えて sales を再利用します。ここでは <code>+f</code> がこのメジャー参照に状態のフィルターを追加します。",
+    "filters.notation": "<strong>修飾子（modifier）</strong>は、この参照をどう計算するかを指定します。<code>{sales: ...}</code> のコロンの前はメジャー、後は修飾設定です。ここでは <code>+f</code> で完了状態のフィルターを加え、sales の定義は変えません。",
     "common.modelCodeLabel": "model.dml · メジャー定義",
-    "common.queryCodeLabel": "query.sql · レポートの問い"
+    "common.queryCodeLabel": "query.sql · レポートの問い",
+    "filters.memory": "<code>f</code> = filter（フィルター）、<code>+</code> = 追加。「sales を計算し、今回は完了状態で絞る」と読みます。",
+    "syntax.summary": "修飾設定の2つの書き方",
+    "syntax.named": "<code>{sales: pp}</code> は名前付き修飾子です。「sales の前期値」と読みます。第9章で使います。",
+    "syntax.configured": "<code>{sales: {+f: {status: completed}}}</code> は値付き設定です。status = completed の条件を加えます。コロンの後の波括弧に修飾設定を入れます。",
+    "syntax.reference": "他の形式は<a href=\"reference--modifiers.html\">修飾子の規則と例</a>を参照してください。",
+    "shares.memory": "<code>d</code> = dimension（次元）、<code>f</code> = filter（フィルター）。<code>-d</code> はグループ化を除き、<code>-df</code> は関連フィルターも除きます。どちらもこの参照だけに適用します。",
+    "recall.summary": "手元に置きたい記号 · 早見表",
+    "recall.intro": "参照は「どのメジャーか」、次に「今回はどう計算するか」と読みます。記憶の手がかりであり、追加構文や算術演算ではありません。",
+    "recall.roles": "ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。",
+    "recall.symbol": "記号",
+    "recall.meaning": "意味を振り返る",
+    "capstone.submitHelp": "設定を選んだら、「答え合わせ」を押して回答を確認しましょう。"
   },
   "ui": {
     "pageTitle": "DML をめぐる小さな旅",
@@ -203,18 +215,18 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "resume": "学習を続ける",
     "review": "レポートを振り返る",
     "reset": "進捗をリセット",
-    "checkChapter": "第 {n} 章を確認",
+    "checkChapter": "答え合わせ",
     "hint": "解説を見る",
     "tryQuestion": "やってみよう · {question}",
     "chooseAnswer": "まず答えを選んでください。",
-    "hintAnswer": "{why} 答えを選び、確認するとこの章が完了します。",
+    "hintAnswer": "{why} 回答を選んで「答え合わせ」を押しましょう。正解すると、この章が完了します。",
     "wrongAnswer": "もう一度考えてみましょう。{why}",
     "replayCelebration": "もう一度お祝いする",
     "award": "正解です。第 {n} 章を完了しました。",
     "chapterComplete": "第 {n} 章、完了。",
     "journeyComplete": "旅を最後まで歩きました。",
     "ready": "地域別レポートができました。",
-    "finalHint": "2025 年 2 月、地域別、全地域と、指定された 5 つのメジャーを選びます。sales_change は任意です。設定に合わせてプレビューが更新されます。レポートを確認すると第 12 章が完了します。",
+    "finalHint": "2025 年 2 月・地域別・全地域を選び、sales、completed_sales、previous_sales、average_customer_sales、all_region_share を含めます。sales_change は任意です。設定後に「答え合わせ」を押しましょう。",
     "finalIssues": "レポートの完成には、次を確認してください：{issues}。",
     "selectFebruary": "2025 年 2 月を選ぶ",
     "groupRegion": "地域別にグループ化する",
@@ -223,8 +235,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "finalCorrect": "正解です。設定が最終レポートの目標に一致しました。プレビューの値を比べ、下に記録されたコンパイラーの指摘も確認しましょう。",
     "finalReview": "最終レポートは完了済みです。ここで作り直して復習できます。",
     "downloadQuery": "自分の query.sql をダウンロード",
-    "averageTransaction": "明細あたりの平均売上",
-    "customerSales": "顧客の売上",
+    "averageTransaction": "売上1件あたりの平均",
+    "customerSales": "顧客別売上合計",
     "januarySales": "1 月の売上",
     "filterNorth": "North の売上は 30 ですが、完了済み売上は 10 です。",
     "filterSouth": "South は 2 件とも完了済みなので、売上と完了済み売上は両方 70 です。",
@@ -249,9 +261,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "averageSale": "売上 {id}",
     "averageNote": "{calculations}。式は結果のグループごとに評価されます。",
     "compileSimplified": "元データのキー [id] の粒度では、dmlc は集計を行の式に簡略化し、厳密チェックの指摘を出します。元データで id が一意であることが前提です。",
-    "compileRegional": "地域別クエリは、確認済みの dmlc ビルドで厳密コンパイルに合格しています。",
-    "compileTotal": "合計クエリは、確認済みの dmlc ビルドで厳密コンパイルに合格しています。",
-    "definitionHint": "クエリ内のフィールドやメジャーをクリックすると、定義を確認できます。",
+    "compileRegional": "この4行モデルの地域別クエリは、確認した dmlc ビルドで厳格コンパイルに成功しています。",
+    "compileTotal": "この4行モデルの合計クエリは、確認した dmlc ビルドで厳格コンパイルに成功しています。",
+    "definitionHint": "ホバーやフォーカスで短いヒントを表示。点線の名前を押すと定義を確認できます。",
     "definitionOpen": "{name} の定義を表示",
     "definitionClose": "定義を閉じる",
     "definitionColumn": "列",
@@ -261,11 +273,55 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "definitionRegion": "空の列定義は TABLE_SALES.region に対応します。GROUP BY region はこの列で売上を地域別にまとめます。",
     "definitionId": "この列は TABLE_SALES.id に対応します。FACT_SALES は dimension: [id] を宣言し、ソースの各行は1件の売上を表します。",
     "definitionAmount": "この列は TABLE_SALES.amount に対応し、各売上の金額を表します。",
-    "definitionSales": "現在のレポートのグループ化とフィルターのコンテキストで amount を合計します。",
-    "definitionCnt": "現在のレポートのグループ化とフィルターのコンテキストでソース行を数えます。",
-    "definitionAverageSale": "現在のコンテキストで sales を cnt で割ります。cnt がゼロの場合、DIVIDE は NULL を返します。",
+    "definitionSales": "この参照の評価グループと有効なフィルターに従い、amount を合計します。",
+    "definitionCnt": "この参照の評価グループと有効なフィルターに従い、元の行を数えます。",
+    "definitionAverageSale": "この参照のコンテキストで sales を cnt で割ります。cnt がゼロなら DIVIDE は NULL を返します。",
     "startLearning": "第 {n} 章を始める",
-    "resumeChapter": "第 {n} 章から続ける"
+    "resumeChapter": "第 {n} 章から続ける",
+    "helpDataset": "データセット",
+    "helpSyntax": "構文",
+    "helpCustomer": "顧客の識別子。customer でまとめると、販売ごとではなく顧客ごとのグループになります。",
+    "helpMonth": "販売月を月初の日付で保存します。この例の月単位の時間コンテキストです。",
+    "helpStatus": "販売の状態。completed_sales は自身の入力にこの列の条件を加えます。",
+    "helpManager": "region を使って DIM_REGION の担当者を参照します。参照先の完全なキーは [region] です。",
+    "helpCompleted": "sales を再利用し、+f でこの参照の入力を完了済みの販売に絞ります。",
+    "helpWithinShare": "sales を region でまとめない分母で割ります。選択した地域のフィルターは分母にも残ります。",
+    "helpAllShare": "region のグループ化と関連フィルターを除いた分母で sales を割ります。月の選択は残ります。",
+    "helpCustomerAverage": "地域・顧客ごとに売上を合計し、AVG で顧客別合計を地域ごとに平均します。",
+    "helpCustomerSum": "顧客別合計を計算し、SUM で地域ごとに合計します。",
+    "helpCustomerMax": "顧客別合計を計算し、MAX で地域内の最大値を選びます。",
+    "helpPrevious": "sales を pp で再利用して前期値を取得します。月単位なら前月です。",
+    "helpChange": "pop は当期 ÷ 前期 − 1 を計算します。小数の比率 0.5 をここでは 50% と表示します。",
+    "helpFilled": "前期売上が NULL の場合に 0 を補います。元の行は追加せず、実際の売上がゼロだったとも示しません。",
+    "helpFact": "論理データセット FACT_SALES は TABLE_SALES を読み、宣言したソース次元 [id] で販売を識別します。",
+    "helpRegions": "地域一覧は TABLE_REGION を読みます。キー [region] は各参照に対して最大1行を識別する必要があります。",
+    "helpDirectoryRegion": "一覧の region は TABLE_REGION.region に対応し、宣言された完全なキーです。",
+    "helpDirectoryManager": "一覧の manager は TABLE_REGION.manager に対応し、参照で返す担当者属性です。",
+    "helpDimension": "ここではデータセットの dimension が完全なソース行キーを宣言します。クエリのグループ化や評価次元とは役割が異なります。",
+    "helpAgg": "クエリのグループ化に従ってモデルのメジャーを要求します。AGG は Model Query 固有の構文です。",
+    "helpDivide": "第1の値を第2の値で割り、分母がゼロなら NULL を返します。",
+    "helpIsnull": "式が NULL の場合に代替値を使います。補完しても結果グループや元データは増えません。",
+    "helpSum": "現在の評価グループの値を合計します。SUM({amount}) は元の金額を、外側の SUM は中間合計を集計します。",
+    "helpCount": "COUNT(1) はこの参照のグループ化・フィルターに従って元の行を数えます。顧客の種類数ではありません。",
+    "helpAvg": "ここでは外側の AVG が +d で得た顧客別合計を平均し、レポートのグループごとに1値を返します。",
+    "helpMax": "ここでは外側の MAX が顧客別合計の最大値を選び、グループごとに1値を返します。",
+    "helpPk": "参照先が宣言した完全なキーで属性を取得します。元データがキーの一意性を満たす必要があります。",
+    "helpPlusFilter": "f = filter（フィルター）。+f は他の有効なフィルターを保ち、この参照の入力に条件を加えます。",
+    "helpPlusDimension": "d = dimension（次元）。+d は評価次元にフィールドを加え、明示した外側の集計でレポートのグループ化に戻します。",
+    "helpMinusDimension": "−d はこの参照の評価グループから指定フィールドを除きます。関連フィルター、データセットのキー、レポートの GROUP BY は維持します。",
+    "helpMinusBoth": "−df はこの参照の評価グループから指定フィールドと関連フィルターを除きます。この例の月など無関係なフィルターは残ります。",
+    "helpPp": "pp = previous period（前期）。この教材の月単位のコンテキストでは、2月の前期は1月です。",
+    "helpPop": "pop = period-over-period growth（前期比成長率）。当期 ÷ 前期 − 1 の小数比率を、ここでは百分率で表示します。",
+    "helpGroupBy": "結果行をまとめるフィールド、つまりクエリ次元を指定します。宣言されたソースキーは変わりません。",
+    "helpWhere": "レポート全体の入力条件です。メジャー修飾子で特定の参照に適用する条件を調整できます。",
+    "helpFromModel": "選択したモデルを使い、フィールドや再利用可能なメジャーの名前を解決します。",
+    "recallLink": "記号早見表",
+    "submitChapter": "第 {n} 章の答え合わせ",
+    "submitInstruction": "回答を 1 つ選び、「答え合わせ」を押してください。",
+    "submitSelected": "回答を選びました。「答え合わせ」を押して確認しましょう。",
+    "helpSourceTable": "物理テーブル",
+    "helpTableSales": "FACT_SALES が読み込む物理販売テーブルです。物理テーブル名とデータセット名は分けます。",
+    "helpTableRegion": "DIM_REGION が読み込む物理地域一覧です。元の行は宣言された [region] キーを満たす必要があります。"
   },
   "chapters": [
     "データ行",
@@ -283,103 +339,103 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
   ],
   "quizzes": {
     "identity": {
-      "question": "このモデルで各売上を識別する、宣言済みのキーはどれですか？",
+      "question": "FACT_SALES で、売上 1 件を識別するソースキーとして宣言されているのはどれですか？",
       "options": [
         "[region]",
         "[id]",
         "[amount]"
       ],
-      "why": "元データの識別子は [id] と宣言されています。region は重複します。amount はこの 4 行では偶然一意ですが、宣言したキーではありません。"
+      "why": "dimension: [id] がソースキーの宣言です。region は重複します。amount はこの 4 行では偶然一意ですが、キーとして宣言されていません。"
     },
     "model": {
-      "question": "FACT_SALES の原子メジャーはどの定義ですか？",
+      "question": "次のうち、FACT_SALES の原子メジャーの定義はどれですか？",
       "options": [
         "sales: SUM({amount})",
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales は FACT_SALES に結び付き、他のメジャーを参照せずに amount を集計します。average_sale は sales と cnt を参照するため、両方が同じ FACT_SALES を使っていても複合メジャーです。GROUP BY はクエリのグループ化を指定します。"
+      "why": "sales は FACT_SALES の amount を、他のメジャーを参照せずに集計します。average_sale は sales と cnt を参照する複合メジャーです。同じデータセットを使うだけでは原子メジャーにはなりません。GROUP BY はクエリのグループ化です。"
     },
     "expressions": {
-      "question": "North の sales が 30、cnt が 2 のとき、DIVIDE({sales}, {cnt}) は何を返しますか？",
+      "question": "North の sales = 30、cnt = 2 のとき、DIVIDE({sales}, {cnt}) の結果はどれですか？",
       "options": [
-        "25：全 4 件の平均",
-        "30：North の合計",
-        "15：North の平均"
+        "25：全 4 件の平均売上",
+        "30：North の売上合計",
+        "15：North の売上 1 件あたりの平均"
       ],
-      "why": "式は現在のレポートのコンテキストでメジャーを評価します。North は 30 / 2 = 15、全 4 件は 100 / 4 = 25 です。"
+      "why": "North のグループでは、売上合計を件数で割るので 30 ÷ 2 = 15 です。全 4 件をまとめた平均 25 とは異なります。"
     },
     "grouping": {
-      "question": "region でグループ化した後、元データセットの次元は何ですか？",
+      "question": "結果を region でグループ化しても、FACT_SALES のソース次元はどれですか？",
       "options": [
         "[region]",
         "[id]",
         "[]"
       ],
-      "why": "クエリのグループ化は結果の粒度を変えますが、元データの行識別子 [id] は変えません。"
+      "why": "GROUP BY region は地域ごとに結果をまとめます。ソースの各売上を識別する dimension: [id] は変わりません。"
     },
     "compiler": {
-      "question": "この演習で、コンパイルに成功すると何が得られますか？",
+      "question": "データベースに接続せずにコンパイルすると、何が得られますか？",
       "options": [
-        "検証済みのデータベース結果行",
-        "確認できる生成 SQL",
-        "すべての元データのキーが一意である証明"
+        "データベースで実行・検証済みの結果行",
+        "確認・実行に使える SQL",
+        "すべてのソースキーが一意である証明"
       ],
-      "why": "コンパイルは SQL を生成します。実データの検証と結果比較には、データベースと別の証拠が必要です。"
+      "why": "コンパイルは SQL を生成します。実際のキーの一意性を調べるには、接続先で --validate-only を実行します。結果の正しさは、SQL を実行して別途比較します。"
     },
     "filters": {
-      "question": "2 月の North で sales = 30、completed_sales = 10 となるのはなぜですか？",
+      "question": "2 月の North で、sales = 30 なのに completed_sales = 10 となるのはなぜですか？",
       "options": [
-        "+f は completed_sales の入力だけを絞り、他のメジャーは 2 件とも使う",
-        "レポートの WHERE が返品をすべてのメジャーから除く",
+        "+f で completed_sales の集計対象だけを完了済みに絞り、sales は North の 2 件とも集計する",
+        "レポートの WHERE が、すべてのメジャーの集計対象から返品を除く",
         "completed_sales がデータセットのキーを変える"
       ],
-      "why": "completed_sales の定義は、そのメジャーだけに +f を適用します。レポートの WHERE で status を絞ると sales も変わります。"
+      "why": "completed_sales は、sales の参照に +f で status = completed を追加します。sales 自体は完了済み 10 と返品 20 の両方を含みます。レポートの WHERE で status を絞ると、sales の集計対象も変わります。"
     },
     "shares": {
-      "question": "North だけのレポートで、全地域の売上を分母に残すのはどれですか？",
+      "question": "2 月の North だけを表示するレポートで、2 月の全地域の売上を分母にする式はどれですか？",
       "options": [
         "{sales: {-d: region}}",
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df はその参照の region グループ化と関連フィルターを外します。-d は region のフィルターを残します。"
+      "why": "-df は分母の参照から region のグループ化と地域フィルターを外すため、分母は 100 です。-d は地域フィルターを残すため、分母は North の 30 です。どちらも 2 月の条件とレポートの表示地域は変えません。"
     },
     "grain": {
-      "question": "South の 30 と 40 の 2 件が、どちらも顧客 C の売上なら、顧客あたりの平均売上はいくらですか？",
+      "question": "South の 2 月の売上 30 と 40 が両方とも顧客 C のものなら、顧客別売上合計の平均はいくらですか？",
       "options": [
         "35",
         "70",
         "2"
       ],
-      "why": "まず顧客別に合計し C = 70 とします。その 1 人分の合計を平均します。明細 2 件を直接平均すれば 35 になります。"
+      "why": "まず +d: customer で顧客別に集計すると、C の合計は 70 です。外側の AVG は、この 1 人分の合計を平均して 70 を返します。売上 2 件を直接平均した 35 とは異なります。"
     },
     "time": {
-      "question": "2 月を月単位で見るとき、pp はどの期間を求めますか？",
+      "question": "対象月が 2025 年 2 月で、月単位で比較するとき、{sales: pp} が参照する期間はどれですか？",
       "options": [
         "2025 年 1 月",
         "2024 年 2 月",
         "それ以前の全期間の合計"
       ],
-      "why": "pp は現在の月粒度で前期の値を求めます。増加率ではなく値です。"
+      "why": "pp は previous period（前期）です。この例は月単位なので、2025 年 2 月の前期は 2025 年 1 月です。取得するのは売上の値で、増加率ではありません。"
     },
     "lookups": {
-      "question": "DIM_REGION に North が 2 行あると、何が変わりますか？",
+      "question": "この例で TABLE_REGION に North が 2 行あると、担当者の参照時に何が起こり得ますか？",
       "options": [
         "コンパイラーが自動で重複を除去する",
-        "参照によって一致するファクト行が重複することがある",
-        "dimension は説明用なので何も変わらない"
+        "North の各売上が 2 行に結合され、売上合計が二重計上される",
+        "dimension は説明用なので、結果は変わらない"
       ],
-      "why": "宣言したキーは実データの一意性と一致しなければなりません。参照先の重複は行と金額を増やす可能性があります。接続先の --validate-only は regions の次元が一意でないことを検出し、DIMENSION_NOT_UNIQUE を報告します。"
+      "why": "DIM_REGION は [region] をキーとして宣言しているため、North は最大 1 行である必要があります。2 行あると、この例では North の売上が二重計上されます。接続先で --validate-only を実行すると、キーの重複を DIMENSION_NOT_UNIQUE として報告します。"
     },
     "missing": {
-      "question": "欠損した前期売上を 0 で補うと、1 月では何が変わりますか？",
+      "question": "2025 年 1 月のレポートで、欠損した前月売上を ISNULL(..., 0) で補うと、何が変わりますか？",
       "options": [
         "12 月の行が追加される",
-        "既存の地域 2 行で NULL が 0 になる",
-        "元データの履歴が 12 月の売上ゼロを証明する"
+        "既存の地域 2 行で、前月売上の表示が NULL から 0 になる",
+        "12 月の実際の売上がゼロだったと確認できる"
       ],
-      "why": "定数の代替値は前期売上がない場所に 0 を返します。1 月の 2 グループはそのままで、12 月の行や元データは追加されません。"
+      "why": "ISNULL(..., 0) は、前月売上の値がないときに 0 を返します。1 月の地域 2 行はそのままで、12 月の行は追加されません。実際の売上がゼロだったことも意味しません。"
     }
   }
 };

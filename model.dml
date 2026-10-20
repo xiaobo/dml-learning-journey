@@ -1,6 +1,6 @@
-regions:
+DIM_REGION:
   type: dataset
-  table: DIM_REGION
+  table: TABLE_REGION
   dimension: [region]
   columns:
     region:
@@ -17,7 +17,7 @@ FACT_SALES:
     dt_month:
     status:
     amount:
-    manager: 'pk(region).{regions}.manager'
+    manager: 'pk(region).{DIM_REGION}.manager'
   measures:
     sales: SUM({amount})
     cnt: COUNT(1)

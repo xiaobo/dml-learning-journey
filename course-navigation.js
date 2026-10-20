@@ -16,6 +16,7 @@
 	links.replaceChildren();
 	const introduction = chapterLink('journey',t('introduction'));
 	for (const chapter of chapters) chapter.menuLink = chapterLink(chapter.id,`${chapter.index+1}. ${chapter.name}`);
+	const symbolGuide = chapterLink('symbol-guide',t('recallLink'));
 	nav.prepend(previous); nav.append(next);
 	nav.addEventListener('click',followLink);
 	document.querySelector('.chapter-nav').addEventListener('click',followLink);
@@ -74,11 +75,13 @@
 	}
 	function initialAnchor() {
 		const target = document.getElementById(location.hash.slice(1));
+		if (target?.tagName === 'DETAILS') target.open = true;
 		if (target) requestAnimationFrame(() => { target.scrollIntoView({block:'start'}); schedule(); });
 	}
 	function goTo(id) {
 		const target = document.getElementById(id);
 		if (!target) return;
+		if (target.tagName === 'DETAILS') target.open = true;
 		menu.open = false;
 		document.dispatchEvent(new Event('course-navigation-change'));
 		location.hash = id;
@@ -95,6 +98,7 @@
 	window.addEventListener('hashchange',() => {
 		menu.open = false;
 		const target = document.getElementById(location.hash.slice(1));
+		if (target?.tagName === 'DETAILS') target.open = true;
 		const heading = target?.querySelector('h2,h1');
 		if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
 		schedule();
@@ -106,6 +110,7 @@
 	function translateNavigation() {
 		for (const chapter of chapters) { chapter.name = i18n.chapter(chapter.index); chapter.nameNode.textContent = chapter.name; }
 		introduction.textContent = t('introduction');
+		symbolGuide.textContent = t('recallLink');
 		completion(); active = undefined; headerSize(); locate();
 	}
 	document.addEventListener('course-language-change',translateNavigation);

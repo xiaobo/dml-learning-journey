@@ -21,13 +21,13 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "model.text4": "DML defines the model in YAML. <code>FACT_SALES</code> names our dataset; <code>TABLE_SALES</code> is its physical source table. Measures name reusable business calculations.",
     "model.text5": "Atomic measures bind to one dataset and aggregate its rows or column expressions without referencing other measures. Here, <code>sales</code> sums amounts; <code>cnt</code> counts rows.",
     "model.text6": "Read the model names",
-    "model.text7": "Bare names in model formulas refer to physical SQL objects.",
+    "model.text7": "This tutorial uses <code>FACT_</code> for fact datasets, <code>DIM_</code> for attribute datasets, and <code>TABLE_</code> for physical tables. Field and measure names use <code>lower_snake_case</code>.",
     "model.text8": "Keep a reusable calculation in the model. Choose report grouping and filters in the query. See <a href=\"explanation--core-concepts.html\">DML, DMX, and Model Query</a>.",
     "model.text9": "model.dml · the reusable model",
     "expressions.text1": "03 / DMX",
     "expressions.text2": "A calculation can<br>reuse what is known.",
     "expressions.text3": "The traveler wanted an average sale. The model already had the total and the count.",
-    "expressions.text4": "DMX is the expression syntax inside a formula. <code>{sales}</code> references a measure definition, not a fixed total. Its value depends on the report's grouping and filters.",
+    "expressions.text4": "DMX is the expression syntax inside a formula. Braces in <code>{sales}</code> reference the model's measure definition. Its value is calculated for this reference's grouping and filters.",
     "expressions.text5": "<code>average_sale</code> is a composite measure because it reuses measures. For a zero denominator, <code>DIVIDE</code> returns NULL, meaning no value is available.",
     "expressions.text6": "For North, the same formula gives 30 ÷ 2 = 15. For all four sales, it gives 100 ÷ 4 = 25.",
     "expressions.text7": "The formula, in DMX",
@@ -38,7 +38,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grouping.text1": "04 / Model Query",
     "grouping.text2": "The same measures.<br>A different view.",
     "grouping.text3": "The traveler turned the telescope toward the regions.",
-    "grouping.text4": "A query chooses what one result row represents. <code>AGG(sales)</code> requests the named measure; <code>SUM({amount})</code> stays in the model. The grouping changes; the model definitions stay the same.",
+    "grouping.text4": "The query dimension is the report's grouping: it decides what one result row represents. <code>AGG(sales)</code> requests a named measure; <code>SUM({amount})</code> stays in the model. The model definitions stay the same.",
     "grouping.text5": "If you know PivotTables, <code>GROUP BY region</code> is like putting region in Rows. <code>AGG</code> is specific to Model Query; it is not a standard SQL function.",
     "grouping.text6": "Choose the report grouping",
     "grouping.label1": "All sales",
@@ -72,7 +72,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text1": "07 / Keep the denominator explicit",
     "shares.text2": "Thirty out of what?",
     "shares.text3": "A share needs both a part and a whole.",
-    "shares.text4": "Keep <strong>North</strong> selected. Switch from <code>-d</code> to <code>-df</code>. Expect the denominator to change from 30 to 100, and the share from 100% to 30%.",
+    "shares.text4": "Select <strong>North</strong> here. Switch from <code>-d</code> to <code>-df</code>. Expect the denominator to change from 30 to 100, and the share from 100% to 30%.",
     "shares.label1": "Report region",
     "shares.text5": "All regions",
     "shares.label2": "Denominator modifier",
@@ -81,7 +81,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text8": "The denominator",
     "shares.text9": "<span id=\"share-context\"></span><span>February stays fixed in both contexts.</span>",
     "shares.text10": "See the Model Query",
-    "shares.text11": "<code>-d</code> removes region grouping for the denominator but keeps its filter. <code>-df</code> also removes that filter. Changing the denominator keeps February and the report's selected regions unchanged. Shares are decimal values displayed as percentages here.",
+    "shares.text11": "Only the denominator's evaluation changes. February, the source key, and the report GROUP BY stay unchanged. Without a related region filter, both modifiers give the same denominator here. Model shares are decimals, displayed here as percentages.",
     "grain.text1": "08 / Calculate at an intermediate grain",
     "grain.text2": "Sum each customer's sales.<br>Then take the average.",
     "grain.text3": "South's two February sales both belong to customer C. Its average transaction is 35; its one customer's total is 70. Try <strong>SUM</strong>, then <strong>MAX</strong>. North changes to 30, then 20. South stays at 70. Return to <strong>AVG</strong> before checking your answer.",
@@ -91,15 +91,15 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text6": "MAX · largest customer total",
     "grain.text7": "Stage 1 · region + customer",
     "grain.text8": "Stage 2 · region",
-    "grain.text9": "Grain means what one row represents. <code>+d: customer</code> adds customer to the measure's evaluation grain. The outer AVG, SUM, or MAX combines those customer totals into one value per region. The report's GROUP BY stays unchanged.",
+    "grain.text9": "<code>d</code> = dimension; <code>+d: customer</code> adds customer to the evaluation dimension for this reference. The outer AVG, SUM or MAX combines customer totals back to the query dimension. The source key and report GROUP BY stay unchanged.",
     "grain.text10": "See the Model Query",
-    "grain.text11": "Compare <a href=\"explanation--dimensions.html\">source, evaluation, and result dimensions</a>.",
+    "grain.text11": "Compare <a href=\"explanation--dimensions.html\">source, query, and evaluation dimensions</a>: source identity, result grouping, and intermediate calculation.",
     "time.text1": "09 / Compare periods",
     "time.text2": "Look back one month.",
     "time.text3": "The traveler kept January's pages beside February's.",
     "time.text4": "In <strong>February</strong>, North has 30 in sales and 20 in previous sales. Its growth is 30 ÷ 20 − 1 = 50%. Switch to <strong>January</strong>. Expect NULL comparisons because the example has no December history. Return to <strong>February</strong> before checking your answer.",
     "time.text5": "model.dml · comparison measures",
-    "time.text6": "<code>pp</code> requests the previous period's value. <code>pop</code> calculates its growth rate. This example uses the standard <code>dt_month</code> field with dates at month start. See <a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">time context</a>.",
+    "time.text6": "In <code>{sales: pp}</code>, sales is the measure and <code>pp</code> is the previous-period modifier. The month context makes that the previous month. <code>pop</code> returns current / previous − 1 as a decimal rate. See <a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">time context</a>.",
     "time.label1": "Current month",
     "time.text7": "February 2025",
     "time.text8": "January 2025",
@@ -112,9 +112,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.text5": "February rows after lookup",
     "lookups.text6": "The duplicate toggle deliberately violates the declared key. Ordinary compilation does not read source rows. With a database connection, <code>dmlc --validate-only</code> checks the complete dataset dimensions reached by the query and reports <code>DIMENSION_NOT_UNIQUE</code> when the declared key is not unique.",
     "lookups.text7": "Catch the duplicate key with dmlc",
-    "lookups.text8": "For database practice, save this query as <code>lookup.sql</code> beside the downloaded project's <code>model.dml</code>. Selecting manager makes the query reach the regions dataset.",
+    "lookups.text8": "For database practice, save this query as <code>lookup.sql</code> beside the downloaded project's <code>model.dml</code>. Selecting manager makes the query reach the DIM_REGION dataset.",
     "lookups.text9": "Run validation on the connection containing your sample tables. Replace <code>default</code> with that connection's ID.",
-    "lookups.text10": "If that connection's DIM_REGION contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for regions. Correct the dataset dimension declaration or source data, then rerun validation. The MCP equivalent is <code>run_query</code> with <code>validateOnly: true</code>.",
+    "lookups.text10": "If that connection's TABLE_REGION contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for DIM_REGION. Correct the dataset dimension declaration or source data, then rerun validation. The MCP equivalent is <code>run_query</code> with <code>validateOnly: true</code>.",
     "lookups.text11": "Validation checks observed keys and probes the main query with EXPLAIN; it does not execute the report's result rows. This browser toggle changes only the invented data on this page, not your database.",
     "missing.text1": "11 / Decide what missing means",
     "missing.text2": "An empty page<br>is not automatically zero.",
@@ -125,8 +125,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "missing.text6": "The outermost <code>ISNULL(..., 0)</code> supplies a literal fallback wherever this measure is used. It does not create new months or customers.",
     "capstone.text1": "12 / Build your report",
     "capstone.text2": "Bring the notebook<br>and the question together.",
-    "capstone.text3": "Try it · Can you build February's report for both regions?",
-    "capstone.text4": "Use one row per region and include sales, completed sales, previous-month sales, average customer sales, and share of all regions. Set the controls below, then check your report to complete chapter 12.",
+    "capstone.text3": "Try it · Build a February 2025 report for North and South.",
+    "capstone.text4": "Show one row per region with sales, completed sales, previous-month sales, average sales per customer, and each region's share of sales across all regions. Choose the settings below, then click Submit answer.",
     "capstone.label1": "Report month",
     "capstone.text5": "February 2025",
     "capstone.text6": "January 2025",
@@ -138,7 +138,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text10": "Measures to include",
     "capstone.label4": "sales · required",
     "capstone.label5": "sales_change · optional",
-    "capstone.text11": "North: sales 30, completed 10, previous 20, average customer sales 15, share 30%. South: sales 70, completed 70, previous 50, average customer sales 70, share 70%.",
+    "capstone.text11": "North: sales 30, completed sales 10, previous-month sales 20, average sales per customer 15, share 30%. South: sales 70, completed sales 70, previous-month sales 50, average sales per customer 70, share 70%.",
     "capstone.text12": "To run it outside the browser, open the project's START-HERE.txt. Create the sample tables in an empty practice database, lint the model, strict-compile the query, and inspect the generated SQL. Record strict findings before moving on to live validation and result comparison.",
     "capstone.text13": "The preview calculates our invented rows, not arbitrary DML. Only recorded companion queries have compiler evidence; other builder combinations need their own compile check. This page makes no database connection.",
     "capstone.text14": "Download the checked project",
@@ -183,9 +183,21 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.queryNote": "The query reuses these definitions. Report controls set its grouping and filters.",
     "identity.fields": "<code>id</code> = sale ID, <code>region</code> = sales region, <code>amount</code> = sale amount.",
     "model.notation": "<code>{amount}</code> references the model column <code>amount</code>. An empty column entry maps to the physical column with the same name.",
-    "filters.notation": "<code>{sales: ...}</code> reuses sales with a modified context. Here, <code>+f</code> adds the status filter to this measure reference.",
+    "filters.notation": "A <strong>modifier</strong> tells the model how to calculate this reference. In <code>{sales: ...}</code>, the measure comes before the colon and the modifier settings after it. Here <code>+f</code> adds the completed-status filter; the sales definition stays unchanged.",
     "common.modelCodeLabel": "model.dml · measure definition",
-    "common.queryCodeLabel": "query.sql · report question"
+    "common.queryCodeLabel": "query.sql · report question",
+    "filters.memory": "<code>f</code> = filter; <code>+</code> = add. Read this formula as: sales, with an extra completed-status filter.",
+    "syntax.summary": "Two ways to write modifier settings",
+    "syntax.named": "<code>{sales: pp}</code> uses a named modifier. Read it as: sales, for the previous period. We will try this in chapter 9.",
+    "syntax.configured": "<code>{sales: {+f: {status: completed}}}</code> uses settings with a value: add the condition status = completed. The braces after the colon hold those settings.",
+    "syntax.reference": "See <a href=\"reference--modifiers.html\">modifier rules and examples</a> when you need more forms.",
+    "shares.memory": "<code>d</code> = dimension, <code>f</code> = filter. <code>-d</code> removes grouping; <code>-df</code> also removes its related filter, for this reference only.",
+    "recall.summary": "Keep these symbols close · quick reference",
+    "recall.intro": "Read a reference as: measure, then how to calculate it this time. These are memory cues, not extra syntax or arithmetic.",
+    "recall.roles": "Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.",
+    "recall.symbol": "Symbol",
+    "recall.meaning": "Recall its meaning",
+    "capstone.submitHelp": "Choose the report settings above, then click Submit answer to check them."
   },
   "ui": {
     "pageTitle": "A small journey through DML",
@@ -203,18 +215,18 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "resume": "Resume learning",
     "review": "Review your report",
     "reset": "Reset progress",
-    "checkChapter": "Check chapter {n}",
+    "checkChapter": "Submit answer",
     "hint": "Show explanation",
     "tryQuestion": "Try it · {question}",
     "chooseAnswer": "Choose an answer first.",
-    "hintAnswer": "{why} Choose an answer and check it to complete this chapter.",
+    "hintAnswer": "{why} Choose an answer, then click Submit answer to check it.",
     "wrongAnswer": "Try again. {why}",
     "replayCelebration": "Celebrate again",
     "award": "Well done! Chapter {n} complete.",
     "chapterComplete": "Chapter {n} complete.",
     "journeyComplete": "Your journey is complete.",
     "ready": "Your regional report is ready.",
-    "finalHint": "Choose February 2025, By region, All regions, and all five requested measures. sales_change is optional. The preview updates as you change the controls. Check your report to complete chapter 12.",
+    "finalHint": "Choose February 2025, By region, All regions, and all five requested measures. sales_change is optional. Changing the settings updates the preview; click Submit answer to check your report.",
     "finalIssues": "To complete the report: {issues}.",
     "selectFebruary": "select February 2025",
     "groupRegion": "group by region",
@@ -223,8 +235,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "finalCorrect": "Correct. Your configuration matches the final report goal. Compare the preview values, then inspect the recorded compiler findings below.",
     "finalReview": "You completed the final report earlier. Rebuild it here to review the exercise.",
     "downloadQuery": "Download my query.sql",
-    "averageTransaction": "average transaction",
-    "customerSales": "customer sales",
+    "averageTransaction": "Average sale amount",
+    "customerSales": "Total sales per customer",
     "januarySales": "January sales",
     "filterNorth": "North has 30 in sales, but only 10 in completed sales.",
     "filterSouth": "South has 70 in sales and completed sales because both sales are completed.",
@@ -250,9 +262,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "averageSale": "Sale {id}",
     "averageNote": "{calculations}. The formula is evaluated for each result group.",
     "compileSimplified": "At source key [id], dmlc simplifies the aggregate to a row expression and reports a strict finding. This relies on id being unique in the source data.",
-    "compileRegional": "The regional query passes strict compilation on the checked dmlc build.",
-    "compileTotal": "The total query passes strict compilation on the checked dmlc build.",
-    "definitionHint": "Click a field or measure in the query to see its definition.",
+    "compileRegional": "The regional query for this four-row model passes strict compilation on the checked dmlc build.",
+    "compileTotal": "The total query for this four-row model passes strict compilation on the checked dmlc build.",
+    "definitionHint": "Hover or focus for a short hint; click a dotted name to explore its definition.",
     "definitionOpen": "Show definition of {name}",
     "definitionClose": "Close definition",
     "definitionColumn": "Column",
@@ -262,11 +274,55 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "definitionRegion": "This empty column declaration maps to TABLE_SALES.region. GROUP BY region uses it to group sales by region.",
     "definitionId": "This column maps to TABLE_SALES.id. FACT_SALES declares dimension: [id], so each source row represents one sale.",
     "definitionAmount": "This column maps to TABLE_SALES.amount, the amount on each source sale.",
-    "definitionSales": "Sums amount in the current report grouping and filter context.",
-    "definitionCnt": "Counts source rows in the current report grouping and filter context.",
-    "definitionAverageSale": "Divides sales by cnt in the current context. DIVIDE returns NULL when cnt is zero.",
+    "definitionSales": "Sums amount for this reference’s evaluation grouping and applicable filters.",
+    "definitionCnt": "Counts source rows for this reference’s evaluation grouping and applicable filters.",
+    "definitionAverageSale": "Divides sales by cnt in this reference’s context. DIVIDE returns NULL when cnt is zero.",
     "startLearning": "Start chapter {n}",
-    "resumeChapter": "Continue with chapter {n}"
+    "resumeChapter": "Continue with chapter {n}",
+    "helpDataset": "Dataset",
+    "helpSyntax": "Syntax",
+    "helpCustomer": "Customer identifier. Grouping by customer gives one group per customer, rather than per sale.",
+    "helpMonth": "The sale's month, stored as the first day of that month. It supplies month context for this example.",
+    "helpStatus": "The sale's status. completed_sales adds a condition on this column to its own inputs.",
+    "helpManager": "Looks up the manager in DIM_REGION using region. The target dataset declares [region] as its complete key.",
+    "helpCompleted": "Reuses sales with +f: add the completed status condition to this reference's inputs.",
+    "helpWithinShare": "Divides sales by a denominator without region grouping. The selected-region filter still applies to that denominator.",
+    "helpAllShare": "Divides sales by a denominator without region grouping or its related filter. The month stays selected.",
+    "helpCustomerAverage": "First sum sales for each customer within each region; then AVG those customer totals back to each region.",
+    "helpCustomerSum": "First calculate each customer's total; then SUM those totals for each region.",
+    "helpCustomerMax": "First calculate each customer's total; then MAX selects the largest customer total in each region.",
+    "helpPrevious": "Reuses sales with pp: request the previous period's value. At month context, that is the previous month.",
+    "helpChange": "pop computes current / previous − 1. Its result is a decimal rate: 0.5 is displayed as 50% here.",
+    "helpFilled": "Supplies 0 when the previous-sales value is NULL. It creates no source rows and does not prove missing sales were zero.",
+    "helpFact": "The logical dataset FACT_SALES reads TABLE_SALES. Its declared source dimension [id] identifies one sale.",
+    "helpRegions": "The regional directory reads TABLE_REGION. Its declared key [region] must identify at most one target row per lookup.",
+    "helpDirectoryRegion": "The directory's region column maps to TABLE_REGION.region and is its declared complete key.",
+    "helpDirectoryManager": "The directory's manager column maps to TABLE_REGION.manager, the attribute returned by the lookup.",
+    "helpDimension": "Here, dataset dimension declares the complete source-row key. Query grouping and a measure's evaluation dimension have different roles.",
+    "helpAgg": "Requests a model measure at the query's grouping. AGG is Model Query syntax, not a standard SQL aggregate function.",
+    "helpDivide": "Divides the first value by the second; returns NULL when the denominator is zero.",
+    "helpIsnull": "Uses the fallback when the expression is NULL. Filling a value does not create new result groups or source facts.",
+    "helpSum": "Adds values in the current evaluation group. SUM({amount}) aggregates source amounts; outer SUM can combine intermediate totals.",
+    "helpCount": "COUNT(1) counts source rows in this reference's grouping and filters; it does not count distinct customers.",
+    "helpAvg": "Here, outer AVG averages the customer totals produced by +d, returning one value per report group.",
+    "helpMax": "Here, outer MAX selects the largest customer total, returning one value per report group.",
+    "helpPk": "Looks up an attribute using the target dataset's complete declared key. The source data must satisfy that key's uniqueness.",
+    "helpPlusFilter": "f = filter; +f adds a condition to this measure reference's inputs, alongside the other applicable filters.",
+    "helpPlusDimension": "d = dimension; +d adds a field to the evaluation dimension. An explicit outer aggregate combines the finer values back to the report grouping.",
+    "helpMinusDimension": "−d removes the named field from this reference's evaluation grouping. Its related filters still apply; the dataset key and report GROUP BY stay unchanged.",
+    "helpMinusBoth": "−df removes the named field from this reference's evaluation grouping and removes its related filters. Unrelated filters, such as the month here, remain.",
+    "helpPp": "pp = previous period: request that period's value. In this tutorial's month context, February refers to January.",
+    "helpPop": "pop = period-over-period growth: current / previous − 1. Returns a decimal rate, displayed here as a percentage.",
+    "helpGroupBy": "Sets the query dimension: the fields that group result rows. It does not change the dataset's declared source key.",
+    "helpWhere": "Sets report-level input conditions. A measure modifier can adjust the applicable conditions for that particular reference.",
+    "helpFromModel": "Resolves names using the selected model, including its fields and reusable measures.",
+    "recallLink": "Symbol guide",
+    "submitChapter": "Submit answer for chapter {n}",
+    "submitInstruction": "Choose an answer, then click Submit answer.",
+    "submitSelected": "Answer selected. Click Submit answer to check it.",
+    "helpSourceTable": "Physical table",
+    "helpTableSales": "The physical sales table read by FACT_SALES. Table names and dataset names are separate.",
+    "helpTableRegion": "The physical regional directory read by DIM_REGION. Its source rows must satisfy the declared [region] key."
   },
   "chapters": [
     "The rows",
@@ -284,13 +340,13 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
   ],
   "quizzes": {
     "identity": {
-      "question": "Which declared source key identifies each sale in this model?",
+      "question": "Which field does FACT_SALES declare as the key for each source sale?",
       "options": [
         "[region]",
         "[id]",
         "[amount]"
       ],
-      "why": "The model declares [id] as source identity. Region repeats. Amount happens to be unique in these four rows, but it is not the declared key."
+      "why": "FACT_SALES declares dimension: [id]. region repeats. amount happens to be unique in these four example rows, but it is not the declared key."
     },
     "model": {
       "question": "Which definition is an atomic measure on FACT_SALES?",
@@ -299,88 +355,88 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales is bound to FACT_SALES and aggregates amount without referencing measures. average_sale is composite because it references sales and cnt, even though both use FACT_SALES. GROUP BY controls query grouping."
+      "why": "sales aggregates amount from FACT_SALES without referencing another measure. average_sale is composite because it references sales and cnt. GROUP BY sets the report grouping; it does not define a measure."
     },
     "expressions": {
       "question": "For North, sales is 30 and cnt is 2. What does DIVIDE({sales}, {cnt}) return?",
       "options": [
-        "25, the average across all four sales",
-        "30, the total for North",
-        "15, the average for North"
+        "25, the average sale amount across both regions",
+        "30, North's total sales",
+        "15, North's average sale amount"
       ],
-      "why": "The formula uses measures in the current report context. North gives 30 / 2 = 15. All four sales give 100 / 4 = 25."
+      "why": "For North, sales / cnt = 30 / 2 = 15 per sale. The formula uses North's totals, not the totals across both regions."
     },
     "grouping": {
-      "question": "After grouping by region, what is the source dataset dimension?",
+      "question": "When the report groups by region, what dimension does FACT_SALES still declare?",
       "options": [
         "[region]",
         "[id]",
         "[]"
       ],
-      "why": "Query grouping changes the result grain. It does not change the source-row identity [id]."
+      "why": "GROUP BY region creates one result row per region. FACT_SALES still declares [id] as its source-row key."
     },
     "compiler": {
-      "question": "What does a successful compile produce in this exercise?",
+      "question": "What does compiling the model and query produce in this exercise?",
       "options": [
-        "Verified database result rows",
+        "Report rows checked against the database",
         "Generated SQL to inspect",
         "Proof that every source key is unique"
       ],
-      "why": "Compilation produces SQL. Live validation and result comparison need a database and separate evidence."
+      "why": "Compilation generates SQL; it does not execute the report or check source-key uniqueness. Those checks require a database connection."
     },
     "filters": {
       "question": "In February, why can North show sales = 30 and completed_sales = 10?",
       "options": [
-        "+f filters the completed_sales inputs; the other measure still uses both sales",
-        "A report WHERE removes the returned sale from every measure",
+        "+f limits completed_sales to completed sales; sales still includes both transactions",
+        "The report's WHERE removes the returned sale from every measure",
         "completed_sales changes the dataset key"
       ],
-      "why": "The completed_sales definition applies +f to that measure. A report-level status WHERE would also change sales."
+      "why": "completed_sales applies +f: status = completed to its own inputs, giving 10. sales still includes both North transactions, giving 30. A report-level status filter would affect both measures."
     },
     "shares": {
-      "question": "For a North-only report, which denominator keeps sales from all regions?",
+      "question": "For a February report filtered to North, which denominator includes both regions' sales?",
       "options": [
         "{sales: {-d: region}}",
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df removes region grouping and its related filter for that reference. -d retains the region filter."
+      "why": "For this denominator, -df removes region grouping and region-related filters, giving 100. -d keeps the North filter, giving 30. Both keep the February filter."
     },
     "grain": {
-      "question": "South has two sales, 30 and 40, both for customer C. What is its average customer sales?",
+      "question": "South has two sales of 30 and 40, both for customer C. What is South's average sales per customer?",
       "options": [
         "35",
         "70",
         "2"
       ],
-      "why": "First sum sales per customer: C = 70. Then average the one customer total. Averaging the two source transactions would give 35."
+      "why": "Customer C's total is 30 + 40 = 70. South has one customer, so its average per customer is 70. Averaging the two sale amounts would give 35."
     },
     "time": {
-      "question": "At February month grain, what period does pp request?",
+      "question": "For February 2025 in this monthly report, which period does {sales: pp} use?",
       "options": [
         "January 2025",
         "February 2024",
         "All earlier months combined"
       ],
-      "why": "pp requests the previous period at the active month grain. It is a value, not a growth rate."
+      "why": "With a monthly time context, pp requests January 2025's sales value. pop calculates the growth rate instead."
     },
     "lookups": {
-      "question": "What changes if DIM_REGION contains two rows for North?",
+      "question": "If TABLE_REGION has two North rows, what can happen when sales are joined to the directory?",
       "options": [
         "The compiler automatically deduplicates the table",
-        "The lookup can duplicate matching fact rows",
-        "Nothing, because dimension is only documentation"
+        "Each North sale can appear twice in the joined result",
+        "Nothing; the declared dimension does not affect lookups"
       ],
-      "why": "The declared key must match source uniqueness. Duplicate lookup targets can multiply matching rows and their amounts. On a database connection, --validate-only detects the non-unique regions dimension and reports DIMENSION_NOT_UNIQUE."
+      "why": "Each North sale matches two directory rows, so it appears twice in the joined result and can be counted twice. The source sales rows are unchanged. With a database connection, --validate-only reports DIMENSION_NOT_UNIQUE for DIM_REGION."
     },
     "missing": {
-      "question": "After filling missing previous sales with 0, what changes in January?",
+      "question": "In the January report, what changes when ISNULL({sales: pp}, 0) replaces {sales: pp}?",
       "options": [
         "Extra December rows appear",
-        "The two existing region rows show 0 instead of NULL",
+        "The previous-sales value shows 0 instead of NULL in each region's row",
         "The source history now proves December sales were zero"
       ],
-      "why": "The literal fallback supplies 0 where the previous-sales measure has no value. The two January groups remain. No December rows or source facts are added."
+      "why": "ISNULL replaces the missing previous-sales value with 0 in each existing January result row. It adds no rows and does not establish that December sales were zero."
     }
   }
 };

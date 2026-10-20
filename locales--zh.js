@@ -22,13 +22,13 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "model.text4": "DML 用 YAML 定义模型。<code>FACT_SALES</code> 是数据集名称，<code>TABLE_SALES</code> 是物理源表。度量为可复用的业务计算命名。",
     "model.text5": "原子度量绑定一个数据集，直接聚合其中的行或列表达式，公式不引用其他度量。这里 <code>sales</code> 求金额之和，<code>cnt</code> 统计行数。",
     "model.text6": "了解模型中的名称",
-    "model.text7": "模型公式中的裸名称指向物理 SQL 对象。",
+    "model.text7": "本教程约定：<code>FACT_</code> 命名事实数据集，<code>DIM_</code> 命名属性数据集，<code>TABLE_</code> 命名物理表；字段和度量采用 <code>lower_snake_case</code>。",
     "model.text8": "可复用的计算放在模型中，报表分组和筛选放在查询中。参见 <a href=\"explanation--core-concepts.html\">DML、DMX 与 Model Query</a>。",
     "model.text9": "model.dml · 可复用模型",
     "expressions.text1": "03 / DMX",
     "expressions.text2": "新的计算，<br>可以复用已有定义。",
     "expressions.text3": "旅人想知道平均每笔销售额。模型里已经有了总额和笔数。",
-    "expressions.text4": "DMX 是公式中的表达式语法。<code>{sales}</code> 引用度量定义，而非固定总额；它的值取决于报表的分组和筛选。",
+    "expressions.text4": "DMX 是公式中的表达式语法。<code>{sales}</code> 的花括号表示引用模型中的度量定义；它的值按这次引用的分组和筛选计算。",
     "expressions.text5": "<code>average_sale</code> 复用其他度量，因此是复合度量。分母为零时，<code>DIVIDE</code> 返回 NULL，表示没有可用数值。",
     "expressions.text6": "同一公式在 North 中得到 30 ÷ 2 = 15；在全部四笔销售中得到 100 ÷ 4 = 25。",
     "expressions.text7": "用 DMX 写出的公式",
@@ -39,7 +39,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grouping.text1": "04 / Model Query",
     "grouping.text2": "相同的度量，<br>换一种视角。",
     "grouping.text3": "旅人把望远镜转向了各个地区。",
-    "grouping.text4": "查询决定一行结果代表什么。<code>AGG(sales)</code> 请求命名度量；<code>SUM({amount})</code> 留在模型中。分组改变，模型定义保持不变。",
+    "grouping.text4": "查询维度就是报表的分组，决定一行结果代表什么。<code>AGG(sales)</code> 请求命名度量；<code>SUM({amount})</code> 留在模型中。模型定义保持不变。",
     "grouping.text5": "如果你熟悉数据透视表，<code>GROUP BY region</code> 就像把 region 放进“行”。<code>AGG</code> 属于 Model Query，并非标准 SQL 函数。",
     "grouping.text6": "选择报表分组",
     "grouping.label1": "全部销售",
@@ -76,7 +76,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text1": "07 / 说清楚分母",
     "shares.text2": "三十，占谁的多少？",
     "shares.text3": "占比需要一部分，也需要一个整体。",
-    "shares.text4": "保持选中 <strong>North</strong>，从 <code>-d</code> 切换到 <code>-df</code>。分母应从 30 变为 100，占比从 100% 变为 30%。",
+    "shares.text4": "在本章选择 <strong>North</strong>，从 <code>-d</code> 切换到 <code>-df</code>。分母应从 30 变为 100，占比从 100% 变为 30%。",
     "shares.label1": "报表地区",
     "shares.text5": "全部地区",
     "shares.label2": "分母修饰符",
@@ -85,7 +85,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "shares.text8": "分母",
     "shares.text9": "<span id=\"share-context\"></span><span>两种上下文都固定在二月。</span>",
     "shares.text10": "查看 Model Query",
-    "shares.text11": "<code>-d</code> 移除分母的 region 分组，但保留其筛选；<code>-df</code> 还会移除该筛选。调整分母不会改变二月筛选，也不会改变报表所选地区。占比在模型中是小数，此处显示为百分比。",
+    "shares.text11": "调整的只是分母的求值。二月筛选、源行键和报表 GROUP BY 保持不变。没有相关地区筛选时，这两种修饰符在本例得到相同分母。模型中的占比是小数，此处显示为百分比。",
     "grain.text1": "08 / 在中间粒度计算",
     "grain.text2": "先按客户汇总，<br>再取平均。",
     "grain.text3": "South 的两笔二月销售都属于客户 C。平均每笔为 35，唯一客户的总额为 70。尝试 <strong>SUM</strong> 和 <strong>MAX</strong>：North 分别变为 30 和 20，South 仍为 70。检查答案前回到 <strong>AVG</strong>。",
@@ -95,15 +95,15 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text6": "MAX · 最大客户销售额",
     "grain.text7": "第 1 步 · region + customer",
     "grain.text8": "第 2 步 · region",
-    "grain.text9": "粒度就是“一行代表什么”。<code>+d: customer</code> 把 customer 加入度量的求值粒度，外层 AVG、SUM 或 MAX 再把各客户总额合为每个地区的一个值。报表的 GROUP BY 不变。",
+    "grain.text9": "<code>d</code> = dimension（维度）；<code>+d: customer</code> 为这次引用的求值维度增加 customer。外层 AVG、SUM 或 MAX 再把客户总额汇总回查询维度。源行键和报表 GROUP BY 不变。",
     "grain.text10": "查看 Model Query",
-    "grain.text11": "对照<a href=\"explanation--dimensions.html\">源维度、求值维度与结果维度</a>。",
+    "grain.text11": "对照<a href=\"explanation--dimensions.html\">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。",
     "time.text1": "09 / 比较期间",
     "time.text2": "回望上一个月。",
     "time.text3": "旅人把一月的笔记，放在了二月旁边。",
     "time.text4": "在<strong>二月</strong>，North 的销售额为 30，上期销售额为 20，增长率为 30 ÷ 20 − 1 = 50%。切换到<strong>一月</strong>：由于没有十二月历史，对比结果应为 NULL。检查答案前回到<strong>二月</strong>。",
     "time.text5": "model.dml · 比较度量",
-    "time.text6": "<code>pp</code> 请求上期值，<code>pop</code> 计算增长率。示例使用标准 <code>dt_month</code> 字段，日期为每月首日。参见<a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">时间上下文</a>。",
+    "time.text6": "<code>{sales: pp}</code> 中，sales 是度量，<code>pp</code> 是请求上一期值的修饰符。本例的月份上下文让它取得上月值。<code>pop</code> 返回本期 ÷ 上期 − 1 的小数增长率。参见<a href=\"explanation--core-concepts.html#3-time-context-and-dim_dt\">时间上下文</a>。",
     "time.label1": "当前月份",
     "time.text7": "2025 年 2 月",
     "time.text8": "2025 年 1 月",
@@ -116,9 +116,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.text5": "关联后的二月记录",
     "lookups.text6": "这个开关有意违反声明的键。普通编译不会读取源数据；连接数据库后，<code>dmlc --validate-only</code> 会检查查询涉及的数据集的完整维度。键不唯一时会报告 <code>DIMENSION_NOT_UNIQUE</code>。",
     "lookups.text7": "用 dmlc 检出重复键",
-    "lookups.text8": "数据库练习中，把查询保存为 <code>lookup.sql</code>，与下载项目中的 <code>model.dml</code> 放在一起。选择 manager 会使查询访问 regions 数据集。",
+    "lookups.text8": "数据库练习中，把查询保存为 <code>lookup.sql</code>，与下载项目中的 <code>model.dml</code> 放在一起。选择 manager 会使查询访问 DIM_REGION 数据集。",
     "lookups.text9": "在存放示例表的连接上运行验证。把 <code>default</code> 换成该连接的 ID。",
-    "lookups.text10": "若该连接中的 DIM_REGION 同时包含两条 North 记录，预期会对 regions 报告 <code>DIMENSION_NOT_UNIQUE</code>。修正维度声明或源数据后重新验证。MCP 中对应的是 <code>run_query</code> 配合 <code>validateOnly: true</code>。",
+    "lookups.text10": "若该连接中的 TABLE_REGION 同时包含两条 North 记录，预期会对 DIM_REGION 报告 <code>DIMENSION_NOT_UNIQUE</code>。修正维度声明或源数据后重新验证。MCP 中对应的是 <code>run_query</code> 配合 <code>validateOnly: true</code>。",
     "lookups.text11": "验证检查实际键值，并通过 EXPLAIN 探测主查询，不会执行报表结果查询。浏览器开关只改变本页虚构数据，不改变数据库。",
     "missing.text1": "11 / 判断缺失的含义",
     "missing.text2": "空白的一页，<br>不一定是零。",
@@ -129,8 +129,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "missing.text6": "最外层的 <code>ISNULL(..., 0)</code> 会在该度量使用处提供字面量回退值，不会创建新的月份或客户。",
     "capstone.text1": "12 / 构建你的报表",
     "capstone.text2": "把笔记与问题，<br>连在一起。",
-    "capstone.text3": "试一试 · 你能构建两个地区的二月报表吗？",
-    "capstone.text4": "每个地区一行，包含销售额、已完成销售额、上月销售额、平均每客户销售额，以及占全部地区的比例。设置下方控件，检查报表，完成第 12 章。",
+    "capstone.text3": "试一试 · 为 North 和 South 构建 2025 年二月销售报表",
+    "capstone.text4": "每个地区一行，包含销售额（sales）、已完成销售额（completed_sales）、上月销售额（previous_sales）、平均每客户销售额（average_customer_sales）和该地区销售额占全部地区的比例（all_region_share）。设置下方选项，再点击“提交答案”。",
     "capstone.label1": "报表月份",
     "capstone.text5": "2025 年 2 月",
     "capstone.text6": "2025 年 1 月",
@@ -175,7 +175,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.a11y2": "报表分组",
     "capstone.a11y3": "报表地区筛选",
     "capstone.notebookTitle": "模型笔记 · model.dml",
-    "capstone.notebookNote": "所选度量及引用度量的节选，会随报表选择更新。",
+    "capstone.notebookNote": "展示所选度量，以及它们引用的其他度量；随报表选项更新。",
     "capstone.notebookFull": "查看完整模型笔记",
     "capstone.notebookDownload": "下载 model.dml",
     "capstone.queryTitle": "报表问题 · query.sql",
@@ -183,9 +183,21 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.queryNote": "查询复用这些定义，分组和筛选由报表控件决定。",
     "identity.fields": "<code>id</code> = 销售编号，<code>region</code> = 地区，<code>amount</code> = 销售金额。",
     "model.notation": "<code>{amount}</code> 引用模型列 <code>amount</code>。留空的列定义映射到同名物理列。",
-    "filters.notation": "<code>{sales: ...}</code> 在调整后的上下文中复用 sales。这里的 <code>+f</code> 为这次度量引用增加状态筛选。",
+    "filters.notation": "<strong>修饰符（modifier）</strong>告诉模型，这一次如何计算引用的度量。<code>{sales: ...}</code> 的冒号前是度量，后面是修饰设置。这里 <code>+f</code> 增加“已完成”状态筛选，sales 原定义保持不变。",
     "common.modelCodeLabel": "model.dml · 度量定义",
-    "common.queryCodeLabel": "query.sql · 报表问题"
+    "common.queryCodeLabel": "query.sql · 报表问题",
+    "filters.memory": "<code>f</code> = filter（筛选），<code>+</code> = 加入。整句读作：计算 sales，这一次增加“已完成”筛选。",
+    "syntax.summary": "修饰符的两种写法",
+    "syntax.named": "<code>{sales: pp}</code> 使用命名修饰符，读作：计算 sales，这一次请求上一期值。第 9 章会用到。",
+    "syntax.configured": "<code>{sales: {+f: {status: completed}}}</code> 使用带参数的配置：增加 status = completed 条件。冒号后的花括号装的是这些修饰设置。",
+    "syntax.reference": "需要更多形式时，查阅<a href=\"reference--modifiers.html\">修饰符规则与示例</a>。",
+    "shares.memory": "<code>d</code> = dimension（维度），<code>f</code> = filter（筛选）。<code>-d</code> 减分组，<code>-df</code> 还减相关筛选；都只作用于这次引用。",
+    "recall.summary": "带上这些符号 · 随手速查",
+    "recall.intro": "读引用时，先看“哪个度量”，再看“这一次怎么算”。这些是记忆提示，不是额外语法或算术运算。",
+    "recall.roles": "源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。",
+    "recall.symbol": "符号",
+    "recall.meaning": "回想它的含义",
+    "capstone.submitHelp": "设置好上面的报表选项，再点击“提交答案”。"
   },
   "ui": {
     "pageTitle": "一段探索 DML 的小小旅程",
@@ -203,28 +215,28 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "resume": "继续学习",
     "review": "回顾你的报表",
     "reset": "重置进度",
-    "checkChapter": "检查第 {n} 章",
+    "checkChapter": "提交答案",
     "hint": "查看解释",
     "tryQuestion": "试一试 · {question}",
     "chooseAnswer": "请先选择一个答案。",
-    "hintAnswer": "{why} 选择答案并检查，即可完成本章。",
+    "hintAnswer": "{why} 选择答案后，点击“提交答案”查看结果。",
     "wrongAnswer": "再试一次。{why}",
     "replayCelebration": "再庆祝一次",
     "award": "答对了，第 {n} 章完成。",
     "chapterComplete": "第 {n} 章完成。",
     "journeyComplete": "你完成了这段旅程。",
     "ready": "你的地区报表准备好了。",
-    "finalHint": "选择 2025 年 2 月、按地区、全部地区，并包含所要求的五个度量。sales_change 可选。调整控件会更新预览；检查报表即可完成第 12 章。",
+    "finalHint": "月份选“2025 年 2 月”，分组选“按地区”，地区筛选选“全部地区”。sales 已勾选，再勾选 completed_sales、previous_sales、average_customer_sales 和 all_region_share。sales_change 可选。最后点击“提交答案”。",
     "finalIssues": "要完成报表，请：{issues}。",
     "selectFebruary": "选择 2025 年 2 月",
     "groupRegion": "按地区分组",
     "includeAll": "包含全部地区",
-    "includeMeasures": "包含 {names}",
-    "finalCorrect": "正确。配置符合最终报表目标。比较预览值，再检查下方记录的编译器问题。",
+    "includeMeasures": "勾选 {names}",
+    "finalCorrect": "答对了，报表选项符合要求。可对照预览结果，再查看下方的编译器检查记录。",
     "finalReview": "你之前已完成最终报表，可以在这里重新构建并回顾。",
     "downloadQuery": "下载我的 query.sql",
     "averageTransaction": "平均每笔销售额",
-    "customerSales": "客户销售额",
+    "customerSales": "客户销售额合计",
     "januarySales": "一月销售额",
     "filterNorth": "North 的销售额为 30，但已完成销售额只有 10。",
     "filterSouth": "South 的两笔销售都已完成，因此销售额和已完成销售额均为 70。",
@@ -249,9 +261,9 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "averageSale": "销售 {id}",
     "averageNote": "{calculations}。公式会针对每个结果组分别求值。",
     "compileSimplified": "在源键 [id] 粒度上，dmlc 将聚合简化为行表达式，并报告严格检查问题。这依赖源数据中的 id 唯一。",
-    "compileRegional": "地区查询在已检查的 dmlc 构建上通过严格编译。",
-    "compileTotal": "总计查询在已检查的 dmlc 构建上通过严格编译。",
-    "definitionHint": "点击查询中的字段或度量，查看定义。",
+    "compileRegional": "这个四行模型的地区查询在检查的 dmlc 构建上通过严格编译。",
+    "compileTotal": "这个四行模型的总计查询在检查的 dmlc 构建上通过严格编译。",
+    "definitionHint": "悬停或聚焦查看短提示；点击带虚线的名称查看定义。",
     "definitionOpen": "查看 {name} 的定义",
     "definitionClose": "关闭定义",
     "definitionColumn": "列",
@@ -261,11 +273,55 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "definitionRegion": "空的列定义映射到 TABLE_SALES.region。GROUP BY region 用它按地区分组销售记录。",
     "definitionId": "此列映射到 TABLE_SALES.id。FACT_SALES 声明 dimension: [id]，每个源数据行代表一笔销售。",
     "definitionAmount": "此列映射到 TABLE_SALES.amount，表示每笔源销售的金额。",
-    "definitionSales": "在当前报表的分组和筛选上下文中，对 amount 求和。",
-    "definitionCnt": "在当前报表的分组和筛选上下文中，统计源数据行数。",
-    "definitionAverageSale": "在当前上下文中，用 sales 除以 cnt。cnt 为零时，DIVIDE 返回 NULL。",
+    "definitionSales": "按这次引用的求值分组和适用筛选，对 amount 求和。",
+    "definitionCnt": "按这次引用的求值分组和适用筛选，统计源数据行数。",
+    "definitionAverageSale": "在这次引用的上下文中用 sales 除以 cnt；cnt 为零时，DIVIDE 返回 NULL。",
     "startLearning": "开始第 {n} 章",
-    "resumeChapter": "继续第 {n} 章"
+    "resumeChapter": "继续第 {n} 章",
+    "helpDataset": "数据集",
+    "helpSyntax": "语法",
+    "helpCustomer": "客户标识。按 customer 分组时，每组代表一个客户，而非一笔销售。",
+    "helpMonth": "销售所属月份，以该月首日保存。本例用它提供月份上下文。",
+    "helpStatus": "销售状态。completed_sales 在自己的输入上增加此列的筛选条件。",
+    "helpManager": "用 region 到 DIM_REGION 查找负责人；目标数据集声明的完整键是 [region]。",
+    "helpCompleted": "复用 sales，用 +f 为这次引用的输入增加“已完成”状态条件。",
+    "helpWithinShare": "sales 除以不按 region 分组的分母；所选地区的筛选仍作用于该分母。",
+    "helpAllShare": "sales 除以同时移除 region 分组及相关筛选的分母；月份筛选保留。",
+    "helpCustomerAverage": "先按地区和客户汇总销售额，再用 AVG 把客户总额平均为每个地区的一个值。",
+    "helpCustomerSum": "先计算各客户总额，再用 SUM 汇总为每个地区的一个值。",
+    "helpCustomerMax": "先计算各客户总额，再用 MAX 取每个地区最大的客户总额。",
+    "helpPrevious": "复用 sales，用 pp 请求上一期的值；在月份上下文中就是上月值。",
+    "helpChange": "pop 计算本期 ÷ 上期 − 1，结果是小数比率：此处把 0.5 显示为 50%。",
+    "helpFilled": "上期销售额为 NULL 时提供 0；不会创建源数据行，也不证明缺失的销售额为零。",
+    "helpFact": "逻辑数据集 FACT_SALES 读取 TABLE_SALES；声明的源维度 [id] 标识一笔销售。",
+    "helpRegions": "地区目录读取 TABLE_REGION；声明的键 [region] 必须让每次查找最多匹配一行目标数据。",
+    "helpDirectoryRegion": "目录中的 region 映射到 TABLE_REGION.region，也是该数据集声明的完整键。",
+    "helpDirectoryManager": "目录中的 manager 映射到 TABLE_REGION.manager，是查找返回的负责人属性。",
+    "helpDimension": "这里的数据集 dimension 声明完整源行键。查询的分组和度量的求值维度承担不同角色。",
+    "helpAgg": "按查询分组请求模型度量。AGG 是 Model Query 语法，并非标准 SQL 聚合函数。",
+    "helpDivide": "第一个值除以第二个值；分母为零时返回 NULL。",
+    "helpIsnull": "表达式为 NULL 时使用后备值。填值不会创建新的结果分组或源事实。",
+    "helpSum": "将当前求值组中的值相加。SUM({amount}) 汇总源金额；外层 SUM 可以合并中间总额。",
+    "helpCount": "COUNT(1) 统计这次引用的分组和筛选下的源行数，不是去重客户数。",
+    "helpAvg": "这里的外层 AVG 对 +d 得到的各客户总额取平均，返回每个报表组的一个值。",
+    "helpMax": "这里的外层 MAX 选出最大的客户总额，返回每个报表组的一个值。",
+    "helpPk": "按目标数据集声明的完整键查找属性；源数据必须满足该键的唯一性。",
+    "helpPlusFilter": "f = filter（筛选）；+f 为这次度量引用的输入增加条件，其他适用筛选仍保留。",
+    "helpPlusDimension": "d = dimension（维度）；+d 增加求值维度字段，再由显式的外层聚合汇总回报表分组。",
+    "helpMinusDimension": "−d 从这次引用的求值分组中移除指定字段，相关筛选仍保留；数据集的键和报表 GROUP BY 不变。",
+    "helpMinusBoth": "−df 为这次引用同时移除指定字段的求值分组及相关筛选；无关筛选保留，例如本例的月份筛选。",
+    "helpPp": "pp = previous period（上一期）：请求该期的值。本教程按月计算，二月的上一期是一月。",
+    "helpPop": "pop = period-over-period growth（期间增长率）：本期 ÷ 上期 − 1。返回小数比率，此处显示为百分比。",
+    "helpGroupBy": "设置查询维度，即结果行的分组字段；不会改变数据集声明的源行键。",
+    "helpWhere": "设置报表层的输入条件；度量修饰符可以为某次引用调整适用条件。",
+    "helpFromModel": "使用所选模型解析字段和可复用度量的名称。",
+    "recallLink": "符号速查",
+    "submitChapter": "提交第 {n} 章答案",
+    "submitInstruction": "选择一个答案，再点击“提交答案”。",
+    "submitSelected": "已选择答案，点击“提交答案”查看结果。",
+    "helpSourceTable": "物理表",
+    "helpTableSales": "FACT_SALES 读取的物理销售表。物理表名称和数据集名称分开命名。",
+    "helpTableRegion": "DIM_REGION 读取的物理地区目录表。源数据行必须满足声明的 [region] 键。"
   },
   "chapters": [
     "数据行",
@@ -283,103 +339,103 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
   ],
   "quizzes": {
     "identity": {
-      "question": "模型中，哪个声明的源键标识每笔销售？",
+      "question": "FACT_SALES 声明用哪组字段唯一标识一笔销售？",
       "options": [
         "[region]",
         "[id]",
         "[amount]"
       ],
-      "why": "模型声明 [id] 为源数据的标识。region 会重复。这四行中的 amount 恰好唯一，但它不是声明的键。"
+      "why": "FACT_SALES 声明 dimension: [id]，用 id 标识每笔销售。region 有重复值；amount 在这四行中恰好不重复，但并不是声明的源行键。"
     },
     "model": {
-      "question": "哪个定义是 FACT_SALES 上的原子度量？",
+      "question": "哪个定义是绑定 FACT_SALES 的原子度量？",
       "options": [
         "sales: SUM({amount})",
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales 绑定 FACT_SALES，直接聚合 amount，不引用其他度量。average_sale 引用 sales 和 cnt，因此是复合度量，即使二者都来自 FACT_SALES。GROUP BY 决定查询分组。"
+      "why": "sales 直接汇总 FACT_SALES 的 amount 列，不引用其他度量，因此是原子度量。average_sale 引用 sales 和 cnt，因此是复合度量。GROUP BY region 设置查询分组，并非度量定义。"
     },
     "expressions": {
       "question": "North 的 sales 为 30，cnt 为 2。DIVIDE({sales}, {cnt}) 返回什么？",
       "options": [
-        "25，四笔销售的平均值",
-        "30，North 的总额",
-        "15，North 的平均值"
+        "25，全部四笔销售的平均每笔金额",
+        "30，North 的销售总额",
+        "15，North 的平均每笔金额"
       ],
-      "why": "公式在当前报表上下文中使用度量。North 为 30 / 2 = 15，全部四笔销售为 100 / 4 = 25。"
+      "why": "计算 North 这一组时，公式使用 North 的销售额和笔数：30 ÷ 2 = 15。25 则是全部四笔销售的平均每笔金额：100 ÷ 4 = 25。"
     },
     "grouping": {
-      "question": "按 region 分组后，源数据集的维度是什么？",
+      "question": "报表按 region 分组后，FACT_SALES 声明的源维度是什么？",
       "options": [
         "[region]",
         "[id]",
         "[]"
       ],
-      "why": "查询分组改变结果粒度，不改变源数据行的标识 [id]。"
+      "why": "GROUP BY region 让每行结果代表一个地区；FACT_SALES 的源维度仍为 [id]，每行源数据仍代表一笔销售。"
     },
     "compiler": {
-      "question": "本练习中，成功编译会产出什么？",
+      "question": "只运行编译、不连接数据库时，会得到什么？",
       "options": [
-        "已验证的数据库结果行",
-        "可供检查的生成 SQL",
-        "源键全部唯一的证明"
+        "数据库执行查询后返回的结果行",
+        "编译器生成的 SQL",
+        "源数据中每个键都唯一的证明"
       ],
-      "why": "编译产出 SQL。实时验证和结果比较需要数据库以及独立证据。"
+      "why": "编译生成 SQL，不执行数据库查询，也不读取源数据来检查键是否唯一。检查实际键值需要连接数据库运行验证；获取报表结果还需执行 SQL。"
     },
     "filters": {
       "question": "二月的 North 为什么能同时显示 sales = 30 和 completed_sales = 10？",
       "options": [
-        "+f 只筛选 completed_sales 的输入，另一个度量仍使用两笔销售",
+        "+f 让 completed_sales 只汇总已完成记录；sales 仍包含两笔记录",
         "报表 WHERE 从所有度量中移除了退货销售",
         "completed_sales 改变了数据集的键"
       ],
-      "why": "completed_sales 的定义只对该度量应用 +f。若在报表 WHERE 中筛选 status，也会改变 sales。"
+      "why": "North 的两笔记录金额为 10 和 20，只有 10 的状态是 completed。+f 只为 completed_sales 内的 sales 引用增加状态筛选，所以两列分别为 30 和 10。若把状态条件放进报表 WHERE，sales 也会受影响。"
     },
     "shares": {
-      "question": "只显示 North 的报表中，哪个分母能保留全部地区的销售额？",
+      "question": "报表筛选二月、只显示 North。哪个分母能计算二月全部地区的销售额？",
       "options": [
         "{sales: {-d: region}}",
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df 为该引用移除 region 分组及其相关筛选；-d 保留 region 筛选。"
+      "why": "-df 只为分母这次引用移除 region 分组及其相关筛选，保留二月筛选，得到 100。-d 保留 North 筛选，分母为 30。源行键和报表 GROUP BY 都不变。"
     },
     "grain": {
-      "question": "South 的两笔销售为 30 和 40，均属于客户 C。平均每客户销售额是多少？",
+      "question": "South 二月有两笔销售，金额为 30 和 40，都属于客户 C。先按客户汇总，再取平均，结果是多少？",
       "options": [
         "35",
         "70",
         "2"
       ],
-      "why": "先按客户求和：C = 70；再对唯一客户的总额取平均。直接对两笔源记录求平均才是 35。"
+      "why": "先算客户 C 的总额：30 + 40 = 70。South 只有这一位客户，因此平均每客户销售额为 70 ÷ 1 = 70。35 是平均每笔销售额。"
     },
     "time": {
-      "question": "二月的月份粒度下，pp 请求哪个期间？",
+      "question": "按月比较时，2025 年二月的 {sales: pp} 请求哪个期间的销售额？",
       "options": [
         "2025 年 1 月",
         "2024 年 2 月",
-        "此前全部期间合计"
+        "二月之前所有月份的合计"
       ],
-      "why": "pp 请求当前月份粒度下的上期值；它是一个值，而非增长率。"
+      "why": "pp 表示上一期。本例按月比较，2025 年二月的上一期是 2025 年一月。{sales: pp} 返回上月销售额；增长率由 pop 计算。"
     },
     "lookups": {
-      "question": "若 DIM_REGION 包含两条 North 记录，会发生什么？",
+      "question": "若 TABLE_REGION 有两条 North 记录，执行本例的关联查询时可能出现什么？",
       "options": [
-        "编译器自动去重该表",
-        "关联后，同一笔 North 销售可能出现在多行结果中",
-        "没有变化，因为 dimension 只是文档"
+        "编译器会自动去掉重复的 North 记录",
+        "同一笔 North 销售匹配两次，汇总金额可能变大",
+        "结果不受影响，dimension 只是说明文字"
       ],
-      "why": "目录声明的键必须唯一。两条 North 目录记录会让每笔 North 销售匹配两次，使关联结果出现重复行，North 的汇总金额从 30 增至 60；源销售数据并未改变。连接数据库运行 --validate-only 可检出 regions 维度不唯一，并报告 DIMENSION_NOT_UNIQUE。"
+      "why": "DIM_REGION 声明 [region] 为源行键，因此每个地区最多应匹配一条记录。两条 North 记录会让每笔 North 销售匹配两次，本例的 North 合计从 30 增至 60，源销售记录本身不变。连接数据库运行 --validate-only 可检出键不唯一，并报告 DIMENSION_NOT_UNIQUE。"
     },
     "missing": {
-      "question": "把缺失的上期销售额填为 0 后，一月有什么变化？",
+      "question": "一月报表用 ISNULL({sales: pp}, 0) 填补缺失值后，什么会改变？",
       "options": [
-        "出现额外的十二月记录",
-        "已有的两个地区行从 NULL 变为 0",
-        "源历史数据证明十二月销售额为零"
+        "结果中增加十二月的记录",
+        "两行结果的上期销售额由 NULL 变为 0",
+        "可以据此证明十二月实际销售额为零"
       ],
-      "why": "字面量回退值只在上期销售度量没有值时提供 0。一月的两个结果组保留，不会增加十二月记录或源事实。"
+      "why": "ISNULL 只把缺失的上期销售额替换为 0。一月仍是 North、South 两行结果，不会新增十二月记录，也不能据此判断十二月实际销售额为零。"
     }
   }
 };

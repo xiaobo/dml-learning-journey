@@ -1,6 +1,6 @@
 -- Run only in a new, empty SQL Server practice database.
 -- Creates sample objects. Does not drop or replace existing objects.
-CREATE TABLE DIM_REGION (
+CREATE TABLE TABLE_REGION (
   region nvarchar(20) NOT NULL PRIMARY KEY,
   manager nvarchar(40) NOT NULL
 );
@@ -24,7 +24,7 @@ BEGIN
   VALUES (@calendar_date, DATEFROMPARTS(YEAR(@calendar_date), MONTH(@calendar_date), 1));
   SET @calendar_date = DATEADD(day, 1, @calendar_date);
 END;
-INSERT INTO DIM_REGION (region, manager) VALUES
+INSERT INTO TABLE_REGION (region, manager) VALUES
 ('North', 'Ada'),
 ('South', 'Lin');
 INSERT INTO TABLE_SALES (id, region, customer, dt_month, status, amount) VALUES
@@ -38,4 +38,4 @@ INSERT INTO TABLE_SALES (id, region, customer, dt_month, status, amount) VALUES
 (8, 'South', 'D', '2025-01-01', 'completed', 30);
 -- Both checks must return no rows.
 SELECT id, COUNT(*) AS rows_per_key FROM TABLE_SALES GROUP BY id HAVING COUNT(*) > 1;
-SELECT region, COUNT(*) AS rows_per_key FROM DIM_REGION GROUP BY region HAVING COUNT(*) > 1;
+SELECT region, COUNT(*) AS rows_per_key FROM TABLE_REGION GROUP BY region HAVING COUNT(*) > 1;

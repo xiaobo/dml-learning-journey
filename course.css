@@ -3,6 +3,7 @@
 .journey-start { display:flex; justify-content:center; margin:22px 0 0; }
 .journey-start a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; }
 .notation-note { margin:12px 0 0; }
+.answer-submit-note { margin:14px 0 8px; color:var(--teal); font-size:14px; line-height:1.65; }
 .field-guide { margin:0 0 12px; line-height:1.7; }
 .learning-progress { display:flex; align-items:center; gap:12px; padding:17px 18px 12px; font-size:12px; }
 .journey-icon { width:36px; height:36px; }
@@ -128,9 +129,21 @@ html:lang(ja) h1,html:lang(ja) h2,html:lang(ja) h3,html:lang(ja) .story { font-f
 #share-denominator > span { display:block; }
 .lab-output { margin-top:22px; }
 #grouping .explorer-grid { align-items:start; }
-#query-code .query-symbol,.definition-references .query-symbol { display:inline; min-height:0; padding:1px 0; border:0; border-bottom:1px dotted #698989; border-radius:0; color:var(--teal); background:transparent; font:inherit; line-height:inherit; }
-#query-code .query-symbol:hover,.definition-references .query-symbol:hover { background:#dce8df; color:#254c4f; }
-#query-code .query-symbol[aria-expanded="true"] { border-bottom-style:solid; background:#e0e9df; }
+.chapter .query-symbol,.definition-references .query-symbol { display:inline; min-height:0; padding:1px 0; border:0; border-bottom:1px dotted #698989; border-radius:0; color:var(--teal); background:transparent; font:inherit; line-height:inherit; }
+.chapter .query-symbol:hover,.definition-references .query-symbol:hover { background:#dce8df; color:#254c4f; }
+.query-symbol[aria-expanded="true"] { border-bottom-style:solid; background:#e0e9df; }
+.query-symbol:focus-visible { outline:2px solid #648987; outline-offset:3px; }
+.definition-tooltip { position:fixed; z-index:40; width:max-content; max-width:min(320px,calc(100vw - 24px)); padding:10px 13px; border:1px solid #cad3c4; border-radius:5px; background:#fffdf7; color:#29494f; box-shadow:0 4px 18px #263e4814; font:14px/1.7 system-ui,"Microsoft YaHei",sans-serif; overflow-wrap:anywhere; }
+.query-definition[hidden],.definition-tooltip[hidden] { display:none; }
+.syntax-note { margin:16px 0 24px; }
+.symbol-guide { margin:32px 0; padding:18px 22px; border:1px solid #d8ddcd; border-radius:5px; background:#f6f5eb; scroll-margin-top:calc(var(--course-header-height,60px) + 20px); }
+.symbol-guide summary { font-weight:600; }
+.symbol-guide table { width:100%; border-collapse:collapse; font-size:14px; }
+.symbol-guide th,.symbol-guide td { padding:10px 12px; text-align:left; border-bottom:1px solid #dfe1d4; vertical-align:top; }
+.symbol-guide th:first-child { width:85px; white-space:nowrap; }
+.symbol-guide p { margin:16px 0 0; }
+.lab-controls .control { min-width:0; max-width:100%; }
+@media print { .definition-tooltip,.query-definition { display:none; } }
 .definition-hint { margin:10px 0 0; font-size:13px; }
 .query-definition { margin-top:14px; padding:14px 18px 18px; border-left:2px solid #8ca99b; border-radius:0 5px 5px 0; background:#fffdf7; font-size:14px; line-height:1.7; }
 .definition-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
