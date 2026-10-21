@@ -46,7 +46,7 @@
 <h2 id="12-build-and-download-the-final-report">12. Build and download the final report</h2>
 <p>Chapter 12&#39;s <strong>Try it</strong> exercise asks you to build February&#39;s report for both regions. Select February, group by region, and include all regions. Select completed sales, previous sales, average customer sales, and all-region share. Sales is already selected.</p>
 <p>Compare <strong>Model notebook · model.dml</strong> with <strong>Your question · query.sql</strong> below the controls. The notebook excerpt shows your selected measures and their dependencies. Expand the complete notebook or download <code>model.dml</code> to inspect the source dataset declarations. The result table follows both panes.</p>
-<p>Choose <strong>Check chapter 12</strong> beside the report controls. If a setting is missing, follow the feedback and try again, or choose <strong>Show explanation</strong> for guidance. Completing this exercise marks the twelfth stop complete. The completed configuration shows these expected example values:</p>
+<p>Choose <strong>Submit answer</strong> beside the report controls. If a setting is missing, follow the feedback and try again, or choose <strong>Show explanation</strong> for guidance. Completing this exercise marks the twelfth stop complete. The completed configuration shows these expected example values:</p>
 <table>
 <thead>
 <tr>
@@ -83,7 +83,7 @@
 <pre><code class="language-powershell">dmlc.exe --lint model.dml --output-format=json
 dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
 </code></pre>
-<p>Inspect the diagnostics and generated SQL. The recorded capstone query has key-union join and simplification warnings, <code>status: findings</code>, and exit 1. This is an expected observation, not a passed strict check. Check result membership, unmatched comparison keys, customer-grain aggregation, and the final projection before using the SQL.</p>
+<p>Inspect the diagnostics and generated SQL. The recorded capstone query has a key-union join warning, <code>status: findings</code>, and exit 1. The join can include regions present only in the comparison month. Check whether those regions belong in your report, then inspect customer-grain aggregation and the final projection. SQL generation does not establish database result correctness.</p>
 <p>For optional database practice, use a new empty SQL Server database and review <code>setup-mssql.sql</code>. It creates the source tables and the calendar required by the time-comparison SQL. Validate the keys, execute the generated SQL, and compare every result value with <code>expected.csv</code>. This live database exercise has not been run as part of the documentation checks.</p>
 <p>For connection and validation commands, follow <a href="how-to--compile-and-validate.html">Compile and validate a query</a>. The <a href="reference--README.html">language reference</a> covers more advanced windows, classifiers, materializations, and model composition after this beginner project.</p>
 <h2 id="resume-or-restart">Resume or restart</h2>

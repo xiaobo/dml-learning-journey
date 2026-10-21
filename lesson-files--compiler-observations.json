@@ -1,20 +1,15 @@
 {
-  "version": "dmlc version 0.3.16\r\nBuild:    2026-10-20 08:32:43 Z\r\nSystem:   windows/amd64\r\nLicenses:  dmlc --licenses",
-  "sha256": "ff113ee2184bb67f66420819396b987b73f3f6dcc61fbd2ec9b28eead02670dc",
+  "version": "dmlc version 0.3.16\r\nBuild:    2026-10-21 04:11:50 Z\r\nSystem:   windows/amd64\r\nLicenses:  dmlc --licenses",
+  "sha256": "44f2fe9a38d2a5b74ce86672b294db894cc5e109220f3bc99629bc1a37c928fa",
   "scope": "Strict compilation and SQL inspection. No database execution or result parity.",
   "lintExit": 0,
   "cases": [
     {
       "name": "filters",
       "query": "SELECT region, AGG(sales), AGG(completed_sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY region",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -31,18 +26,9 @@
     {
       "name": "filters_north",
       "query": "SELECT region, AGG(sales), AGG(completed_sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01' AND region = 'North'\nGROUP BY region",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [region]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -62,14 +48,6 @@
       "exit": 1,
       "status": "findings",
       "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [region]"
-        },
         {
           "severity": "warning",
           "message": "warn during processing [measure within_slice_share] [ref {sales: {-d: region}}]: `-d` modifier removed dimension region from grain, but filter `{region} = 'dml_get_parameter(1)'` that references region is still being evaluated, Hint: to prevent this, replace `-d` with `-df` to also block filter push down on those dimensions"
@@ -95,14 +73,9 @@
     {
       "name": "grain_avg",
       "query": "SELECT region, AGG(average_sale), AGG(average_customer_sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY region",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -119,14 +92,9 @@
     {
       "name": "grain_sum",
       "query": "SELECT region, AGG(sum_customer_sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY region",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -143,14 +111,9 @@
     {
       "name": "grain_max",
       "query": "SELECT region, AGG(max_customer_sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY region",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -170,10 +133,6 @@
       "exit": 1,
       "status": "findings",
       "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
         {
           "severity": "warning",
           "message": "warn during processing [query time] [join]: key-union join (FULL OUTER JOIN or densify UNION+LEFT; secondary-only keys appear). To keep only the primary arm's population: filters: { \"sales is not null\": } (or a presence measure); fill ≠ population. If key-union is intended, OK to ignore (except with --strict). HINT: when comparing SQL↔DML, check unmatched secondary-only keys. 提示: 若只要主臂人口，在 filters 写该指标 is not null（勿用 fill 代替）；若本意键并集可忽略（加 --strict 仍会失败）。 [join:a1-foj]"
@@ -200,10 +159,6 @@
       "diagnostics": [
         {
           "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
-        {
-          "severity": "warning",
           "message": "warn during processing [query time_january] [join]: key-union join (FULL OUTER JOIN or densify UNION+LEFT; secondary-only keys appear). To keep only the primary arm's population: filters: { \"sales is not null\": } (or a presence measure); fill ≠ population. If key-union is intended, OK to ignore (except with --strict). HINT: when comparing SQL↔DML, check unmatched secondary-only keys. 提示: 若只要主臂人口，在 filters 写该指标 is not null（勿用 fill 代替）；若本意键并集可忽略（加 --strict 仍会失败）。 [join:a1-foj]"
         }
       ],
@@ -223,14 +178,9 @@
     {
       "name": "lookup",
       "query": "SELECT manager, AGG(sales)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY manager",
-      "exit": 1,
-      "status": "findings",
-      "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        }
-      ],
+      "exit": 0,
+      "status": "passed",
+      "diagnostics": [],
       "notes": [
         {
           "code": "DATASET_GRAIN_UNVERIFIED",
@@ -250,10 +200,6 @@
       "exit": 1,
       "status": "findings",
       "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
         {
           "severity": "warning",
           "message": "warn during processing [query missing] [join]: key-union join (FULL OUTER JOIN or densify UNION+LEFT; secondary-only keys appear). To keep only the primary arm's population: filters: { \"sales is not null\": } (or a presence measure); fill ≠ population. If key-union is intended, OK to ignore (except with --strict). HINT: when comparing SQL↔DML, check unmatched secondary-only keys. 提示: 若只要主臂人口，在 filters 写该指标 is not null（勿用 fill 代替）；若本意键并集可忽略（加 --strict 仍会失败）。 [join:a1-foj]"
@@ -278,10 +224,6 @@
       "exit": 1,
       "status": "findings",
       "diagnostics": [
-        {
-          "severity": "warning",
-          "message": "Simplification output cannot be re-parsed as Search_conditionContext; returning original: [dt_month]"
-        },
         {
           "severity": "warning",
           "message": "warn during processing [query capstone] [join]: key-union join (FULL OUTER JOIN or densify UNION+LEFT; secondary-only keys appear). To keep only the primary arm's population: filters: { \"sales is not null\": } (or a presence measure); fill ≠ population. If key-union is intended, OK to ignore (except with --strict). HINT: when comparing SQL↔DML, check unmatched secondary-only keys. 提示: 若只要主臂人口，在 filters 写该指标 is not null（勿用 fill 代替）；若本意键并集可忽略（加 --strict 仍会失败）。 [join:a1-foj]"

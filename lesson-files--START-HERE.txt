@@ -6,12 +6,12 @@ The FACT_SALES dataset reads the physical TABLE_SALES table.
 The browser preview uses local arithmetic. It does not execute dmlc or a database.
 
 1. Extract all files to one writable directory. Keep model.dml beside query.sql.
-2. Make the bundled dmlc.exe available using an absolute path or PATH.
+2. Make dmlc.exe available using an absolute path or PATH.
 3. Run:
    dmlc.exe --lint model.dml --output-format=json
    dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
 4. Inspect the output JSON and gen SQL files. The recorded capstone query has
-   status findings and exit 1 because of key-union join and simplification warnings. That is not a
+   status findings and exit 1 because of a key-union join warning. That is not a
    passed strict check. Inspect unmatched keys and query membership before use.
    The SQL combines current and previous month values and customer-level AVG.
 5. The stored compiler observations identify the checked executable and SQL.
