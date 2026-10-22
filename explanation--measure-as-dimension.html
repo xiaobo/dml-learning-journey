@@ -19,9 +19,7 @@
 <h2 id="label-channel-filters">Label-channel filters</h2>
 <p>A filter over a classifier label or sibling measures at label grain belongs after classification. DML queries can express such a predicate under <code>filters:</code>, for example <code>&quot;{首购月} is not null OR {销售额} &gt; 0&quot;:</code>.</p>
 <p>Model Query can represent a measure predicate as <code>HAVING</code>. The semantic stage matters more than that keyword: compiled SQL commonly uses <code>WHERE</code> on the relation produced by classification. Moving the predicate before classification changes the population used to calculate the label.</p>
-<h2 id="build-evidence-and-limitations">Build evidence and limitations</h2>
-<p>The 2026-10-16 build of <code>0.3.16</code> emits two-stage SQL for the checked sales-value and <code>COUNT(1)</code> classifiers. Both explicit-key forms pass strict compilation.</p>
-<p>The 2026-09-24 build emitted invalid <code>GROUP BY COUNT(1)</code> for the count classifier with <code>+d</code> and failed its replacement-dimension form. Those defects do not reproduce in the current probes.</p>
-<p>The checks inspect compilation and SQL shape. They do not establish database execution or result parity. <a href="maintenance--release-evidence.html">Release evidence</a> records complete inputs and build identities.</p>
-<p>This feature covers query <code>columns.dimension</code>. It does not establish support for classifiers in <code>materialize.dimension_columns</code>. That capability remains deferred in the <a href="maintenance--improvement-plan.html">improvement plan</a>. Temporal classifier combinations and SQL round trips need separate evidence.</p>
+<p><a id="build-evidence-and-limitations"></a></p>
+<h2 id="limitations">Limitations</h2>
+<p>This pattern describes query <code>columns.dimension</code>; it does not establish classifier support in <code>materialize.dimension_columns</code>. Inspect the generated classification and reaggregation stages, then validate keys and compare result values on your own data.</p>
 </main></html>

@@ -86,7 +86,7 @@ GROUP BY region
 </tbody></table>
 <p>Without grouping fields, the same model measures give total sales of 100 and an average sale of 25. Grouping by <code>id</code> gives one result per sale. The source identity remains <code>[id]</code> in every case.</p>
 <p>At the declared source key <code>[id]</code>, the checked compiler simplifies the aggregate to a row expression and reports a strict finding. That simplification relies on <code>id</code> being unique in the source data. The total and regional queries pass strict compilation on the checked build.</p>
-<p>The checked executable is <code>dmlc 0.3.16</code>, build <code>2026-10-17 05:00:24 Z</code>. The <a href="compiler-observations.json">tutorial compiler record</a> includes its fingerprint and validation limits.</p>
+<p>The <a href="compiler-observations.json">tutorial compiler record</a> identifies the executable used for the interactive project, its fingerprint and the checks performed.</p>
 <p>The interactive page calculates these small example tables in the browser. It does not run DML or connect to a database.</p>
 <h2 id="compilation-produces-sql">Compilation produces SQL</h2>
 <p>The compiler combines the model and query to generate SQL. The database executes that SQL against the real source table.</p>

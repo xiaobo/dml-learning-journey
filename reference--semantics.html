@@ -1,16 +1,14 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML evaluation semantics · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-evaluation-semantics">DML evaluation semantics</h1>
-<p>This page owns evaluation context, grain compatibility, and composition contracts. Declaration syntax lives in <a href="reference--model-structure.html">model structure</a>, <a href="reference--measures.html">measures</a>, <a href="reference--query-yaml.html">queries</a>, and <a href="reference--materialization.html">materialization</a>. <a href="maintenance--release-evidence.html">Compiler evidence</a> records observed implementation gaps.</p>
+<p>This page owns evaluation context, grain compatibility, and composition contracts. Declaration syntax lives in <a href="reference--model-structure.html">model structure</a>, <a href="reference--measures.html">measures</a>, <a href="reference--query-yaml.html">queries</a>, and <a href="reference--materialization.html">materialization</a>.</p>
 <p><a id="1--scope-and-position"></a></p>
 <h2 id="scope-and-position">Scope and position</h2>
 <p><a id="11-what-this-spec-covers"></a></p>
 <h3 id="what-this-spec-covers">What this spec covers</h3>
-<p>This document specifies DML evaluation context, grain compatibility, and modifier constraints. Rules below describe language contracts. Error codes, MCP protocol, and structured error response format are documented in <a href="reference--error-codes.html">DMLC Error Codes Reference</a> and <a href="reference--mcp-contract.html">MCP Contract (CLI + MCP)</a>.</p>
-<p>Current product capability status and evidence boundaries are maintained separately in <a title="Reference available in the development workspace"><code>DML 产品事实源</code></a>. This spec defines language meaning; examples here do not by themselves upgrade a product capability to <code>tested</code>.</p>
+<p>This document specifies DML evaluation context, grain compatibility, and modifier constraints. Rules below describe language contracts. See <a href="reference--error-codes.html">Error codes</a> for diagnostic meanings and suggested fixes.</p>
 <p><a id="12-what-this-spec-does-not-cover"></a></p>
 <h3 id="what-this-spec-does-not-cover">What this spec does not cover</h3>
 <ul>
 <li><a href="how-to--compile-and-validate.html">Compile and validate a query</a> covers CLI commands and evidence collection.</li>
-<li><a href="reference--mcp-contract.html">MCP contract</a> covers tool requests and responses.</li>
 <li><a href="how-to--build-analysis.html">Build an analysis</a> covers business analysis procedures.</li>
 <li><a href="explanation--core-concepts.html">Core concepts</a> explains the model, query, and expression layers.</li>
 </ul>
@@ -64,7 +62,6 @@
 <li><strong>Govern semantics like code.</strong> Git, PR, LSP, <code>dml_schema.yaml</code> validation.</li>
 <li><strong>Measures are not bound to a fixed result grain.</strong> A measure has a derived, optionally constrained <strong>measure valid/native context</strong> and is evaluated at an effective grain chosen by the query and modifiers; the compiler enforces compatibility.</li>
 <li><strong>Complex derivations belong in the model.</strong> Time comparisons, ratios, multi-level aggregation — kept in <code>.dml</code>, not scattered to BI calculated fields or ad-hoc SQL.</li>
-<li><strong>Agents are equal consumers.</strong> MCP <code>run_query</code>, <code>structuredContent</code>, <code>next.actions</code> — agents and analysts share the same semantic entry point.</li>
 </ol>
 <hr>
 <p><a id="2--evaluation-context-model"></a></p>
@@ -289,7 +286,7 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
 <hr>
 <p><a id="3--grain-system"></a></p>
 <h2 id="grain-system">Grain system</h2>
-<p>The dimension in each evaluation context determines its grain and compatibility with other contexts. The DML roles of each dimension declaration are summarized in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p>The dimension in each evaluation context determines its grain and compatibility with other contexts. The DML roles of each dimension declaration are summarized in <a href="explanation--dimensions.html">dimension roles</a>.</p>
 <p><a id="31-three-grain-types"></a></p>
 <h3 id="three-grain-types">Three grain types</h3>
 <table>
@@ -330,7 +327,7 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
 <li>Other formulas wanting to use it must explicitly <code>{measure: {+d: dim}}</code> to drill to that grain.</li>
 <li>The compiler rejects incompatible grains with: <code>cannot set dimension [...] since only [...] are allowed</code>.</li>
 </ul>
-<p>Dataset/materialize <code>dimension:</code> contains one dimension, while measure <code>dimensions:</code> contains alternative allowed dimensions—each inner list is one dimension. The latter is a constraint, not a declaration of dataset identity or query grouping. See the dimension-role contract in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p>Dataset/materialize <code>dimension:</code> contains one dimension, while measure <code>dimensions:</code> contains alternative allowed dimensions—each inner list is one dimension. The latter is a constraint, not a declaration of dataset identity or query grouping. See the dimension-role contract in <a href="explanation--dimensions.html">dimension roles</a>.</p>
 <p>For a composite measure:</p>
 <ul>
 <li>The grain is the union of referenced measures&#39; grains (after modifier resolution).</li>
@@ -403,7 +400,7 @@ GROUP BY dt_quarter, brand
 <p>Independent measure datasets normally aggregate separately and compose with FULL OUTER JOIN on aligned dimensions (<em>key-union</em>). Composition / densify FOJ ON uses <strong>plain <code>=</code></strong> (SQL <code>NULL≠NULL</code>); row-preserving LEFT and <code>nullpk</code> invent stay <strong>null-safe</strong>. Do not assume the same NULL equality for composition and for <code>pk()</code> / detail spines. Authoring detail: <a href="reference--join-null-equality.html">join NULL equality</a>.</p>
 <p><strong>Emitted join type.</strong> FULL OUTER JOIN is the composition semantics, not the emitted form. The intermediate template emits <code>FULL OUTER JOIN</code> (or densify <code>UNION</code>+<code>LEFT</code> with the same bare-<code>=</code> contract); the SQL compiler may then reduce each join to the strongest type proven by query predicates: a filter that proves the primary side present (e.g. <code>{primary_presence_measure} is not null</code>) lowers the emitted join to <code>LEFT JOIN</code>; filters proving both sides required lower it to <code>INNER JOIN</code>. Inspect the emitted SQL for the final join type — a <code>LEFT</code>/<code>INNER</code> result means the presence contract was proven by authored filters, not that composition semantics or ON equality changed.</p>
 <p>For a LEFT population, filter on a dedicated primary presence measure that is non-null on every valid primary group and NULL on absent groups. For an INNER population, require presence from both sides. Use unfilled source counts or another proven presence signal; a nullable business value can discard valid groups, while missing-row fill can retain absent groups.</p>
-<p>Validate shared key meaning, complete-key uniqueness, nullable-key acceptance (bare <code>=</code> vs null-safe site), unmatched rows, and missing-row fill separately. Independent preaggregation does not repair duplicate lookup keys or a wrong alignment contract. <a href="maintenance--release-evidence.html">Executable probes</a> establish SQL shape, not database result parity.</p>
+<p>Validate shared key meaning, complete-key uniqueness, nullable-key acceptance (bare <code>=</code> vs null-safe site), unmatched rows, and missing-row fill separately. Independent preaggregation does not repair duplicate lookup keys or a wrong alignment contract. SQL inspection establishes the generated shape; database validation and result comparison require separate checks.</p>
 <p><a id="35-grain-safety-enforcement-existing-compiler-behavior"></a></p>
 <h3 id="grain-safety-enforcement-existing-compiler-behavior">Grain safety enforcement (existing compiler behavior)</h3>
 <p>The compiler enforces grain safety at compile time:</p>
@@ -422,7 +419,7 @@ GROUP BY dt_quarter, brand
 <li><p><strong>Measure-as-dimension rules</strong>: see <a href="#37-measure-as-dimension">Measure-as-dimension</a> and the release caveats. Missing entity keys are rejected, but static checks do not catch every invalid lowering.</p>
 </li>
 </ol>
-<p><strong>Evidence boundary:</strong> compile success is not a proof of valid SQL or correct numbers. The distributed build has a strict-success classifier probe that emits <code>GROUP BY COUNT(1)</code>. Check SQL shape, live uniqueness and result parity as separate gates; see <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p><strong>Evidence boundary:</strong> compile success alone does not prove that generated SQL is valid or that its numbers are correct. Inspect the classification and aggregation stages, validate live keys, and compare results separately.</p>
 <p><a id="36-time-grain-rules"></a></p>
 <h3 id="time-grain-rules">Time grain rules</h3>
 <ul>
@@ -433,7 +430,7 @@ GROUP BY dt_quarter, brand
 </ul>
 <p><a id="37-measure-as-dimension"></a></p>
 <h3 id="measure-as-dimension">Measure-as-dimension</h3>
-<p>A <strong>measure-as-dimension</strong> field is a member of the <strong>query dimension</strong> whose value is the result of evaluating a measure (or a scalar expression over such a measure), not a physical dataset column. It remains a query-dimension role (<a title="Reference available in the development workspace">dimension roles</a>): it contributes to the <strong>query result grain</strong>. It does not declare dataset identity.</p>
+<p>A <strong>measure-as-dimension</strong> field is a member of the <strong>query dimension</strong> whose value is the result of evaluating a measure (or a scalar expression over such a measure), not a physical dataset column. It remains a query-dimension role (<a href="explanation--dimensions.html">dimension roles</a>): it contributes to the <strong>query result grain</strong>. It does not declare dataset identity.</p>
 <p>Explanation: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. This section states the intended multi-pass contract. The <a href="explanation--measure-as-dimension.html">explanation</a> separates working shapes from shipped lowering defects. The compiler models these query columns separately from physical dimension columns and ordinary output measures while reusing normal measure calculation behavior.</p>
 <p><a id="371-syntax-on-columnsdimension"></a></p>
 <h4 id="syntax-on-columnsdimension">Syntax on <code>columns.dimension</code></h4>
@@ -565,5 +562,5 @@ report:
 </tr>
 </tbody></table>
 <p>Authors who intend a clear reading must write one of: <code>{销量}</code> / <code>SUM({销量: {+d: 门店}})</code> / <code>{销量: {-d:…\|-df:…\|-f:…}}</code>.<br><strong>Different</strong> dimensions may still coexist, e.g. <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>.</p>
-<p>The 2026-10-16 <code>dimension_conflict</code> and <code>dimension_filter_conflict</code> probes both exit 0. They emit a regional window total at customer grain and then sum the repeated totals. The manifest records this behavior as a known compiler gap. It is not an accepted authoring pattern. See <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p>The 2026-10-16 build accepts the checked same-field dimension conflicts and repeats regional totals at customer grain before summing them. This is a known implementation gap, not an accepted authoring pattern. Express one evaluation stage explicitly and inspect its SQL.</p>
 </main></html>

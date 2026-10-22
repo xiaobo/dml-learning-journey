@@ -23,7 +23,7 @@
 <p><a id="p25"></a></p>
 <h2 id="p25-not-documenting-edge-cases">P25. Not documenting edge cases</h2>
 <p><strong>Wrong</strong>: Measure without description that &quot;excludes returns&quot; or &quot;includes zeros&quot;.
-<strong>Fix</strong>: Always add <code>description:</code> for non-obvious behavior. For agent-facing models, document the dataset dimension and row meaning, scope flags, and misleading names—<a href="how-to--write-model-metadata.html">Write model metadata</a>.</p>
+<strong>Fix</strong>: Always add <code>description:</code> for non-obvious behavior. Document the dataset dimension and row meaning, scope flags, and misleading names—<a href="how-to--write-model-metadata.html">Write model metadata</a>.</p>
 <p><a id="p27"></a></p>
 <h2 id="p27-mixing-dimension-constrained-measures-with-incompatible-queries">P27. Mixing dimension-constrained measures with incompatible queries</h2>
 <p><strong>Wrong</strong>: Selecting <code>sales_by_product</code> (allowed dimension <code>[product]</code>) and <code>total_sales</code> in a query whose query dimension is <code>[dt_month]</code>.
@@ -78,5 +78,5 @@ profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
 <p><a id="p42"></a></p>
 <h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. Bare name vs <code>{col}</code> inside <code>.dml</code> formulas</h2>
 <p><strong>Wrong (meaning):</strong> Treating <code>formula: calc_amt * 2</code> as “forgot braces” / a compiler hole. Bare <code>calc_amt</code> binds as a <strong>physical</strong> table column (SQL pass-through).
-<strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: &#39;{calc_amt} * 2&#39;</code>. Leave physical columns bare: <code>net: amount - discount</code>. Canonical: <a title="Reference available in the development workspace">reference-scope checks</a>; <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
+<strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: &#39;{calc_amt} * 2&#39;</code>. Leave physical columns bare: <code>net: amount - discount</code>. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
 </main></html>

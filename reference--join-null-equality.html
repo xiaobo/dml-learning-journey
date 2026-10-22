@@ -32,6 +32,6 @@
 <p>A presence measure identifies whether a source group exists. An arbitrary nullable business measure does not prove presence.</p>
 <p>Missing-row fill supplies a fallback measure value. Densification supplies missing entity or calendar rows. Neither operation establishes membership in a source population.</p>
 <h2 id="build-evidence">Build evidence</h2>
-<p>The <code>cross_dataset</code> probe on the 2026-10-16 build emits <code>full join ... on t2.region = t1.region</code>. Strict mode returns findings for key-union composition and nullable arithmetic. The <a href="maintenance--release-evidence.html">release evidence</a> records the executable identity and scope of that observation.</p>
-<p>The <a href="reference--semantics.html#34-cross-dataset-auto-join">core specification, cross-dataset auto-join</a> defines composition. <a title="Reference available in the development workspace">SKILL.md, semantic review</a> lists the checks for changed queries.</p>
+<p>The 2026-10-16 build emits <code>full join ... on t2.region = t1.region</code> for the checked cross-dataset example. Strict findings warn about key-union composition and nullable arithmetic. Inspect result membership and NULL handling before accepting this shape for a report.</p>
+<p>The <a href="reference--semantics.html#34-cross-dataset-auto-join">core specification, cross-dataset auto-join</a> defines composition. <a href="how-to--review-model.html">Model review</a> lists the checks for changed queries.</p>
 </main></html>

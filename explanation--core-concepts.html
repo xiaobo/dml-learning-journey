@@ -89,7 +89,7 @@ avg_transaction_value:
 <p><a href="explanation--dimensions.html">Dimension semantics</a> explains these roles and their consequences in more detail.</p>
 <h2 id="3-time-context-and-dim_dt">3. Time context and <code>dim_dt</code></h2>
 <p><code>dim_dt</code> represents the active time field of a measure&#39;s query context. It lets a formula refer to the current time grain without naming <code>dt_date</code>, <code>dt_month</code>, or <code>dt_quarter</code> directly. Macro prerequisites still limit which grains a macro accepts.</p>
-<p>A grouped time field or a time filter can supply the context. Compilation can also emit a strict warning for the joins that a time comparison introduces. The <a href="maintenance--release-evidence.html">release evidence</a> records those outcomes separately from syntax acceptance.</p>
+<p>A grouped time field or a time filter can supply the context. Compilation can also emit a strict warning for the joins that a time comparison introduces. Inspect those diagnostics and the generated joins separately from syntax acceptance.</p>
 <p>Declaring a standard fine time field such as <code>dt_date</code> makes supported coarser fields available through the system calendar. These virtual fields do not require duplicate physical declarations. Editor go-to-definition for a derived <code>dt_month</code> resolves to the explicit source time column.</p>
 <p>The <a href="reference--semantics.html">time context specification</a> defines <code>dim_dt</code> and standard time fields. <a href="02-syntax--system_macros.dml">System macros</a> provides a reference copy of time and formula macro definitions.</p>
 </main></html>

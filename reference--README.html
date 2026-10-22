@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Language and tool reference · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="language-and-tool-reference">Language and tool reference</h1>
-<p>Each row identifies the maintained reference for a topic. <a href="docs.html#complete-a-task">How-to guides</a> cover authoring and validation procedures.</p>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML and DMX language reference · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-and-dmx-language-reference">DML and DMX language reference</h1>
+<p>Use the <a href="docs.html">documentation index</a> for concepts and usage guides, or the <a href="reference--examples--README.html">example catalog</a> for worked patterns.</p>
 <h2 id="language-definitions">Language definitions</h2>
 <table>
 <thead>
@@ -9,99 +9,51 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>Evaluation context, grain compatibility, and composition contracts</td>
+<td>Evaluation context, grain compatibility and composition</td>
 <td><a href="reference--semantics.html">Evaluation semantics</a></td>
 </tr>
 <tr>
-<td>Model-level fields, datasets, columns, and metadata fields</td>
+<td>Datasets, columns and metadata</td>
 <td><a href="reference--model-structure.html">Model structure</a></td>
 </tr>
 <tr>
-<td>Atomic and composite measures, formulas, windows, and fill</td>
+<td>Atomic and composite measures, windows and fill</td>
 <td><a href="reference--measures.html">Measure declarations</a></td>
 </tr>
 <tr>
-<td>Reference forms, intrinsic functions, and runtime variables</td>
-<td><a href="reference--expressions.html">DMX expressions and functions</a></td>
+<td>References, functions and runtime variables</td>
+<td><a href="reference--expressions.html">DMX expressions</a></td>
 </tr>
 <tr>
-<td>Time, dimension, and filter modifiers; stacking</td>
+<td>Time, dimension and filter modifiers</td>
 <td><a href="reference--modifiers.html">Measure modifiers</a></td>
 </tr>
 <tr>
-<td><code>FROM</code>, <code>AGG</code>, aliases, filters, grouping, and output order</td>
+<td><code>FROM</code>, <code>AGG</code>, filters and grouping</td>
 <td><a href="reference--model-query-sql.html">Model Query SQL</a></td>
 </tr>
 <tr>
-<td><code>type: query</code>, <code>columns</code>, <code>filters</code>, <code>after</code>, and <code>allows</code></td>
+<td><code>type: query</code>, columns and filters</td>
 <td><a href="reference--query-yaml.html">YAML query declarations</a></td>
 </tr>
 <tr>
-<td>Stored grouping keys, attributes, and measure selection</td>
+<td>Stored grouping keys, attributes and measures</td>
 <td><a href="reference--materialization.html">Materialization declarations</a></td>
 </tr>
 <tr>
-<td>Includes, forward references, and name resolution</td>
+<td>Includes, forward references and names</td>
 <td><a href="reference--model-composition.html">Model composition</a></td>
 </tr>
 <tr>
-<td>Join equality, NULL keys, and result membership</td>
+<td>Join equality, NULL keys and result membership</td>
 <td><a href="reference--join-null-equality.html">Join NULL equality</a></td>
 </tr>
 </tbody></table>
-<h2 id="tools-and-diagnostics">Tools and diagnostics</h2>
-<table>
-<thead>
-<tr>
-<th>Topic</th>
-<th>Reference</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>MCP requests, responses, and CLI JSON</td>
-<td><a href="reference--mcp-contract.html">MCP contract</a></td>
-</tr>
-<tr>
-<td>Structured diagnostic codes</td>
-<td><a href="reference--error-codes.html">Error codes</a></td>
-</tr>
-<tr>
-<td>Symptoms and stable P identifiers</td>
-<td><a href="reference--troubleshooting--README.html">Troubleshooting index</a></td>
-</tr>
-<tr>
-<td>Query, model, and formula patterns</td>
-<td><a href="reference--examples--README.html">Example catalog</a></td>
-</tr>
-<tr>
-<td>Tested executable, observations, and known defects</td>
-<td><a href="maintenance--release-evidence.html">Release evidence</a></td>
-</tr>
-</tbody></table>
-<h2 id="packaged-resources">Packaged resources</h2>
-<table>
-<thead>
-<tr>
-<th>Resource</th>
-<th>File</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>DML object schema</td>
-<td><a href="02-syntax--dml_schema.yaml">dml_schema.yaml</a></td>
-</tr>
-<tr>
-<td>Modifier payload schema</td>
-<td><a href="02-syntax--dmx_variable_schema.yaml">dmx_variable_schema.yaml</a></td>
-</tr>
-<tr>
-<td>System macro definitions</td>
-<td><a href="02-syntax--system_macros.dml">system_macros.dml</a></td>
-</tr>
-<tr>
-<td>Embedded expression help, in Chinese</td>
-<td><a href="02-syntax--dmx.html">dmx.md</a></td>
-</tr>
-</tbody></table>
-<p>The build consumes these exact paths. Packaged resources in the selected executable determine that build&#39;s behavior. The <a href="maintenance--README.html#packaged-resources">maintenance guide</a> records the path constraint. Command flags come from <code>dmlc --help</code> and <code>dmlc --advanced-help</code>; live MCP schemas come from <code>tools/list</code>.</p>
+<h2 id="diagnostics-and-built-in-definitions">Diagnostics and built-in definitions</h2>
+<ul>
+<li><a href="reference--error-codes.html">Error codes</a> — meanings and suggested fixes.</li>
+<li><a href="reference--troubleshooting--README.html">Troubleshooting</a> — symptoms and stable pitfall identifiers.</li>
+<li><a href="02-syntax--system_macros.dml">System macros</a> — built-in macro definitions used by the examples.</li>
+</ul>
+<p>For command-line flags, read <code>dmlc --help</code> and <code>dmlc --advanced-help</code> from your installed executable.</p>
 </main></html>

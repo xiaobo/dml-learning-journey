@@ -13,7 +13,7 @@
 <tbody><tr>
 <td><strong>Model Query SQL</strong></td>
 <td><code>.sql</code> file or inline string</td>
-<td>SQL-literate users, MCP, CLI, dashboards</td>
+<td>SQL-literate users, CLI, dashboards</td>
 </tr>
 <tr>
 <td><strong>DML format</strong></td>
@@ -69,7 +69,7 @@
 </tr>
 </tbody></table>
 <p>Do not put <code>.dml</code> in the <code>FROM</code> clause. Nested <code>queries/</code> layouts: put the <code>.dml</code> beside the SQL, or pass <code>--model=</code> as the directory that contains it.</p>
-<p><code>explain_change</code> (<code>dmlc -e</code>) and <code>setup</code> (<code>dmlc -s</code>) take a <strong><code>.dml</code> file</strong>, not a directory.</p>
+<p><code>setup</code> (<code>dmlc -s</code>) takes a <strong><code>.dml</code> file</strong>, not a directory.</p>
 <pre><code class="language-sql">-- model.dml
 SELECT product, dt_month, AGG(sales)
 FROM MODEL
@@ -182,11 +182,7 @@ does not fall back to an unrelated same-named DML measure.</p>
 compiler treats the alias as a redefinition of the measure. Use a distinct
 alias (e.g. <code>AS sales_mom</code>). Without a modifier, <code>AGG(sales) AS sales</code> is
 accepted as a redundant pass-through.</p>
-<p>For semantic tooling, only <code>AGG</code> argument 0 is a measure-reference position.
-It accepts an identifier (<code>AGG(sales)</code>) or a modifier expression
-(<code>AGG({sales: yoy})</code>). A curly token outside that modifier position is not a
-measure reference. SQL keywords, function names, relation aliases, and cast
-types are syntax, not column references.</p>
+<p>The first argument of <code>AGG</code> names the measure: use <code>AGG(sales)</code> for its ordinary value or <code>AGG({sales: yoy})</code> to modify this reference. Use bare column names elsewhere in Model Query SQL.</p>
 <p><a id="34-where-rules"></a></p>
 <h3 id="where-rules">WHERE rules</h3>
 <ul>
@@ -236,7 +232,7 @@ query, filter, or editor diagnostic. Go-to-definition on the derived name resolv
 explicit source time column.</p>
 <p><strong>Filtering</strong>: <code>WHERE dt_month = &#39;2024-01-01&#39;</code> (first day, <code>=</code> not <code>BETWEEN</code> for single periods).</p>
 <p>The <a href="reference--expressions.html#34-date-functions-sqlite-dialect">date function reference</a> describes SQLite-style expression forms. The compiler lowers supported forms to the selected dialect.</p>
-<p>Multiple time fields are accepted as input, but acceptance does not guarantee that every requested field survives in the result. On the 2026-10-16 build, the <code>two_times</code> probe requests <code>dt_year</code> and <code>dt_month</code> but emits only <code>dt_month</code> and the measure. This is a known output defect. See <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p>Multiple time fields are accepted as input, but acceptance does not guarantee that every requested field survives in the result. On the 2026-10-16 build, the <code>two_times</code> probe requests <code>dt_year</code> and <code>dt_month</code> but emits only <code>dt_month</code> and the measure. This is a known output defect.</p>
 <p><a id="39-having"></a></p>
 <h3 id="having">HAVING</h3>
 <pre><code class="language-sql">-- Customers with outstanding balance
@@ -307,7 +303,7 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 <td><code>SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL</code></td>
 </tr>
 </tbody></table>
-<p>Time-comparison syntax can produce strict findings for key-union joins on the checked build. These examples show query forms. <a href="maintenance--release-evidence.html">Release evidence</a> records the strict outcomes separately.</p>
+<p>Time-comparison syntax can produce strict findings for key-union joins on the checked build. These examples show query forms. Read the diagnostics and inspect the emitted joins before executing.</p>
 <p><a id="311-aggregation-lookup-table"></a></p>
 <h3 id="aggregation-lookup-table">Aggregation lookup table</h3>
 <p>Model Query SQL (<code>FROM MODEL</code>) requires all aggregations to go through <strong>measures</strong> defined in <code>model.dml</code> or inline <code>/** dml ... **/</code> blocks (<a href="#312-inline-measures--dml--">inline measures</a>). Raw-column aggregations are rejected.</p>

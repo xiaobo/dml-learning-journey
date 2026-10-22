@@ -149,7 +149,7 @@ product_list:
 <ul>
 <li><code>dmlc -c</code> does not validate dataset column existence against the table schema — a mismatched name compiles but produces runtime SQL errors. Use <code>validateOnly</code> (requires database connection) to catch mismatched names.</li>
 <li>When a query column name matches neither a measure nor a derivable dataset column, it errors as <code>not defined, add formula?</code>.</li>
-<li>When the query column name differs from the measure name, add an explicit formula (<code>display_name: &#39;{measure_name}&#39;</code>) or rename the measure with <code>abbr:</code> (<a title="Reference available in the development workspace">semantic review checks</a>).</li>
+<li>When the query column name differs from the measure name, add an explicit formula (<code>display_name: &#39;{measure_name}&#39;</code>) or rename the measure with <code>abbr:</code>.</li>
 <li>A dataset column that is <strong>not derivable</strong> from the query dimension (e.g., a raw fact column with no dimension-field dependency) errors with <code>cannot be derived from dimension [store_id]</code>.</li>
 <li>A pass-through column (no <code>formula:</code>) may carry metadata properties (<code>description:</code>, <code>visibility:</code>) in object form without requiring <code>formula:</code>. Example: <code>revenue: { description: &#39;Total revenue&#39; }</code> auto-aliases to measure <code>revenue</code> while attaching the description.</li>
 </ul>
@@ -274,7 +274,7 @@ filters:
 </tr>
 <tr>
 <td>Complex EXISTS / PK chain in query <code>filters:</code></td>
-<td>Use measure-input gating only for metric-specific eligibility. If the condition removes source population and migration still requires dataset <code>sql:</code>, record the minimal escape under the <a title="Reference available in the development workspace"><code>sql-to-dml-v2</code> native-first contract</a>.</td>
+<td>Use measure-input gating only for metric-specific eligibility. If the condition selects source rows, keep it at the source-row stage; moving it into a measure can change the report population. Inspect the emitted predicates and joins.</td>
 </tr>
 </tbody></table>
 <p><a id="49-pk-chaining"></a></p>
@@ -318,15 +318,7 @@ measure/expression order, or TOP/LIMIT differs from the default. Don&#39;t re-ag
         sales:
     after: &#39;select * from {QUERY} ORDER BY sales DESC LIMIT 10&#39;
 </code></pre>
-<p>When <code>after:</code> is present, <code>{QUERY}</code> is mandatory: it names the compiled query result consumed by the post-query statement. “Ordering only” means no business logic beyond this wrapper plus ORDER BY/TOP/LIMIT. Structured compile output exposes the final decision as <code>effectiveOutputOrder</code>; semantic manifests expose the same object under each <code>queryContracts[]</code> entry. The upstream compiler emits a <code>redundant ORDER BY</code> warning when an authored order matches the query&#39;s default output order. Follow its contextual hint: remove only the redundant <code>ORDER BY</code> clause when other important <code>after:</code> processing remains; remove the entire block only when nothing else remains.</p>
-<p>The machine contract uses <code>status: known</code> with <code>source: default_dimension_order | explicit_after | none</code> and ordered <code>items</code> containing
-<code>expression</code>, <code>direction: asc | desc</code>, and <code>nullOrdering: dialect_default | first | last</code>. A manifest query that cannot compile uses
-<code>status: unavailable</code> (with a reason) and does not guess items. <code>explicit_after</code>
-is retained even when the post-query SQL has no <code>ORDER BY</code>, making the absence
-of a final order an explicit result of the authored block. For the <code>.sql</code> Model
-Query compile surface, the same <code>explicit_after</code> protocol bucket denotes an
-authored top-level <code>ORDER BY</code>; otherwise a compiled final order is classified as
-<code>default_dimension_order</code>.</p>
+<p>When <code>after:</code> is present, <code>{QUERY}</code> is mandatory: it names the compiled query result consumed by the post-query statement. “Ordering only” means no business logic beyond this wrapper plus ORDER BY/TOP/LIMIT. The upstream compiler emits a <code>redundant ORDER BY</code> warning when an authored order matches the query&#39;s default output order. Follow its contextual hint: remove only the redundant <code>ORDER BY</code> clause when other important <code>after:</code> processing remains; remove the entire block only when nothing else remains.</p>
 <p><strong>Wrong</strong>: Re-aggregating with <code>group by</code> in <code>after:</code> on a standard measure query. Let the query block aggregate measures.</p>
 <p><a id="411-allows-all"></a></p>
 <h2 id="allows-all"><code>allows: ALL</code></h2>

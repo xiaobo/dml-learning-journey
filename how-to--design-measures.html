@@ -54,7 +54,7 @@ GROUP BY product
 </code></pre>
 <h2 id="dimension-constrained-measures">Dimension-constrained measures</h2>
 <blockquote>
-<p>⚠️ <strong>Measure <code>dimensions:</code> contains allowed dimensions.</strong> Each inner list is one allowed dimension; the outer list contains alternatives. It does not define dataset row identity or query grouping; those belong to dataset <code>dimension:</code> and query <code>GROUP BY</code> / <code>columns.dimension:</code> respectively. See <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p>⚠️ <strong>Measure <code>dimensions:</code> contains allowed dimensions.</strong> Each inner list is one allowed dimension; the outer list contains alternatives. It does not define dataset row identity or query grouping; those belong to dataset <code>dimension:</code> and query <code>GROUP BY</code> / <code>columns.dimension:</code> respectively. See <a href="explanation--dimensions.html">dimension roles</a>.</p>
 </blockquote>
 <p>Add this constraint only when the metric <strong>must</strong> be evaluated with a specific dimension:</p>
 <pre><code class="language-yaml"># &quot;Average order value per customer&quot; — customer_id is required during evaluation

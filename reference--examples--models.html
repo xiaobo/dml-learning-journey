@@ -240,12 +240,12 @@ report:
 <ul>
 <li>The golden SQL is a stored procedure with <code>INSERT INTO ... SELECT ... FROM raw JOIN dims</code>.</li>
 <li>The stored procedure&#39;s temp tables map cleanly to dimension datasets with <code>pk()</code> chain lookups.</li>
-<li>The stored procedure&#39;s <code>INNER JOIN</code> population restrictions become measure gates (see <a title="Reference available in the development workspace"><code>sql-to-dml-v2/references/filter-layers.md</code></a> §&quot;Measure gates for INNER JOIN population restrictions&quot;).</li>
+<li>The stored procedure&#39;s <code>INNER JOIN</code> population restrictions become measure gates; preserve the original population and inspect the emitted predicates.</li>
 </ul>
 <p><strong>Caveats</strong>:</p>
 <ul>
-<li>Stored procedures that use <code>@month</code> (last balance month) to refresh all historical months&#39; master data cannot be exactly reproduced with <code>pk()</code> chains that join on <code>archive_month</code> (per-month master data). Document this as a known limitation requiring E2 live parity.</li>
-<li><code>CROSS APPLY</code> table-valued functions and <code>CASE WHEN</code> key remapping require <code>sql:</code> escapes on dimension datasets (see <a title="Reference available in the development workspace"><code>sql-to-dml-v2/references/curation.md</code></a> §sql: escape on dimension datasets).</li>
+<li>Stored procedures that use <code>@month</code> (last balance month) to refresh all historical months&#39; master data cannot be exactly reproduced with <code>pk()</code> chains that join on <code>archive_month</code> (per-month master data). Document this as a known limitation that needs result comparison on the same source snapshot.</li>
+<li><code>CROSS APPLY</code> table-valued functions and <code>CASE WHEN</code> key remapping require <code>sql:</code> escapes on dimension datasets; declare the resulting keys and validate their uniqueness.</li>
 </ul>
 <hr>
 <h2 id="uneven-dimensions">Uneven dimensions</h2>

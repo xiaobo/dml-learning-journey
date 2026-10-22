@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SQL migration pitfalls · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="sql-migration-pitfalls">SQL migration pitfalls</h1>
-<p>These entries retain the existing pitfall IDs. The <a title="Reference available in the development workspace">migration skill</a> owns the full migration workflow.</p>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model authoring pitfalls · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="model-authoring-pitfalls">Model authoring pitfalls</h1>
+<p>Keep reusable definitions in the model and presentation choices in the query or reporting layer.</p>
 <p><a id="p1"></a></p>
 <h2 id="p1-including-presentation-logic-in-dml">P1. Including presentation logic in DML</h2>
 <p><strong>Wrong</strong>: Putting <code>FORMAT(...)</code>, <code>CONCAT(...)</code>, <code>CAST(... AS VARCHAR)</code> in measure formulas.
@@ -8,14 +8,6 @@
 <h2 id="p2-including-query-only-derived-columns-in-dml">P2. Including query-only derived columns in DML</h2>
 <p><strong>Wrong</strong>: Creating measures for calculations that only make sense in one specific query.
 <strong>Fix</strong>: Put query-specific expressions in Model Query SQL, not <code>.dml</code>.</p>
-<p><a id="p3"></a></p>
-<h2 id="p3-not-simplifying-sql-before---to-dml">P3. Not simplifying SQL before <code>--to-dml</code></h2>
-<p><strong>Wrong</strong>: Running <code>dmlc --to-dml</code> on complex SQL with subqueries, CTEs, and window functions.
-<strong>Fix</strong>: Simplify first — strip presentation, ORDER BY, TOP, and convert CTEs to measures.</p>
-<p><a id="p4"></a></p>
-<h2 id="p4-forgetting-pk-hints">P4. Forgetting PK hints</h2>
-<p><strong>Wrong</strong>: Expecting <code>dmlc --to-dml</code> to always infer primary keys correctly.
-<strong>Fix</strong>: After generating draft, add <code>pk: true</code> to primary dimension fields.</p>
 <p><a id="p5"></a></p>
 <h2 id="p5-not-verifying-compiled-sql-matches-golden-sql">P5. Not verifying compiled SQL matches golden SQL</h2>
 <p><strong>Wrong</strong>: Assuming <code>-c</code> output is correct just because it compiles.

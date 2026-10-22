@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review a DML model · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="review-a-dml-model">Review a DML model</h1>
 <p>Run this technical review after the applicable checks in <a href="how-to--build-analysis.html#phase-5-validate-the-model-and-query">Forward analysis, Phase 5</a> pass. Review model reuse, query structure, evaluation grain, and validation evidence.</p>
 <h2 id="prepare-an-independent-review">Prepare an independent review</h2>
-<p>Give a reviewer a focused bundle. For an agent review, use a separate sub-agent context. Include the final artifacts and contract rather than the full conversation.</p>
+<p>Give a reviewer a focused bundle. Include the final artifacts and contract rather than the full conversation.</p>
 <p>The bundle contains the following material.</p>
 <ul>
 <li>The model and its includes, with changed definitions identified.</li>
@@ -42,7 +42,6 @@
 <li>Inspect join equality, source membership, fill behavior, and projected columns.</li>
 <li>Keep SQL readable in saved files. Encode it as a string when a tool requires that format.</li>
 </ul>
-<p>Do not infer MCP transport requirements from how a query is displayed in documentation. Use the live tool schema.</p>
 <h2 id="64-check-results-against-explicit-assumptions">6.4 Check results against explicit assumptions</h2>
 <p>Re-run affected result checks after model or query edits.</p>
 <ol>
@@ -58,11 +57,10 @@
 <p>If a strict warning remains, report the finding. An emitted SQL artifact does not constitute a passed strict check.</p>
 <h2 id="66-deliver-the-artifacts-and-review-evidence">6.6 Deliver the artifacts and review evidence</h2>
 <p>Return the model, consumer queries, review findings, accepted changes, and check results. Distinguish passed checks, reproduced defects, and checks that were not run.</p>
-<p>For exports and dashboards, keep measures numeric and check output names against the consumer. For variance attribution, preserve the measure names and baseline semantics required by <a title="Reference available in the development workspace">explain-change-variance</a>.</p>
+<p>For exports and dashboards, keep measures numeric and check output names against the consumer.</p>
 <h2 id="67-resolve-findings">6.7 Resolve findings</h2>
-<p>Have the reviewer recheck accepted fixes in the updated bundle. Limit independent review to three rounds unless the user extends the review. After that limit, report unresolved findings and their effect on delivery. Do not weaken a required semantic check to obtain a pass.</p>
+<p>Recheck accepted fixes in the updated model and affected queries. Record unresolved findings and their effect on the results.</p>
 <p>Return to Phase 4 when a proposed optimization changes a business definition. Record that change explicitly.</p>
 <h2 id="68-check-analytical-claims-separately">6.8 Check analytical claims separately</h2>
-<p>Use the assumption checks in <a title="Reference available in the development workspace">data-analysis</a> during Phases 1 and 5. Technical review does not establish that a business conclusion follows from the data.</p>
-<p>Claim independent review only when a separate reviewer or agent context performed it. Keep the report&#39;s description of its review method consistent with the evidence.</p>
+<p>Check business assumptions during modeling and after execution. Technical review alone does not establish that a business conclusion follows from the data.</p>
 </main></html>

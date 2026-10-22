@@ -10,7 +10,7 @@
 <li>Record the source population, NULL behavior, and required output columns.</li>
 <li>List assumptions that could change the conclusion.</li>
 </ol>
-<p>For business analysis, apply the assumption checks in <a title="Reference available in the development workspace">data-analysis</a> at this stage and after execution.</p>
+<p>Check business assumptions before modeling and after execution, including the source population, reporting period, missing values and denominator.</p>
 <h2 id="phase-2-draft-the-consumer-query">Phase 2: Draft the consumer query</h2>
 <p>Write the intended <code>SELECT</code>, <code>WHERE</code>, and <code>GROUP BY</code> before adding measures. Use existing business names wherever possible.</p>
 <pre><code class="language-sql">SELECT
@@ -24,7 +24,7 @@ WHERE dt_month = &#39;2025-03-01&#39;
 GROUP BY dt_month, 渠道
 </code></pre>
 <p>Keep report grouping, time windows, and channel slices in the query. Put reusable definitions, such as same-store eligibility, in the model. Add sorting or a row limit when the requested result depends on it. Predicate order does not change grammar acceptance.</p>
-<p>Use a distinct alias for each modified measure reference. Check emitted output columns because the compiler can change their order or omit a requested time field on a known defective shape. See <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p>Use a distinct alias for each modified measure reference. Check emitted output columns because the compiler can change their order or omit a requested time field on a known defective shape.</p>
 <h2 id="phase-3-find-missing-measure-definitions">Phase 3: Find missing measure definitions</h2>
 <p>For each <code>AGG(...)</code> in the draft, inspect the target model.</p>
 <ol>
@@ -70,5 +70,5 @@ dmlc --validate-only query.sql --model=model.dml --connection=default --output-f
 <p>Follow <a href="how-to--review-model.html">Phase 6 technical review</a> after the applicable Phase 5 checks pass. Supply the model, consumer query, original report contract, compiler identity, and validation evidence.</p>
 <p>Re-run affected checks after fixes. Keep business-definition changes visible and return to Phase 4 when a proposed optimization changes the metric.</p>
 <h2 id="deliver-the-model-and-query">Deliver the model and query</h2>
-<p>Save the reusable model, consumer SQL, and validation evidence together. Record remaining findings and checks that were not run. Use <a title="Reference available in the development workspace">data-analysis</a> for exports, dashboards, and the analytical narrative.</p>
+<p>Save the reusable model, consumer SQL, and validation evidence together. Record remaining findings and checks that were not run.</p>
 </main></html>

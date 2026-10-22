@@ -87,7 +87,7 @@
 <p><strong>Wrong</strong>: Re-aggregating with <code>group by</code> in <code>after:</code> on a standard measure query.
 <strong>Fix</strong>: Let the query block aggregate measures. Omit <code>after:</code> for automatic dimension ordering. When custom ordering/limit requires it, reference <code>{QUERY}</code> and keep the block to presentation (<code>select * from {QUERY}</code> plus ORDER BY/TOP/LIMIT) unless unavoidable custom post-SQL is explicitly documented.</p>
 <hr>
-<p>Validated from Windows + MCP production runs. Generic CLI playbook: <a href="how-to--compile-and-validate.html">Use the dmlc CLI to check and run queries</a>. <strong><code>explain_change</code> pitfalls (P55–P58):</strong> <a title="Reference available in the development workspace"><code>../../explain-change-variance/SKILL.md</code></a> and <a title="Reference available in the development workspace"><code>../../explain-change-variance/references/how-to/three-moves-playbook.md</code></a>.</p>
+<p>For commands and result checks, see <a href="how-to--compile-and-validate.html">Compile and validate a query</a>.</p>
 <p><a id="p60"></a></p>
 <h2 id="p60-subquery-for-max-date-in-aggregation-query">P60. Subquery for MAX date in aggregation query</h2>
 <p><strong>Wrong</strong>: <code>WHERE dt_month = (SELECT MAX(dt_month) FROM MODEL ...)</code>

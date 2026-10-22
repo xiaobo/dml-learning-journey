@@ -1,13 +1,13 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Use the dmlc CLI to check and run queries · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="use-the-dmlc-cli-to-check-and-run-queries">Use the dmlc CLI to check and run queries</h1>
-<p>Use this guide to capture compiler evidence, validate source keys, and execute a Model Query. Read flags from the selected executable&#39;s <code>--help</code> and <code>--advanced-help</code>. For the JSON fields, see <a href="reference--mcp-contract.html">MCP and CLI response contracts</a>.</p>
+<p>Use this guide to compile a Model Query, inspect diagnostics and generated SQL, validate source keys, and compare results. Read available flags from your installed executable with <code>--help</code> and <code>--advanced-help</code>.</p>
 <h2 id="1-identify-the-executable-and-model">1. Identify the executable and model</h2>
 <p>Record the executable path, version, build timestamp, and SHA-256 before comparing behavior with a documented build.</p>
-<pre><code class="language-powershell">$dmlc = (Resolve-Path scripts/dmlc-mcp/dmlc.exe).Path
+<pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
 Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
-&amp; $dmlc --help
+&amp; $dmlc --advanced-help
 </code></pre>
-<p>These commands start in the <code>dml-dmx</code> directory. For subsequent commands, use the directory containing your model and query.</p>
+<p>Install <code>dmlc.exe</code> and add its directory to PATH. Run these commands in the directory containing your model and query.</p>
 <p>Match the model filename with the SQL <code>FROM</code> name. For <code>model.dml</code>, use <code>FROM MODEL</code>. For <code>acme.dml</code>, use <code>FROM acme</code>. Pass <code>--model=model.dml</code> to select a file, or pass its containing directory for filename discovery. See <a href="reference--model-query-sql.html#2-query-types">query discovery</a>.</p>
 <h2 id="2-lint-and-strict-compile">2. Lint and strict-compile</h2>
 <p>Lint the model, then strict-compile the consumer query.</p>
@@ -54,7 +54,5 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p>Check keys, row multiplicity, NULLs, and all measures. If an independent result exists, compare both queries on the same source snapshot and scope.</p>
 <p>If a DuckDB cache is locked, identify the process and connection that owns it. Use another configured connection only when it represents the intended source. Do not change source data merely to avoid a lock.</p>
-<h2 id="use-mcp-for-an-integrated-client">Use MCP for an integrated client</h2>
-<p>Read the live <code>tools/list</code> schema before calling MCP tools. Use <code>run_query</code> with <code>validateOnly: true</code> for live preflight. Resolve <code>outputFile</code> relative to the MCP <code>workspaceFolder</code>.</p>
-<p>For setup, follow <a href="how-to--configure-mcp.html">MCP setup and detection</a>. For variance attribution, follow <a title="Reference available in the development workspace">explain-change-variance</a>. For specific failures, use <a href="reference--troubleshooting--README.html">pitfalls</a> and <a href="reference--error-codes.html">error codes</a>.</p>
+<p>For specific failures, use the <a href="reference--troubleshooting--README.html">troubleshooting index</a> and <a href="reference--error-codes.html">error codes</a>.</p>
 </main></html>

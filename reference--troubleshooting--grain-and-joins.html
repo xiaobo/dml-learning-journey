@@ -49,7 +49,6 @@ measures:
   amount: SUM({included_amount})
 </code></pre>
 <p>Then inspect the generated SQL: both lookups must remain <code>LEFT JOIN</code>, the fallback must remain inside <code>CASE</code>, and any output-group guard should reuse a selected primary measure (<code>HAVING AGG(amount) is not null</code>) so it does not leak an extra hidden column into the result. Treat non-unique keys and target/indirect overlap as diagnostics; DML relationships should not silently reproduce accidental fanout.</p>
-<p>This section records compiler-facing behavior. SQL-migration acceptance, multiplicity classification, and evidence gates are owned by <a title="Reference available in the development workspace"><code>sql-to-dml</code>&#39;s native-first contract</a>; do not maintain a second policy here.</p>
 <p><a id="p43"></a></p>
 <h2 id="p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> vs <code>{-d: dim_dt}</code> (different SQL shape)</h2>
 <p><strong>Wrong</strong>: Using <code>{-d: dim_dt}</code> when golden SQL uses a separate GROUP BY CTE at reduced grain.
@@ -57,7 +56,7 @@ measures:
 <p><a id="p44"></a></p>
 <h2 id="p44-window-share-vs--d-dim">P44. Window share vs <code>{-d: dim}</code></h2>
 <p><strong>Wrong</strong>: Stocking draft <code>divide({m}, {m_minus_dim_X})</code> from <code>--to-dml</code> as final business DML.
-<strong>Fix</strong>: Use <code>divide({m}*1.0, {m: {-d: dim}})</code> in query <code>columns:</code> or measures. Migration detail: <a title="Reference available in the development workspace"><code>sql-to-dml</code> curation <code>{-df:}</code> ratio pattern</a>.</p>
+<strong>Fix</strong>: Use <code>divide({m}*1.0, {m: {-d: dim}})</code> in query <code>columns:</code> or measures. See <a href="reference--modifiers.html">dimension and filter modifiers</a>.</p>
 <hr>
 <p>Equivalent to Model Query SQL; YAML-specific pitfalls. Full rules: <a href="reference--query-yaml.html">YAML query declarations</a>.</p>
 <p><a id="p62"></a></p>
@@ -81,7 +80,7 @@ sales:
     formula: SUM({amount})
 # SELECT region, AGG(sales) FROM MODEL GROUP BY region
 </code></pre>
-<p>See the dimension-role contract in <a title="Reference available in the development workspace">dimension roles</a>.</p>
+<p>See the dimension-role contract in <a href="explanation--dimensions.html">dimension roles</a>.</p>
 <p><a id="p64"></a></p>
 <h2 id="p64-materialize-true-on-a-measure">P64. <code>materialize: true</code> on a measure</h2>
 <p><strong>Symptom</strong>: <code>ERROR error during processing [ref null]: undefined modifier &#39;materialize&#39;</code> at compile time; the measure is silently dropped (<code>0 measure(s) processed</code>).
@@ -209,7 +208,7 @@ measures:
 <h2 id="p79-same-dimension-d-with--d---df">P79. Same-dimension <code>+d</code> with <code>-d</code> / <code>-df</code></h2>
 <p><strong>Wrong</strong>: <code>{销量: {+d: 门店, -d: 门店}}</code> or <code>{销量: {+d: 门店, -df: 门店}}</code> accepted and rewritten to bare <code>{销量}</code> or <code>{-f: 门店}</code>.</p>
 <p><strong>Why</strong>: no unique silent reading; canceling hides typos; for <code>AVG</code> the fine stage differs from a bare reference; when the output grain already contains the field, <code>-df</code> ≠ <code>-f</code>.</p>
-<p><strong>Fix</strong>: express one intended evaluation stage. Use a bare reference, an explicit fine-grain reference with an outer aggregate, or a removal modifier. Different fields can still coexist. The 2026-10-16 build accepts the checked conflicts without diagnostics and repeats regional totals before an outer sum. This violates the required rejection contract. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a> and <a href="maintenance--release-evidence.html">release evidence</a>.</p>
+<p><strong>Fix</strong>: express one intended evaluation stage. Use a bare reference, an explicit fine-grain reference with an outer aggregate, or a removal modifier. Different fields can still coexist. The 2026-10-16 build accepts the checked conflicts without diagnostics and repeats regional totals before an outer sum. This violates the required rejection contract. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a>.</p>
 <p><a id="p80"></a></p>
 <h2 id="p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> drops a non-grain query filter from the report row set</h2>
 <p><strong>Wrong</strong>: query filter <code>{store_id}=1</code> while a measure uses <code>{-f: store_id}</code> and <code>store_id</code> is not in the output grain → filter silently omitted → FOJ partner rows from the unfiltered arm appear.</p>

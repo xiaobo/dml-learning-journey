@@ -1,89 +1,26 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML and DMX documentation · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dml-and-dmx-documentation">DML and DMX documentation</h1>
-<p>DML defines datasets and reusable business measures in YAML. Model Query consumes those definitions. DMX supplies expressions and modifiers in both contexts.</p>
-<p><a title="Reference available in the development workspace">SKILL.md</a> routes agent tasks. Start with the <a href="tutorials--first-query.html">first-query tutorial</a>, or use the task and topic indexes below.</p>
-<p>For a complete beginner project, follow the <a href="tutorials--interactive-journey.html">interactive DML tutorial</a>: twelve illustrated chapters, graded exercises, saved progress, and a downloadable regional report. The shorter <a href="explanation--visual-introduction.html">visual introduction</a> explains the basic concepts.</p>
-<h2 id="complete-a-task">Complete a task</h2>
-<table>
-<thead>
-<tr>
-<th>Goal</th>
-<th>How-to guide</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Turn a business question into a model and query</td>
-<td><a href="how-to--build-analysis.html">Build an analysis</a></td>
-</tr>
-<tr>
-<td>Choose reusable formulas, constraints, and intermediate grain</td>
-<td><a href="how-to--design-measures.html">Design measures</a></td>
-</tr>
-<tr>
-<td>Choose stored grouping and reusable aggregates</td>
-<td><a href="how-to--design-materializations.html">Design materializations</a></td>
-</tr>
-<tr>
-<td>Add time shifts and formula wrappers</td>
-<td><a href="how-to--define-macros.html">Define macros</a></td>
-</tr>
-<tr>
-<td>Describe datasets, columns, and measures</td>
-<td><a href="how-to--write-model-metadata.html">Write model metadata</a></td>
-</tr>
-<tr>
-<td>Capture SQL and validate a query</td>
-<td><a href="how-to--compile-and-validate.html">Compile and validate</a></td>
-</tr>
-<tr>
-<td>Investigate a wrong result or diagnostic</td>
-<td><a href="how-to--troubleshoot-query.html">Troubleshoot a query</a></td>
-</tr>
-<tr>
-<td>Review a model and its consumers</td>
-<td><a href="how-to--review-model.html">Review a model</a></td>
-</tr>
-<tr>
-<td>Connect an MCP client</td>
-<td><a href="how-to--configure-mcp.html">Configure MCP</a></td>
-</tr>
-<tr>
-<td>Reproduce documented compiler behavior</td>
-<td><a href="how-to--verify-reference.html">Verify the reference</a></td>
-</tr>
-</tbody></table>
-<h2 id="look-up-a-rule-or-example">Look up a rule or example</h2>
-<p>The <a href="reference--README.html">reference index</a> groups language declarations, expressions, query formats, and tool contracts. Each topic has one maintained reference page. The <a href="reference--examples--README.html">example catalog</a> groups worked patterns by task. The <a href="reference--troubleshooting--README.html">troubleshooting index</a> supports lookup by symptom or stable P identifier.</p>
-<p>When behavior is uncertain, use the selected dmlc.exe as the source of truth. <a href="maintenance--release-evidence.html">Release evidence</a> identifies the checked build and its known defects. A successful compile does not establish database-key uniqueness or correct result values.</p>
-<h2 id="understand-the-design">Understand the design</h2>
-<table>
-<thead>
-<tr>
-<th>Question</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>How do DML, Model Query, and DMX fit together?</td>
-<td><a href="explanation--core-concepts.html">Core concepts</a></td>
-</tr>
-<tr>
-<td>How do dimensions determine row identity and grain?</td>
-<td><a href="explanation--dimensions.html">Dimensions</a></td>
-</tr>
-<tr>
-<td>How does a measure value become a grouping label?</td>
-<td><a href="explanation--measure-as-dimension.html">Measure-as-dimension</a></td>
-</tr>
-<tr>
-<td>Where does a window calculation run?</td>
-<td><a href="explanation--window-placement.html">Window placement</a></td>
-</tr>
-<tr>
-<td>Why use DML for business metrics?</td>
-<td><a href="explanation--philosophy-zh.html">Philosophy and scenarios, in Chinese</a></td>
-</tr>
-</tbody></table>
-<h2 id="related-skills-and-maintenance">Related skills and maintenance</h2>
-<p><a title="Reference available in the development workspace">SQL-to-DML v2</a> owns SQL migration. <a title="Reference available in the development workspace">SQL-to-DML</a> retains its round-trip workflow and migration references. <a title="Reference available in the development workspace">Data analysis</a> owns analysis, exports, and dashboards. <a title="Reference available in the development workspace">Explain change variance</a> owns metric attribution.</p>
-<p><a href="maintenance--README.html">Documentation maintenance</a> describes content ownership, link compatibility, packaged resources, and verification commands. The <a href="maintenance--improvement-plan.html">improvement plan</a> records proposals separately from supported behavior.</p>
+<p>Define datasets and reusable measures with <strong>DML</strong>. Write formulas and adjust a measure&#39;s calculation with <strong>DMX</strong>. Ask questions of the model with <strong>Model Query</strong>.</p>
+<p>Start with the <a href="index.html">interactive journey</a>: twelve illustrated lessons with exercises in English, 中文, 日本語 and Deutsch. Then use these pages to look up a concept, a rule or an example.</p>
+<h2 id="concepts">Concepts</h2>
+<ul>
+<li><a href="explanation--core-concepts.html">Core concepts</a> — how the model, query and expression layers fit together.</li>
+<li><a href="explanation--dimensions.html">Dimensions</a> — source-row identity, report grouping and evaluation grain.</li>
+<li><a href="explanation--measure-as-dimension.html">Measure-as-dimension</a> — calculate a label per entity, then group by it.</li>
+<li><a href="explanation--window-placement.html">Window placement</a> — choose the stage at which a window calculation runs.</li>
+<li><a href="explanation--visual-introduction.html">Text introduction</a> — a short companion to the interactive journey.</li>
+</ul>
+<h2 id="language-reference">Language reference</h2>
+<p>The <a href="reference--README.html">reference index</a> covers model declarations, measures, DMX expressions, modifiers, SQL and YAML queries, materialization and model composition.</p>
+<h2 id="examples">Examples</h2>
+<p>Browse the <a href="reference--examples--README.html">example catalog</a> for models, queries, aggregation, measure formulas and advanced calculations. Each example states the definitions it needs.</p>
+<h2 id="usage-guides">Usage guides</h2>
+<ul>
+<li><a href="tutorials--first-query.html">Compile your first query</a>.</li>
+<li><a href="tutorials--interactive-journey.html">Use the interactive journey and its downloadable project</a>.</li>
+<li><a href="how-to--build-analysis.html">Build an analysis</a> and <a href="how-to--design-measures.html">design reusable measures</a>.</li>
+<li><a href="how-to--define-macros.html">Define macros</a> and <a href="how-to--design-materializations.html">design materializations</a>.</li>
+<li><a href="how-to--write-model-metadata.html">Write model metadata</a> and <a href="how-to--review-model.html">review a model</a>.</li>
+<li><a href="how-to--compile-and-validate.html">Compile and validate</a>, <a href="how-to--troubleshoot-query.html">troubleshoot a query</a>, or look up an <a href="reference--error-codes.html">error code</a>.</li>
+</ul>
+<p>A successful compile produces SQL to inspect. Validate source keys on the intended connection and compare result values separately.</p>
 </main></html>

@@ -39,7 +39,7 @@
 <p>To check the keys on a database connection, expand <strong>Catch the duplicate key with dmlc</strong> in chapter 10. Save its manager lookup query as <code>lookup.sql</code> beside the downloaded model. The query must reach <code>DIM_REGION</code> for its dimension to be checked. Replace <code>default</code> with the connection containing your sample tables, then run:</p>
 <pre><code class="language-powershell">dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json
 </code></pre>
-<p>If that connection&#39;s <code>TABLE_REGION</code> contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for <code>DIM_REGION</code>. Correct the dataset dimension declaration or source data, then rerun validation. MCP clients use <code>run_query</code> with <code>validateOnly: true</code>. The browser toggle changes only this page&#39;s invented data. Validation reads the connected data, checks reached dataset dimensions, and probes the main query with EXPLAIN without executing its result rows.</p>
+<p>If that connection&#39;s <code>TABLE_REGION</code> contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for <code>DIM_REGION</code>. Correct the dataset dimension declaration or source data, then rerun validation. The browser toggle changes only this page&#39;s invented data. Validation reads the connected data, checks reached dataset dimensions, and probes the main query with EXPLAIN without executing its result rows.</p>
 <h2 id="11-make-missing-value-behavior-explicit">11. Make missing-value behavior explicit</h2>
 <p>In chapter 11, switch from <strong>Keep NULL</strong> to <strong>Use a literal zero fallback</strong>. The same January result groups remain. Only the prior-period value changes from NULL to 0.</p>
 <p>Read the filled measure formula and check what changes in January. The fallback supplies a value where that measure is used. It does not generate new calendar rows or decide the business meaning of missing history.</p>
@@ -92,9 +92,4 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 <p>Open <strong>Symbol guide</strong> in that menu to revisit modifiers and the source, query and evaluation dimension roles. The guide follows chapter 12 and does not count as an additional chapter. The sample model uses <code>FACT_SALES</code> and <code>DIM_REGION</code> as logical dataset names, <code>TABLE_SALES</code> and <code>TABLE_REGION</code> as physical table names, and lower_snake_case for fields and measures.</p>
 <p>Correct exercise answers save progress in this browser when local storage is available. Choose <strong>Resume learning</strong> in the chapter menu to find the next incomplete chapter. Progress stays on this device; the page sends no learner data to a server.</p>
 <p>Choose <strong>Reset progress</strong> at the bottom of the chapter menu to clear completed exercises. If browser storage is unavailable, the lessons still work for the current page session.</p>
-<p>Maintainers can reproduce the stored compiler checks from the skills workspace:</p>
-<pre><code class="language-powershell">node dml-dmx/scripts/verify-tutorial.cjs dml-dmx/scripts/dmlc-mcp/dmlc.exe
-</code></pre>
-<p>Translation catalogs live in <code>explanation/visual-introduction/locales/</code>. Run <code>node dml-dmx/scripts/check-visual-locales.cjs</code> after changing them to check coverage, placeholders, inline code, and links.</p>
-<p>The runner writes fresh observations to an OS temporary directory. Review a changed executable fingerprint, diagnostic, status, or SQL shape before updating the <a href="compiler-observations.json">stored observations</a>.</p>
 </main></html>

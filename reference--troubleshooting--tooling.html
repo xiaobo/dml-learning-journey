@@ -1,40 +1,10 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compiler and tool pitfalls · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="compiler-and-tool-pitfalls">Compiler and tool pitfalls</h1>
-<p>These entries cover validation, CLI capture, MCP, and attribution inputs. <a href="how-to--compile-and-validate.html">Compile and validate</a> owns the command workflow.</p>
-<h2 id="mcp--tool-errors">MCP / Tool errors</h2>
-<table>
-<thead>
-<tr>
-<th>Error</th>
-<th>Cause</th>
-<th>Fix</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>validateDimensions failed</code></td>
-<td>Query references dimension fields not in model/dataset</td>
-<td>Check the model&#39;s declared dimension fields; use column-macros if a field exists but isn&#39;t declared</td>
-</tr>
-<tr>
-<td><code>Query does not reference any measure</code></td>
-<td>Aggregation query has no <code>AGG()</code></td>
-<td>Add <code>AGG()</code> around at least one measure, or switch to detail query</td>
-</tr>
-<tr>
-<td><code>--analysis-path</code> parse error (Windows)</td>
-<td>JSON mangled by PowerShell quoting</td>
-<td>Node wrapper with <code>JSON.stringify(analysisPath)</code> — <a title="Reference available in the development workspace"><code>../../explain-change-variance/references/how-to/three-moves-playbook.md</code></a> §3</td>
-</tr>
-<tr>
-<td>explain_change headline ≠ Model Query headline</td>
-<td>Different <code>--filter</code>, <code>--current</code>, or baseline modifier</td>
-<td>Align <code>--filter</code> and period; re-export headline SQL JSON and compare <code>summary</code> block</td>
-</tr>
-</tbody></table>
+<p>These entries cover validation, CLI capture, dialects and model filenames. <a href="how-to--compile-and-validate.html">Compile and validate</a> owns the command workflow.</p>
 <p><a id="p34"></a></p>
 <h2 id="p34-not-running-validateonly-before-trusted-use">P34. Not running validateOnly before trusted use</h2>
-<p><strong>Wrong</strong>: Writing a query and immediately running it without validation when JDBC/MCP validate-only is available.
-<strong>Fix</strong>: Run <code>validateOnly</code> / <code>--validate-only</code> on the intended connection before trusted use. It catches compile errors, checks complete dataset dimensions reached by the query against observed data, and probes the main query with EXPLAIN; it does not prove result correctness or future uniqueness.
-<strong>Env note</strong>: The datosql standalone compiler jar has no <code>--validate-only</code>. Missing flag / no connection is an <strong>env gap</strong> (compile-only pending) — not a model RED by itself. See <a title="Reference available in the development workspace">validation requirements</a> and <a href="how-to--compile-and-validate.html#4-validate-source-keys-and-database-acceptance">live validation procedure</a>.</p>
+<p><strong>Wrong</strong>: Writing a query and immediately running it without validation when database validation is available.
+<strong>Fix</strong>: Run <code>--validate-only</code> on the intended connection before trusted use. It catches compile errors, checks complete dataset dimensions reached by the query against observed data, and probes the main query with EXPLAIN; it does not prove result correctness or future uniqueness.
+<strong>Prerequisite</strong>: Validation requires an executable with <code>--validate-only</code> and a configured connection. Check <code>--help</code> and <code>--advanced-help</code>. If either prerequisite is missing, record database validation as not run. See <a href="how-to--compile-and-validate.html#4-validate-source-keys-and-database-acceptance">live validation</a>.</p>
 <p><a id="p35"></a></p>
 <h2 id="p35-ignoring-column-descriptions">P35. Ignoring column descriptions</h2>
 <p><strong>Wrong</strong>: Using <code>customer_name</code> when description says &quot;internal use only, use customer instead&quot;.
@@ -60,20 +30,4 @@
 <h2 id="p54-cjk-json-via-powershell-pipe">P54. CJK JSON via PowerShell pipe</h2>
 <p><strong>Wrong</strong>: <code>dmlc ... | Out-File result.json</code> or capturing stdout for Chinese field names.
 <strong>Fix</strong>: <code>dmlc ... -o result.json --overwrite</code> or Node <code>execSync(..., { encoding: &#39;utf8&#39; })</code>.</p>
-<p><a id="p55"></a></p>
-<h2 id="p55-explain_change-filter--headline-sql">P55. explain_change filter ≠ headline SQL</h2>
-<p><strong>Wrong</strong>: Headline KPI with <code>WHERE 是否统计UL = &#39;是&#39;</code> but <code>dmlc -e</code> without <code>--filter</code>.
-<strong>Fix</strong>: Pass the same population filter to explain_change; document in caliber footnote.</p>
-<p><a id="p56"></a></p>
-<h2 id="p56-analysis-path-dimension-missing-from---dimensions">P56. analysis-path dimension missing from --dimensions</h2>
-<p><strong>Wrong</strong>: <code>--analysis-path=[{&quot;dimension&quot;:&quot;渠道&quot;,...}]</code> with <code>--dimensions=品牌,购买方层级</code> (no 渠道).
-<strong>Fix</strong>: Include every path dimension in <code>--dimensions</code>.</p>
-<p><a id="p57"></a></p>
-<h2 id="p57-windows---analysis-path-json-mangling">P57. Windows <code>--analysis-path</code> JSON mangling</h2>
-<p><strong>Wrong</strong>: Hand-escaped JSON string in PowerShell for <code>dmlc -e</code>.
-<strong>Fix</strong>: Node wrapper with <code>JSON.stringify(analysisPath)</code> — see data-analysis <code>run_explain_with_path.js</code> pattern.</p>
-<p><a id="p58"></a></p>
-<h2 id="p58-treating-shareofheadlinedelta-as-additive">P58. Treating shareOfHeadlineDelta as additive</h2>
-<p><strong>Wrong</strong>: Summing <code>shareOfHeadlineDelta</code> across dimensions to 100%+ waterfall.
-<strong>Fix</strong>: Read <code>drivers.note</code>; rank within dimension; pair with link-type SQL for pipeline vs terminal.</p>
 </main></html>

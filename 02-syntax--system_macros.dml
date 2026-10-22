@@ -1,43 +1,6 @@
-# ================================================================
-# System Macros — DML built-in modifier definitions
-# ================================================================
-#
-# HOW TO READ THIS FILE (for LLM/agent)
-# ─────────────────────────────────────
-# 1. Two macro types:
-#    - dt-macro: shifts or expands the time window for a measure.
-#      • `value:` → single-point shift (e.g. ya → 1 year back)
-#      • `range:` → date range [start, end] (e.g. ytd → Jan 1 .. today)
-#    - fn-macro: wraps the measure in a formula (growth %, rank, etc.).
-#      • `formula:` → expression using {measure} and other macros
-#
-# 2. `{dim_dt}` = the current time dimension in scope.
-#    Properties: {dim_dt.datetype} (day|month|quarter|year),
-#                {dim_dt.periods_per_year}, {dim_dt.datepart}.
-#
-# 3. `prerequisite:` = grain constraint. If present, the macro is
-#    only valid when dim_dt matches. Agent should check before using.
-#
-# 4. Usage in Model Query SQL:
-#    - dt-macro:  AGG({measure: ya}), AGG({measure: ytd})
-#    - fn-macro:  AGG({measure: yoy}), AGG({measure: rank})
-#    - Stacking:  AGG({measure: {ytd, ya}})  = YTD one year ago
-#    - Time macros require a resolvable dim_dt and compatible prerequisites.
-#      A grouped time field or a time filter can supply that context.
-#
-# 5. Commented-out entries (# prefix) are disabled/experimental.
-#    Do NOT use them in queries or measures.
-# ================================================================
 
 
-# ===========================
-#  dt-macros (time shifting)
-# ===========================
-# These shift or expand the date window for a measure.
-# • `value:` = point-in-time shift (returns one date)
-# • `range:` = date range [start_date, end_date]
 
-# --- Period-to-date (cumulative from period start to current) ---
 
 ytd:
   description: Year-to-date cumulative value (当年至今值)
@@ -75,7 +38,6 @@ wtd:
   prerequisite: |-
     {dim_dt.datetype} = 'day'
 
-# --- Comparison periods (shift to a prior point or range) ---
 
 ya:
   description: Year-ago value — same period one year back (去年同期值)
@@ -92,7 +54,6 @@ ppp:
   type: dt-macro
   value: date({dim_dt}, '-2 {dim_dt.datetype}s')
 
-# --- Rolling windows (range of recent periods incl. current) ---
 
 mat:
   description: Moving annual total — rolling 12-period sum ending at current (滚动年度总计)
@@ -141,14 +102,7 @@ p5y:
     - '{dim_dt}'
 
 
-# ============================
-#  fn-macros (formula macros)
-# ============================
-# These wrap {measure} in a derived formula: growth %, rank, share, etc.
-# The placeholder {measure} is replaced by whatever measure the modifier
-# is applied to, e.g. AGG({sales: yoy}) → yoy formula applied to sales.
 
-# --- Period boundary values (fn-macros with grain shift) ---
 
 firstday:
   description: Period opening value — measure at the first day of the period (期初值)
@@ -168,7 +122,6 @@ lastmonth:
   formula: |-
     {measure: {dim_dt as month: 'date({dim_dt}, ''+1 {dim_dt.datetype}'', ''-1 month'')'}}
 
-# --- Growth rates (current vs prior period) ---
 
 yoy:
   description: Year-over-year growth rate as decimal (同比增长%)
@@ -190,7 +143,6 @@ mom:
   prerequisite: |-
     {dim_dt.datetype} = 'month'
 
-# --- Convenience time filters ---
 
 today:
   description: Value filtered to today only (今日值)
@@ -210,7 +162,6 @@ current_month:
   formula: |-
     {measure: {+f: {dt_month: "`date(current_date, 'start of month')`"}}}
 
-# --- Totals, shares, and ranking ---
 
 grand:
   description: Grand total — drops all dimensions, returns overall total (合计)
@@ -237,11 +188,6 @@ rank_asc:
     rank() over (order by {measure} asc)
 
 
-# ==========================================
-#  System calendar dataset (Dim Calendar)
-# ==========================================
-# Built-in calendar table used for cross-grain date lookups.
-# Provides dt_date → dt_month → dt_quarter → dt_year hierarchy.
 
 Dim Calendar:
   type: dataset

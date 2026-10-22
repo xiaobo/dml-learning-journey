@@ -1,15 +1,12 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC Error Codes Reference · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML · Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dmlc-error-codes-reference">DMLC Error Codes Reference</h1>
-<blockquote>
-<p><strong>Implementation note:</strong> kept in sync with Java error enums. Full tool response shapes: <a href="reference--mcp-contract.html">MCP Contract (CLI + MCP)</a>. Explain-change diagnostics: <a title="Reference available in the development workspace"><code>../../../dmlc_jdbc/docs/explain-change.md</code></a>.</p>
-</blockquote>
+<p>Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code.</p>
 <h2 id="path-display-convention">Path display convention</h2>
-<p>All user-visible paths (CLI stderr, MCP <code>message</code> / <code>details</code>, scrubbed logs) use <strong>forward slashes</strong> (<code>/</code>) on every platform:</p>
+<p>User-visible file paths use <strong>forward slashes</strong> (<code>/</code>) on every platform:</p>
 <ul>
 <li>User input such as <code>..\data</code> or <code>../data</code> is normalized to <code>../data</code> in errors.</li>
 <li>Workspace placeholders use <code>&lt;workspaceFolder&gt;/relative/path</code> (never backslashes under the placeholder).</li>
-<li>Resolved filesystem paths prefer cwd-relative form when possible (<code>WorkspaceUtils.toUserFacingPath</code>).</li>
+<li>Resolved filesystem paths prefer cwd-relative form when possible.</li>
 </ul>
-<p>Internal resolution still uses <code>java.nio.file.Path</code>; only display and serialized error fields are normalized.</p>
 <h2 id="error-code-categories">Error Code Categories</h2>
 <table>
 <thead>
@@ -97,10 +94,9 @@
 <li><strong>Code</strong>: PATH_OUTSIDE_WORKSPACE</li>
 <li><strong>Common Causes</strong>: File path is outside the workspace folder (including <code>../</code> traversal, absolute paths on another drive, or symlinks that resolve outside the workspace)</li>
 <li><strong>Suggested Fixes</strong>: Use a relative path within the workspace folder</li>
-<li><strong>Example</strong>: <code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code> (same message for read paths via <code>resolveFilename</code> and write paths via <code>resolveOutputPath</code>)</li>
-<li><strong>Path display</strong>: User-facing paths in errors and MCP/CLI payloads use forward slashes (<code>/</code>) on all platforms, including <code>&lt;workspaceFolder&gt;/relative/path</code> placeholders.</li>
-<li><strong>Notes</strong>: When a workspace folder is configured (MCP <code>workspace</code> / <code>workspaceRoots</code>, or CLI <code>WORKSPACE_FOLDER</code>), relative traversal outside that folder is blocked on both MCP and CLI. With multiple <code>workspaceRoots</code>, output paths may be absolute under any configured root.</li>
-<li><strong>Breaking change (list_models)</strong>: Unresolvable <code>dataFiles</code> entries now return <code>PATH_OUTSIDE_WORKSPACE</code> or <code>INVALID_PARAMS</code> and abort the tool instead of emitting a warning and continuing with partial results.</li>
+<li><strong>Example</strong>: <code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code></li>
+<li><strong>Path display</strong>: User-facing paths in errors and CLI output use forward slashes (<code>/</code>) on all platforms, including <code>&lt;workspaceFolder&gt;/relative/path</code> placeholders.</li>
+<li><strong>Notes</strong>: When CLI <code>WORKSPACE_FOLDER</code> is configured, input and output files must stay within that directory.</li>
 </ul>
 <h4 id="no_sheets_in_excel">NO_SHEETS_IN_EXCEL</h4>
 <ul>
@@ -161,7 +157,7 @@
 <li><strong>Common Causes</strong>: DML syntax error, model validation error, SQL generation error; illegal modifier composition (e.g. same-dimension <code>+d</code> with <code>-d</code>/<code>-df</code> in one modifier object — language contract: fail loudly, see <a href="reference--semantics.html#45-modifier-composition">dml-core-spec §4.5</a> / pitfalls P79)</li>
 <li><strong>Suggested Fixes</strong>: Fix compilation errors, check model.dml exists in workspace folder, review generated SQL in error.details.generatedSql; for conflicting <code>+d</code>/<code>-d</code>/<code>-df</code>, rewrite to one explicit intent instead of relying on cancel</li>
 <li><strong>Example</strong>: <code>Compilation failed — see details.compilationErrors</code></li>
-<li><strong>Notes</strong>: The 2026-10-16 same-field <code>+d</code> conflict probes produce no error diagnostic and exit 0. The required rejection is not implemented in those cases. A future diagnostic needs its own verified structured code. See <a href="maintenance--release-evidence.html">release evidence</a>.</li>
+<li><strong>Notes</strong>: The 2026-10-16 build accepts the checked same-field <code>+d</code> conflicts without an error. Express one evaluation stage explicitly and inspect the generated SQL; do not rely on cancellation.</li>
 </ul>
 <h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
 <ul>
@@ -184,8 +180,8 @@
 <ul>
 <li><strong>Category</strong>: NOT_FOUND</li>
 <li><strong>Code</strong>: MODEL_RESOLUTION_ERROR</li>
-<li><strong>Common Causes</strong>: Cannot find <code>&lt;FROM&gt;.dml</code> beside the SQL / under <code>--model=&lt;dir&gt;</code> / on the model path; or <code>--model=acme.dml</code> was used with <code>FROM MODEL</code> (file/FROM mismatch — exit 65); or <code>explain_change</code> was given a directory</li>
-<li><strong>Suggested Fixes</strong>: For query/compile/validate, pass a directory that contains the right <code>.dml</code>, or pass a file whose name matches <code>FROM</code>. For <code>explain_change</code> / <code>setup</code>, pass a <code>.dml</code> file. Or call <code>list_models</code>, then pass the directory containing <code>.dml</code> files as <code>run_query.model</code> for DML model queries only (not native SQL).</li>
+<li><strong>Common Causes</strong>: Cannot find <code>&lt;FROM&gt;.dml</code> beside the SQL / under <code>--model=&lt;dir&gt;</code> / on the model path; or <code>--model=acme.dml</code> was used with <code>FROM MODEL</code> (file/FROM mismatch — exit 65); or a file-only operation was given a directory</li>
+<li><strong>Suggested Fixes</strong>: For query, compile and validate commands, pass a directory containing the matching <code>.dml</code> file, or pass a file whose name matches <code>FROM</code>. For setup, pass a <code>.dml</code> file.</li>
 <li><strong>Example</strong>: <code>model file &quot;acme.dml&quot; does not match FROM &quot;MODEL&quot; (expected &quot;MODEL.dml&quot;).</code></li>
 </ul>
 <h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
@@ -202,7 +198,7 @@
 <li><strong>Category</strong>: VALIDATION</li>
 <li><strong>Code</strong>: DIMENSION_NOT_UNIQUE</li>
 <li><strong>Common Causes</strong>: The complete dataset dimension value combination occurs more than once, or a range-based lookup can match overlapping source rows</li>
-<li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>validateOnly</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
+<li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>--validate-only</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
 <li><strong>Example</strong>: <code>Declared DML dataset dimension is not unique in dataset &#39;Order Line&#39; on this connection at validation time.</code></li>
 </ul>
 <h4 id="validation_query_failed">VALIDATION_QUERY_FAILED</h4>
@@ -247,142 +243,4 @@
 <li><strong>Suggested Fixes</strong>: Report this error to the development team</li>
 <li><strong>Example</strong>: <code>Unexpected error: NullPointerException</code></li>
 </ul>
-<h2 id="protocol-errors-json-rpc">Protocol Errors (JSON-RPC)</h2>
-<h3 id="method_not_found">METHOD_NOT_FOUND</h3>
-<ul>
-<li><strong>Code</strong>: -32601</li>
-<li><strong>Common Causes</strong>: Requested method does not exist</li>
-<li><strong>Suggested Fixes</strong>: Check available tools and use a valid method name</li>
-<li><strong>Example</strong>: <code>Method not found: unknown_tool. Available tools: [list_connections, list_models, run_query, explain_change]</code></li>
-</ul>
-<h3 id="invalid_params-1">INVALID_PARAMS</h3>
-<ul>
-<li><strong>Code</strong>: -32602</li>
-<li><strong>Common Causes</strong>: Invalid parameters for the requested method</li>
-<li><strong>Suggested Fixes</strong>: Check parameter names and valid options for the method</li>
-<li><strong>Example</strong>: <code>Invalid params: missing tool name. Valid options: [list_connections, list_models, run_query, explain_change]</code></li>
-</ul>
-<h3 id="invalid_request">INVALID_REQUEST</h3>
-<ul>
-<li><strong>Code</strong>: -32600</li>
-<li><strong>Common Causes</strong>: Invalid JSON-RPC request format</li>
-<li><strong>Suggested Fixes</strong>: Check request format follows JSON-RPC 2.0 specification</li>
-<li><strong>Example</strong>: <code>Invalid Request: missing method</code></li>
-</ul>
-<h3 id="parse_error">PARSE_ERROR</h3>
-<ul>
-<li><strong>Code</strong>: -32700</li>
-<li><strong>Common Causes</strong>: Failed to parse JSON-RPC request</li>
-<li><strong>Suggested Fixes</strong>: Check JSON syntax and encoding</li>
-<li><strong>Example</strong>: <code>Parse error: Invalid JSON</code></li>
-</ul>
-<h3 id="internal_error">INTERNAL_ERROR</h3>
-<ul>
-<li><strong>Code</strong>: -32603</li>
-<li><strong>Common Causes</strong>: Internal JSON-RPC error occurred</li>
-<li><strong>Suggested Fixes</strong>: Report this error to the development team</li>
-<li><strong>Example</strong>: <code>Internal error</code></li>
-</ul>
-<h2 id="error-details-structure">Error Details Structure</h2>
-<p>Errors may include additional structured details in the <code>error.details</code> field:</p>
-<pre><code class="language-json">{
-  &quot;error&quot;: {
-    &quot;code&quot;: &quot;COMPILE_ERROR&quot;,
-    &quot;message&quot;: &quot;Compilation failed — see details.compilationErrors&quot;,
-    &quot;details&quot;: {
-      &quot;compilationErrors&quot;: [&quot;error message 1&quot;, &quot;error message 2&quot;],
-      &quot;generatedSql&quot;: &quot;SELECT AGG(sales) FROM MODEL WHERE dt_month = &#39;2025-01-01&#39;&quot;,
-      &quot;dimensionErrors&quot;: {
-        &quot;datasetA&quot;: &quot;Dimension is not unique&quot;
-      },
-      &quot;executionErrors&quot;: [&quot;execution error message&quot;],
-      &quot;validationErrors&quot;: [&quot;validation error message&quot;]
-    }
-  }
-}
-</code></pre>
-<h2 id="diagnostic-metadata-errordetails">Diagnostic metadata (<code>error.details</code>)</h2>
-<p>Internal recovery hints (when present) use unified names:</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>exampleModel</code></td>
-<td>Suggested value for <code>params.model</code> on retry</td>
-</tr>
-<tr>
-<td><code>exampleModelCandidates</code></td>
-<td>Multiple candidate model dirs/files (truncated list)</td>
-</tr>
-<tr>
-<td><code>exampleModelCandidatesTotal</code></td>
-<td>Total candidates when list is truncated</td>
-</tr>
-<tr>
-<td><code>recovery</code></td>
-<td>Recovery class: <code>needs_model</code>, <code>needs_qualified_from</code>, <code>needs_both</code></td>
-</tr>
-<tr>
-<td><code>overlapSuggestedPath</code></td>
-<td>Workspace overlap hint when a path was resolved incorrectly (not the <code>model</code> tool param)</td>
-</tr>
-</tbody></table>
-<h2 id="next-actions">Next Actions</h2>
-<p>Errors may include actionable next steps in the <code>structuredContent.next.actions</code> field:</p>
-<pre><code class="language-json">{
-  &quot;next&quot;: {
-    &quot;actions&quot;: [
-      {
-        &quot;type&quot;: &quot;provide_model&quot;,
-        &quot;description&quot;: &quot;Provide model (directory or .dml file) for a DML model query and retry&quot;,
-        &quot;params&quot;: {
-          &quot;model&quot;: &quot;sql&quot;
-        }
-      },
-      {
-        &quot;type&quot;: &quot;list_models&quot;,
-        &quot;description&quot;: &quot;Run list_models first, then use the parent directory of a modelFiles entry as run_query.model&quot;
-      },
-      {
-        &quot;type&quot;: &quot;increase_timeout&quot;,
-        &quot;description&quot;: &quot;Increase timeout value&quot;,
-        &quot;params&quot;: {
-          &quot;timeoutSeconds&quot;: 60
-        }
-      }
-    ]
-  }
-}
-</code></pre>
-<h2 id="diagnostics-warning-types-non-fatal">Diagnostics warning types (non-fatal)</h2>
-<p>These appear in <code>structuredContent.diagnostics.warnings[]</code> (especially <code>explain_change</code> discovery). They use field <strong><code>type</code></strong> (not legacy <code>EXPLAIN_*</code> codes). They do <strong>not</strong> set <code>isError: true</code>.</p>
-<table>
-<thead>
-<tr>
-<th><code>type</code></th>
-<th>Meaning</th>
-<th>Agent action</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>missing_dimensions</code></td>
-<td><code>dimensions</code> omitted; driver SQL not executed</td>
-<td>Pick axes from <code>candidateDimensions</code> and rerun with <code>dimensions</code></td>
-</tr>
-<tr>
-<td><code>missing_formula</code></td>
-<td><code>formula</code> omitted; factor attribution not executed</td>
-<td>Add <code>formula</code> when factor breakdown is needed</td>
-</tr>
-<tr>
-<td><code>REPEATED_DISCOVERY_CALL</code></td>
-<td><em>(P2, optional)</em> Same discovery params sent again</td>
-<td>Stop looping; enter full execution with dimensions</td>
-</tr>
-</tbody></table>
-<p><strong>Observations</strong> (same <code>diagnostics</code> object, field <strong><code>type</code></strong>): quality/context signals such as <code>narrow_dimension_breakdown</code>, <code>results_truncated</code> — not blockers; see <a title="Reference available in the development workspace">explain-change.md</a> §5.</p>
 </main></html>

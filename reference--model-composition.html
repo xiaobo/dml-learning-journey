@@ -9,5 +9,5 @@
 <p>In dataset <code>sql:</code>, <code>FROM {Customers}</code> references the logical dataset. <code>FROM Customers</code> names a physical relation. Within column formulas, <code>{net_amount}</code> expands the model column, while bare <code>net_amount</code> is physical SQL. Reverse-generated SQL can deliberately retain physical references.</p>
 <h2 id="direct-query-files">Direct query files</h2>
 <p>For direct DML compilation, the query key must match the file stem: <code>report.dml</code> contains <code>report: {type: query, ...}</code>. A reusable model without a query is consumed by Model Query SQL; its FROM name follows the model filename (<a href="reference--model-query-sql.html#2-query-types">query discovery</a>).</p>
-<p>Evidence: <a href="maintenance--release-evidence.html">forward references and include isolation probes</a>. The current-source design documents are supporting evidence, not a replacement for checking the distributed build.</p>
+<p>Check includes, names and generated SQL with your installed compiler before running a report.</p>
 </main></html>
