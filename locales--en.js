@@ -4,7 +4,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "common.label1": "Your journey",
     "common.text2": "An illustrated, interactive tutorial",
     "common.text3": "A small journey<br>through DML",
-    "common.text4": "A notebook of definitions. A question about sales.<br>And a small traveler learning how the two fit together.",
+    "common.text4": "Define metrics. Compose calculations.<br>Change the context. Check the result.",
     "common.text5": "Build a February sales report in twelve chapters. Start with four sales, reuse the measures, then download your project. Predict the result, change a control, then check your answer. The examples run offline with invented data.",
     "common.text6": "An original watercolor scene inspired by the gentle storybook imagery of The Little Prince.",
     "identity.text1": "01 / The rows",
@@ -151,7 +151,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text21": "Start with <a href=\"how-to--build-analysis.html\">Build a model from a business question</a>. Use <a href=\"how-to--design-measures.html\">Design a reusable measure</a> for new calculations.",
     "common.text7": "DML defines. DMX expresses. Model Query selects and groups.",
     "common.text8": "<a href=\"compiler-observations.json\">Compiler observations</a> · <a href=\"explanation--visual-introduction.html\">Original text introduction</a> · Works offline",
-    "common.a11y1": "DML documentation",
+    "common.a11y1": "DML overview",
     "common.a11y2": "Tutorial navigation",
     "common.a11y3": "A small traveler with a golden scarf looks at floating watercolor worlds: a garden with a notebook, a telescope, and paper cards.",
     "common.a11y4": "Chapters",
@@ -197,7 +197,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "recall.roles": "Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.",
     "recall.symbol": "Symbol",
     "recall.meaning": "Recall its meaning",
-    "capstone.submitHelp": "Choose the report settings above, then click Submit answer to check them."
+    "capstone.submitHelp": "Choose the report settings above, then click Submit answer to check them.",
+    "capstone.reuse": "You defined a model, composed measures, changed the context and checked the report. The same ideas apply to <a href=\"reference--examples--composable-metrics.html\">a cumulative gross-margin comparison</a>."
   },
   "ui": {
     "pageTitle": "A small journey through DML",

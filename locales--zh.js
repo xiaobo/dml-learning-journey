@@ -4,7 +4,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "common.label1": "你的旅程",
     "common.text2": "图解互动教程",
     "common.text3": "一段探索 DML<br>的小小旅程",
-    "common.text4": "一本记录定义的笔记，一道关于销售的问题。<br>小小旅人正在学习，如何把它们连在一起。",
+    "common.text4": "定义指标，引用组合。<br>改变上下文，检查结果。",
     "common.text5": "用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。",
     "common.text6": "原创水彩插画，灵感来自《小王子》温柔的绘本意境。",
     "identity.text1": "01 / 数据行",
@@ -159,7 +159,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text21": "从<a href=\"how-to--build-analysis.html\">把业务问题转为模型</a>开始；新增计算时参考<a href=\"how-to--design-measures.html\">设计可复用度量</a>。",
     "common.text7": "DML 定义，DMX 表达，Model Query 选择并分组。",
     "common.text8": "<a href=\"compiler-observations.json\">编译器记录</a> · <a href=\"explanation--visual-introduction.html\">原文字版介绍</a> · 可离线使用",
-    "common.a11y1": "DML 文档",
+    "common.a11y1": "DML 概览",
     "common.a11y2": "教程导航",
     "common.a11y3": "围着金色围巾的小旅人，望向漂浮的水彩小世界：花园、笔记、望远镜和纸卡。",
     "common.a11y4": "章节",
@@ -197,7 +197,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "recall.roles": "源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。",
     "recall.symbol": "符号",
     "recall.meaning": "回想它的含义",
-    "capstone.submitHelp": "设置好上面的报表选项，再点击“提交答案”。"
+    "capstone.submitHelp": "设置好上面的报表选项，再点击“提交答案”。",
+    "capstone.reuse": "你已定义模型、组合度量、改变上下文并检查报表。同样的思路也适用于<a href=\"reference--examples--composable-metrics.html\">累计毛利率的同期比较</a>。"
   },
   "ui": {
     "pageTitle": "一段探索 DML 的小小旅程",

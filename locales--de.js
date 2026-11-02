@@ -4,7 +4,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "common.label1": "Deine Reise",
     "common.text2": "Ein interaktiver Kurs mit Illustrationen",
     "common.text3": "Eine kleine Reise<br>durch DML",
-    "common.text4": "Ein Notizbuch voller Definitionen. Eine Frage zum Umsatz.<br>Ein kleiner Reisender entdeckt, wie beides zusammenpasst.",
+    "common.text4": "Kennzahlen definieren und kombinieren.<br>Kontext ändern und Ergebnisse prüfen.",
     "common.text5": "Erstelle in zwölf Kapiteln einen Umsatzbericht für Februar. Beginne mit vier Verkäufen, verwende Kennzahlen wieder und lade dein Projekt herunter. Sage das Ergebnis voraus, ändere eine Einstellung und prüfe deine Antwort. Die Beispiele laufen offline mit erfundenen Daten.",
     "common.text6": "Eine eigene Aquarellszene, inspiriert von der sanften Bilderbuchwelt des Kleinen Prinzen.",
     "identity.text1": "01 / Die Zeilen",
@@ -159,7 +159,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text21": "Beginne mit <a href=\"how-to--build-analysis.html\">Vom Geschäftsproblem zum Modell</a>. Nutze für neue Berechnungen <a href=\"how-to--design-measures.html\">Wiederverwendbare Kennzahlen entwerfen</a>.",
     "common.text7": "DML definiert. DMX drückt aus. Model Query wählt und gruppiert.",
     "common.text8": "<a href=\"compiler-observations.json\">Compileraufzeichnungen</a> · <a href=\"explanation--visual-introduction.html\">Ursprüngliche Textfassung</a> · Offline nutzbar",
-    "common.a11y1": "DML-Dokumentation",
+    "common.a11y1": "DML-Überblick",
     "common.a11y2": "Kursnavigation",
     "common.a11y3": "Ein kleiner Reisender mit goldenem Schal betrachtet schwebende Aquarellwelten: einen Garten, ein Notizbuch, ein Fernrohr und Papierkarten.",
     "common.a11y4": "Kapitel",
@@ -197,7 +197,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "recall.roles": "Quelldimension <code>dimension: [id]</code>: Quellzeilen identifizieren. Abfragedimension <code>GROUP BY region</code>: Ergebniszeilen gruppieren. Auswertungsdimension mit <code>+d: customer</code>: Kundensummen als Zwischenwerte berechnen.",
     "recall.symbol": "Zeichen",
     "recall.meaning": "Bedeutung auffrischen",
-    "capstone.submitHelp": "Die Vorschau aktualisiert sich sofort. Klicke auf „Antwort abgeben“, um deine Einstellungen prüfen zu lassen."
+    "capstone.submitHelp": "Die Vorschau aktualisiert sich sofort. Klicke auf „Antwort abgeben“, um deine Einstellungen prüfen zu lassen.",
+    "capstone.reuse": "Sie haben ein Modell definiert, Kennzahlen kombiniert, den Kontext geändert und den Bericht geprüft. Dasselbe Vorgehen gilt für <a href=\"reference--examples--composable-metrics.html\">kumulierte Margen im Vorjahresvergleich</a>."
   },
   "ui": {
     "pageTitle": "Eine kleine Reise durch DML",

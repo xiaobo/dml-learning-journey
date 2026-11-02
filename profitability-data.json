@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "region": "North",
+    "dt_month": "2024-01-01",
+    "revenue_amount": 100,
+    "cost_amount": 85
+  },
+  {
+    "id": 2,
+    "region": "North",
+    "dt_month": "2024-02-01",
+    "revenue_amount": 100,
+    "cost_amount": 75
+  },
+  {
+    "id": 3,
+    "region": "North",
+    "dt_month": "2025-01-01",
+    "revenue_amount": 100,
+    "cost_amount": 60
+  },
+  {
+    "id": 4,
+    "region": "North",
+    "dt_month": "2025-02-01",
+    "revenue_amount": 300,
+    "cost_amount": 240
+  },
+  {
+    "id": 5,
+    "region": "South",
+    "dt_month": "2024-01-01",
+    "revenue_amount": 200,
+    "cost_amount": 150
+  },
+  {
+    "id": 6,
+    "region": "South",
+    "dt_month": "2024-02-01",
+    "revenue_amount": 100,
+    "cost_amount": 90
+  },
+  {
+    "id": 7,
+    "region": "South",
+    "dt_month": "2025-01-01",
+    "revenue_amount": 200,
+    "cost_amount": 120
+  },
+  {
+    "id": 8,
+    "region": "South",
+    "dt_month": "2025-02-01",
+    "revenue_amount": 100,
+    "cost_amount": 80
+  }
+]

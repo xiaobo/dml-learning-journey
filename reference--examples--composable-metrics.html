@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compose a metric, then change the question · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="compose-a-metric-then-change-the-question">Compose a metric, then change the question</h1>
+<p>This independent example models profitability. It complements the sales model in the <a href="journey.html">interactive journey</a>. <a href="index.html">Watch the overview animation</a> to see how the definitions connect.</p>
+<h2 id="agree-the-definition">Agree the definition</h2>
+<p>Business and data teams agree what net revenue and sales cost include. The model names these calculations, derives gross profit, and divides profit by revenue to obtain gross margin. DML and DMX capture the rules; the compiler generates SQL for the database. Together they can form the calculation core of an analytical semantic layer.</p>
+<h2 id="the-model">The model</h2>
+<p>The logical dataset is FACT_PROFITABILITY; its physical source is TABLE_PROFITABILITY. Source field names differ from measure names so references are unambiguous. The complete source key is [id]. Use decimal types for revenue_amount and cost_amount in the physical table; CSV does not carry SQL column types, and integer division would lose the fractional margin.</p>
+<pre><code class="language-yaml">FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: &#39;{net_revenue} - {sales_cost}&#39;
+
+gross_margin:
+  type: measure
+  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+
+gross_margin_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+
+margin_change_pp:
+  type: measure
+  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+</code></pre>
+<p><a href="profitability-model.dml">Download model.dml</a>, <a href="TABLE_PROFITABILITY.csv">source CSV</a>, or <a href="profitability-data.json">source data as JSON</a>.</p>
+<h2 id="change-the-context">Change the context</h2>
+<p>For North in February 2025, revenue is 300 and cost is 240, giving a 20% margin. January revenue is 100 and cost is 60, giving a 40% margin. Year-to-date revenue is 400 and cost is 300: the cumulative margin is 25%, not the 30% simple average of monthly margins.</p>
+<p>The checked compiler requires cumulative atomic components before division. Apply the time rule to revenue and cost, then recalculate profit and margin. Do not sum ratios or assume every composite formula can be reaggregated by attaching a time modifier directly.</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+FROM MODEL
+WHERE dt_month = &#39;2025-02-01&#39;
+GROUP BY region, dt_month
+</code></pre>
+<h2 id="compare-the-same-period">Compare the same period</h2>
+<p>North&#39;s January–February 2024 revenue is 200 and cost is 160, giving a 20% cumulative margin. The current cumulative margin of 25% is <strong>5 percentage points higher</strong>. Relative growth would be 25%; it is a different calculation and is not the displayed difference.</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+FROM MODEL
+WHERE dt_month = &#39;2025-02-01&#39;
+GROUP BY region, dt_month
+</code></pre>
+<p><a href="profitability-monthly.sql">Download the monthly query</a>, <a href="profitability-cumulative.sql">cumulative query</a>, or <a href="profitability-comparison.sql">comparison query</a>. Standard time calculations also require the compiler&#39;s DML_CALENDAR on the target connection.</p>
+<h2 id="inspect-the-evidence">Inspect the evidence</h2>
+<p>The <a href="profitability-compiler-observations.json">compiler record</a> includes the executable identity, exact queries, process exits, statuses, diagnostics and generated SQL. The three checked queries pass strict compilation. Inspection confirms that the cumulative branches sum revenue and cost before division; the prior-year branch shifts the cumulative range by one year.</p>
+<p>These observations cover this example and compiler build. Database execution, source-key validation and result parity have not been run. The browser independently calculates the invented rows; it does not execute DML. A zero revenue denominator produces NULL, and a missing prior period remains missing rather than becoming a fabricated zero.</p>
+<h2 id="continue">Continue</h2>
+<p>Use the <a href="explanation--core-concepts.html">core concepts</a>, <a href="reference--modifiers.html">modifier reference</a>, and <a href="how-to--compile-and-validate.html">compile and validate guide</a> for the exact rules and checks.</p>
+</main></html>

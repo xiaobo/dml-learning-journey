@@ -4,7 +4,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "common.label1": "あなたの旅",
     "common.text2": "イラストで学ぶ対話型チュートリアル",
     "common.text3": "DML をめぐる<br>小さな旅",
-    "common.text4": "定義を記すノートと、売上についての問い。<br>小さな旅人が、そのつながりを学びます。",
+    "common.text4": "指標を定義し、組み合わせる。<br>文脈を変え、結果を確かめる。",
     "common.text5": "12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。",
     "common.text6": "『星の王子さま』の穏やかな絵本の雰囲気に着想を得た、オリジナルの水彩画。",
     "identity.text1": "01 / データ行",
@@ -159,7 +159,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text21": "まずは<a href=\"how-to--build-analysis.html\">業務の問いからモデルを作る</a>へ。新しい計算には<a href=\"how-to--design-measures.html\">再利用できるメジャーの設計</a>を参照してください。",
     "common.text7": "DML で定義し、DMX で式を書き、Model Query で選択とグループ化を行います。",
     "common.text8": "<a href=\"compiler-observations.json\">コンパイラーの記録</a> · <a href=\"explanation--visual-introduction.html\">元のテキスト版</a> · オフライン対応",
-    "common.a11y1": "DML ドキュメント",
+    "common.a11y1": "DML の概要",
     "common.a11y2": "チュートリアルのナビゲーション",
     "common.a11y3": "金色のマフラーを巻いた小さな旅人が、庭、ノート、望遠鏡、紙のカードが浮かぶ水彩の世界を眺めています。",
     "common.a11y4": "章",
@@ -197,7 +197,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "recall.roles": "ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。",
     "recall.symbol": "記号",
     "recall.meaning": "意味を振り返る",
-    "capstone.submitHelp": "設定を選んだら、「答え合わせ」を押して回答を確認しましょう。"
+    "capstone.submitHelp": "設定を選んだら、「答え合わせ」を押して回答を確認しましょう。",
+    "capstone.reuse": "モデルを定義し、指標を組み合わせ、文脈を変えて結果を確認しました。同じ考え方を<a href=\"reference--examples--composable-metrics.html\">累計利益率の前年同期比較</a>にも使えます。"
   },
   "ui": {
     "pageTitle": "DML をめぐる小さな旅",
