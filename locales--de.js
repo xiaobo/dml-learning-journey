@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "Zwei Verkäufe können dieselbe Region haben. <code>region</code> eignet sich zum Gruppieren, reicht aber als Quellschlüssel nicht aus.",
     "identity.text6": "Finde die beiden North-Verkäufe: gleiche Region, verschiedene IDs. Ein Quellschlüssel muss jede Zeile identifizieren.",
     "identity.text7": "Vier erfundene Verkäufe · TABLE_SALES",
-    "identity.text8": "Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Seine Deklaration entfernt keine Duplikate; die Quelldaten müssen ihn erfüllen.",
+    "identity.text8": "Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Prüfe mit <code>dmlc --validate-only</code> auf der Zielverbindung, ob die von der Abfrage verwendeten Schlüssel zu den tatsächlichen Daten passen. Behebe Abweichungen vor der Ausführung, um doppelte Lookup-Ergebnisse zu vermeiden.",
     "identity.caption": "Nur Beispieldaten. Es ist keine Datenbank verbunden.",
     "model.text1": "02 / DML",
     "model.text2": "Bewahre die Definitionen<br>in einem Notizbuch auf.",

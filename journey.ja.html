@@ -155,7 +155,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">説明用のデータです。データベースには接続していません。</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">レポートを region でグループ化しても、元のキーは [id] のままです。キーの宣言は重複を除去しません。元データが一意性を満たす必要があります。</p>
+				<p class="identity-note" data-i18n="identity.text8">レポートを region でグループ化しても、元のキーは [id] のままです。対象の接続で <code>dmlc --validate-only</code> を実行し、クエリが参照するキーの宣言と実データを照合します。不整合を修正してから実行し、ルックアップ結果の重複を防ぎましょう。</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -318,10 +318,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">手元に置きたい記号 · 早見表</summary><p data-i18n="recall.intro">参照は「どのメジャーか」、次に「今回はどう計算するか」と読みます。記憶の手がかりであり、追加構文や算術演算ではありません。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">記号</th><th data-i18n="recall.meaning">意味を振り返る</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。</p><p class="small" data-i18n="syntax.reference">他の形式は<a href="reference--modifiers.html">修飾子の規則と例</a>を参照してください。</p></details>
 		<footer><p data-i18n="common.text7">DML で定義し、DMX で式を書き、Model Query で選択とグループ化を行います。</p><p data-i18n="common.text8"><a href="compiler-observations.json">コンパイラーの記録</a> · <a href="explanation--visual-introduction.html">元のテキスト版</a> · オフライン対応</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=48e14b7d59"></script>
-	<script src="locales--zh.js?v=c20ff4d6d1"></script>
-	<script src="locales--ja.js?v=d06b8acd75"></script>
-	<script src="locales--de.js?v=3f58c01b78"></script>
+	<script src="locales--en.js?v=6d352fa67d"></script>
+	<script src="locales--zh.js?v=5f7668b2cf"></script>
+	<script src="locales--ja.js?v=77ded0c420"></script>
+	<script src="locales--de.js?v=6010f89405"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {

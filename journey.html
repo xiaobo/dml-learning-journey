@@ -157,7 +157,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">Illustrative data only. No database is connected.</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">Even when the report groups by region, the source key stays [id]. Declaring a key does not remove duplicates; the source data must satisfy it.</p>
+				<p class="identity-note" data-i18n="identity.text8">Even when the report groups by region, the source key stays [id]. Run <code>dmlc --validate-only</code> on the target connection to check the keys reached by the query against actual data. Fix inconsistencies before execution to avoid duplicated lookup results.</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -320,10 +320,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Keep these symbols close · quick reference</summary><p data-i18n="recall.intro">Read a reference as: measure, then how to calculate it this time. These are memory cues, not extra syntax or arithmetic.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Symbol</th><th data-i18n="recall.meaning">Recall its meaning</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.</p><p class="small" data-i18n="syntax.reference">See <a href="reference--modifiers.html">modifier rules and examples</a> when you need more forms.</p></details>
 		<footer><p data-i18n="common.text7">DML defines. DMX expresses. Model Query selects and groups.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compiler observations</a> · <a href="explanation--visual-introduction.html">Original text introduction</a> · Works offline</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=48e14b7d59"></script>
-	<script src="locales--zh.js?v=c20ff4d6d1"></script>
-	<script src="locales--ja.js?v=d06b8acd75"></script>
-	<script src="locales--de.js?v=3f58c01b78"></script>
+	<script src="locales--en.js?v=6d352fa67d"></script>
+	<script src="locales--zh.js?v=5f7668b2cf"></script>
+	<script src="locales--ja.js?v=77ded0c420"></script>
+	<script src="locales--de.js?v=6010f89405"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {

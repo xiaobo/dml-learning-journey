@@ -30,8 +30,8 @@
 <h2 id="inspect-the-rows">Inspect the rows</h2>
 <p><a href="journey.en.html#lookups">Open the lookup exercise</a> and enable the invalid duplicate North entry. Compare the directory, matched rows and North total. The logical dataset DIM_REGION declares dimension: [region]; its physical source is TABLE_REGION. Repeated North values violate that source-key declaration.</p>
 <h2 id="validate-the-real-connection">Validate the real connection</h2>
-<p>A normal compile does not read the physical rows. With the lesson tables on a database connection, dmlc --validate-only checks the full declared dimensions of reached datasets. The invalid DIM_REGION key is expected to produce DIMENSION_NOT_UNIQUE. <a href="journey.en.html#lookups">Use the exercise&#39;s exact command and query</a>, then correct the key declaration or data and validate again.</p>
-<p>Do not assume DISTINCT repairs the business meaning, or that declaring a key deduplicates the table. A legitimate one-to-many relationship needs an explicitly designed calculation.</p>
+<p>Before executing the report, run <code>dmlc --validate-only</code> on the intended connection. It checks whether the full declared dimensions of datasets reached by the query agree with the actual data. In this example, two North entries cause <code>DIM_REGION</code> to report <code>DIMENSION_NOT_UNIQUE</code>. <a href="journey.en.html#lookups">Use the exercise&#39;s exact command and query</a>, correct the declaration or source data, and validate again before execution to avoid duplicated lookup results.</p>
+<p>Revalidate after relevant changes to the model, query, connection or source data. A legitimate one-to-many relationship needs an explicitly designed calculation.</p>
 <p>The browser toggle affects only invented browser data. Validation probes source keys and query planning; it is not a comparison of executed report results. See <a href="reference--troubleshooting--grain-and-joins.html">grain and joins</a>.</p>
 <p><a href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.zip">Download the lesson project</a></p>
 </main></body></html>

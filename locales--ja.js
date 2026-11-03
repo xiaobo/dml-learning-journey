@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "複数の売上が同じ地域に属することがあります。<code>region</code> はグループ化には使えますが、元データのキーには不十分です。",
     "identity.text6": "North の 2 件を見てください。地域は同じでも ID は異なります。元データのキーは各行を識別できなければなりません。",
     "identity.text7": "架空の売上 4 件 · TABLE_SALES",
-    "identity.text8": "レポートを region でグループ化しても、元のキーは [id] のままです。キーの宣言は重複を除去しません。元データが一意性を満たす必要があります。",
+    "identity.text8": "レポートを region でグループ化しても、元のキーは [id] のままです。対象の接続で <code>dmlc --validate-only</code> を実行し、クエリが参照するキーの宣言と実データを照合します。不整合を修正してから実行し、ルックアップ結果の重複を防ぎましょう。",
     "identity.caption": "説明用のデータです。データベースには接続していません。",
     "model.text1": "02 / DML",
     "model.text2": "定義は一冊の<br>ノートにまとめよう。",

@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "两笔销售可以属于同一地区。因此 <code>region</code> 适合分组，却不足以作为源数据的键。",
     "identity.text6": "找到两笔 North 销售：地区相同，ID 不同。源键必须能标识每一行。",
     "identity.text7": "四笔虚构销售 · TABLE_SALES",
-    "identity.text8": "即使报表按 region 分组，源键仍是 [id]。声明键不会自动去重，源数据必须满足它。",
+    "identity.text8": "即使报表按 region 分组，源键仍是 [id]。在目标连接上运行 <code>dmlc --validate-only</code>，检查查询涉及的键声明与实际数据是否一致；修正不一致后再执行，避免关联结果重复。",
     "identity.caption": "仅为示例数据，未连接数据库。",
     "model.text1": "02 / DML",
     "model.text2": "把定义收在<br>同一本笔记里。",

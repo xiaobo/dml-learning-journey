@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "Two sales can share a region. That makes <code>region</code> useful for grouping, but insufficient as the source key.",
     "identity.text6": "Find the two North sales. Their region repeats; their IDs differ. A source key must identify each row.",
     "identity.text7": "Four invented sales · TABLE_SALES",
-    "identity.text8": "Even when the report groups by region, the source key stays [id]. Declaring a key does not remove duplicates; the source data must satisfy it.",
+    "identity.text8": "Even when the report groups by region, the source key stays [id]. Run <code>dmlc --validate-only</code> on the target connection to check the keys reached by the query against actual data. Fix inconsistencies before execution to avoid duplicated lookup results.",
     "model.text1": "02 / DML",
     "model.text2": "Keep the definitions<br>in one notebook.",
     "model.text3": "\"What shall we call the total?\"<br>The traveler wrote: sales.",

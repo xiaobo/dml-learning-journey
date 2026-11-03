@@ -30,8 +30,8 @@
 <h2 id="先看明细发生了什么">先看明细发生了什么</h2>
 <p>打开<a href="journey.zh.html#lookups">属性查找练习</a>，启用无效的第二条 North 目录记录，比较目录、匹配结果和 North 合计。逻辑数据集 DIM_REGION 声明 dimension: [region]，对应物理表 TABLE_REGION。North 重复意味着该源键声明不符合实际数据。</p>
 <h2 id="再验证真实连接">再验证真实连接</h2>
-<p>普通编译不会读取物理数据行。将课程示例表放到数据库后，dmlc --validate-only 会检查查询涉及数据集的完整维度。该无效键预期对 DIM_REGION 报告 DIMENSION_NOT_UNIQUE。可使用<a href="journey.zh.html#lookups">练习中的完整命令和查询</a>，修正键声明或源数据后再验证。</p>
-<p>不要假定加 DISTINCT 就修复了业务含义，也不要以为声明键会自动去重。合法的一对多关系需要明确设计计算方式。</p>
+<p>执行报表前，在目标连接上运行 <code>dmlc --validate-only</code>，检查查询涉及数据集的完整键声明与实际数据是否一致。本例中，两条 North 记录会使 <code>DIM_REGION</code> 报告 <code>DIMENSION_NOT_UNIQUE</code>。使用<a href="journey.zh.html#lookups">练习中的完整命令和查询</a>，修正键声明或源数据，重新验证通过后再执行，避免关联结果重复。</p>
+<p>模型、查询、连接或相关源数据变化后，应重新验证。合法的一对多关系需要明确设计计算方式。</p>
 <p>浏览器开关只改变虚构示例数据。验证会探测源键和查询计划，不等于执行报表并对照结果。参见<a href="reference--troubleshooting--grain-and-joins.html">粒度与关联排查</a>。</p>
 <p><a href="guide--duplicate-lookup-en.html">English</a> · <a href="lesson-files.zip">下载课程项目</a></p>
 </main></body></html>
