@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "两笔销售可以属于同一地区。因此 <code>region</code> 适合分组，却不足以作为源数据的键。",
     "identity.text6": "找到两笔 North 销售：地区相同，ID 不同。源键必须能标识每一行。",
     "identity.text7": "四笔虚构销售 · TABLE_SALES",
-    "identity.text8": "即使报表按 region 分组，源键仍是 [id]。",
+    "identity.text8": "即使报表按 region 分组，源键仍是 [id]。声明键不会自动去重，源数据必须满足它。",
     "identity.caption": "仅为示例数据，未连接数据库。",
     "model.text1": "02 / DML",
     "model.text2": "把定义收在<br>同一本笔记里。",
@@ -30,7 +30,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "expressions.text3": "旅人想知道平均每笔销售额。模型里已经有了总额和笔数。",
     "expressions.text4": "DMX 是公式中的表达式语法。<code>{sales}</code> 的花括号表示引用模型中的度量定义；它的值按这次引用的分组和筛选计算。",
     "expressions.text5": "<code>average_sale</code> 复用其他度量，因此是复合度量。分母为零时，<code>DIVIDE</code> 返回 NULL，表示没有可用数值。",
-    "expressions.text6": "同一公式在 North 中得到 30 ÷ 2 = 15；在全部四笔销售中得到 100 ÷ 4 = 25。",
+    "expressions.text6": "North 为 30 ÷ 2 = 15，全部销售为 100 ÷ 4 = 25。本例两地各有两笔销售，地区平均值的简单平均恰好相同；笔数不等时，要用总额除以总笔数重算。",
     "expressions.text7": "用 DMX 写出的公式",
     "expressions.text8": "<strong>sales</strong>金额求和。",
     "expressions.text9": "<strong>cnt</strong>统计源数据行数。",
@@ -97,7 +97,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text8": "第 2 步 · region",
     "grain.text9": "<code>d</code> = dimension（维度）；<code>+d: customer</code> 为这次引用的求值维度增加 customer。外层 AVG、SUM 或 MAX 再把客户总额汇总回查询维度。源行键和报表 GROUP BY 不变。",
     "grain.text10": "查看 Model Query",
-    "grain.text11": "对照<a href=\"explanation--dimensions.html\">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。",
+    "grain.text11": "此处只纳入所选期间有销售的客户。对照<a href=\"explanation--dimensions.html\">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。",
     "time.text1": "09 / 比较期间",
     "time.text2": "回望上一个月。",
     "time.text3": "旅人把一月的笔记，放在了二月旁边。",
@@ -217,7 +217,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "review": "回顾你的报表",
     "reset": "重置进度",
     "checkChapter": "提交答案",
-    "hint": "查看解释",
+    "hint": "查看提示",
     "tryQuestion": "试一试 · {question}",
     "chooseAnswer": "请先选择一个答案。",
     "hintAnswer": "{why} 选择答案后，点击“提交答案”查看结果。",
@@ -288,7 +288,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "helpCompleted": "复用 sales，用 +f 为这次引用的输入增加“已完成”状态条件。",
     "helpWithinShare": "sales 除以不按 region 分组的分母；所选地区的筛选仍作用于该分母。",
     "helpAllShare": "sales 除以同时移除 region 分组及相关筛选的分母；月份筛选保留。",
-    "helpCustomerAverage": "先按地区和客户汇总销售额，再用 AVG 把客户总额平均为每个地区的一个值。",
+    "helpCustomerAverage": "先在每个报表组内按客户汇总销售额，再对客户总额取平均。只纳入所选期间有销售的客户。",
     "helpCustomerSum": "先计算各客户总额，再用 SUM 汇总为每个地区的一个值。",
     "helpCustomerMax": "先计算各客户总额，再用 MAX 取每个地区最大的客户总额。",
     "helpPrevious": "复用 sales，用 pp 请求上一期的值；在月份上下文中就是上月值。",
@@ -346,7 +346,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[amount]"
       ],
-      "why": "FACT_SALES 声明 dimension: [id]，用 id 标识每笔销售。region 有重复值；amount 在这四行中恰好不重复，但并不是声明的源行键。"
+      "why": "FACT_SALES 声明 dimension: [id]，用 id 标识每笔销售。region 有重复值；amount 在这四行中恰好不重复，但并不是声明的源行键。",
+      "hint": "对照声明的键，区分“这几行恰好不重复”和“用于标识每笔销售”。"
     },
     "model": {
       "question": "哪个定义是绑定 FACT_SALES 的原子度量？",
@@ -355,7 +356,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales 直接汇总 FACT_SALES 的 amount 列，不引用其他度量，因此是原子度量。average_sale 引用 sales 和 cnt，因此是复合度量。GROUP BY region 设置查询分组，并非度量定义。"
+      "why": "sales 直接汇总 FACT_SALES 的 amount 列，不引用其他度量，因此是原子度量。average_sale 引用 sales 和 cnt，因此是复合度量。GROUP BY region 设置查询分组，并非度量定义。",
+      "hint": "寻找直接聚合源列、没有引用其他度量的定义。"
     },
     "expressions": {
       "question": "North 的 sales 为 30，cnt 为 2。DIVIDE({sales}, {cnt}) 返回什么？",
@@ -364,7 +366,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "30，North 的销售总额",
         "15，North 的平均每笔金额"
       ],
-      "why": "计算 North 这一组时，公式使用 North 的销售额和笔数：30 ÷ 2 = 15。25 则是全部四笔销售的平均每笔金额：100 ÷ 4 = 25。"
+      "why": "计算 North 这一组时，公式使用 North 的销售额和笔数：30 ÷ 2 = 15。25 则是全部四笔销售的平均每笔金额：100 ÷ 4 = 25。",
+      "hint": "只取 North 的销售额和笔数，再相除。"
     },
     "grouping": {
       "question": "报表按 region 分组后，FACT_SALES 声明的源维度是什么？",
@@ -373,7 +376,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[]"
       ],
-      "why": "GROUP BY region 让每行结果代表一个地区；FACT_SALES 的源维度仍为 [id]，每行源数据仍代表一笔销售。"
+      "why": "GROUP BY region 让每行结果代表一个地区；FACT_SALES 的源维度仍为 [id]，每行源数据仍代表一笔销售。",
+      "hint": "把源行标识与结果分组分开考虑。"
     },
     "compiler": {
       "question": "只运行编译、不连接数据库时，会得到什么？",
@@ -382,7 +386,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "编译器生成的 SQL",
         "源数据中每个键都唯一的证明"
       ],
-      "why": "编译生成 SQL，不执行数据库查询，也不读取源数据来检查键是否唯一。检查实际键值需要连接数据库运行验证；获取报表结果还需执行 SQL。"
+      "why": "编译生成 SQL，不执行数据库查询，也不读取源数据来检查键是否唯一。检查实际键值需要连接数据库运行验证；获取报表结果还需执行 SQL。",
+      "hint": "区分生成 SQL、检查源数据和执行报表这三步。"
     },
     "filters": {
       "question": "二月的 North 为什么能同时显示 sales = 30 和 completed_sales = 10？",
@@ -391,7 +396,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "报表 WHERE 从所有度量中移除了退货销售",
         "completed_sales 改变了数据集的键"
       ],
-      "why": "North 的两笔记录金额为 10 和 20，只有 10 的状态是 completed。+f 只为 completed_sales 内的 sales 引用增加状态筛选，所以两列分别为 30 和 10。若把状态条件放进报表 WHERE，sales 也会受影响。"
+      "why": "North 的两笔记录金额为 10 和 20，只有 10 的状态是 completed。+f 只为 completed_sales 内的 sales 引用增加状态筛选，所以两列分别为 30 和 10。若把状态条件放进报表 WHERE，sales 也会受影响。",
+      "hint": "比较单次度量引用内的筛选与报表 WHERE 的影响范围。"
     },
     "shares": {
       "question": "报表筛选二月、只显示 North。哪个分母能计算二月全部地区的销售额？",
@@ -400,7 +406,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df 只为分母这次引用移除 region 分组及其相关筛选，保留二月筛选，得到 100。-d 保留 North 筛选，分母为 30。源行键和报表 GROUP BY 都不变。"
+      "why": "-df 只为分母这次引用移除 region 分组及其相关筛选，保留二月筛选，得到 100。-d 保留 North 筛选，分母为 30。源行键和报表 GROUP BY 都不变。",
+      "hint": "想一想，哪个修饰符同时移除地区分组及其相关筛选？"
     },
     "grain": {
       "question": "South 二月有两笔销售，金额为 30 和 40，都属于客户 C。先按客户汇总，再取平均，结果是多少？",
@@ -409,7 +416,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "70",
         "2"
       ],
-      "why": "先算客户 C 的总额：30 + 40 = 70。South 只有这一位客户，因此平均每客户销售额为 70 ÷ 1 = 70。35 是平均每笔销售额。"
+      "why": "先算客户 C 的总额：30 + 40 = 70。South 只有这一位客户，因此平均每客户销售额为 70 ÷ 1 = 70。35 是平均每笔销售额。",
+      "hint": "先数 South 有几位客户，再算每位客户的销售总额。"
     },
     "time": {
       "question": "按月比较时，2025 年二月的 {sales: pp} 请求哪个期间的销售额？",
@@ -418,7 +426,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "2024 年 2 月",
         "二月之前所有月份的合计"
       ],
-      "why": "pp 表示上一期。本例按月比较，2025 年二月的上一期是 2025 年一月。{sales: pp} 返回上月销售额；增长率由 pop 计算。"
+      "why": "pp 表示上一期。本例按月比较，2025 年二月的上一期是 2025 年一月。{sales: pp} 返回上月销售额；增长率由 pop 计算。",
+      "hint": "先确定报表按什么时间单位比较，再理解“上一期”。"
     },
     "lookups": {
       "question": "若 TABLE_REGION 有两条 North 记录，执行本例的关联查询时可能出现什么？",
@@ -427,7 +436,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "同一笔 North 销售匹配两次，汇总金额可能变大",
         "结果不受影响，dimension 只是说明文字"
       ],
-      "why": "DIM_REGION 声明 [region] 为源行键，因此每个地区最多应匹配一条记录。两条 North 记录会让每笔 North 销售匹配两次，本例的 North 合计从 30 增至 60，源销售记录本身不变。连接数据库运行 --validate-only 可检出键不唯一，并报告 DIMENSION_NOT_UNIQUE。"
+      "why": "DIM_REGION 声明 [region] 为源行键，因此每个地区最多应匹配一条记录。两条 North 记录会让每笔 North 销售匹配两次，本例的 North 合计从 30 增至 60，源销售记录本身不变。连接数据库运行 --validate-only 可检出键不唯一，并报告 DIMENSION_NOT_UNIQUE。",
+      "hint": "数一数，每笔 North 销售会匹配几条目录记录。"
     },
     "missing": {
       "question": "一月报表用 ISNULL({sales: pp}, 0) 填补缺失值后，什么会改变？",
@@ -436,7 +446,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "两行结果的上期销售额由 NULL 变为 0",
         "可以据此证明十二月实际销售额为零"
       ],
-      "why": "ISNULL 只把缺失的上期销售额替换为 0。一月仍是 North、South 两行结果，不会新增十二月记录，也不能据此判断十二月实际销售额为零。"
+      "why": "ISNULL 只把缺失的上期销售额替换为 0。一月仍是 North、South 两行结果，不会新增十二月记录，也不能据此判断十二月实际销售额为零。",
+      "hint": "区分显示的回退值与真实补入的历史数据。"
     }
   }
 };

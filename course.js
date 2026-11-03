@@ -140,7 +140,7 @@
 		}
 		const hint = document.createElement('button'); hint.type = 'button'; hint.className = 'secondary'; hint.textContent = t('hint');
 		const feedback = document.createElement('div'); feedback.className = 'feedback'; feedback.setAttribute('role','status'); feedback.setAttribute('aria-atomic','true');
-		hint.addEventListener('click',() => { clearFeedback(form,feedback); feedback.dataset.kind = 'hint'; feedback.textContent = t('hintAnswer',{why:i18n.quiz(quiz).why}); updateSubmitNote(); });
+		hint.addEventListener('click',() => { clearFeedback(form,feedback); feedback.dataset.kind = 'hint'; feedback.textContent = t('hintAnswer',{why:i18n.quiz(quiz).hint}); updateSubmitNote(); });
 		form.addEventListener('change',() => { clearFeedback(form,feedback); updateSubmitNote(); });
 		form.addEventListener('reset',() => requestAnimationFrame(updateSubmitNote));
 		form.addEventListener('submit',event => {
@@ -165,7 +165,7 @@
 			const kind = feedback.dataset.kind;
 			if (kind === 'correct') reward(form,feedback,quiz,index);
 			else if (kind === 'choose') feedback.textContent = t('chooseAnswer');
-			else if (kind === 'hint' || kind === 'wrong') feedback.textContent = t(kind === 'hint' ? 'hintAnswer' : 'wrongAnswer',{why:words.why});
+			else if (kind === 'hint' || kind === 'wrong') feedback.textContent = t(kind === 'hint' ? 'hintAnswer' : 'wrongAnswer',{why:kind === 'hint' ? words.hint : words.why});
 		}
 		translateQuiz(); document.addEventListener('course-language-change',translateQuiz);
 	}

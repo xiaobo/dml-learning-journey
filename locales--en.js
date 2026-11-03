@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "Two sales can share a region. That makes <code>region</code> useful for grouping, but insufficient as the source key.",
     "identity.text6": "Find the two North sales. Their region repeats; their IDs differ. A source key must identify each row.",
     "identity.text7": "Four invented sales · TABLE_SALES",
-    "identity.text8": "The source key is [id], even when the report groups by region.",
+    "identity.text8": "Even when the report groups by region, the source key stays [id]. Declaring a key does not remove duplicates; the source data must satisfy it.",
     "model.text1": "02 / DML",
     "model.text2": "Keep the definitions<br>in one notebook.",
     "model.text3": "\"What shall we call the total?\"<br>The traveler wrote: sales.",
@@ -29,7 +29,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "expressions.text3": "The traveler wanted an average sale. The model already had the total and the count.",
     "expressions.text4": "DMX is the expression syntax inside a formula. Braces in <code>{sales}</code> reference the model's measure definition. Its value is calculated for this reference's grouping and filters.",
     "expressions.text5": "<code>average_sale</code> is a composite measure because it reuses measures. For a zero denominator, <code>DIVIDE</code> returns NULL, meaning no value is available.",
-    "expressions.text6": "For North, the same formula gives 30 ÷ 2 = 15. For all four sales, it gives 100 ÷ 4 = 25.",
+    "expressions.text6": "The formula gives 30 ÷ 2 = 15 for North and 100 ÷ 4 = 25 overall. Both regions have two sales here, so averaging their averages happens to agree. For unequal counts, use total sales ÷ total count.",
     "expressions.text7": "The formula, in DMX",
     "expressions.text8": "<strong>sales</strong>Sum the amounts.",
     "expressions.text9": "<strong>cnt</strong>Count the source rows.",
@@ -93,7 +93,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text8": "Stage 2 · region",
     "grain.text9": "<code>d</code> = dimension; <code>+d: customer</code> adds customer to the evaluation dimension for this reference. The outer AVG, SUM or MAX combines customer totals back to the query dimension. The source key and report GROUP BY stay unchanged.",
     "grain.text10": "See the Model Query",
-    "grain.text11": "Compare <a href=\"explanation--dimensions.html\">source, query, and evaluation dimensions</a>: source identity, result grouping, and intermediate calculation.",
+    "grain.text11": "Only customers with sales in the selected period enter this average. Compare <a href=\"explanation--dimensions.html\">source, query and evaluation dimensions</a>: source-row identity, result grouping and intermediate calculation.",
     "time.text1": "09 / Compare periods",
     "time.text2": "Look back one month.",
     "time.text3": "The traveler kept January's pages beside February's.",
@@ -217,7 +217,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "review": "Review your report",
     "reset": "Reset progress",
     "checkChapter": "Submit answer",
-    "hint": "Show explanation",
+    "hint": "Show hint",
     "tryQuestion": "Try it · {question}",
     "chooseAnswer": "Choose an answer first.",
     "hintAnswer": "{why} Choose an answer, then click Submit answer to check it.",
@@ -289,7 +289,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "helpCompleted": "Reuses sales with +f: add the completed status condition to this reference's inputs.",
     "helpWithinShare": "Divides sales by a denominator without region grouping. The selected-region filter still applies to that denominator.",
     "helpAllShare": "Divides sales by a denominator without region grouping or its related filter. The month stays selected.",
-    "helpCustomerAverage": "First sum sales for each customer within each region; then AVG those customer totals back to each region.",
+    "helpCustomerAverage": "First sum sales per customer within each report group, then average those customer totals. Only customers with sales in the selected period enter the average.",
     "helpCustomerSum": "First calculate each customer's total; then SUM those totals for each region.",
     "helpCustomerMax": "First calculate each customer's total; then MAX selects the largest customer total in each region.",
     "helpPrevious": "Reuses sales with pp: request the previous period's value. At month context, that is the previous month.",
@@ -347,7 +347,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[amount]"
       ],
-      "why": "FACT_SALES declares dimension: [id]. region repeats. amount happens to be unique in these four example rows, but it is not the declared key."
+      "why": "FACT_SALES declares dimension: [id]. region repeats. amount happens to be unique in these four example rows, but it is not the declared key.",
+      "hint": "Compare the declared key with fields that happen to be unique in this sample."
     },
     "model": {
       "question": "Which definition is an atomic measure on FACT_SALES?",
@@ -356,7 +357,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales aggregates amount from FACT_SALES without referencing another measure. average_sale is composite because it references sales and cnt. GROUP BY sets the report grouping; it does not define a measure."
+      "why": "sales aggregates amount from FACT_SALES without referencing another measure. average_sale is composite because it references sales and cnt. GROUP BY sets the report grouping; it does not define a measure.",
+      "hint": "Look for an aggregate over source columns with no references to other measures."
     },
     "expressions": {
       "question": "For North, sales is 30 and cnt is 2. What does DIVIDE({sales}, {cnt}) return?",
@@ -365,7 +367,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "30, North's total sales",
         "15, North's average sale amount"
       ],
-      "why": "For North, sales / cnt = 30 / 2 = 15 per sale. The formula uses North's totals, not the totals across both regions."
+      "why": "For North, sales / cnt = 30 / 2 = 15 per sale. The formula uses North's totals, not the totals across both regions.",
+      "hint": "Use the sales and count for North, then divide."
     },
     "grouping": {
       "question": "When the report groups by region, what dimension does FACT_SALES still declare?",
@@ -374,7 +377,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[]"
       ],
-      "why": "GROUP BY region creates one result row per region. FACT_SALES still declares [id] as its source-row key."
+      "why": "GROUP BY region creates one result row per region. FACT_SALES still declares [id] as its source-row key.",
+      "hint": "Keep source-row identity separate from result grouping."
     },
     "compiler": {
       "question": "What does compiling the model and query produce in this exercise?",
@@ -383,7 +387,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Generated SQL to inspect",
         "Proof that every source key is unique"
       ],
-      "why": "Compilation generates SQL; it does not execute the report or check source-key uniqueness. Those checks require a database connection."
+      "why": "Compilation generates SQL; it does not execute the report or check source-key uniqueness. Those checks require a database connection.",
+      "hint": "Separate generating SQL from checking source data and executing the report."
     },
     "filters": {
       "question": "In February, why can North show sales = 30 and completed_sales = 10?",
@@ -392,7 +397,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "The report's WHERE removes the returned sale from every measure",
         "completed_sales changes the dataset key"
       ],
-      "why": "completed_sales applies +f: status = completed to its own inputs, giving 10. sales still includes both North transactions, giving 30. A report-level status filter would affect both measures."
+      "why": "completed_sales applies +f: status = completed to its own inputs, giving 10. sales still includes both North transactions, giving 30. A report-level status filter would affect both measures.",
+      "hint": "Compare a filter inside one measure reference with a report WHERE condition."
     },
     "shares": {
       "question": "For a February report filtered to North, which denominator includes both regions' sales?",
@@ -401,7 +407,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "For this denominator, -df removes region grouping and region-related filters, giving 100. -d keeps the North filter, giving 30. Both keep the February filter."
+      "why": "For this denominator, -df removes region grouping and region-related filters, giving 100. -d keeps the North filter, giving 30. Both keep the February filter.",
+      "hint": "Which modifier removes both region grouping and its related filter?"
     },
     "grain": {
       "question": "South has two sales of 30 and 40, both for customer C. What is South's average sales per customer?",
@@ -410,7 +417,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "70",
         "2"
       ],
-      "why": "Customer C's total is 30 + 40 = 70. South has one customer, so its average per customer is 70. Averaging the two sale amounts would give 35."
+      "why": "Customer C's total is 30 + 40 = 70. South has one customer, so its average per customer is 70. Averaging the two sale amounts would give 35.",
+      "hint": "First count the customers in South, then calculate each customer’s total."
     },
     "time": {
       "question": "For February 2025 in this monthly report, which period does {sales: pp} use?",
@@ -419,7 +427,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "February 2024",
         "All earlier months combined"
       ],
-      "why": "With a monthly time context, pp requests January 2025's sales value. pop calculates the growth rate instead."
+      "why": "With a monthly time context, pp requests January 2025's sales value. pop calculates the growth rate instead.",
+      "hint": "Identify the report’s time unit before interpreting “previous”."
     },
     "lookups": {
       "question": "If TABLE_REGION has two North rows, what can happen when sales are joined to the directory?",
@@ -428,7 +437,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Each North sale can appear twice in the joined result",
         "Nothing; the declared dimension does not affect lookups"
       ],
-      "why": "Each North sale matches two directory rows, so it appears twice in the joined result and can be counted twice. The source sales rows are unchanged. With a database connection, --validate-only reports DIMENSION_NOT_UNIQUE for DIM_REGION."
+      "why": "Each North sale matches two directory rows, so it appears twice in the joined result and can be counted twice. The source sales rows are unchanged. With a database connection, --validate-only reports DIMENSION_NOT_UNIQUE for DIM_REGION.",
+      "hint": "Count how many directory rows each North sale matches."
     },
     "missing": {
       "question": "In the January report, what changes when ISNULL({sales: pp}, 0) replaces {sales: pp}?",
@@ -437,7 +447,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "The previous-sales value shows 0 instead of NULL in each region's row",
         "The source history now proves December sales were zero"
       ],
-      "why": "ISNULL replaces the missing previous-sales value with 0 in each existing January result row. It adds no rows and does not establish that December sales were zero."
+      "why": "ISNULL replaces the missing previous-sales value with 0 in each existing January result row. It adds no rows and does not establish that December sales were zero.",
+      "hint": "Distinguish a fallback display value from new historical data."
     }
   }
 };

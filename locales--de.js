@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "Zwei Verkäufe können dieselbe Region haben. <code>region</code> eignet sich zum Gruppieren, reicht aber als Quellschlüssel nicht aus.",
     "identity.text6": "Finde die beiden North-Verkäufe: gleiche Region, verschiedene IDs. Ein Quellschlüssel muss jede Zeile identifizieren.",
     "identity.text7": "Vier erfundene Verkäufe · TABLE_SALES",
-    "identity.text8": "Der Quellschlüssel bleibt [id], auch wenn der Bericht nach region gruppiert.",
+    "identity.text8": "Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Seine Deklaration entfernt keine Duplikate; die Quelldaten müssen ihn erfüllen.",
     "identity.caption": "Nur Beispieldaten. Es ist keine Datenbank verbunden.",
     "model.text1": "02 / DML",
     "model.text2": "Bewahre die Definitionen<br>in einem Notizbuch auf.",
@@ -30,7 +30,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "expressions.text3": "Der Reisende suchte den durchschnittlichen Verkaufsbetrag. Summe und Anzahl waren schon im Modell vorhanden.",
     "expressions.text4": "DMX ist die Ausdruckssyntax innerhalb einer Formel. Die geschweiften Klammern in <code>{sales}</code> verweisen auf die Kennzahldefinition im Modell. Der Wert ergibt sich aus der Gruppierung und den Filtern dieser Referenz.",
     "expressions.text5": "<code>average_sale</code> ist zusammengesetzt, weil es andere Kennzahlen verwendet. Bei einem Nenner von 0 liefert <code>DIVIDE</code> NULL, also keinen verfügbaren Wert.",
-    "expressions.text6": "Dieselbe Formel ergibt für North 30 ÷ 2 = 15, für alle vier Verkäufe 100 ÷ 4 = 25.",
+    "expressions.text6": "Für North ergibt sich 30 ÷ 2 = 15, insgesamt 100 ÷ 4 = 25. Hier haben beide Regionen je zwei Verkäufe, daher stimmt auch der einfache Mittelwert der Regionsmittelwerte. Bei ungleichen Anzahlen gilt: Gesamtsumme ÷ Gesamtanzahl.",
     "expressions.text7": "Die Formel in DMX",
     "expressions.text8": "<strong>sales</strong>Beträge summieren.",
     "expressions.text9": "<strong>cnt</strong>Quellzeilen zählen.",
@@ -97,7 +97,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "grain.text8": "Stufe 2 · region",
     "grain.text9": "<code>d</code> = dimension; <code>+d: customer</code> ergänzt customer zur Auswertungsdimension dieser Referenz. Das äußere AVG, SUM oder MAX fasst die Kundensummen wieder zur Abfragedimension zusammen. Quellschlüssel und Bericht-GROUP BY bleiben unverändert.",
     "grain.text10": "Model Query ansehen",
-    "grain.text11": "Vergleiche <a href=\"explanation--dimensions.html\">Quell-, Abfrage- und Auswertungsdimension</a>: Quellschlüssel, Ergebnisgruppierung und Zwischenberechnung.",
+    "grain.text11": "In diesen Durchschnitt gehen nur Kunden mit Verkäufen im ausgewählten Zeitraum ein. Vergleiche <a href=\"explanation--dimensions.html\">Quell-, Abfrage- und Auswertungsdimension</a>: Identität der Quellzeilen, Ergebnisgruppierung und Zwischenberechnung.",
     "time.text1": "09 / Zeiträume vergleichen",
     "time.text2": "Einen Monat zurückblicken.",
     "time.text3": "Der Reisende legte die Januarseiten neben den Februar.",
@@ -217,7 +217,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "review": "Deinen Bericht ansehen",
     "reset": "Fortschritt zurücksetzen",
     "checkChapter": "Antwort abgeben",
-    "hint": "Erklärung anzeigen",
+    "hint": "Hinweis anzeigen",
     "tryQuestion": "Probiere es · {question}",
     "chooseAnswer": "Wähle zuerst eine Antwort.",
     "hintAnswer": "{why} Wähle eine Antwort und klicke auf „Antwort abgeben“, um sie prüfen zu lassen.",
@@ -289,7 +289,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "helpCompleted": "Verwendet sales erneut und ergänzt mit +f die Statusbedingung completed für diese Referenz.",
     "helpWithinShare": "Teilt sales durch einen Nenner ohne region-Gruppierung. Der Filter für ausgewählte Regionen bleibt im Nenner aktiv.",
     "helpAllShare": "Teilt sales durch einen Nenner ohne region-Gruppierung und zugehörigen Filter. Der Monatsfilter bleibt erhalten.",
-    "helpCustomerAverage": "Summiert Verkäufe je Region und Kunde und bildet mit AVG daraus den Durchschnitt je Region.",
+    "helpCustomerAverage": "Zuerst den Umsatz je Kunde innerhalb jeder Berichtsgruppe summieren, dann diese Kundensummen mitteln. Es zählen nur Kunden mit Verkäufen im ausgewählten Zeitraum.",
     "helpCustomerSum": "Berechnet zunächst Kundensummen und summiert sie mit SUM je Region.",
     "helpCustomerMax": "Berechnet zunächst Kundensummen und wählt mit MAX die größte je Region.",
     "helpPrevious": "Verwendet sales mit pp für den Vorperiodenwert. Im Monatskontext ist das der Vormonat.",
@@ -347,7 +347,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[amount]"
       ],
-      "why": "dimension: [id] legt den Quellschlüssel fest. region kommt mehrfach vor. amount ist in diesen vier Zeilen zwar eindeutig, wurde aber nicht als Schlüssel deklariert."
+      "why": "dimension: [id] legt den Quellschlüssel fest. region kommt mehrfach vor. amount ist in diesen vier Zeilen zwar eindeutig, wurde aber nicht als Schlüssel deklariert.",
+      "hint": "Unterscheide den deklarierten Schlüssel von Feldern, die im Beispiel zufällig eindeutig sind."
     },
     "model": {
       "question": "Welche Definition ist eine atomare Kennzahl des Datasets FACT_SALES?",
@@ -356,7 +357,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "average_sale: DIVIDE({sales}, {cnt})",
         "GROUP BY region"
       ],
-      "why": "sales gehört zu FACT_SALES und summiert amount, ohne andere Kennzahlen zu verwenden. average_sale verwendet sales und cnt und ist deshalb zusammengesetzt. GROUP BY ist eine Abfragegruppierung, keine Kennzahl."
+      "why": "sales gehört zu FACT_SALES und summiert amount, ohne andere Kennzahlen zu verwenden. average_sale verwendet sales und cnt und ist deshalb zusammengesetzt. GROUP BY ist eine Abfragegruppierung, keine Kennzahl.",
+      "hint": "Suche eine Aggregation über Quellspalten ohne Verweise auf andere Kennzahlen."
     },
     "expressions": {
       "question": "Für North gilt sales = 30 und cnt = 2. Was ergibt DIVIDE({sales}, {cnt})?",
@@ -365,7 +367,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "30, der Gesamtbetrag für North",
         "15, der durchschnittliche Verkaufsbetrag für North"
       ],
-      "why": "Für North teilt die Formel den Umsatz 30 durch die Anzahl 2: Das ergibt 15 je Verkauf. Der Durchschnitt über alle vier Verkäufe wäre 100 / 4 = 25."
+      "why": "Für North teilt die Formel den Umsatz 30 durch die Anzahl 2: Das ergibt 15 je Verkauf. Der Durchschnitt über alle vier Verkäufe wäre 100 / 4 = 25.",
+      "hint": "Verwende Umsatz und Anzahl für North und teile dann."
     },
     "grouping": {
       "question": "Die Abfrage gruppiert nach region. Welche Quelldimension bleibt in FACT_SALES deklariert?",
@@ -374,7 +377,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "[id]",
         "[]"
       ],
-      "why": "GROUP BY region erzeugt eine Ergebniszeile je Region. Der Quellschlüssel bleibt dimension: [id]; er identifiziert weiterhin die einzelnen Verkaufszeilen."
+      "why": "GROUP BY region erzeugt eine Ergebniszeile je Region. Der Quellschlüssel bleibt dimension: [id]; er identifiziert weiterhin die einzelnen Verkaufszeilen.",
+      "hint": "Trenne die Identität einer Quellzeile von der Gruppierung des Ergebnisses."
     },
     "compiler": {
       "question": "Was liefert eine erfolgreiche Kompilierung in dieser Übung?",
@@ -383,7 +387,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Generiertes SQL zur Prüfung",
         "Den Nachweis, dass die deklarierten Schlüssel in den Quelldaten eindeutig sind"
       ],
-      "why": "Der Compiler erzeugt SQL, ohne die Datenbankabfrage auszuführen. Die Schlüssel in den Quelldaten prüfst du mit --validate-only und einer Datenbankverbindung; die Ergebniswerte musst du anschließend gesondert vergleichen."
+      "why": "Der Compiler erzeugt SQL, ohne die Datenbankabfrage auszuführen. Die Schlüssel in den Quelldaten prüfst du mit --validate-only und einer Datenbankverbindung; die Ergebniswerte musst du anschließend gesondert vergleichen.",
+      "hint": "Unterscheide SQL-Erzeugung, Prüfung der Quelldaten und Ausführung des Berichts."
     },
     "filters": {
       "question": "Warum hat North im Februar sales = 30, aber completed_sales = 10?",
@@ -392,7 +397,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Ein WHERE-Filter der Abfrage schließt den Verkauf mit Status returned für alle Kennzahlen aus",
         "completed_sales ändert den Quellschlüssel des Datasets"
       ],
-      "why": "completed_sales verwendet sales mit dem zusätzlichen Filter status = completed: So bleibt der Betrag 10. sales summiert weiterhin 10 + 20 = 30. Ein status-Filter im WHERE der Abfrage würde auch sales einschränken."
+      "why": "completed_sales verwendet sales mit dem zusätzlichen Filter status = completed: So bleibt der Betrag 10. sales summiert weiterhin 10 + 20 = 30. Ein status-Filter im WHERE der Abfrage würde auch sales einschränken.",
+      "hint": "Vergleiche einen Filter innerhalb eines Kennzahlverweises mit einer WHERE-Bedingung des Berichts."
     },
     "shares": {
       "question": "Der Bericht zeigt nur North im Februar. Welcher Nenner berechnet trotzdem den Februarumsatz aller Regionen?",
@@ -401,7 +407,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "{sales: {-df: region}}",
         "{sales}"
       ],
-      "why": "-df entfernt für diesen Nenner die Gruppierung nach region und die zugehörigen Regionsfilter: Er beträgt 100. -d behält die Regionsfilter und ergibt hier 30. Der Februarfilter, der Quellschlüssel und das GROUP BY des Berichts bleiben unverändert."
+      "why": "-df entfernt für diesen Nenner die Gruppierung nach region und die zugehörigen Regionsfilter: Er beträgt 100. -d behält die Regionsfilter und ergibt hier 30. Der Februarfilter, der Quellschlüssel und das GROUP BY des Berichts bleiben unverändert.",
+      "hint": "Welche Modifikation entfernt sowohl die Regionsgruppierung als auch den zugehörigen Filter?"
     },
     "grain": {
       "question": "In South entfallen beide Februarverkäufe (30 und 40) auf Kunde C. Wie hoch ist der durchschnittliche Umsatz je Kunde?",
@@ -410,7 +417,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "70",
         "2"
       ],
-      "why": "Zuerst den Umsatz je Kunde summieren: C = 30 + 40 = 70. Es gibt hier nur diesen einen Kunden, also beträgt auch der Kundendurchschnitt 70. 35 wäre der Durchschnitt je Verkauf."
+      "why": "Zuerst den Umsatz je Kunde summieren: C = 30 + 40 = 70. Es gibt hier nur diesen einen Kunden, also beträgt auch der Kundendurchschnitt 70. 35 wäre der Durchschnitt je Verkauf.",
+      "hint": "Zähle zuerst die Kunden in South und berechne dann den Umsatz je Kunde."
     },
     "time": {
       "question": "Der Bericht vergleicht Monate und zeigt Februar 2025. Für welchen Monat liefert {sales: pp} den Umsatz?",
@@ -419,7 +427,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Februar 2024",
         "Alle früheren Monate zusammen"
       ],
-      "why": "pp bedeutet previous period: Bei Monatsvergleichen ist die Vorperiode von Februar 2025 der Januar 2025. {sales: pp} liefert dessen Umsatz; {sales: pop} liefert die Wachstumsrate."
+      "why": "pp bedeutet previous period: Bei Monatsvergleichen ist die Vorperiode von Februar 2025 der Januar 2025. {sales: pp} liefert dessen Umsatz; {sales: pop} liefert die Wachstumsrate.",
+      "hint": "Bestimme die Zeiteinheit des Berichts, bevor du „Vorperiode“ deutest."
     },
     "lookups": {
       "question": "TABLE_REGION enthält zwei Zeilen mit region = North. Was kann dadurch beim Lookup passieren?",
@@ -428,7 +437,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "North-Verkäufe können im verbundenen Ergebnis mehrfach erscheinen",
         "Nichts, denn die Deklaration dimension hat keine Auswirkung auf die Berechnung"
       ],
-      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate-only den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE."
+      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate-only den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE.",
+      "hint": "Zähle, wie viele Verzeichniszeilen zu jedem Verkauf in North passen."
     },
     "missing": {
       "question": "Im Januarbericht ersetzt ISNULL({sales: pp}, 0) fehlende Vormonatswerte. Was ändert sich in der Anzeige?",
@@ -437,7 +447,8 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "In den beiden vorhandenen Regionszeilen steht beim Vormonatswert 0 statt NULL",
         "Die Quelldaten belegen jetzt, dass der Dezemberumsatz 0 war"
       ],
-      "why": "Nur der fehlende Vormonatswert wird durch 0 ersetzt. Die zwei Januarzeilen und ihre Januarumsätze bleiben erhalten. Es entstehen keine Dezemberzeilen, und es ist damit nicht belegt, dass der tatsächliche Dezemberumsatz 0 war."
+      "why": "Nur der fehlende Vormonatswert wird durch 0 ersetzt. Die zwei Januarzeilen und ihre Januarumsätze bleiben erhalten. Es entstehen keine Dezemberzeilen, und es ist damit nicht belegt, dass der tatsächliche Dezemberumsatz 0 war.",
+      "hint": "Unterscheide einen Ersatzwert in der Anzeige von zusätzlichen historischen Daten."
     }
   }
 };

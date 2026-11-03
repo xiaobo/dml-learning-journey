@@ -155,7 +155,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">仅为示例数据，未连接数据库。</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">即使报表按 region 分组，源键仍是 [id]。</p>
+				<p class="identity-note" data-i18n="identity.text8">即使报表按 region 分组，源键仍是 [id]。声明键不会自动去重，源数据必须满足它。</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -184,7 +184,7 @@
 				<p data-i18n="expressions.text3">旅人想知道平均每笔销售额。模型里已经有了总额和笔数。</p>
 				<p data-i18n="expressions.text4">DMX 是公式中的表达式语法。<code>{sales}</code> 的花括号表示引用模型中的度量定义；它的值按这次引用的分组和筛选计算。</p>
 				<p data-i18n="expressions.text5"><code>average_sale</code> 复用其他度量，因此是复合度量。分母为零时，<code>DIVIDE</code> 返回 NULL，表示没有可用数值。</p>
-				<p class="small" data-i18n="expressions.text6">同一公式在 North 中得到 30 ÷ 2 = 15；在全部四笔销售中得到 100 ÷ 4 = 25。</p>
+				<p class="small" data-i18n="expressions.text6">North 为 30 ÷ 2 = 15，全部销售为 100 ÷ 4 = 25。本例两地各有两笔销售，地区平均值的简单平均恰好相同；笔数不等时，要用总额除以总笔数重算。</p>
 			</div>
 			<div>
 				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">用 DMX 写出的公式</div><code>DIVIDE({sales}, {cnt})</code></div>
@@ -252,7 +252,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 			<p class="lesson-start" data-i18n="grain.text3">South 的两笔二月销售都属于客户 C。平均每笔为 35，唯一客户的总额为 70。尝试 <strong>SUM</strong> 和 <strong>MAX</strong>：North 分别变为 30 和 20，South 仍为 70。检查答案前回到 <strong>AVG</strong>。</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">外层聚合</span><select id="grain-operation" aria-label="外层聚合" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · 平均每客户销售额</option><option value="SUM" data-i18n="grain.text5">SUM · 客户销售额合计</option><option value="MAX" data-i18n="grain.text6">MAX · 最大客户销售额</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · 度量定义</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">第 1 步 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">第 2 步 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
-			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（维度）；<code>+d: customer</code> 为这次引用的求值维度增加 customer。外层 AVG、SUM 或 MAX 再把客户总额汇总回查询维度。源行键和报表 GROUP BY 不变。</p><details><summary data-i18n="grain.text10">查看 Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">对照<a href="explanation--dimensions.html">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（维度）；<code>+d: customer</code> 为这次引用的求值维度增加 customer。外层 AVG、SUM 或 MAX 再把客户总额汇总回查询维度。源行键和报表 GROUP BY 不变。</p><details><summary data-i18n="grain.text10">查看 Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">此处只纳入所选期间有销售的客户。对照<a href="explanation--dimensions.html">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
 		</section>
 		<section class="chapter full" id="time" aria-labelledby="time-title">
 			<span class="chapter-no" data-i18n="time.text1">09 / 比较期间</span><h2 id="time-title" data-i18n="time.text2">回望上一个月。</h2>
@@ -318,10 +318,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">带上这些符号 · 随手速查</summary><p data-i18n="recall.intro">读引用时，先看“哪个度量”，再看“这一次怎么算”。这些是记忆提示，不是额外语法或算术运算。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">符号</th><th data-i18n="recall.meaning">回想它的含义</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。</p><p class="small" data-i18n="syntax.reference">需要更多形式时，查阅<a href="reference--modifiers.html">修饰符规则与示例</a>。</p></details>
 		<footer><p data-i18n="common.text7">DML 定义，DMX 表达，Model Query 选择并分组。</p><p data-i18n="common.text8"><a href="compiler-observations.json">编译器记录</a> · <a href="explanation--visual-introduction.html">原文字版介绍</a> · 可离线使用</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=ff69134b9f"></script>
-	<script src="locales--zh.js?v=3119955a84"></script>
-	<script src="locales--ja.js?v=5e6c62ee91"></script>
-	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="locales--en.js?v=48e14b7d59"></script>
+	<script src="locales--zh.js?v=c20ff4d6d1"></script>
+	<script src="locales--ja.js?v=d06b8acd75"></script>
+	<script src="locales--de.js?v=3f58c01b78"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {
@@ -377,7 +377,7 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 	<script src="course-definitions.js?v=1907b3c643"></script>
 	<script src="compiler-observations.js?v=9584a66e1d"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=3b675d296b"></script>
+	<script src="course.js?v=7ded72104c"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

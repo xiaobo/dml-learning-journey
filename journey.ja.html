@@ -155,7 +155,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">説明用のデータです。データベースには接続していません。</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">レポートを region でグループ化しても、元データのキーは [id] のままです。</p>
+				<p class="identity-note" data-i18n="identity.text8">レポートを region でグループ化しても、元のキーは [id] のままです。キーの宣言は重複を除去しません。元データが一意性を満たす必要があります。</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -184,7 +184,7 @@
 				<p data-i18n="expressions.text3">旅人は 1 件あたりの平均売上を知りたくなりました。モデルには、すでに合計と件数があります。</p>
 				<p data-i18n="expressions.text4">DMX は数式内の式の構文です。<code>{sales}</code> の波括弧はモデルのメジャー定義を参照し、その値はこの参照のグループ化とフィルターで計算されます。</p>
 				<p data-i18n="expressions.text5"><code>average_sale</code> は他のメジャーを再利用する複合メジャーです。分母がゼロの場合、<code>DIVIDE</code> は値がないことを示す NULL を返します。</p>
-				<p class="small" data-i18n="expressions.text6">同じ式でも、North では 30 ÷ 2 = 15、全 4 件では 100 ÷ 4 = 25 になります。</p>
+				<p class="small" data-i18n="expressions.text6">North は 30 ÷ 2 = 15、全体は 100 ÷ 4 = 25 です。この例は両地域とも2件なので、地域別平均の単純平均も偶然一致します。件数が異なる場合は合計額を合計件数で割り直します。</p>
 			</div>
 			<div>
 				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">DMX で書いた式</div><code>DIVIDE({sales}, {cnt})</code></div>
@@ -252,7 +252,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 			<p class="lesson-start" data-i18n="grain.text3">South の 2 月の 2 件は、どちらも顧客 C の売上です。明細平均は 35、顧客の合計は 70。<strong>SUM</strong>、<strong>MAX</strong> を試すと North は 30、20 に変わり、South は 70 のままです。回答前に <strong>AVG</strong> に戻しましょう。</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">外側の集計</span><select id="grain-operation" aria-label="外側の集計" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · 顧客あたりの平均売上</option><option value="SUM" data-i18n="grain.text5">SUM · 顧客売上の合計</option><option value="MAX" data-i18n="grain.text6">MAX · 最大の顧客売上</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · メジャー定義</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">段階 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">段階 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
-			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（次元）。<code>+d: customer</code> はこの参照の評価次元に customer を追加します。外側の AVG・SUM・MAX で顧客別合計をクエリ次元に戻します。ソースキーと GROUP BY は変わりません。</p><details><summary data-i18n="grain.text10">Model Query を見る</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11"><a href="explanation--dimensions.html">ソース次元・クエリ次元・評価次元</a>を比較します。それぞれ元の行の識別、結果のグループ化、中間計算を担います。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（次元）。<code>+d: customer</code> はこの参照の評価次元に customer を追加します。外側の AVG・SUM・MAX で顧客別合計をクエリ次元に戻します。ソースキーと GROUP BY は変わりません。</p><details><summary data-i18n="grain.text10">Model Query を見る</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">この平均の対象は、選択した期間に売上がある顧客だけです。<a href="explanation--dimensions.html">元・クエリ・評価のディメンション</a>を比較しましょう。それぞれ元の行の識別、結果のグループ化、中間計算を担います。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
 		</section>
 		<section class="chapter full" id="time" aria-labelledby="time-title">
 			<span class="chapter-no" data-i18n="time.text1">09 / 期間を比べる</span><h2 id="time-title" data-i18n="time.text2">ひと月前を振り返ろう。</h2>
@@ -318,10 +318,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">手元に置きたい記号 · 早見表</summary><p data-i18n="recall.intro">参照は「どのメジャーか」、次に「今回はどう計算するか」と読みます。記憶の手がかりであり、追加構文や算術演算ではありません。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">記号</th><th data-i18n="recall.meaning">意味を振り返る</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。</p><p class="small" data-i18n="syntax.reference">他の形式は<a href="reference--modifiers.html">修飾子の規則と例</a>を参照してください。</p></details>
 		<footer><p data-i18n="common.text7">DML で定義し、DMX で式を書き、Model Query で選択とグループ化を行います。</p><p data-i18n="common.text8"><a href="compiler-observations.json">コンパイラーの記録</a> · <a href="explanation--visual-introduction.html">元のテキスト版</a> · オフライン対応</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=ff69134b9f"></script>
-	<script src="locales--zh.js?v=3119955a84"></script>
-	<script src="locales--ja.js?v=5e6c62ee91"></script>
-	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="locales--en.js?v=48e14b7d59"></script>
+	<script src="locales--zh.js?v=c20ff4d6d1"></script>
+	<script src="locales--ja.js?v=d06b8acd75"></script>
+	<script src="locales--de.js?v=3f58c01b78"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {
@@ -377,7 +377,7 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 	<script src="course-definitions.js?v=1907b3c643"></script>
 	<script src="compiler-observations.js?v=9584a66e1d"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=3b675d296b"></script>
+	<script src="course.js?v=7ded72104c"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

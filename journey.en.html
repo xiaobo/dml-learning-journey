@@ -155,7 +155,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">Illustrative data only. No database is connected.</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">The source key is [id], even when the report groups by region.</p>
+				<p class="identity-note" data-i18n="identity.text8">Even when the report groups by region, the source key stays [id]. Declaring a key does not remove duplicates; the source data must satisfy it.</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -184,7 +184,7 @@
 				<p data-i18n="expressions.text3">The traveler wanted an average sale. The model already had the total and the count.</p>
 				<p data-i18n="expressions.text4">DMX is the expression syntax inside a formula. Braces in <code>{sales}</code> reference the model's measure definition. Its value is calculated for this reference's grouping and filters.</p>
 				<p data-i18n="expressions.text5"><code>average_sale</code> is a composite measure because it reuses measures. For a zero denominator, <code>DIVIDE</code> returns NULL, meaning no value is available.</p>
-				<p class="small" data-i18n="expressions.text6">For North, the same formula gives 30 ÷ 2 = 15. For all four sales, it gives 100 ÷ 4 = 25.</p>
+				<p class="small" data-i18n="expressions.text6">The formula gives 30 ÷ 2 = 15 for North and 100 ÷ 4 = 25 overall. Both regions have two sales here, so averaging their averages happens to agree. For unequal counts, use total sales ÷ total count.</p>
 			</div>
 			<div>
 				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">The formula, in DMX</div><code>DIVIDE({sales}, {cnt})</code></div>
@@ -252,7 +252,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 			<p class="lesson-start" data-i18n="grain.text3">South's two February sales both belong to customer C. Its average transaction is 35; its one customer's total is 70. Try <strong>SUM</strong>, then <strong>MAX</strong>. North changes to 30, then 20. South stays at 70. Return to <strong>AVG</strong> before checking your answer.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">Outer aggregate</span><select id="grain-operation" aria-label="Outer aggregate" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · average customer sales</option><option value="SUM" data-i18n="grain.text5">SUM · total customer sales</option><option value="MAX" data-i18n="grain.text6">MAX · largest customer total</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · measure definition</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">Stage 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">Stage 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
-			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> adds customer to the evaluation dimension for this reference. The outer AVG, SUM or MAX combines customer totals back to the query dimension. The source key and report GROUP BY stay unchanged.</p><details><summary data-i18n="grain.text10">See the Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Compare <a href="explanation--dimensions.html">source, query, and evaluation dimensions</a>: source identity, result grouping, and intermediate calculation.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> adds customer to the evaluation dimension for this reference. The outer AVG, SUM or MAX combines customer totals back to the query dimension. The source key and report GROUP BY stay unchanged.</p><details><summary data-i18n="grain.text10">See the Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Only customers with sales in the selected period enter this average. Compare <a href="explanation--dimensions.html">source, query and evaluation dimensions</a>: source-row identity, result grouping and intermediate calculation.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
 		</section>
 		<section class="chapter full" id="time" aria-labelledby="time-title">
 			<span class="chapter-no" data-i18n="time.text1">09 / Compare periods</span><h2 id="time-title" data-i18n="time.text2">Look back one month.</h2>
@@ -318,10 +318,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Keep these symbols close · quick reference</summary><p data-i18n="recall.intro">Read a reference as: measure, then how to calculate it this time. These are memory cues, not extra syntax or arithmetic.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Symbol</th><th data-i18n="recall.meaning">Recall its meaning</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.</p><p class="small" data-i18n="syntax.reference">See <a href="reference--modifiers.html">modifier rules and examples</a> when you need more forms.</p></details>
 		<footer><p data-i18n="common.text7">DML defines. DMX expresses. Model Query selects and groups.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compiler observations</a> · <a href="explanation--visual-introduction.html">Original text introduction</a> · Works offline</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=ff69134b9f"></script>
-	<script src="locales--zh.js?v=3119955a84"></script>
-	<script src="locales--ja.js?v=5e6c62ee91"></script>
-	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="locales--en.js?v=48e14b7d59"></script>
+	<script src="locales--zh.js?v=c20ff4d6d1"></script>
+	<script src="locales--ja.js?v=d06b8acd75"></script>
+	<script src="locales--de.js?v=3f58c01b78"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {
@@ -377,7 +377,7 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 	<script src="course-definitions.js?v=1907b3c643"></script>
 	<script src="compiler-observations.js?v=9584a66e1d"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=3b675d296b"></script>
+	<script src="course.js?v=7ded72104c"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

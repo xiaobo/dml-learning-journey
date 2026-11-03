@@ -155,7 +155,7 @@
 				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">Nur Beispieldaten. Es ist keine Datenbank verbunden.</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
 					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
 				</tbody></table>
-				<p class="identity-note" data-i18n="identity.text8">Der Quellschlüssel bleibt [id], auch wenn der Bericht nach region gruppiert.</p>
+				<p class="identity-note" data-i18n="identity.text8">Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Seine Deklaration entfernt keine Duplikate; die Quelldaten müssen ihn erfüllen.</p>
 			</div>
 		</section>
 		<section class="chapter" id="model" aria-labelledby="model-title">
@@ -184,7 +184,7 @@
 				<p data-i18n="expressions.text3">Der Reisende suchte den durchschnittlichen Verkaufsbetrag. Summe und Anzahl waren schon im Modell vorhanden.</p>
 				<p data-i18n="expressions.text4">DMX ist die Ausdruckssyntax innerhalb einer Formel. Die geschweiften Klammern in <code>{sales}</code> verweisen auf die Kennzahldefinition im Modell. Der Wert ergibt sich aus der Gruppierung und den Filtern dieser Referenz.</p>
 				<p data-i18n="expressions.text5"><code>average_sale</code> ist zusammengesetzt, weil es andere Kennzahlen verwendet. Bei einem Nenner von 0 liefert <code>DIVIDE</code> NULL, also keinen verfügbaren Wert.</p>
-				<p class="small" data-i18n="expressions.text6">Dieselbe Formel ergibt für North 30 ÷ 2 = 15, für alle vier Verkäufe 100 ÷ 4 = 25.</p>
+				<p class="small" data-i18n="expressions.text6">Für North ergibt sich 30 ÷ 2 = 15, insgesamt 100 ÷ 4 = 25. Hier haben beide Regionen je zwei Verkäufe, daher stimmt auch der einfache Mittelwert der Regionsmittelwerte. Bei ungleichen Anzahlen gilt: Gesamtsumme ÷ Gesamtanzahl.</p>
 			</div>
 			<div>
 				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">Die Formel in DMX</div><code>DIVIDE({sales}, {cnt})</code></div>
@@ -252,7 +252,7 @@ GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="
 			<p class="lesson-start" data-i18n="grain.text3">Beide Februarverkäufe von South gehören Kunde C. Der Durchschnitt je Verkauf ist 35, die Summe dieses einen Kunden 70. Probiere <strong>SUM</strong> und <strong>MAX</strong>: North wird 30 bzw. 20, South bleibt 70. Kehre vor der Antwort zu <strong>AVG</strong> zurück.</p>
 			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">Äußere Aggregation</span><select id="grain-operation" aria-label="Äußere Aggregation" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · Durchschnitt je Kunde</option><option value="SUM" data-i18n="grain.text5">SUM · Gesamter Kundenumsatz</option><option value="MAX" data-i18n="grain.text6">MAX · Höchster Kundenumsatz</option></select></label></div>
 			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · Kennzahldefinition</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">Stufe 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">Stufe 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
-			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> ergänzt customer zur Auswertungsdimension dieser Referenz. Das äußere AVG, SUM oder MAX fasst die Kundensummen wieder zur Abfragedimension zusammen. Quellschlüssel und Bericht-GROUP BY bleiben unverändert.</p><details><summary data-i18n="grain.text10">Model Query ansehen</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Vergleiche <a href="explanation--dimensions.html">Quell-, Abfrage- und Auswertungsdimension</a>: Quellschlüssel, Ergebnisgruppierung und Zwischenberechnung.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> ergänzt customer zur Auswertungsdimension dieser Referenz. Das äußere AVG, SUM oder MAX fasst die Kundensummen wieder zur Abfragedimension zusammen. Quellschlüssel und Bericht-GROUP BY bleiben unverändert.</p><details><summary data-i18n="grain.text10">Model Query ansehen</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">In diesen Durchschnitt gehen nur Kunden mit Verkäufen im ausgewählten Zeitraum ein. Vergleiche <a href="explanation--dimensions.html">Quell-, Abfrage- und Auswertungsdimension</a>: Identität der Quellzeilen, Ergebnisgruppierung und Zwischenberechnung.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
 		</section>
 		<section class="chapter full" id="time" aria-labelledby="time-title">
 			<span class="chapter-no" data-i18n="time.text1">09 / Zeiträume vergleichen</span><h2 id="time-title" data-i18n="time.text2">Einen Monat zurückblicken.</h2>
@@ -318,10 +318,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Diese Zeichen helfen weiter · Kurzreferenz</summary><p data-i18n="recall.intro">Lies zuerst den Kennzahlnamen, dann die Berechnungseinstellung dieser Referenz. Dies sind Merkhilfen, keine zusätzliche Syntax oder Rechenoperationen.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Zeichen</th><th data-i18n="recall.meaning">Bedeutung auffrischen</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Quelldimension <code>dimension: [id]</code>: Quellzeilen identifizieren. Abfragedimension <code>GROUP BY region</code>: Ergebniszeilen gruppieren. Auswertungsdimension mit <code>+d: customer</code>: Kundensummen als Zwischenwerte berechnen.</p><p class="small" data-i18n="syntax.reference">Weitere Formen stehen unter <a href="reference--modifiers.html">Modifikatorregeln und Beispiele</a>.</p></details>
 		<footer><p data-i18n="common.text7">DML definiert. DMX drückt aus. Model Query wählt und gruppiert.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compileraufzeichnungen</a> · <a href="explanation--visual-introduction.html">Ursprüngliche Textfassung</a> · Offline nutzbar</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=ff69134b9f"></script>
-	<script src="locales--zh.js?v=3119955a84"></script>
-	<script src="locales--ja.js?v=5e6c62ee91"></script>
-	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="locales--en.js?v=48e14b7d59"></script>
+	<script src="locales--zh.js?v=c20ff4d6d1"></script>
+	<script src="locales--ja.js?v=d06b8acd75"></script>
+	<script src="locales--de.js?v=3f58c01b78"></script>
 	<script src="course-i18n.js?v=9435bb1a01"></script>
 	<script>
 		(() => {
@@ -377,7 +377,7 @@ dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --o
 	<script src="course-definitions.js?v=1907b3c643"></script>
 	<script src="compiler-observations.js?v=9584a66e1d"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=3b675d296b"></script>
+	<script src="course.js?v=7ded72104c"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 
