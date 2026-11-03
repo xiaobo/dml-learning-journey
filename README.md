@@ -6,6 +6,6 @@ Open `index.html` for the overview, `journey.html` for the tutorial, and `docs.h
 
 The linked documentation is included as HTML. The downloadable lesson project retains its DML, SQL, CSV and compiler evidence. Compiler executables and unrelated workspace files are excluded.
 
-Source revision: `01522347861d1d4150bc7e8b9cfe626a83569e8c`.
+Source revision: `6bcdae44a13f1bb8e5e0d4d363cb490724464161`.
 
 Tutorial compiler SHA-256: `44f2fe9a38d2a5b74ce86672b294db894cc5e109220f3bc99629bc1a37c928fa`. The compiler record states which checks were performed.

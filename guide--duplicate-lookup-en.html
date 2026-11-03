@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Why duplicate dimension keys can double sales after a lookup · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="When one fact row matches two dimension rows, a join can return that fact row twice. Summing the joined amounts then counts both matches. A lookup is safe only when the declared target key matches the actual da"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Why duplicate dimension keys can double sales after a lookup · DML"><meta property="og:description" content="When one fact row matches two dimension rows, a join can return that fact row twice. Summing the joined amounts then counts both matches. A lookup is safe only when the declared target key matches the actual da"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.en.html">DML</a><a href="journey.en.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="why-duplicate-dimension-keys-can-double-sales-after-a-lookup">Why duplicate dimension keys can double sales after a lookup</h1>
+<p>When one fact row matches two dimension rows, a join can return that fact row twice. Summing the joined amounts then counts both matches. A lookup is safe only when the declared target key matches the actual data&#39;s uniqueness.</p>
+<h2 id="one-region-two-matches">One region, two matches</h2>
+<p>The lesson has two North sales: 10 and 20. With one North directory entry, the matched sales total is 30. Add a second North entry and each sale matches twice:</p>
+<table>
+<thead>
+<tr>
+<th>Source sale</th>
+<th align="right">Matches</th>
+<th align="right">Contribution after join</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North, amount 10</td>
+<td align="right">2</td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>North, amount 20</td>
+<td align="right">2</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>Total</td>
+<td align="right">4 joined rows</td>
+<td align="right">60</td>
+</tr>
+</tbody></table>
+<p>The source sales have not changed. The join result has more rows. A later aggregation can hide the extra rows while retaining the inflated amount.</p>
+<h2 id="inspect-the-rows">Inspect the rows</h2>
+<p><a href="journey.en.html#lookups">Open the lookup exercise</a> and enable the invalid duplicate North entry. Compare the directory, matched rows and North total. The logical dataset DIM_REGION declares dimension: [region]; its physical source is TABLE_REGION. Repeated North values violate that source-key declaration.</p>
+<h2 id="validate-the-real-connection">Validate the real connection</h2>
+<p>A normal compile does not read the physical rows. With the lesson tables on a database connection, dmlc --validate-only checks the full declared dimensions of reached datasets. The invalid DIM_REGION key is expected to produce DIMENSION_NOT_UNIQUE. <a href="journey.en.html#lookups">Use the exercise&#39;s exact command and query</a>, then correct the key declaration or data and validate again.</p>
+<p>Do not assume DISTINCT repairs the business meaning, or that declaring a key deduplicates the table. A legitimate one-to-many relationship needs an explicitly designed calculation.</p>
+<p>The browser toggle affects only invented browser data. Validation probes source keys and query planning; it is not a comparison of executed report results. See <a href="reference--troubleshooting--grain-and-joins.html">grain and joins</a>.</p>
+<p><a href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.zip">Download the lesson project</a></p>
+</main></body></html>

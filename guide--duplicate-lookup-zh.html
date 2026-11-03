@@ -1,0 +1,37 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>维表重复为什么会让销售额翻倍？ · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="一条事实记录如果匹配到两条维表记录，关联结果就可能出现两次。再对关联后的金额求和，会把两次匹配都计入。查找是否安全，取决于目标数据是否真的满足声明的键唯一性。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="维表重复为什么会让销售额翻倍？ · DML"><meta property="og:description" content="一条事实记录如果匹配到两条维表记录，关联结果就可能出现两次。再对关联后的金额求和，会把两次匹配都计入。查找是否安全，取决于目标数据是否真的满足声明的键唯一性。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="journey.zh.html">互动教程</a><a href="docs.html">核心文档（英文）</a></header><main><h1 id="维表重复为什么会让销售额翻倍">维表重复为什么会让销售额翻倍？</h1>
+<p>一条事实记录如果匹配到两条维表记录，关联结果就可能出现两次。再对关联后的金额求和，会把两次匹配都计入。查找是否安全，取决于目标数据是否真的满足声明的键唯一性。</p>
+<h2 id="一个地区两次匹配">一个地区，两次匹配</h2>
+<p>课程中 North 有两笔销售，金额分别为 10 和 20。地区目录只有一条 North 时，合计为 30；增加第二条 North 后，每笔销售都会匹配两次：</p>
+<table>
+<thead>
+<tr>
+<th>源销售记录</th>
+<th align="right">匹配次数</th>
+<th align="right">关联后计入的金额</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North，金额 10</td>
+<td align="right">2</td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>North，金额 20</td>
+<td align="right">2</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>合计</td>
+<td align="right">4 条关联结果</td>
+<td align="right">60</td>
+</tr>
+</tbody></table>
+<p>源销售记录并未改变，变多的是关联结果。后续聚合可能隐藏重复的明细行，却仍保留被放大的金额。</p>
+<h2 id="先看明细发生了什么">先看明细发生了什么</h2>
+<p>打开<a href="journey.zh.html#lookups">属性查找练习</a>，启用无效的第二条 North 目录记录，比较目录、匹配结果和 North 合计。逻辑数据集 DIM_REGION 声明 dimension: [region]，对应物理表 TABLE_REGION。North 重复意味着该源键声明不符合实际数据。</p>
+<h2 id="再验证真实连接">再验证真实连接</h2>
+<p>普通编译不会读取物理数据行。将课程示例表放到数据库后，dmlc --validate-only 会检查查询涉及数据集的完整维度。该无效键预期对 DIM_REGION 报告 DIMENSION_NOT_UNIQUE。可使用<a href="journey.zh.html#lookups">练习中的完整命令和查询</a>，修正键声明或源数据后再验证。</p>
+<p>不要假定加 DISTINCT 就修复了业务含义，也不要以为声明键会自动去重。合法的一对多关系需要明确设计计算方式。</p>
+<p>浏览器开关只改变虚构示例数据。验证会探测源键和查询计划，不等于执行报表并对照结果。参见<a href="reference--troubleshooting--grain-and-joins.html">粒度与关联排查</a>。</p>
+<p><a href="guide--duplicate-lookup-en.html">English</a> · <a href="lesson-files.zip">下载课程项目</a></p>
+</main></body></html>

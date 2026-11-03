@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query examples · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="query-examples">Query examples</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query examples · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="The introductory examples use the shared sales model. Domain-specific examples require their named dependencies."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:type" content="website"><meta property="og:title" content="Query examples · DML"><meta property="og:description" content="The introductory examples use the shared sales model. Domain-specific examples require their named dependencies."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="query-examples">Query examples</h1>
 <p>The introductory examples use the <a href="reference--examples--shared-model.html">shared sales model</a>. Domain-specific examples require their named dependencies.</p>
 <h2 id="basic-queries">Basic queries</h2>
 <h3 id="total-sales">Total sales</h3>
@@ -195,4 +195,4 @@ GROUP BY dt_date
 SELECT DISTINCTCOUNTIF(product, AGG({sales: {+d: product}}) &gt; 1000) as prod_cnt FROM MODEL
 </code></pre>
 <p>Or define once in <code>.dml</code>: <code>formula: &#39;DISTINCTCOUNTIF({product}, {sales: {+d: product}} &gt; 1000)&#39;</code> then <code>SELECT AGG(high_sales_product_count) FROM MODEL</code>.</p>
-</main></html>
+</main></body></html>

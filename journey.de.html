@@ -1,0 +1,384 @@
+<!DOCTYPE html><html data-search-title="DML lernen: Interaktiver Kurs zu Geschäftskennzahlen" lang="de" data-course-locale="de"><head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>DML lernen: Interaktiver Kurs zu Geschäftskennzahlen</title>
+	<link rel="preload" href="assets--journey-planet.svg" as="image" type="image/svg+xml">
+	<style>
+		:root { color-scheme: light; --paper:#faf7ef; --ink:#263e48; --muted:#5c696b; --rule:#d9d4c6; --teal:#355f61; --gold:#ac7736; --blue:#e8eff0; --rose:#f2e5dc; }
+		* { box-sizing:border-box; }
+		html { scroll-behavior:smooth; scroll-padding-top:84px; }
+		body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+		a { color:var(--teal); text-underline-offset:4px; }
+		a:hover { color:#744b22; }
+		:focus-visible { outline:3px solid #a46c30; outline-offset:5px; }
+		.skip { position:absolute; top:-80px; left:20px; z-index:10; padding:12px; background:white; }
+		.skip:focus { top:10px; }
+		.topbar { position:sticky; top:0; z-index:5; background:rgba(250,247,239,.97); border-bottom:1px solid var(--rule); }
+		.topbar-inner { max-width:1240px; margin:auto; min-height:66px; padding:14px 36px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
+		.brand { text-decoration:none; color:var(--ink); font-size:12px; font-weight:650; letter-spacing:.16em; }
+		.topbar nav { display:flex; gap:24px; font-size:13px; }
+		.topbar nav a { text-decoration:none; }
+		main { max-width:1240px; margin:auto; padding:0 36px; }
+		.hero { padding:69px 0 0; text-align:center; }
+		.eyebrow { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#79613f; font-weight:650; }
+		h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; font-weight:400; line-height:1.12; }
+		h1 { font-size:clamp(46px,6.4vw,84px); letter-spacing:-.045em; margin:18px auto 22px; max-width:850px; }
+		.hero .lead { color:var(--muted); max-width:580px; margin:0 auto; font-size:19px; }
+		.hero figure { margin:30px -20px 0; }
+		.hero img { display:block; width:100%; height:auto; border-radius:4px; }
+		figcaption { color:var(--muted); font-size:13px; margin-top:12px; }
+		.chapter-nav { display:flex; flex-wrap:wrap; justify-content:center; gap:9px 30px; border-bottom:1px solid var(--rule); padding:30px 0 34px; font-size:13px; }
+		.chapter-nav a { text-decoration:none; }
+		.chapter-nav span { color:var(--gold); margin-right:7px; font-family:Georgia,serif; font-style:italic; }
+		.chapter { padding:76px 0; border-bottom:1px solid var(--rule); display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:70px; align-items:start; }
+		.chapter.full { display:block; }
+		.chapter-no { color:var(--gold); font:italic 22px Georgia,serif; display:block; margin-bottom:16px; }
+		h2 { font-size:clamp(32px,3.6vw,47px); letter-spacing:-.025em; margin:0 0 24px; max-width:560px; }
+		h3 { font-size:25px; margin:0 0 15px; }
+		p { margin:0 0 18px; }
+		.story { color:#765e3d; font:italic 21px/1.65 Georgia,serif; }
+		.small { color:var(--muted); font-size:14px; }
+		code { font: .88em/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+		p code,li code { background:#eeece3; padding:2px 5px; border-radius:3px; }
+		pre { overflow:auto; padding:24px; margin:0; background:#eeeee6; border:1px solid #d7dbd1; border-radius:7px; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:2; }
+		pre code { font-size:14px; }
+		.paper-panel { padding:27px; background:#fffdf7; border:1px solid var(--rule); border-radius:6px; box-shadow:0 8px 25px #52636306; }
+		.caption-label { font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:17px; }
+		table { border-collapse:collapse; width:100%; text-align:left; font-variant-numeric:tabular-nums; }
+		th { font-size:12px; font-weight:600; color:var(--muted); border-bottom:1px solid var(--rule); padding:10px 12px; }
+		td { padding:14px 12px; border-bottom:1px solid #eae5da; font-size:15px; }
+		tbody tr:last-child td { border-bottom:0; }
+		.key { border:1px solid #bfd0ce; border-radius:50%; width:29px; height:29px; display:inline-grid; place-items:center; color:var(--teal); background:#edf2eb; font-size:13px; }
+		.identity-note { margin:18px 0 0; font-size:13px; color:var(--teal); border-top:1px dashed var(--rule); padding-top:16px; }
+		.rule { border-left:2px solid #b58b50; padding:6px 0 6px 18px; margin:23px 0 0; font-size:15px; }
+		.code-label { font-size:12px; color:var(--muted); margin:0 0 10px; }
+		details { margin-top:18px; }
+		summary { cursor:pointer; font-size:14px; color:var(--teal); margin-bottom:12px; }
+		.formula { padding:34px 28px; background:#eaf0ec; border:1px solid #cddbd3; border-radius:7px; text-align:center; }
+		.formula code { font-size:clamp(16px,1.9vw,23px); }
+		.formula-parts { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:15px; }
+		.formula-parts p { padding:18px; margin:0; border:1px solid var(--rule); border-radius:5px; font-size:14px; }
+		.formula-parts strong { display:block; font:24px Georgia,serif; margin-bottom:6px; }
+		.explorer-intro { max-width:670px; }
+		fieldset { margin:30px 0 25px; padding:0; border:0; }
+		legend { margin-bottom:12px; font-size:14px; font-weight:600; }
+		.choices { display:flex; flex-wrap:wrap; gap:10px; }
+		.choice { cursor:pointer; display:flex; gap:10px; align-items:center; border:1px solid #c8cfc5; border-radius:30px; padding:9px 18px; font-size:14px; background:#fffdf7; }
+		.choice:has(input:checked) { color:#fffdf7; background:var(--teal); border-color:var(--teal); }
+		.choice input { accent-color:var(--teal); margin:0; }
+		.explorer-grid { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+		#query-code { min-height:140px; }
+		.result-panel { min-height:235px; }
+		.result-panel td { padding:12px; }
+		.result-title { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:10px; }
+		.result-title p { margin:0; }
+		.result-count { font-size:12px; color:var(--teal); }
+		.grain-note { margin:22px 0 0; padding:18px 22px; background:#eee9dc; border-radius:5px; font-size:15px; }
+		.flow { display:flex; align-items:stretch; gap:10px; margin:30px 0 25px; }
+		.flow-item { flex:1; padding:20px 14px; border:1px solid var(--rule); border-radius:5px; background:#fffdf7; text-align:center; font-size:14px; }
+		.flow-item strong { display:block; font:23px Georgia,serif; margin-bottom:9px; }
+		.flow-arrow { align-self:center; color:var(--gold); }
+		.verification { max-width:760px; }
+		.next-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:25px; }
+		.next-links a { display:inline-block; text-decoration:none; border:1px solid var(--teal); border-radius:5px; padding:11px 18px; font-size:14px; }
+		.next-links a:first-child { color:var(--paper); background:var(--teal); }
+		footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:15px; padding:30px 0 40px; color:var(--muted); font-size:12px; }
+		footer p { margin:0; }
+		@media(max-width:800px) {
+			main { padding:0 22px; } .topbar-inner { padding:15px 22px; } .topbar nav { gap:15px; }
+			.hero { padding-top:45px; } .hero figure { margin:24px -15px 0; } .hero .lead { font-size:17px; }
+			.chapter { grid-template-columns:1fr; gap:30px; padding:48px 0; } .explorer-grid { grid-template-columns:1fr; }
+			.flow { flex-direction:column; } .flow-arrow { transform:rotate(90deg); } .flow-item { padding:15px; }
+		}
+		@media(max-width:420px) { .paper-panel { padding:18px; } td,th { padding:10px 8px; } .choices { display:grid; } }
+		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
+	</style>
+	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
+<meta name="description" content="Erstelle in zwölf Kapiteln einen Umsatzbericht für Februar. Beginne mit vier Verkäufen, verwende Kennzahlen wieder und lade dein Projekt herunter. Sage das Ergebnis voraus, ändere eine Einstellung und prüfe deine Antwort. Die Beispiele laufen offline mit erfundenen Daten."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML lernen: Interaktiver Kurs zu Geschäftskennzahlen"><meta property="og:description" content="Erstelle in zwölf Kapiteln einen Umsatzbericht für Februar. Beginne mit vier Verkäufen, verwende Kennzahlen wieder und lade dein Projekt herunter. Sage das Ergebnis voraus, ändere eine Einstellung und prüfe deine Antwort. Die Beispiele laufen offline mit erfundenen Daten."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
+<body>
+	<a class="skip" href="#journey" data-i18n="common.text1">Zur Einführung springen</a>
+	<header class="topbar">
+		<div class="topbar-inner">
+			<a class="brand" href="index.de.html" aria-label="DML-Überblick" data-i18n-aria-label="common.a11y1">DML</a>
+			<nav class="course-location" aria-label="Kursnavigation" data-i18n-aria-label="common.a11y2">
+				<details class="chapter-menu" id="chapter-menu">
+					<summary id="chapter-toggle"><span id="chapter-current">Introduction</span><span class="chapter-chevron" aria-hidden="true">⌄</span></summary>
+					<div class="chapter-menu-panel">
+						<div class="learning-progress" id="learning-progress" data-resume="identity">
+							<img class="journey-icon" src="assets--journey-planet.svg" width="36" height="36" alt="">
+							<div class="journey-overview"><label for="course-progress"><span data-i18n="common.label1">Deine Reise</span></label><span id="progress-label" role="status" aria-label="0 of 12 chapters completed">0 of 12 completed</span><progress class="sr-only" id="course-progress" max="12" value="0"></progress><div id="journey-track" aria-hidden="true"></div></div>
+						</div>
+						<a id="resume-learning" class="resume-learning" href="#identity">Weiterlernen</a>
+						<div class="chapter-menu-links" id="chapter-menu-links"><a href="#journey">Introduction</a><a href="#identity">1. The rows</a></div>
+						<div class="chapter-menu-footer"><button type="button" class="secondary reset" id="reset-progress">Fortschritt zurücksetzen</button></div>
+					</div>
+				</details>
+			</nav>
+			<label class="language-control">
+				<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"></circle><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse><path d="M3 12h18M5 6.5c4 2 10 2 14 0M5 17.5c4-2 10-2 14 0"></path></svg>
+				<span class="sr-only" id="language-label">Sprache</span>
+				<select id="course-language" aria-label="Language"><option value="en" lang="en">English</option><option value="zh" lang="zh-CN">中文</option><option value="ja" lang="ja">日本語</option><option value="de" lang="de" selected="">Deutsch</option></select>
+			</label>
+		</div>
+	</header>
+	<main id="journey">
+		<section class="hero" aria-labelledby="title">
+			<div class="eyebrow" data-i18n="common.text2">Ein interaktiver Kurs mit Illustrationen</div>
+			<h1 id="title" data-i18n="common.text3">Eine kleine Reise<br>durch DML</h1>
+			<p class="lead" data-i18n="common.text4">Kennzahlen definieren und kombinieren.<br>Kontext ändern und Ergebnisse prüfen.</p>
+			<p class="offline-note" data-i18n="common.text5">Erstelle in zwölf Kapiteln einen Umsatzbericht für Februar. Beginne mit vier Verkäufen, verwende Kennzahlen wieder und lade dein Projekt herunter. Sage das Ergebnis voraus, ändere eine Einstellung und prüfe deine Antwort. Die Beispiele laufen offline mit erfundenen Daten.</p>
+			<div class="journey-start"><a class="download-link" id="start-learning" href="#identity">Start chapter 1</a></div>
+			<figure>
+				<img src="assets--little-worlds.png" width="1672" height="941" alt="Ein kleiner Reisender mit goldenem Schal betrachtet schwebende Aquarellwelten: einen Garten, ein Notizbuch, ein Fernrohr und Papierkarten." data-i18n-alt="common.a11y3">
+				<figcaption data-i18n="common.text6">Eine eigene Aquarellszene, inspiriert von der sanften Bilderbuchwelt des Kleinen Prinzen.</figcaption>
+			</figure>
+		</section>
+		<nav class="chapter-nav" id="chapters" aria-label="Kapitel" data-i18n-aria-label="common.a11y4">
+			<a href="#identity"><span>01</span>The rows</a><a href="#model"><span>02</span>The model</a><a href="#expressions"><span>03</span>The expression</a><a href="#grouping"><span>04</span>The question</a><a href="#compiler"><span>05</span>The compiler</a>
+			<a href="#filters"><span>06</span>The filters</a><a href="#shares"><span>07</span>The denominator</a><a href="#grain"><span>08</span>The intermediate grain</a><a href="#time"><span>09</span>The previous month</a><a href="#lookups"><span>10</span>The lookup</a><a href="#missing"><span>11</span>The missing value</a><a href="#capstone"><span>12</span>Your report</a>
+		</nav>
+		<noscript><p>Enable JavaScript for the exercises, or follow the <a href="tutorials--interactive-journey.html">text exercise guide</a>. The source examples and compiler snapshots are included in the downloadable project.</p></noscript>
+		<section class="chapter" id="identity" aria-labelledby="identity-title">
+			<div>
+				<span class="chapter-no" data-i18n="identity.text1">01 / Die Zeilen</span><h2 id="identity-title" data-i18n="identity.text2">Verstehe zuerst,<br>was eine Zeile bedeutet.</h2>
+				<p class="story" data-i18n="identity.text3">Der Reisende zählte vier Verkäufe.<br>Jeder brauchte einen eigenen Namen.</p>
+				<p data-i18n="identity.text4">Ein Dataset bildet eine Quelltabelle im Modell ab. <code>dimension: [id]</code> deklariert den vollständigen Quellschlüssel: Hier identifiziert <code>id</code> jede Verkaufszeile.</p>
+				<p data-i18n="identity.text5">Zwei Verkäufe können dieselbe Region haben. <code>region</code> eignet sich zum Gruppieren, reicht aber als Quellschlüssel nicht aus.</p>
+				<p class="rule" data-i18n="identity.text6">Finde die beiden North-Verkäufe: gleiche Region, verschiedene IDs. Ein Quellschlüssel muss jede Zeile identifizieren.</p>
+			</div>
+			<div class="paper-panel">
+				<div class="caption-label" data-i18n="identity.text7">Vier erfundene Verkäufe · TABLE_SALES</div>
+				<p class="small field-guide" data-i18n="identity.fields"><code>id</code> = Verkaufs-ID, <code>region</code> = Verkaufsregion, <code>amount</code> = Verkaufsbetrag.</p>
+				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">Nur Beispieldaten. Es ist keine Datenbank verbunden.</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
+					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
+				</tbody></table>
+				<p class="identity-note" data-i18n="identity.text8">Der Quellschlüssel bleibt [id], auch wenn der Bericht nach region gruppiert.</p>
+			</div>
+		</section>
+		<section class="chapter" id="model" aria-labelledby="model-title">
+			<div>
+				<span class="chapter-no" data-i18n="model.text1">02 / DML</span><h2 id="model-title" data-i18n="model.text2">Bewahre die Definitionen<br>in einem Notizbuch auf.</h2>
+				<p class="story" data-i18n="model.text3">„Wie nennen wir die Summe?“<br>Der Reisende schrieb: sales.</p>
+				<p data-i18n="model.text4">DML definiert das Modell in YAML. <code>FACT_SALES</code> benennt unser Dataset; <code>TABLE_SALES</code> ist seine physische Quelltabelle. Kennzahlen benennen wiederverwendbare Geschäftsberechnungen.</p>
+				<p data-i18n="model.text5">Atomare Kennzahlen sind an ein Dataset gebunden. Sie aggregieren dessen Zeilen oder Spaltenausdrücke, ohne andere Kennzahlen zu verwenden. Hier summiert <code>sales</code> die Beträge; <code>cnt</code> zählt die Zeilen.</p>
+				<details><summary data-i18n="model.text6">Die Namen im Modell verstehen</summary><p data-i18n="model.text7">In diesem Kurs bezeichnet <code>FACT_</code> Datasets mit Geschäftsvorgängen, <code>DIM_</code> Datasets zum Nachschlagen von Attributen und <code>TABLE_</code> physische Tabellen. Feld- und Kennzahlnamen folgen <code>lower_snake_case</code>.</p><p data-i18n="model.text8">Wiederverwendbare Berechnungen gehören ins Modell, Berichtsgruppen und Filter in die Abfrage. Siehe <a href="explanation--core-concepts.html">DML, DMX und Model Query</a>.</p></details>
+			</div>
+			<div><p class="code-label" data-i18n="model.text9">model.dml · das wiederverwendbare Modell</p><pre><code>FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> referenziert die Modellspalte <code>amount</code>. Ein leerer Spalteneintrag verweist auf die gleichnamige physische Spalte.</p></div>
+		</section>
+		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
+			<div>
+				<span class="chapter-no" data-i18n="expressions.text1">03 / DMX</span><h2 id="expressions-title" data-i18n="expressions.text2">Eine Berechnung kann<br>Bekanntes wiederverwenden.</h2>
+				<p data-i18n="expressions.text3">Der Reisende suchte den durchschnittlichen Verkaufsbetrag. Summe und Anzahl waren schon im Modell vorhanden.</p>
+				<p data-i18n="expressions.text4">DMX ist die Ausdruckssyntax innerhalb einer Formel. Die geschweiften Klammern in <code>{sales}</code> verweisen auf die Kennzahldefinition im Modell. Der Wert ergibt sich aus der Gruppierung und den Filtern dieser Referenz.</p>
+				<p data-i18n="expressions.text5"><code>average_sale</code> ist zusammengesetzt, weil es andere Kennzahlen verwendet. Bei einem Nenner von 0 liefert <code>DIVIDE</code> NULL, also keinen verfügbaren Wert.</p>
+				<p class="small" data-i18n="expressions.text6">Dieselbe Formel ergibt für North 30 ÷ 2 = 15, für alle vier Verkäufe 100 ÷ 4 = 25.</p>
+			</div>
+			<div>
+				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">Die Formel in DMX</div><code>DIVIDE({sales}, {cnt})</code></div>
+				<div class="formula-parts"><p data-i18n="expressions.text8"><strong>sales</strong>Beträge summieren.</p><p data-i18n="expressions.text9"><strong>cnt</strong>Quellzeilen zählen.</p></div>
+				<details><summary data-i18n="expressions.text10">Vollständige Kennzahldefinition ansehen</summary><pre><code>average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'</code></pre><p class="small" data-i18n="expressions.text11">Diese zusammengesetzte Kennzahl lässt <code>dataset:</code> weg. Ihre atomaren Abhängigkeiten bestimmen das Quelldataset. DMX kommt auch in Abfrageausdrücken vor.</p></details>
+			</div>
+		</section>
+		<section class="chapter full" id="grouping" aria-labelledby="grouping-title">
+			<span class="chapter-no" data-i18n="grouping.text1">04 / Model Query</span><h2 id="grouping-title" data-i18n="grouping.text2">Dieselben Kennzahlen.<br>Eine andere Sicht.</h2>
+			<div class="explorer-intro"><p class="story" data-i18n="grouping.text3">Der Reisende richtete das Fernrohr auf die Regionen.</p><p data-i18n="grouping.text4">Die Abfragedimension ist die Berichtsgruppierung: Sie bestimmt die Bedeutung einer Ergebniszeile. <code>AGG(sales)</code> fordert eine benannte Kennzahl an; <code>SUM({amount})</code> bleibt im Modell. Die Definitionen bleiben unverändert.</p><p class="small" data-i18n="grouping.text5">Bei PivotTables entspricht <code>GROUP BY region</code> etwa dem Einfügen von region unter „Zeilen“. <code>AGG</code> gehört zu Model Query und ist keine Standard-SQL-Funktion.</p></div>
+			<fieldset id="grouping-controls"><legend data-i18n="grouping.text6">Berichtsgruppierung wählen</legend><div class="choices">
+				<label class="choice"><input type="radio" name="grouping" value="all"><span data-i18n="grouping.label1">Alle Verkäufe</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="region" checked=""><span data-i18n="grouping.label2">Nach Region</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="id"><span data-i18n="grouping.label3">Nach Verkauf</span></label>
+			</div></fieldset>
+			<p class="small" data-i18n="grouping.text7">Probiere <strong>Alle Verkäufe</strong>, dann <strong>Nach Verkauf</strong>: zuerst eine Summenzeile, dann vier Einzelzeilen. Kehre zu <strong>Nach Region</strong> zurück.</p>
+			<div class="explorer-grid">
+				<div><p class="code-label" data-i18n="grouping.text8">query.sql · Model Query</p><pre id="query-code"><code>SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="grouping.text9">FROM MODEL wählt model.dml mit dem Dataset und den drei Kennzahlen von oben.</p></div>
+				<div class="paper-panel result-panel"><div class="result-title"><p class="caption-label" data-i18n="grouping.text10">Beispielergebnis</p><p class="result-count" id="result-count" role="status">4 source rows → 2 result rows</p></div>
+					<table id="results"><thead><tr><th scope="col">region</th><th scope="col">sales</th><th scope="col">average_sale</th></tr></thead><tbody><tr><td>North</td><td>30</td><td>15</td></tr><tr><td>South</td><td>70</td><td>35</td></tr></tbody></table>
+				</div>
+			</div>
+			<div class="grain-note"><p id="grain-note">Each result row represents one region. The source dataset still has dimension: [id].</p><p class="small" id="average-note" role="status">North: 30 ÷ 2 = 15. South: 70 ÷ 2 = 35. The formula is evaluated for each result group.</p></div>
+			<p class="small" id="compiler-note" style="margin-top:14px">The regional query for this four-row model passes strict compilation on the checked dmlc build.</p>
+			<p class="small" style="margin-top:14px" data-i18n="grouping.text11">Der Browser berechnet dieses Beispiel mit vier Zeilen lokal. Die Demo kompiliert kein DML, führt kein SQL aus und liest keine Datenbank.</p>
+			<noscript><p>JavaScript is disabled. The regional example remains visible. For all sales together, sales = 100 and average_sale = 25. By sale, sales and average_sale both equal that row's amount.</p></noscript>
+		</section>
+		<section class="chapter full" id="compiler" aria-labelledby="compiler-title">
+			<span class="chapter-no" data-i18n="compiler.text1">05 / dmlc</span><h2 id="compiler-title" data-i18n="compiler.text2">Der Compiler schreibt SQL.<br>Die Datenbank liefert Zeilen.</h2>
+			<div class="flow" role="list" aria-label="Kompilierung und Ausführung" data-i18n-aria-label="compiler.a11y1">
+				<div class="flow-item" role="listitem" data-i18n="compiler.text3"><strong>Modell + Abfrage</strong>Definitionen und Berichtseinstellungen</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text4"><strong>dmlc</strong>In SQL übersetzen</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text5"><strong>Datenbank</strong>Generiertes SQL ausführen</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text6"><strong>Ergebniszeilen</strong>Die Antwort lesen</div>
+			</div>
+			<div class="verification"><p data-i18n="compiler.text7">Die Kompilierung erzeugt SQL zur Prüfung. Prüfe einen Bericht mit deinen eigenen Daten in diesen Schritten:</p><ol><li><span data-i18n="compiler.step1">Kompilieren, Diagnosen lesen und das generierte SQL prüfen.</span></li><li><span data-i18n="compiler.step2">Mit einer Verbindung <code>--validate-only</code> ausführen, um die Schlüssel der erreichten Datasets zu prüfen und SQL mit EXPLAIN zu testen.</span></li><li><span data-i18n="compiler.step3">Den Bericht ausführen und Zeilen sowie Werte mit einem unabhängigen Ergebnis vergleichen.</span></li></ol><p class="small" data-i18n="compiler.text8">Der Browser zeigt berechnete Beispiele. Live-Validierung und Ergebnisvergleich benötigen eine Datenbank.</p></div>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="compiler.text9">Die erste Abfrage kompilieren</a><a href="explanation--core-concepts.html" data-i18n="compiler.text10">Grundbegriffe lesen</a><a href="explanation--visual-introduction.html" data-i18n="compiler.text11">Textfassung lesen</a></div>
+		</section>
+		<section class="chapter full" id="filters" aria-labelledby="filters-title">
+			<span class="chapter-no" data-i18n="filters.text1">06 / Bericht und Kennzahl filtern</span><h2 id="filters-title" data-i18n="filters.text2">Welche Verkäufe beantworten<br>welche Frage?</h2>
+			<div class="lesson-start"><p class="story" data-i18n="filters.text3">Zwischen den Belegen fand der Reisende einen zurückgegebenen Verkauf.</p><p data-i18n="filters.text4">Unsere vier Verkäufe haben nun Monat, Kunde und Status. Vier Januarverkäufe dienen dem Vergleich. Wähle <strong>North</strong>: Umsatz 30, davon 10 aus abgeschlossenen Verkäufen.</p></div>
+			<details><summary data-i18n="filters.text5">Alle acht Verkäufe ansehen</summary><div class="lesson-table" id="extended-source"></div></details>
+			<details><summary data-i18n="filters.text6">Vollständiges Modell für Kapitel 6–12 ansehen</summary><pre class="model-preview"><code id="full-model"></code></pre></details>
+			<p class="code-label" style="margin-top:24px" data-i18n="filters.text7">model.dml · eine wiederverwendbare Kennzahl</p><pre><code>completed_sales:
+  type: measure
+  formula: '{sales: {+f: {status: completed}}}'</code></pre><p class="notation-note" data-i18n="filters.notation">Ein <strong>Modifikator</strong> legt fest, wie diese Referenz berechnet wird. In <code>{sales: ...}</code> steht vor dem Doppelpunkt die Kennzahl, dahinter die Modifikatoreinstellung. Hier ergänzt <code>+f</code> den Filter status = completed; die Definition von sales bleibt unverändert.</p>
+			<p class="small notation-note" data-i18n="filters.memory"><code>f</code> = filter, <code>+</code> = hinzufügen. Die Formel bedeutet: sales mit einem zusätzlichen Filter auf abgeschlossene Verkäufe.</p>
+			<details class="syntax-note"><summary data-i18n="syntax.summary">Zwei Schreibweisen für Modifikatoren</summary><p data-i18n="syntax.named"><code>{sales: pp}</code> verwendet einen benannten Modifikator: sales für die Vorperiode. Das folgt in Kapitel 9.</p><p data-i18n="syntax.configured"><code>{sales: {+f: {status: completed}}}</code> verwendet Einstellungen mit einem Wert: die Bedingung status = completed hinzufügen. Die Klammern nach dem Doppelpunkt enthalten diese Einstellungen.</p><p class="small" data-i18n="syntax.reference">Weitere Formen stehen unter <a href="reference--modifiers.html">Modifikatorregeln und Beispiele</a>.</p></details>
+			<div class="lab-controls"><label class="control"><span data-i18n="filters.label1">Berichtsregion</span><select id="filter-region" aria-label="Berichtsregion" data-i18n-aria-label="filters.a11y1"><option value="all" data-i18n="filters.text8">Alle Regionen</option><option>North</option><option>South</option></select></label></div>
+			<div class="explorer-grid"><pre><code id="filter-query"></code></pre><div class="paper-panel lesson-table" id="filter-result" aria-label="Gefiltertes Verkaufsergebnis" data-i18n-aria-label="filters.a11y2"></div></div>
+			<p class="context-note" id="filter-note" role="status">Report WHERE selects the report's rows. +f restricts the inputs to completed_sales. The other measure still includes returned sales.</p>
+			<div class="compiler-observation" data-probe="filters"></div>
+		</section>
+		<section class="chapter full" id="shares" aria-labelledby="shares-title">
+			<span class="chapter-no" data-i18n="shares.text1">07 / Den Nenner klar benennen</span><h2 id="shares-title" data-i18n="shares.text2">Dreißig von wie viel?</h2>
+			<p class="story" data-i18n="shares.text3">Ein Anteil braucht einen Teil und ein Ganzes.</p><p class="notation-note" data-i18n="shares.memory"><code>d</code> = dimension, <code>f</code> = filter. <code>-d</code> entfernt das genannte Feld aus der Auswertungsgruppierung; <code>-df</code> entfernt zusätzlich die zugehörigen Filter. Das gilt nur für diese Referenz.</p><p class="lesson-start" data-i18n="shares.text4">Wähle hier <strong>North</strong> und wechsle von <code>-d</code> zu <code>-df</code>. Der Nenner wechselt von 30 zu 100, der Anteil von 100 % zu 30 %.</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="shares.label1">Berichtsregion</span><select id="share-region" aria-label="Region des Anteilsberichts" data-i18n-aria-label="shares.a11y1"><option>North</option><option>South</option><option value="all" data-i18n="shares.text5">Alle Regionen</option></select></label><label class="control"><span data-i18n="shares.label2">Nenner-Modifikator</span><select id="share-mode" aria-label="Nenner-Modifikator" data-i18n-aria-label="shares.a11y2"><option value="keep" data-i18n="shares.text6">-d: region · Regionsfilter behalten</option><option value="remove" data-i18n="shares.text7">-df: region · Regionsfilter entfernen</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · Kennzahldefinition</p><pre><code id="share-formula"></code></pre><div class="stage-board"><div class="paper-panel"><h3 data-i18n="shares.text8">Der Nenner</h3><p id="share-denominator" role="status" data-i18n="shares.text9"><span id="share-context"></span><span>Februar bleibt in beiden Kontexten fest.</span></p></div><div class="paper-panel lesson-table" id="share-result"></div></div>
+			<details><summary data-i18n="shares.text10">Model Query ansehen</summary><pre><code id="share-query"></code></pre></details>
+			<p class="small" data-i18n="shares.text11">Nur die Auswertung des Nenners ändert sich. Februarfilter, Quellschlüssel und Bericht-GROUP BY bleiben gleich. Ohne zugehörigen Regionsfilter liefern beide hier denselben Nenner. Die Anteile sind Dezimalwerte und werden hier als Prozent angezeigt.</p><div class="compiler-observation" data-probe="shares"></div>
+		</section>
+		<section class="chapter full" id="grain" aria-labelledby="grain-title">
+			<span class="chapter-no" data-i18n="grain.text1">08 / Auf einer Zwischenebene rechnen</span><h2 id="grain-title" data-i18n="grain.text2">Umsatz je Kunde summieren.<br>Dann den Durchschnitt bilden.</h2>
+			<p class="lesson-start" data-i18n="grain.text3">Beide Februarverkäufe von South gehören Kunde C. Der Durchschnitt je Verkauf ist 35, die Summe dieses einen Kunden 70. Probiere <strong>SUM</strong> und <strong>MAX</strong>: North wird 30 bzw. 20, South bleibt 70. Kehre vor der Antwort zu <strong>AVG</strong> zurück.</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">Äußere Aggregation</span><select id="grain-operation" aria-label="Äußere Aggregation" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · Durchschnitt je Kunde</option><option value="SUM" data-i18n="grain.text5">SUM · Gesamter Kundenumsatz</option><option value="MAX" data-i18n="grain.text6">MAX · Höchster Kundenumsatz</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · Kennzahldefinition</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">Stufe 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">Stufe 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension; <code>+d: customer</code> ergänzt customer zur Auswertungsdimension dieser Referenz. Das äußere AVG, SUM oder MAX fasst die Kundensummen wieder zur Abfragedimension zusammen. Quellschlüssel und Bericht-GROUP BY bleiben unverändert.</p><details><summary data-i18n="grain.text10">Model Query ansehen</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">Vergleiche <a href="explanation--dimensions.html">Quell-, Abfrage- und Auswertungsdimension</a>: Quellschlüssel, Ergebnisgruppierung und Zwischenberechnung.</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+		</section>
+		<section class="chapter full" id="time" aria-labelledby="time-title">
+			<span class="chapter-no" data-i18n="time.text1">09 / Zeiträume vergleichen</span><h2 id="time-title" data-i18n="time.text2">Einen Monat zurückblicken.</h2>
+			<p class="story" data-i18n="time.text3">Der Reisende legte die Januarseiten neben den Februar.</p>
+			<div class="time-definitions"><p class="code-label" data-i18n="time.text5">model.dml · Vergleichskennzahlen</p><div class="explorer-grid"><pre><code>previous_sales:
+  type: measure
+  formula: '{sales: pp}'</code></pre><pre><code>sales_change:
+  type: measure
+  formula: '{sales: pop}'</code></pre></div><p class="small" data-i18n="time.text6">In <code>{sales: pp}</code> ist sales die Kennzahl und <code>pp</code> der Modifikator für den Vorperiodenwert. Bei Monatsvergleichen ist das der Vormonat. <code>pop</code> liefert aktueller Wert / Vorperiodenwert − 1 als Dezimalzahl. Siehe <a href="explanation--core-concepts.html#3-time-context-and-dim_dt">Zeitkontext</a>.</p></div>
+			<p class="lesson-start" data-i18n="time.text4">Im <strong>Februar</strong> hat North Umsatz 30 und Vorperiodenumsatz 20. Das Wachstum ist 30 ÷ 20 − 1 = 50%. Wechsle zu <strong>Januar</strong>: Ohne Dezemberdaten sind die Vergleichswerte NULL. Kehre vor der Antwort zu <strong>Februar</strong> zurück.</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="time.label1">Aktueller Monat</span><select id="time-month" aria-label="Aktueller Monat" data-i18n-aria-label="time.a11y1"><option value="2025-02-01" data-i18n="time.text7">Februar 2025</option><option value="2025-01-01" data-i18n="time.text8">Januar 2025</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.queryCodeLabel">query.sql · Berichtsfrage</p><pre><code id="time-query"></code></pre></div><div class="paper-panel lesson-table" id="time-result"></div></div><p class="context-note" data-i18n="time.text9">Der Abfragefilter bleibt auf dem Zielmonat. Die Kennzahlen im Modell berechnen den Vorperiodenwert und die Wachstumsrate.</p><div class="compiler-observation" data-probe="time"></div>
+		</section>
+		<section class="chapter full" id="lookups" aria-labelledby="lookups-title">
+			<span class="chapter-no" data-i18n="lookups.text1">10 / Ein Attribut zuordnen</span><h2 id="lookups-title" data-i18n="lookups.text2">Ein Lookup braucht<br>einen eindeutigen Treffer.</h2>
+			<p class="lesson-start" data-i18n="lookups.text3">Im Regionsverzeichnis ist Ada für North und Lin für South zuständig. Das Modell sucht über den vollständigen Schlüssel <code>[region]</code>. Füge einen ungültigen zweiten North-Eintrag hinzu und prüfe die verbundenen Zeilen.</p>
+			<pre><code>DIM_REGION:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [region]
+  columns:
+    region:
+    manager:
+
+# Inside FACT_SALES.columns:
+manager: 'pk(region).{DIM_REGION}.manager'</code></pre>
+			<div class="lab-controls"><label class="answer-option"><input type="checkbox" id="duplicate-key"><span data-i18n="lookups.label1">Ungültigen zweiten North-Eintrag hinzufügen</span></label></div><div class="stage-board"><div class="paper-panel"><h3 data-i18n="lookups.text4">Regionsverzeichnis</h3><div class="lesson-table" id="lookup-directory"></div></div><div class="paper-panel"><h3 data-i18n="lookups.text5">Februarzeilen nach dem Lookup</h3><div class="lesson-table" id="lookup-rows"></div></div></div><p class="context-note" id="lookup-note" role="status"></p>
+			<p class="small" data-i18n="lookups.text6">Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate-only</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>DIMENSION_NOT_UNIQUE</code>.</p>
+			<details><summary data-i18n="lookups.text7">Doppelte Schlüssel mit dmlc erkennen</summary><p data-i18n="lookups.text8">Speichere die Abfrage für die Datenbankübung als <code>lookup.sql</code> neben <code>model.dml</code> im heruntergeladenen Projekt. Die Auswahl von manager führt zum Dataset DIM_REGION.</p><pre><code>SELECT manager, AGG(sales)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY manager</code></pre><p data-i18n="lookups.text9">Führe die Validierung mit der Verbindung aus, die deine Beispieltabellen enthält. Ersetze <code>default</code> durch deren Verbindungs-ID.</p><pre><code>dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json</code></pre><p data-i18n="lookups.text10">Enthält TABLE_REGION dort beide North-Einträge, erwarte <code>DIMENSION_NOT_UNIQUE</code> für DIM_REGION. Korrigiere die Dimensionsdeklaration oder Quelldaten und validiere erneut.</p><p class="small" data-i18n="lookups.text11">Die Validierung prüft beobachtete Schlüssel und die Hauptabfrage mit EXPLAIN; sie führt den Bericht nicht zur Ergebnisgewinnung aus. Der Browserschalter ändert nur die erfundenen Daten dieser Seite, nicht deine Datenbank.</p></details>
+			<div class="compiler-observation" data-probe="lookup"></div>
+		</section>
+		<section class="chapter full" id="missing" aria-labelledby="missing-title">
+			<span class="chapter-no" data-i18n="missing.text1">11 / Fehlende Werte verstehen</span><h2 id="missing-title" data-i18n="missing.text2">Ein fehlender Wert<br>ist nicht automatisch 0.</h2>
+			<p class="lesson-start" data-i18n="missing.text3">Wähle <strong>Durch den festen Wert 0 ersetzen</strong>. Beide Januarzeilen bleiben erhalten; die Vorperiodenwerte wechseln von NULL auf 0. NULL bedeutet hier, dass kein Vorperiodenwert vorliegt. Das Ersetzen belegt keinen tatsächlichen Dezemberumsatz von 0.</p><div class="lab-controls"><label class="control"><span data-i18n="missing.label1">Fehlender Vorperiodenwert</span><select id="missing-mode" aria-label="Fehlender Vorperiodenwert" data-i18n-aria-label="missing.a11y1"><option value="null" data-i18n="missing.text4">NULL beibehalten</option><option value="zero" data-i18n="missing.text5">Durch den festen Wert 0 ersetzen</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.modelCodeLabel">model.dml · Kennzahldefinition</p><pre><code id="missing-formula"></code></pre></div><div class="paper-panel lesson-table" id="missing-result"></div></div><p class="context-note" data-i18n="missing.text6">Das äußerste <code>ISNULL(..., 0)</code> liefert überall, wo die Kennzahl verwendet wird, einen festen Ersatzwert. Es erzeugt keine neuen Monate oder Kunden.</p><div class="compiler-observation" data-probe="missing"></div>
+		</section>
+		<section class="chapter full" id="capstone" aria-labelledby="capstone-title">
+			<span class="chapter-no" data-i18n="capstone.text1">12 / Deinen Bericht erstellen</span><h2 id="capstone-title" data-i18n="capstone.text2">Notizbuch und Frage<br>zusammenbringen.</h2>
+			<form class="chapter-check final-check" id="capstone-check" aria-labelledby="capstone-question">
+			<fieldset><legend id="capstone-question" data-i18n="capstone.text3">Probiere es · Erstelle den Februarbericht für beide Regionen.</legend>
+			<p class="lesson-start" data-i18n="capstone.text4">Wähle Februar 2025, alle Regionen und eine Zeile je Region. Nimm diese fünf Kennzahlen auf: sales, completed_sales, previous_sales, average_customer_sales und all_region_share. Klicke anschließend auf „Antwort abgeben“.</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="capstone.label1">Berichtsmonat</span><select id="final-month" aria-label="Berichtsmonat" data-i18n-aria-label="capstone.a11y1"><option value="2025-02-01" data-i18n="capstone.text5">Februar 2025</option><option value="2025-01-01" data-i18n="capstone.text6">Januar 2025</option></select></label><label class="control"><span data-i18n="capstone.label2">Berichtsgruppierung</span><select id="final-group" aria-label="Berichtsgruppierung" data-i18n-aria-label="capstone.a11y2"><option value="region" data-i18n="capstone.text7">Nach Region</option><option value="all" data-i18n="capstone.text8">Alle Verkäufe zusammen</option></select></label><label class="control"><span data-i18n="capstone.label3">Regionsfilter des Berichts</span><select id="final-region" aria-label="Regionsfilter des Berichts" data-i18n-aria-label="capstone.a11y3"><option value="all" data-i18n="capstone.text9">Alle Regionen</option><option>North</option><option>South</option></select></label></div>
+			<fieldset><legend data-i18n="capstone.text10">Enthaltene Kennzahlen</legend><div class="metric-options" id="final-measures"><label><input type="checkbox" value="sales" checked="" disabled=""><span data-i18n="capstone.label4">sales · erforderlich</span></label><label><input type="checkbox" value="completed_sales">completed_sales</label><label><input type="checkbox" value="previous_sales">previous_sales</label><label><input type="checkbox" value="average_customer_sales">average_customer_sales</label><label><input type="checkbox" value="all_region_share">all_region_share</label><label><input type="checkbox" value="sales_change"><span data-i18n="capstone.label5">sales_change · optional</span></label></div></fieldset>
+			</fieldset>
+			<p class="answer-submit-note" data-i18n="capstone.submitHelp">Die Vorschau aktualisiert sich sofort. Klicke auf „Antwort abgeben“, um deine Einstellungen prüfen zu lassen.</p><div class="actions"><button type="submit" id="check-final">Submit answer</button><button type="button" class="secondary" id="final-hint">Show explanation</button></div>
+			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North: Umsatz 30, Umsatz abgeschlossener Verkäufe 10, Vormonatsumsatz 20, durchschnittlicher Umsatz je Kunde 15, Anteil am Gesamtumsatz 30 %. South: Umsatz 70, Umsatz abgeschlossener Verkäufe 70, Vormonatsumsatz 50, durchschnittlicher Umsatz je Kunde 70, Anteil am Gesamtumsatz 70 %.</p><p data-i18n="capstone.text12">Öffne für die Ausführung außerhalb des Browsers START-HERE.txt. Lege die Beispieltabellen in einer leeren Übungsdatenbank an, prüfe das Modell, kompiliere streng und prüfe das SQL. Dokumentiere die Befunde vor Live-Validierung und Ergebnisvergleich.</p></div>
+			</form>
+			<div class="explorer-grid final-preview">
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">Modellnotizbuch · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">Auszug der ausgewählten Kennzahlen und der von ihnen referenzierten Kennzahlen. Er wird mit deiner Auswahl aktualisiert.</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">Vollständiges Modellnotizbuch anzeigen</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">model.dml herunterladen</a></details></div>
+				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">Deine Berichtsfrage · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">Die Abfrage verwendet diese Definitionen. Die Berichtseinstellungen bestimmen Gruppierung und Filter.</p><pre><code id="final-query"></code></pre></div>
+			</div>
+			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">Beispielergebnis</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">Die Vorschau berechnet unsere Beispieldaten, kein beliebiges DML. Compilerbelege liegen nur für die aufgezeichneten Begleitabfragen vor; andere Kombinationen benötigen eigene Prüfungen. Die Seite verbindet sich nicht mit einer Datenbank.</p>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">Geprüftes Projekt herunterladen</a></div>
+			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">Lokale Compilerbefehle ansehen</summary><pre><code>dmlc.exe --lint model.dml --output-format=json
+dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen</code></pre><p class="small" data-i18n="capstone.text16">Diese Compilerbefehle benötigen keine Datenbankverbindung. Beispieldaten und SQL-Server-Setup dienen einer getrennten Datenbankübung. Erwartete Join-Warnungen sind aufgezeichnet; eine erwartete Warnung bedeutet nicht, dass die strenge Prüfung bestanden wurde.</p></details>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="capstone.text17">Zum Compiler-Tutorial</a><a href="reference--README.html" data-i18n="capstone.text18">Sprachreferenz erkunden</a><a href="tutorials--interactive-journey.html" data-i18n="capstone.text19">Übungsanleitung lesen</a></div>
+			<details><summary data-i18n="capstone.text20">Auf deinen eigenen Bericht übertragen</summary><ol><li><span data-i18n="capstone.step1">Erkläre, was eine Quell- und eine Ergebniszeile darstellen. Prüfe den vollständigen Quellschlüssel.</span></li><li><span data-i18n="capstone.step2">Benenne Eingaben, Filter, Zeitraum und Zwischengranularität jeder Kennzahl.</span></li><li><span data-i18n="capstone.step3">Benenne bei Verhältnissen den Nenner. Kläre vor dem Ersetzen fehlender Werte deren fachliche Bedeutung.</span></li><li><span data-i18n="capstone.step4">Kompiliere und prüfe SQL, validiere auf der Zielverbindung und vergleiche Schlüssel, Duplikate, NULL und alle Kennzahlen mit einem unabhängigen Ergebnis.</span></li></ol><p data-i18n="capstone.text21">Beginne mit <a href="how-to--build-analysis.html">Vom Geschäftsproblem zum Modell</a>. Nutze für neue Berechnungen <a href="how-to--design-measures.html">Wiederverwendbare Kennzahlen entwerfen</a>.</p></details>
+		<p class="context-note" data-i18n="capstone.reuse">Sie haben ein Modell definiert, Kennzahlen kombiniert, den Kontext geändert und den Bericht geprüft. Dasselbe Vorgehen gilt für <a href="reference--examples--composable-metrics.html">kumulierte Margen im Vorjahresvergleich</a>.</p>
+</section>
+		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Diese Zeichen helfen weiter · Kurzreferenz</summary><p data-i18n="recall.intro">Lies zuerst den Kennzahlnamen, dann die Berechnungseinstellung dieser Referenz. Dies sind Merkhilfen, keine zusätzliche Syntax oder Rechenoperationen.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Zeichen</th><th data-i18n="recall.meaning">Bedeutung auffrischen</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Quelldimension <code>dimension: [id]</code>: Quellzeilen identifizieren. Abfragedimension <code>GROUP BY region</code>: Ergebniszeilen gruppieren. Auswertungsdimension mit <code>+d: customer</code>: Kundensummen als Zwischenwerte berechnen.</p><p class="small" data-i18n="syntax.reference">Weitere Formen stehen unter <a href="reference--modifiers.html">Modifikatorregeln und Beispiele</a>.</p></details>
+		<footer><p data-i18n="common.text7">DML definiert. DMX drückt aus. Model Query wählt und gruppiert.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compileraufzeichnungen</a> · <a href="explanation--visual-introduction.html">Ursprüngliche Textfassung</a> · Offline nutzbar</p></footer>
+	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
+	<script src="locales--en.js?v=ff69134b9f"></script>
+	<script src="locales--zh.js?v=3119955a84"></script>
+	<script src="locales--ja.js?v=5e6c62ee91"></script>
+	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script>
+		(() => {
+			const i18n = window.SmallJourneyI18n, t = i18n.t;
+			const rows = [
+				{ id:1, region:'North', amount:10 }, { id:2, region:'North', amount:20 },
+				{ id:3, region:'South', amount:30 }, { id:4, region:'South', amount:40 }
+			];
+			const results = document.getElementById('results');
+			const query = document.querySelector('#query-code code');
+			const count = document.getElementById('result-count');
+			const grain = document.getElementById('grain-note');
+			const compilerNote = document.getElementById('compiler-note');
+			const format = value => i18n.number(value);
+			function render(grouping) {
+				const field = grouping === 'all' ? null : grouping;
+				const groups = new Map();
+				for (const row of rows) {
+					const key = field ? row[field] : 'all';
+					if (!groups.has(key)) groups.set(key,{ key, sales:0, cnt:0 });
+					const group = groups.get(key); group.sales += row.amount; group.cnt++;
+				}
+				const header = document.createElement('tr');
+				for (const name of [...(field ? [field] : []),'sales','average_sale']) {
+					const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = name; header.append(cell);
+				}
+				results.tHead.replaceChildren(header);
+				const body = document.createDocumentFragment();
+				for (const group of groups.values()) {
+					const tr = document.createElement('tr');
+					const values = [...(field ? [group.key] : []),format(group.sales),format(group.sales/group.cnt)];
+					for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
+					body.append(tr);
+				}
+				results.tBodies[0].replaceChildren(body);
+				query.textContent = `SELECT ${field ? field+', ' : ''}AGG(sales), AGG(average_sale)\nFROM MODEL${field ? '\nGROUP BY '+field : ''}`;
+				count.textContent = t('resultCount',{source:4,n:groups.size});
+				grain.textContent = t(field === 'id' ? 'grainSale' : field ? 'grainRegion' : 'grainAll');
+				document.getElementById('average-note').textContent = t('averageNote',{calculations:[...groups.values()].map(group => `${field ? (field === 'id' ? t('averageSale',{id:group.key}) : group.key) : t('averageAll')}: ${format(group.sales)} ÷ ${group.cnt} = ${format(group.sales/group.cnt)}`).join('; ')});
+				compilerNote.textContent = field === 'id'
+					? t('compileSimplified')
+					: t(field ? 'compileRegional' : 'compileTotal');
+				document.dispatchEvent(new Event('course-query-change'));
+			}
+			document.getElementById('grouping-controls').addEventListener('change',event => {
+				if (event.target.name === 'grouping') render(event.target.value);
+			});
+			render('region');
+			document.addEventListener('course-language-change',() => render(document.querySelector('input[name="grouping"]:checked').value));
+		})();
+	</script>
+	<script src="course-data.js?v=f376cc3f21"></script>
+	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="compiler-observations.js?v=9584a66e1d"></script>
+	<script src="course-rewards.js?v=445824a005"></script>
+	<script src="course.js?v=3b675d296b"></script>
+	<script src="course-navigation.js?v=5181d006d7"></script>
+
+
+</body></html>

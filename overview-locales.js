@@ -82,7 +82,11 @@ window.DMLOverviewLocales={
     "skip": "Skip to content",
     "mainNavigation": "Main navigation",
     "scenes": "Scenes",
-    "homeLabel": "DML overview"
+    "homeLabel": "DML overview",
+    "questionsTitle": "Start with a real question.",
+    "questionMargin": "Why can’t monthly margins be averaged?",
+    "questionShare": "Which sales belong in the denominator?",
+    "questionLookup": "Why did a lookup double sales?"
   },
   "zh": {
     "home": "概览",
@@ -167,7 +171,11 @@ window.DMLOverviewLocales={
     "skip": "跳到正文",
     "mainNavigation": "主导航",
     "scenes": "分幕导航",
-    "homeLabel": "DML 概览"
+    "homeLabel": "DML 概览",
+    "questionsTitle": "从一个真实问题开始。",
+    "questionMargin": "为什么累计毛利率不能直接平均？",
+    "questionShare": "销售占比的分母应该保留哪些筛选？",
+    "questionLookup": "为什么属性查找让销售额翻倍？"
   },
   "ja": {
     "home": "概要",
@@ -252,7 +260,11 @@ window.DMLOverviewLocales={
     "skip": "本文へ移動",
     "mainNavigation": "メインナビゲーション",
     "scenes": "場面の選択",
-    "homeLabel": "DML 概要"
+    "homeLabel": "DML 概要",
+    "questionsTitle": "実際の疑問から始める。",
+    "questionMargin": "月次利益率を単純平均できない理由（英語）",
+    "questionShare": "売上構成比の分母を決める（英語）",
+    "questionLookup": "参照後に売上が倍になる理由（英語）"
   },
   "de": {
     "home": "Überblick",
@@ -337,6 +349,10 @@ window.DMLOverviewLocales={
     "skip": "Zum Inhalt",
     "mainNavigation": "Hauptnavigation",
     "scenes": "Szenenauswahl",
-    "homeLabel": "DML-Überblick"
+    "homeLabel": "DML-Überblick",
+    "questionsTitle": "Mit einer konkreten Frage beginnen.",
+    "questionMargin": "Warum Monatsmargen nicht einfach mitteln? (Englisch)",
+    "questionShare": "Welche Umsätze gehören in den Nenner? (Englisch)",
+    "questionLookup": "Warum verdoppelt ein Lookup den Umsatz? (Englisch)"
   }
 };

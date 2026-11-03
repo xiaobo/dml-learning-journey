@@ -1,0 +1,80 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>为什么累计毛利率不能直接平均各月毛利率？ · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="累计毛利率应先汇总期间内的收入和成本，再用累计毛利润除以累计收入。直接平均各月毛利率，会给收入不同的月份相同的权重。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="为什么累计毛利率不能直接平均各月毛利率？ · DML"><meta property="og:description" content="累计毛利率应先汇总期间内的收入和成本，再用累计毛利润除以累计收入。直接平均各月毛利率，会给收入不同的月份相同的权重。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="journey.zh.html">互动教程</a><a href="docs.html">核心文档（英文）</a></header><main><h1 id="为什么累计毛利率不能直接平均各月毛利率">为什么累计毛利率不能直接平均各月毛利率？</h1>
+<p>累计毛利率应先汇总期间内的收入和成本，再用累计毛利润除以累计收入。直接平均各月毛利率，会给收入不同的月份相同的权重。</p>
+<h2 id="用两个月看清区别">用两个月看清区别</h2>
+<p><a href="profitability-data.json">同一套毛利率示例数据</a>中，North 的数值如下：</p>
+<table>
+<thead>
+<tr>
+<th>期间</th>
+<th align="right">净收入</th>
+<th align="right">销售成本</th>
+<th align="right">毛利率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2025 年 1 月</td>
+<td align="right">100</td>
+<td align="right">60</td>
+<td align="right">40%</td>
+</tr>
+<tr>
+<td>2025 年 2 月</td>
+<td align="right">300</td>
+<td align="right">240</td>
+<td align="right">20%</td>
+</tr>
+<tr>
+<td>1—2 月累计</td>
+<td align="right">400</td>
+<td align="right">300</td>
+<td align="right">25%</td>
+</tr>
+</tbody></table>
+<p>累计结果为 (400 − 300) / 400 = <strong>25%</strong>。将 40% 与 20% 平均得到 30%，回答的是“各月毛利率的简单平均”，不是累计毛利率。两种算法在各月收入相等等情形下可能一致，但不能普遍互换。</p>
+<h2 id="自己切换一次">自己切换一次</h2>
+<p>打开<a href="index.zh.html#metric-theatre">指标构造剧场</a>，选择 North 和第四幕，从当月切换到本年累计：收入由 300 变为 400，成本由 240 变为 300，毛利率由 20% 变为 25%。</p>
+<p>下面的已验证模型先累计原子度量净收入与销售成本，再计算比率，不累加各月毛利率：</p>
+<details><summary>查看完整 DML 模型</summary>
+
+<pre><code class="language-yaml">FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: &#39;{net_revenue} - {sales_cost}&#39;
+
+gross_margin:
+  type: measure
+  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+
+gross_margin_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+
+margin_change_pp:
+  type: measure
+  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+</code></pre>
+</details>
+
+<h2 id="百分点与增长率也要区分">百分点与增长率也要区分</h2>
+<p>North 去年同期累计毛利率为 20%。从 20% 升到 25%，增加的是 <strong>5 个百分点</strong>；相对增长率为 (25% / 20%) − 1 = 25%。报表中应分别标明。</p>
+<p>可查阅<a href="reference--examples--composable-metrics.html">完整案例</a>、<a href="profitability-comparison.sql">比较查询</a>和<a href="profitability-compiler-observations.json">编译记录</a>。记录覆盖严格编译与 SQL 检查，尚未执行数据库。物理表金额列应使用小数类型；收入为零时比率为 NULL，缺少历史值不自动补零。</p>
+<h2 id="接着学">接着学</h2>
+<p><a href="journey.zh.html#expressions">引用已有度量</a> · <a href="journey.zh.html#time">改变计算上下文</a> · <a href="guide--cumulative-margin-en.html">English</a></p>
+</main></body></html>

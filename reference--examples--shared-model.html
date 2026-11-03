@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shared model for query examples · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="shared-model-for-query-examples">Shared model for query examples</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shared model for query examples · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="The introductory query examples use this model as model.dml. Later domain fragments name additional dependencies. Compilation does not establish source-key uniqueness or result correctness."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.html"><meta property="og:type" content="website"><meta property="og:title" content="Shared model for query examples · DML"><meta property="og:description" content="The introductory query examples use this model as model.dml. Later domain fragments name additional dependencies. Compilation does not establish source-key uniqueness or result correctness."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="shared-model-for-query-examples">Shared model for query examples</h1>
 <p>The introductory <a href="reference--examples--queries.html">query examples</a> use this model as <code>model.dml</code>. Later domain fragments name additional dependencies. Compilation does not establish source-key uniqueness or result correctness.</p>
 <pre><code class="language-yaml"># model.dml (shared)
 transactions:
@@ -21,4 +21,4 @@ sales:
     dataset: transactions
     formula: SUM({amount})
 </code></pre>
-</main></html>
+</main></body></html>

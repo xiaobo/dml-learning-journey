@@ -1,0 +1,384 @@
+<!DOCTYPE html><html data-search-title="DML 入門：業務指標を学ぶインタラクティブチュートリアル" lang="ja" data-course-locale="ja"><head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>DML 入門：業務指標を学ぶインタラクティブチュートリアル</title>
+	<link rel="preload" href="assets--journey-planet.svg" as="image" type="image/svg+xml">
+	<style>
+		:root { color-scheme: light; --paper:#faf7ef; --ink:#263e48; --muted:#5c696b; --rule:#d9d4c6; --teal:#355f61; --gold:#ac7736; --blue:#e8eff0; --rose:#f2e5dc; }
+		* { box-sizing:border-box; }
+		html { scroll-behavior:smooth; scroll-padding-top:84px; }
+		body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+		a { color:var(--teal); text-underline-offset:4px; }
+		a:hover { color:#744b22; }
+		:focus-visible { outline:3px solid #a46c30; outline-offset:5px; }
+		.skip { position:absolute; top:-80px; left:20px; z-index:10; padding:12px; background:white; }
+		.skip:focus { top:10px; }
+		.topbar { position:sticky; top:0; z-index:5; background:rgba(250,247,239,.97); border-bottom:1px solid var(--rule); }
+		.topbar-inner { max-width:1240px; margin:auto; min-height:66px; padding:14px 36px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
+		.brand { text-decoration:none; color:var(--ink); font-size:12px; font-weight:650; letter-spacing:.16em; }
+		.topbar nav { display:flex; gap:24px; font-size:13px; }
+		.topbar nav a { text-decoration:none; }
+		main { max-width:1240px; margin:auto; padding:0 36px; }
+		.hero { padding:69px 0 0; text-align:center; }
+		.eyebrow { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#79613f; font-weight:650; }
+		h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; font-weight:400; line-height:1.12; }
+		h1 { font-size:clamp(46px,6.4vw,84px); letter-spacing:-.045em; margin:18px auto 22px; max-width:850px; }
+		.hero .lead { color:var(--muted); max-width:580px; margin:0 auto; font-size:19px; }
+		.hero figure { margin:30px -20px 0; }
+		.hero img { display:block; width:100%; height:auto; border-radius:4px; }
+		figcaption { color:var(--muted); font-size:13px; margin-top:12px; }
+		.chapter-nav { display:flex; flex-wrap:wrap; justify-content:center; gap:9px 30px; border-bottom:1px solid var(--rule); padding:30px 0 34px; font-size:13px; }
+		.chapter-nav a { text-decoration:none; }
+		.chapter-nav span { color:var(--gold); margin-right:7px; font-family:Georgia,serif; font-style:italic; }
+		.chapter { padding:76px 0; border-bottom:1px solid var(--rule); display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:70px; align-items:start; }
+		.chapter.full { display:block; }
+		.chapter-no { color:var(--gold); font:italic 22px Georgia,serif; display:block; margin-bottom:16px; }
+		h2 { font-size:clamp(32px,3.6vw,47px); letter-spacing:-.025em; margin:0 0 24px; max-width:560px; }
+		h3 { font-size:25px; margin:0 0 15px; }
+		p { margin:0 0 18px; }
+		.story { color:#765e3d; font:italic 21px/1.65 Georgia,serif; }
+		.small { color:var(--muted); font-size:14px; }
+		code { font: .88em/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+		p code,li code { background:#eeece3; padding:2px 5px; border-radius:3px; }
+		pre { overflow:auto; padding:24px; margin:0; background:#eeeee6; border:1px solid #d7dbd1; border-radius:7px; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:2; }
+		pre code { font-size:14px; }
+		.paper-panel { padding:27px; background:#fffdf7; border:1px solid var(--rule); border-radius:6px; box-shadow:0 8px 25px #52636306; }
+		.caption-label { font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:17px; }
+		table { border-collapse:collapse; width:100%; text-align:left; font-variant-numeric:tabular-nums; }
+		th { font-size:12px; font-weight:600; color:var(--muted); border-bottom:1px solid var(--rule); padding:10px 12px; }
+		td { padding:14px 12px; border-bottom:1px solid #eae5da; font-size:15px; }
+		tbody tr:last-child td { border-bottom:0; }
+		.key { border:1px solid #bfd0ce; border-radius:50%; width:29px; height:29px; display:inline-grid; place-items:center; color:var(--teal); background:#edf2eb; font-size:13px; }
+		.identity-note { margin:18px 0 0; font-size:13px; color:var(--teal); border-top:1px dashed var(--rule); padding-top:16px; }
+		.rule { border-left:2px solid #b58b50; padding:6px 0 6px 18px; margin:23px 0 0; font-size:15px; }
+		.code-label { font-size:12px; color:var(--muted); margin:0 0 10px; }
+		details { margin-top:18px; }
+		summary { cursor:pointer; font-size:14px; color:var(--teal); margin-bottom:12px; }
+		.formula { padding:34px 28px; background:#eaf0ec; border:1px solid #cddbd3; border-radius:7px; text-align:center; }
+		.formula code { font-size:clamp(16px,1.9vw,23px); }
+		.formula-parts { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:15px; }
+		.formula-parts p { padding:18px; margin:0; border:1px solid var(--rule); border-radius:5px; font-size:14px; }
+		.formula-parts strong { display:block; font:24px Georgia,serif; margin-bottom:6px; }
+		.explorer-intro { max-width:670px; }
+		fieldset { margin:30px 0 25px; padding:0; border:0; }
+		legend { margin-bottom:12px; font-size:14px; font-weight:600; }
+		.choices { display:flex; flex-wrap:wrap; gap:10px; }
+		.choice { cursor:pointer; display:flex; gap:10px; align-items:center; border:1px solid #c8cfc5; border-radius:30px; padding:9px 18px; font-size:14px; background:#fffdf7; }
+		.choice:has(input:checked) { color:#fffdf7; background:var(--teal); border-color:var(--teal); }
+		.choice input { accent-color:var(--teal); margin:0; }
+		.explorer-grid { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+		#query-code { min-height:140px; }
+		.result-panel { min-height:235px; }
+		.result-panel td { padding:12px; }
+		.result-title { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:10px; }
+		.result-title p { margin:0; }
+		.result-count { font-size:12px; color:var(--teal); }
+		.grain-note { margin:22px 0 0; padding:18px 22px; background:#eee9dc; border-radius:5px; font-size:15px; }
+		.flow { display:flex; align-items:stretch; gap:10px; margin:30px 0 25px; }
+		.flow-item { flex:1; padding:20px 14px; border:1px solid var(--rule); border-radius:5px; background:#fffdf7; text-align:center; font-size:14px; }
+		.flow-item strong { display:block; font:23px Georgia,serif; margin-bottom:9px; }
+		.flow-arrow { align-self:center; color:var(--gold); }
+		.verification { max-width:760px; }
+		.next-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:25px; }
+		.next-links a { display:inline-block; text-decoration:none; border:1px solid var(--teal); border-radius:5px; padding:11px 18px; font-size:14px; }
+		.next-links a:first-child { color:var(--paper); background:var(--teal); }
+		footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:15px; padding:30px 0 40px; color:var(--muted); font-size:12px; }
+		footer p { margin:0; }
+		@media(max-width:800px) {
+			main { padding:0 22px; } .topbar-inner { padding:15px 22px; } .topbar nav { gap:15px; }
+			.hero { padding-top:45px; } .hero figure { margin:24px -15px 0; } .hero .lead { font-size:17px; }
+			.chapter { grid-template-columns:1fr; gap:30px; padding:48px 0; } .explorer-grid { grid-template-columns:1fr; }
+			.flow { flex-direction:column; } .flow-arrow { transform:rotate(90deg); } .flow-item { padding:15px; }
+		}
+		@media(max-width:420px) { .paper-panel { padding:18px; } td,th { padding:10px 8px; } .choices { display:grid; } }
+		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
+	</style>
+	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
+<meta name="description" content="12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 入門：業務指標を学ぶインタラクティブチュートリアル"><meta property="og:description" content="12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
+<body>
+	<a class="skip" href="#journey" data-i18n="common.text1">はじめにへ移動</a>
+	<header class="topbar">
+		<div class="topbar-inner">
+			<a class="brand" href="index.ja.html" aria-label="DML の概要" data-i18n-aria-label="common.a11y1">DML</a>
+			<nav class="course-location" aria-label="チュートリアルのナビゲーション" data-i18n-aria-label="common.a11y2">
+				<details class="chapter-menu" id="chapter-menu">
+					<summary id="chapter-toggle"><span id="chapter-current">Introduction</span><span class="chapter-chevron" aria-hidden="true">⌄</span></summary>
+					<div class="chapter-menu-panel">
+						<div class="learning-progress" id="learning-progress" data-resume="identity">
+							<img class="journey-icon" src="assets--journey-planet.svg" width="36" height="36" alt="">
+							<div class="journey-overview"><label for="course-progress"><span data-i18n="common.label1">あなたの旅</span></label><span id="progress-label" role="status" aria-label="0 of 12 chapters completed">0 of 12 completed</span><progress class="sr-only" id="course-progress" max="12" value="0"></progress><div id="journey-track" aria-hidden="true"></div></div>
+						</div>
+						<a id="resume-learning" class="resume-learning" href="#identity">学習を続ける</a>
+						<div class="chapter-menu-links" id="chapter-menu-links"><a href="#journey">Introduction</a><a href="#identity">1. The rows</a></div>
+						<div class="chapter-menu-footer"><button type="button" class="secondary reset" id="reset-progress">進捗をリセット</button></div>
+					</div>
+				</details>
+			</nav>
+			<label class="language-control">
+				<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"></circle><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse><path d="M3 12h18M5 6.5c4 2 10 2 14 0M5 17.5c4-2 10-2 14 0"></path></svg>
+				<span class="sr-only" id="language-label">言語</span>
+				<select id="course-language" aria-label="Language"><option value="en" lang="en">English</option><option value="zh" lang="zh-CN">中文</option><option value="ja" lang="ja" selected="">日本語</option><option value="de" lang="de">Deutsch</option></select>
+			</label>
+		</div>
+	</header>
+	<main id="journey">
+		<section class="hero" aria-labelledby="title">
+			<div class="eyebrow" data-i18n="common.text2">イラストで学ぶ対話型チュートリアル</div>
+			<h1 id="title" data-i18n="common.text3">DML をめぐる<br>小さな旅</h1>
+			<p class="lead" data-i18n="common.text4">指標を定義し、組み合わせる。<br>文脈を変え、結果を確かめる。</p>
+			<p class="offline-note" data-i18n="common.text5">12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。</p>
+			<div class="journey-start"><a class="download-link" id="start-learning" href="#identity">Start chapter 1</a></div>
+			<figure>
+				<img src="assets--little-worlds.png" width="1672" height="941" alt="金色のマフラーを巻いた小さな旅人が、庭、ノート、望遠鏡、紙のカードが浮かぶ水彩の世界を眺めています。" data-i18n-alt="common.a11y3">
+				<figcaption data-i18n="common.text6">『星の王子さま』の穏やかな絵本の雰囲気に着想を得た、オリジナルの水彩画。</figcaption>
+			</figure>
+		</section>
+		<nav class="chapter-nav" id="chapters" aria-label="章" data-i18n-aria-label="common.a11y4">
+			<a href="#identity"><span>01</span>The rows</a><a href="#model"><span>02</span>The model</a><a href="#expressions"><span>03</span>The expression</a><a href="#grouping"><span>04</span>The question</a><a href="#compiler"><span>05</span>The compiler</a>
+			<a href="#filters"><span>06</span>The filters</a><a href="#shares"><span>07</span>The denominator</a><a href="#grain"><span>08</span>The intermediate grain</a><a href="#time"><span>09</span>The previous month</a><a href="#lookups"><span>10</span>The lookup</a><a href="#missing"><span>11</span>The missing value</a><a href="#capstone"><span>12</span>Your report</a>
+		</nav>
+		<noscript><p>Enable JavaScript for the exercises, or follow the <a href="tutorials--interactive-journey.html">text exercise guide</a>. The source examples and compiler snapshots are included in the downloadable project.</p></noscript>
+		<section class="chapter" id="identity" aria-labelledby="identity-title">
+			<div>
+				<span class="chapter-no" data-i18n="identity.text1">01 / データ行</span><h2 id="identity-title" data-i18n="identity.text2">まず、1 行が何を<br>表すかを知ろう。</h2>
+				<p class="story" data-i18n="identity.text3">旅人は 4 件の売上を数えました。<br>それぞれに、固有の名前が必要でした。</p>
+				<p data-i18n="identity.text4">データセットはソーステーブルをモデルに対応付けます。<code>dimension: [id]</code> はソース行の完全なキーを宣言します。ここでは各行が1件の売上で、<code>id</code> が識別します。</p>
+				<p data-i18n="identity.text5">複数の売上が同じ地域に属することがあります。<code>region</code> はグループ化には使えますが、元データのキーには不十分です。</p>
+				<p class="rule" data-i18n="identity.text6">North の 2 件を見てください。地域は同じでも ID は異なります。元データのキーは各行を識別できなければなりません。</p>
+			</div>
+			<div class="paper-panel">
+				<div class="caption-label" data-i18n="identity.text7">架空の売上 4 件 · TABLE_SALES</div>
+				<p class="small field-guide" data-i18n="identity.fields"><code>id</code> = 売上ID、<code>region</code> = 地域、<code>amount</code> = 売上金額。</p>
+				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">説明用のデータです。データベースには接続していません。</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
+					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
+				</tbody></table>
+				<p class="identity-note" data-i18n="identity.text8">レポートを region でグループ化しても、元データのキーは [id] のままです。</p>
+			</div>
+		</section>
+		<section class="chapter" id="model" aria-labelledby="model-title">
+			<div>
+				<span class="chapter-no" data-i18n="model.text1">02 / DML</span><h2 id="model-title" data-i18n="model.text2">定義は一冊の<br>ノートにまとめよう。</h2>
+				<p class="story" data-i18n="model.text3">「合計に、どんな名前をつけよう？」<br>旅人は sales と書きました。</p>
+				<p data-i18n="model.text4">DML は YAML でモデルを定義します。<code>FACT_SALES</code> はデータセット名、<code>TABLE_SALES</code> は物理的な元テーブルです。メジャーは再利用できる業務計算に名前をつけます。</p>
+				<p data-i18n="model.text5">原子メジャーは1つのデータセットに結び付き、その行または列の式を集計します。他のメジャーは参照しません。ここでは <code>sales</code> が金額を合計し、<code>cnt</code> が行数を数えます。</p>
+				<details><summary data-i18n="model.text6">モデル内の名前を確認する</summary><p data-i18n="model.text7">この教材では、<code>FACT_</code> はファクトデータセット、<code>DIM_</code> は属性データセット、<code>TABLE_</code> は物理テーブルを表します。フィールドとメジャーは <code>lower_snake_case</code> で命名します。</p><p data-i18n="model.text8">再利用する計算はモデルに、レポートのグループ化とフィルターはクエリに置きます。<a href="explanation--core-concepts.html">DML・DMX・Model Query</a> を参照してください。</p></details>
+			</div>
+			<div><p class="code-label" data-i18n="model.text9">model.dml · 再利用するモデル</p><pre><code>FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> はモデル列 <code>amount</code> を参照します。空の列定義は同名の物理列に対応します。</p></div>
+		</section>
+		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
+			<div>
+				<span class="chapter-no" data-i18n="expressions.text1">03 / DMX</span><h2 id="expressions-title" data-i18n="expressions.text2">すでにある定義を<br>計算に生かそう。</h2>
+				<p data-i18n="expressions.text3">旅人は 1 件あたりの平均売上を知りたくなりました。モデルには、すでに合計と件数があります。</p>
+				<p data-i18n="expressions.text4">DMX は数式内の式の構文です。<code>{sales}</code> の波括弧はモデルのメジャー定義を参照し、その値はこの参照のグループ化とフィルターで計算されます。</p>
+				<p data-i18n="expressions.text5"><code>average_sale</code> は他のメジャーを再利用する複合メジャーです。分母がゼロの場合、<code>DIVIDE</code> は値がないことを示す NULL を返します。</p>
+				<p class="small" data-i18n="expressions.text6">同じ式でも、North では 30 ÷ 2 = 15、全 4 件では 100 ÷ 4 = 25 になります。</p>
+			</div>
+			<div>
+				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">DMX で書いた式</div><code>DIVIDE({sales}, {cnt})</code></div>
+				<div class="formula-parts"><p data-i18n="expressions.text8"><strong>sales</strong>金額を合計します。</p><p data-i18n="expressions.text9"><strong>cnt</strong>元データの行数を数えます。</p></div>
+				<details><summary data-i18n="expressions.text10">メジャーの完全な定義を見る</summary><pre><code>average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'</code></pre><p class="small" data-i18n="expressions.text11">この複合メジャーでは <code>dataset:</code> を省略しています。依存する原子メジャーによって元データセットが決まります。DMX はクエリの式にも使われます。</p></details>
+			</div>
+		</section>
+		<section class="chapter full" id="grouping" aria-labelledby="grouping-title">
+			<span class="chapter-no" data-i18n="grouping.text1">04 / Model Query</span><h2 id="grouping-title" data-i18n="grouping.text2">同じメジャーを、<br>別の視点から。</h2>
+			<div class="explorer-intro"><p class="story" data-i18n="grouping.text3">旅人は望遠鏡を地域に向けました。</p><p data-i18n="grouping.text4">クエリ次元はレポートのグループ化で、結果の1行が何を表すかを決めます。<code>AGG(sales)</code> は名前付きメジャーを要求し、<code>SUM({amount})</code> はモデルに置きます。モデル定義は変わりません。</p><p class="small" data-i18n="grouping.text5">ピボットテーブルなら、<code>GROUP BY region</code> は region を「行」に置く操作に似ています。<code>AGG</code> は Model Query 独自の関数で、標準 SQL の関数ではありません。</p></div>
+			<fieldset id="grouping-controls"><legend data-i18n="grouping.text6">レポートのグループ化を選ぶ</legend><div class="choices">
+				<label class="choice"><input type="radio" name="grouping" value="all"><span data-i18n="grouping.label1">全売上</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="region" checked=""><span data-i18n="grouping.label2">地域別</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="id"><span data-i18n="grouping.label3">売上明細別</span></label>
+			</div></fieldset>
+			<p class="small" data-i18n="grouping.text7"><strong>全売上</strong>、次に<strong>売上明細別</strong>を試しましょう。合計 1 行から、明細 4 行に変わります。最後に<strong>地域別</strong>へ戻してください。</p>
+			<div class="explorer-grid">
+				<div><p class="code-label" data-i18n="grouping.text8">query.sql · Model Query</p><pre id="query-code"><code>SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="grouping.text9">FROM MODEL は、上のデータセットと 3 つのメジャーを含む model.dml を選びます。</p></div>
+				<div class="paper-panel result-panel"><div class="result-title"><p class="caption-label" data-i18n="grouping.text10">結果の例</p><p class="result-count" id="result-count" role="status">4 source rows → 2 result rows</p></div>
+					<table id="results"><thead><tr><th scope="col">region</th><th scope="col">sales</th><th scope="col">average_sale</th></tr></thead><tbody><tr><td>North</td><td>30</td><td>15</td></tr><tr><td>South</td><td>70</td><td>35</td></tr></tbody></table>
+				</div>
+			</div>
+			<div class="grain-note"><p id="grain-note">Each result row represents one region. The source dataset still has dimension: [id].</p><p class="small" id="average-note" role="status">North: 30 ÷ 2 = 15. South: 70 ÷ 2 = 35. The formula is evaluated for each result group.</p></div>
+			<p class="small" id="compiler-note" style="margin-top:14px">The regional query for this four-row model passes strict compilation on the checked dmlc build.</p>
+			<p class="small" style="margin-top:14px" data-i18n="grouping.text11">ブラウザー内で 4 行の例を計算します。このデモでは DML のコンパイル、SQL の実行、データベースの読み取りは行いません。</p>
+			<noscript><p>JavaScript is disabled. The regional example remains visible. For all sales together, sales = 100 and average_sale = 25. By sale, sales and average_sale both equal that row's amount.</p></noscript>
+		</section>
+		<section class="chapter full" id="compiler" aria-labelledby="compiler-title">
+			<span class="chapter-no" data-i18n="compiler.text1">05 / dmlc</span><h2 id="compiler-title" data-i18n="compiler.text2">コンパイラーは SQL を生成し、<br>データベースは行を返す。</h2>
+			<div class="flow" role="list" aria-label="コンパイルと実行" data-i18n-aria-label="compiler.a11y1">
+				<div class="flow-item" role="listitem" data-i18n="compiler.text3"><strong>モデル + クエリ</strong>定義とレポートの設定</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text4"><strong>dmlc</strong>SQL にコンパイル</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text5"><strong>データベース</strong>生成した SQL を実行</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text6"><strong>結果の行</strong>答えを読み取る</div>
+			</div>
+			<div class="verification"><p data-i18n="compiler.text7">コンパイルで確認用の SQL が生成されます。自分のデータでレポートを確かめるには、次の順に進めます。</p><ol><li><span data-i18n="compiler.step1">コンパイルし、診断と生成された SQL を確認する。</span></li><li><span data-i18n="compiler.step2">接続先で <code>--validate-only</code> を実行し、参照先データセットのキーと、EXPLAIN による SQL の検査を行う。</span></li><li><span data-i18n="compiler.step3">レポートを実行し、行と値を独立した結果と比較する。</span></li></ol><p class="small" data-i18n="compiler.text8">ブラウザーは計算例を表示します。実データの検証と結果比較にはデータベースが必要です。</p></div>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="compiler.text9">最初のクエリをコンパイル</a><a href="explanation--core-concepts.html" data-i18n="compiler.text10">基本概念を読む</a><a href="explanation--visual-introduction.html" data-i18n="compiler.text11">テキスト版を読む</a></div>
+		</section>
+		<section class="chapter full" id="filters" aria-labelledby="filters-title">
+			<span class="chapter-no" data-i18n="filters.text1">06 / レポートとメジャーのフィルター</span><h2 id="filters-title" data-i18n="filters.text2">どの売上で、<br>どの問いに答えよう。</h2>
+			<div class="lesson-start"><p class="story" data-i18n="filters.text3">旅人は領収書の中に返品を見つけました。</p><p data-i18n="filters.text4">4 件の売上に 2 月・顧客・ステータスを加えました。比較用に 1 月の 4 件も追加します。<strong>North</strong> を選ぶと、売上は 30、完了済み売上は 10 になります。</p></div>
+			<details><summary data-i18n="filters.text5">全 8 件の売上を見る</summary><div class="lesson-table" id="extended-source"></div></details>
+			<details><summary data-i18n="filters.text6">第 6〜12 章の完全なモデルを見る</summary><pre class="model-preview"><code id="full-model"></code></pre></details>
+			<p class="code-label" style="margin-top:24px" data-i18n="filters.text7">model.dml · 再利用するメジャー</p><pre><code>completed_sales:
+  type: measure
+  formula: '{sales: {+f: {status: completed}}}'</code></pre><p class="notation-note" data-i18n="filters.notation"><strong>修飾子（modifier）</strong>は、この参照をどう計算するかを指定します。<code>{sales: ...}</code> のコロンの前はメジャー、後は修飾設定です。ここでは <code>+f</code> で完了状態のフィルターを加え、sales の定義は変えません。</p>
+			<p class="small notation-note" data-i18n="filters.memory"><code>f</code> = filter（フィルター）、<code>+</code> = 追加。「sales を計算し、今回は完了状態で絞る」と読みます。</p>
+			<details class="syntax-note"><summary data-i18n="syntax.summary">修飾設定の2つの書き方</summary><p data-i18n="syntax.named"><code>{sales: pp}</code> は名前付き修飾子です。「sales の前期値」と読みます。第9章で使います。</p><p data-i18n="syntax.configured"><code>{sales: {+f: {status: completed}}}</code> は値付き設定です。status = completed の条件を加えます。コロンの後の波括弧に修飾設定を入れます。</p><p class="small" data-i18n="syntax.reference">他の形式は<a href="reference--modifiers.html">修飾子の規則と例</a>を参照してください。</p></details>
+			<div class="lab-controls"><label class="control"><span data-i18n="filters.label1">レポートの地域</span><select id="filter-region" aria-label="レポートの地域" data-i18n-aria-label="filters.a11y1"><option value="all" data-i18n="filters.text8">全地域</option><option>North</option><option>South</option></select></label></div>
+			<div class="explorer-grid"><pre><code id="filter-query"></code></pre><div class="paper-panel lesson-table" id="filter-result" aria-label="フィルター後の売上結果" data-i18n-aria-label="filters.a11y2"></div></div>
+			<p class="context-note" id="filter-note" role="status">Report WHERE selects the report's rows. +f restricts the inputs to completed_sales. The other measure still includes returned sales.</p>
+			<div class="compiler-observation" data-probe="filters"></div>
+		</section>
+		<section class="chapter full" id="shares" aria-labelledby="shares-title">
+			<span class="chapter-no" data-i18n="shares.text1">07 / 分母を明確に</span><h2 id="shares-title" data-i18n="shares.text2">30 は、何に対する割合？</h2>
+			<p class="story" data-i18n="shares.text3">割合には、部分と全体の両方が必要です。</p><p class="notation-note" data-i18n="shares.memory"><code>d</code> = dimension（次元）、<code>f</code> = filter（フィルター）。<code>-d</code> はグループ化を除き、<code>-df</code> は関連フィルターも除きます。どちらもこの参照だけに適用します。</p><p class="lesson-start" data-i18n="shares.text4">ここで <strong>North</strong> を選び、<code>-d</code> から <code>-df</code> に切り替えます。分母は30から100へ、割合は100%から30%へ変わります。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="shares.label1">レポートの地域</span><select id="share-region" aria-label="割合レポートの地域" data-i18n-aria-label="shares.a11y1"><option>North</option><option>South</option><option value="all" data-i18n="shares.text5">全地域</option></select></label><label class="control"><span data-i18n="shares.label2">分母の修飾子</span><select id="share-mode" aria-label="分母の修飾子" data-i18n-aria-label="shares.a11y2"><option value="keep" data-i18n="shares.text6">-d: region · フィルターを保持</option><option value="remove" data-i18n="shares.text7">-df: region · フィルターも解除</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · メジャー定義</p><pre><code id="share-formula"></code></pre><div class="stage-board"><div class="paper-panel"><h3 data-i18n="shares.text8">分母</h3><p id="share-denominator" role="status" data-i18n="shares.text9"><span id="share-context"></span><span>どちらのコンテキストも 2 月のままです。</span></p></div><div class="paper-panel lesson-table" id="share-result"></div></div>
+			<details><summary data-i18n="shares.text10">Model Query を見る</summary><pre><code id="share-query"></code></pre></details>
+			<p class="small" data-i18n="shares.text11">変わるのは分母の評価だけです。2月のフィルター、ソースキー、レポートの GROUP BY は変わりません。関連する地域フィルターがなければ、この例の分母は両者で同じです。比率は小数で返り、ここでは百分率で表示します。</p><div class="compiler-observation" data-probe="shares"></div>
+		</section>
+		<section class="chapter full" id="grain" aria-labelledby="grain-title">
+			<span class="chapter-no" data-i18n="grain.text1">08 / 中間の粒度で計算</span><h2 id="grain-title" data-i18n="grain.text2">顧客ごとに売上を合計し、<br>その平均を取る。</h2>
+			<p class="lesson-start" data-i18n="grain.text3">South の 2 月の 2 件は、どちらも顧客 C の売上です。明細平均は 35、顧客の合計は 70。<strong>SUM</strong>、<strong>MAX</strong> を試すと North は 30、20 に変わり、South は 70 のままです。回答前に <strong>AVG</strong> に戻しましょう。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">外側の集計</span><select id="grain-operation" aria-label="外側の集計" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · 顧客あたりの平均売上</option><option value="SUM" data-i18n="grain.text5">SUM · 顧客売上の合計</option><option value="MAX" data-i18n="grain.text6">MAX · 最大の顧客売上</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · メジャー定義</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">段階 1 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">段階 2 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（次元）。<code>+d: customer</code> はこの参照の評価次元に customer を追加します。外側の AVG・SUM・MAX で顧客別合計をクエリ次元に戻します。ソースキーと GROUP BY は変わりません。</p><details><summary data-i18n="grain.text10">Model Query を見る</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11"><a href="explanation--dimensions.html">ソース次元・クエリ次元・評価次元</a>を比較します。それぞれ元の行の識別、結果のグループ化、中間計算を担います。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+		</section>
+		<section class="chapter full" id="time" aria-labelledby="time-title">
+			<span class="chapter-no" data-i18n="time.text1">09 / 期間を比べる</span><h2 id="time-title" data-i18n="time.text2">ひと月前を振り返ろう。</h2>
+			<p class="story" data-i18n="time.text3">旅人は 1 月のページを、2 月の隣に置きました。</p>
+			<div class="time-definitions"><p class="code-label" data-i18n="time.text5">model.dml · 比較メジャー</p><div class="explorer-grid"><pre><code>previous_sales:
+  type: measure
+  formula: '{sales: pp}'</code></pre><pre><code>sales_change:
+  type: measure
+  formula: '{sales: pop}'</code></pre></div><p class="small" data-i18n="time.text6"><code>{sales: pp}</code> の sales はメジャー、<code>pp</code> は前期値を求める修飾子です。この例は月単位なので前月になります。<code>pop</code> は当期 ÷ 前期 − 1 の小数比率を返します。<a href="explanation--core-concepts.html#3-time-context-and-dim_dt">時間コンテキスト</a>も参照してください。</p></div>
+			<p class="lesson-start" data-i18n="time.text4"><strong>2 月</strong>の North の売上は 30、前期売上は 20。増加率は 30 ÷ 20 − 1 = 50% です。<strong>1 月</strong>に切り替えると、12 月の履歴がないため比較値は NULL になります。回答前に<strong>2 月</strong>へ戻しましょう。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="time.label1">対象月</span><select id="time-month" aria-label="対象月" data-i18n-aria-label="time.a11y1"><option value="2025-02-01" data-i18n="time.text7">2025 年 2 月</option><option value="2025-01-01" data-i18n="time.text8">2025 年 1 月</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.queryCodeLabel">query.sql · レポートの問い</p><pre><code id="time-query"></code></pre></div><div class="paper-panel lesson-table" id="time-result"></div></div><p class="context-note" data-i18n="time.text9">クエリのフィルターは対象月のままにします。前月の値と成長率はモデル内のメジャーが計算します。</p><div class="compiler-observation" data-probe="time"></div>
+		</section>
+		<section class="chapter full" id="lookups" aria-labelledby="lookups-title">
+			<span class="chapter-no" data-i18n="lookups.text1">10 / 属性を関連づける</span><h2 id="lookups-title" data-i18n="lookups.text2">参照先には、<br>一意な一致が必要。</h2>
+			<p class="lesson-start" data-i18n="lookups.text3">地域一覧では North の担当者が Ada、South が Lin です。モデルは一覧の完全なキー <code>[region]</code> で担当者を参照します。無効な North の重複行を加え、結合結果を確認しましょう。</p>
+			<pre><code>DIM_REGION:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [region]
+  columns:
+    region:
+    manager:
+
+# Inside FACT_SALES.columns:
+manager: 'pk(region).{DIM_REGION}.manager'</code></pre>
+			<div class="lab-controls"><label class="answer-option"><input type="checkbox" id="duplicate-key"><span data-i18n="lookups.label1">無効な 2 件目の North を一覧に追加</span></label></div><div class="stage-board"><div class="paper-panel"><h3 data-i18n="lookups.text4">地域一覧</h3><div class="lesson-table" id="lookup-directory"></div></div><div class="paper-panel"><h3 data-i18n="lookups.text5">参照後の 2 月の行</h3><div class="lesson-table" id="lookup-rows"></div></div></div><p class="context-note" id="lookup-note" role="status"></p>
+			<p class="small" data-i18n="lookups.text6">この切り替えは意図的に宣言したキーに違反します。通常のコンパイルでは元データを読みません。接続先で <code>dmlc --validate-only</code> を実行すると、参照先データセットの完全な次元を検証し、一意でなければ <code>DIMENSION_NOT_UNIQUE</code> を報告します。</p>
+			<details><summary data-i18n="lookups.text7">dmlc で重複キーを検出</summary><p data-i18n="lookups.text8">データベースで試すときは、ダウンロードした <code>model.dml</code> と同じ場所に <code>lookup.sql</code> を保存します。manager を選ぶことで DIM_REGION データセットが参照されます。</p><pre><code>SELECT manager, AGG(sales)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY manager</code></pre><p data-i18n="lookups.text9">サンプルテーブルがある接続先で検証します。<code>default</code> をその接続 ID に置き換えてください。</p><pre><code>dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json</code></pre><p data-i18n="lookups.text10">接続先の TABLE_REGION に North が 2 件あれば、DIM_REGION に対する <code>DIMENSION_NOT_UNIQUE</code> が想定されます。次元の宣言か元データを修正し、再検証してください。</p><p class="small" data-i18n="lookups.text11">検証では実際のキーを調べ、EXPLAIN で主クエリを検査します。レポート結果の行は取得しません。この切り替えはページ内の架空データだけを変更し、データベースは変えません。</p></details>
+			<div class="compiler-observation" data-probe="lookup"></div>
+		</section>
+		<section class="chapter full" id="missing" aria-labelledby="missing-title">
+			<span class="chapter-no" data-i18n="missing.text1">11 / 欠損の意味を考える</span><h2 id="missing-title" data-i18n="missing.text2">空白のページは、<br>ゼロとは限らない。</h2>
+			<p class="lesson-start" data-i18n="missing.text3"><strong>定数 0 で補う</strong>を選びましょう。1 月の地域 2 行はそのままで、前期売上が NULL から 0 に変わります。ここで NULL は前期の値がないことを示します。補完しても 12 月の売上がゼロだった証拠にはなりません。</p><div class="lab-controls"><label class="control"><span data-i18n="missing.label1">前期値の欠損</span><select id="missing-mode" aria-label="前期値の欠損" data-i18n-aria-label="missing.a11y1"><option value="null" data-i18n="missing.text4">NULL を保持</option><option value="zero" data-i18n="missing.text5">定数 0 で補う</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.modelCodeLabel">model.dml · メジャー定義</p><pre><code id="missing-formula"></code></pre></div><div class="paper-panel lesson-table" id="missing-result"></div></div><p class="context-note" data-i18n="missing.text6">最も外側の <code>ISNULL(..., 0)</code> は、このメジャーを使う場所で定数の代替値を返します。新しい月や顧客を作るものではありません。</p><div class="compiler-observation" data-probe="missing"></div>
+		</section>
+		<section class="chapter full" id="capstone" aria-labelledby="capstone-title">
+			<span class="chapter-no" data-i18n="capstone.text1">12 / レポートを作る</span><h2 id="capstone-title" data-i18n="capstone.text2">ノートと問いを、<br>ひとつにつなげよう。</h2>
+			<form class="chapter-check final-check" id="capstone-check" aria-labelledby="capstone-question">
+			<fieldset><legend id="capstone-question" data-i18n="capstone.text3">やってみよう · North と South の 2025 年 2 月のレポートを作りましょう。</legend>
+			<p class="lesson-start" data-i18n="capstone.text4">地域ごとに 1 行で、sales（売上合計）、completed_sales（完了済み売上）、previous_sales（前月売上）、average_customer_sales（顧客別売上合計の平均）、all_region_share（全地域の売上に占める割合）を表示します。下で設定し、「答え合わせ」を押してください。sales_change は任意です。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="capstone.label1">レポートの月</span><select id="final-month" aria-label="レポートの月" data-i18n-aria-label="capstone.a11y1"><option value="2025-02-01" data-i18n="capstone.text5">2025 年 2 月</option><option value="2025-01-01" data-i18n="capstone.text6">2025 年 1 月</option></select></label><label class="control"><span data-i18n="capstone.label2">レポートのグループ化</span><select id="final-group" aria-label="レポートのグループ化" data-i18n-aria-label="capstone.a11y2"><option value="region" data-i18n="capstone.text7">地域別</option><option value="all" data-i18n="capstone.text8">全売上をまとめる</option></select></label><label class="control"><span data-i18n="capstone.label3">レポートの地域フィルター</span><select id="final-region" aria-label="レポートの地域フィルター" data-i18n-aria-label="capstone.a11y3"><option value="all" data-i18n="capstone.text9">全地域</option><option>North</option><option>South</option></select></label></div>
+			<fieldset><legend data-i18n="capstone.text10">含めるメジャー</legend><div class="metric-options" id="final-measures"><label><input type="checkbox" value="sales" checked="" disabled=""><span data-i18n="capstone.label4">sales · 必須</span></label><label><input type="checkbox" value="completed_sales">completed_sales</label><label><input type="checkbox" value="previous_sales">previous_sales</label><label><input type="checkbox" value="average_customer_sales">average_customer_sales</label><label><input type="checkbox" value="all_region_share">all_region_share</label><label><input type="checkbox" value="sales_change"><span data-i18n="capstone.label5">sales_change · 任意</span></label></div></fieldset>
+			</fieldset>
+			<p class="answer-submit-note" data-i18n="capstone.submitHelp">設定を選んだら、「答え合わせ」を押して回答を確認しましょう。</p><div class="actions"><button type="submit" id="check-final">Submit answer</button><button type="button" class="secondary" id="final-hint">Show explanation</button></div>
+			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North：売上 30、完了済み 10、前月 20、顧客平均 15、割合 30%。South：売上 70、完了済み 70、前月 50、顧客平均 70、割合 70%。</p><p data-i18n="capstone.text12">ブラウザー外で実行するには START-HERE.txt を開きます。空の練習用データベースにサンプルテーブルを作り、モデルを lint し、クエリを厳密にコンパイルして SQL を確認します。指摘事項を記録してから、実データの検証と結果比較に進みましょう。</p></div>
+			</form>
+			<div class="explorer-grid final-preview">
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">モデルのノート · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">選択したメジャーと参照するメジャーの抜粋です。選択に合わせて更新されます。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">モデルのノートをすべて表示</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">model.dml をダウンロード</a></details></div>
+				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">レポートの問い · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">クエリはこれらの定義を再利用します。グループ化とフィルターはレポートの設定で決まります。</p><pre><code id="final-query"></code></pre></div>
+			</div>
+			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">結果の例</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">プレビューはこのページの架空データだけを計算し、任意の DML を実行するものではありません。コンパイラーの記録があるのは付属の検証済みクエリだけです。他の組み合わせは別途コンパイルが必要です。データベースには接続しません。</p>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">確認済みプロジェクトをダウンロード</a></div>
+			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">ローカルのコンパイルコマンドを見る</summary><pre><code>dmlc.exe --lint model.dml --output-format=json
+dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen</code></pre><p class="small" data-i18n="capstone.text16">これらのコンパイルコマンドにデータベース接続は不要です。別の実習用に、サンプルデータと SQL Server のセットアップも含まれます。想定する結合警告は記録済みですが、想定内の警告でも厳密チェックの合格にはなりません。</p></details>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="capstone.text17">コンパイラーの実習へ</a><a href="reference--README.html" data-i18n="capstone.text18">言語リファレンスを見る</a><a href="tutorials--interactive-journey.html" data-i18n="capstone.text19">演習ガイドを読む</a></div>
+			<details><summary data-i18n="capstone.text20">自分のレポートに応用する</summary><ol><li><span data-i18n="capstone.step1">元データと結果の 1 行が何を表すかを述べ、元データの完全なキーを確認する。</span></li><li><span data-i18n="capstone.step2">各メジャーの入力、フィルター、期間、中間粒度を明確にする。</span></li><li><span data-i18n="capstone.step3">比率では分母の範囲を明確にし、欠損を埋める前に業務上の意味を決める。</span></li><li><span data-i18n="capstone.step4">コンパイルして SQL を確認し、対象の接続先で検証したうえで、キー・重複行・NULL・全メジャーを独立した結果と比較する。</span></li></ol><p data-i18n="capstone.text21">まずは<a href="how-to--build-analysis.html">業務の問いからモデルを作る</a>へ。新しい計算には<a href="how-to--design-measures.html">再利用できるメジャーの設計</a>を参照してください。</p></details>
+		<p class="context-note" data-i18n="capstone.reuse">モデルを定義し、指標を組み合わせ、文脈を変えて結果を確認しました。同じ考え方を<a href="reference--examples--composable-metrics.html">累計利益率の前年同期比較</a>にも使えます。</p>
+</section>
+		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">手元に置きたい記号 · 早見表</summary><p data-i18n="recall.intro">参照は「どのメジャーか」、次に「今回はどう計算するか」と読みます。記憶の手がかりであり、追加構文や算術演算ではありません。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">記号</th><th data-i18n="recall.meaning">意味を振り返る</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。</p><p class="small" data-i18n="syntax.reference">他の形式は<a href="reference--modifiers.html">修飾子の規則と例</a>を参照してください。</p></details>
+		<footer><p data-i18n="common.text7">DML で定義し、DMX で式を書き、Model Query で選択とグループ化を行います。</p><p data-i18n="common.text8"><a href="compiler-observations.json">コンパイラーの記録</a> · <a href="explanation--visual-introduction.html">元のテキスト版</a> · オフライン対応</p></footer>
+	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
+	<script src="locales--en.js?v=ff69134b9f"></script>
+	<script src="locales--zh.js?v=3119955a84"></script>
+	<script src="locales--ja.js?v=5e6c62ee91"></script>
+	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script>
+		(() => {
+			const i18n = window.SmallJourneyI18n, t = i18n.t;
+			const rows = [
+				{ id:1, region:'North', amount:10 }, { id:2, region:'North', amount:20 },
+				{ id:3, region:'South', amount:30 }, { id:4, region:'South', amount:40 }
+			];
+			const results = document.getElementById('results');
+			const query = document.querySelector('#query-code code');
+			const count = document.getElementById('result-count');
+			const grain = document.getElementById('grain-note');
+			const compilerNote = document.getElementById('compiler-note');
+			const format = value => i18n.number(value);
+			function render(grouping) {
+				const field = grouping === 'all' ? null : grouping;
+				const groups = new Map();
+				for (const row of rows) {
+					const key = field ? row[field] : 'all';
+					if (!groups.has(key)) groups.set(key,{ key, sales:0, cnt:0 });
+					const group = groups.get(key); group.sales += row.amount; group.cnt++;
+				}
+				const header = document.createElement('tr');
+				for (const name of [...(field ? [field] : []),'sales','average_sale']) {
+					const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = name; header.append(cell);
+				}
+				results.tHead.replaceChildren(header);
+				const body = document.createDocumentFragment();
+				for (const group of groups.values()) {
+					const tr = document.createElement('tr');
+					const values = [...(field ? [group.key] : []),format(group.sales),format(group.sales/group.cnt)];
+					for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
+					body.append(tr);
+				}
+				results.tBodies[0].replaceChildren(body);
+				query.textContent = `SELECT ${field ? field+', ' : ''}AGG(sales), AGG(average_sale)\nFROM MODEL${field ? '\nGROUP BY '+field : ''}`;
+				count.textContent = t('resultCount',{source:4,n:groups.size});
+				grain.textContent = t(field === 'id' ? 'grainSale' : field ? 'grainRegion' : 'grainAll');
+				document.getElementById('average-note').textContent = t('averageNote',{calculations:[...groups.values()].map(group => `${field ? (field === 'id' ? t('averageSale',{id:group.key}) : group.key) : t('averageAll')}: ${format(group.sales)} ÷ ${group.cnt} = ${format(group.sales/group.cnt)}`).join('; ')});
+				compilerNote.textContent = field === 'id'
+					? t('compileSimplified')
+					: t(field ? 'compileRegional' : 'compileTotal');
+				document.dispatchEvent(new Event('course-query-change'));
+			}
+			document.getElementById('grouping-controls').addEventListener('change',event => {
+				if (event.target.name === 'grouping') render(event.target.value);
+			});
+			render('region');
+			document.addEventListener('course-language-change',() => render(document.querySelector('input[name="grouping"]:checked').value));
+		})();
+	</script>
+	<script src="course-data.js?v=f376cc3f21"></script>
+	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="compiler-observations.js?v=9584a66e1d"></script>
+	<script src="course-rewards.js?v=445824a005"></script>
+	<script src="course.js?v=3b675d296b"></script>
+	<script src="course-navigation.js?v=5181d006d7"></script>
+
+
+</body></html>

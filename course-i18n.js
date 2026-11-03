@@ -3,8 +3,8 @@
  const catalogs = window.SmallJourneyLocales;
  const supported = ['en','zh','ja','de'];
  const storageKey = 'dml-small-journey-language-v1';
- let locale = 'en';
- try { const saved = localStorage.getItem(storageKey); if (supported.includes(saved)) locale = saved; } catch {}
+ let locale = document.documentElement.dataset.courseLocale || 'en';
+ try { const saved = localStorage.getItem(storageKey); if (!document.documentElement.dataset.courseLocale && supported.includes(saved)) locale = saved; } catch {}
  const select = document.getElementById('course-language');
  function t(key,args={}) {
   let value = catalogs[locale].ui[key] ?? catalogs.en.ui[key];
@@ -24,12 +24,13 @@
    }
   }
   document.documentElement.lang = locale === 'zh' ? 'zh-CN' : locale;
-  document.title = t('pageTitle');
+  document.title = document.documentElement.dataset.searchTitle || t('pageTitle');
   select.value = locale; select.setAttribute('aria-label',t('language'));
   document.getElementById('language-label').textContent = t('language');
  }
  function change(next) {
   if (!supported.includes(next) || locale === next) return;
+  if (document.documentElement.dataset.courseLocale) { try { localStorage.setItem(storageKey,next); } catch {} location.assign('journey.'+next+'.html'+location.search+location.hash); return; }
   const line = document.querySelector('.topbar').getBoundingClientRect().bottom;
   const anchors = [...document.querySelectorAll('main section.chapter, main h2, main form, main .stage-board, main .lab-controls, main pre')]
    .map(element => ({element,top:element.getBoundingClientRect().top,height:element.getBoundingClientRect().height}))

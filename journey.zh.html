@@ -1,0 +1,384 @@
+<!DOCTYPE html><html data-search-title="DML 互动教程：定义指标、组合计算与分析上下文" lang="zh-CN" data-course-locale="zh"><head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>DML 互动教程：定义指标、组合计算与分析上下文</title>
+	<link rel="preload" href="assets--journey-planet.svg" as="image" type="image/svg+xml">
+	<style>
+		:root { color-scheme: light; --paper:#faf7ef; --ink:#263e48; --muted:#5c696b; --rule:#d9d4c6; --teal:#355f61; --gold:#ac7736; --blue:#e8eff0; --rose:#f2e5dc; }
+		* { box-sizing:border-box; }
+		html { scroll-behavior:smooth; scroll-padding-top:84px; }
+		body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+		a { color:var(--teal); text-underline-offset:4px; }
+		a:hover { color:#744b22; }
+		:focus-visible { outline:3px solid #a46c30; outline-offset:5px; }
+		.skip { position:absolute; top:-80px; left:20px; z-index:10; padding:12px; background:white; }
+		.skip:focus { top:10px; }
+		.topbar { position:sticky; top:0; z-index:5; background:rgba(250,247,239,.97); border-bottom:1px solid var(--rule); }
+		.topbar-inner { max-width:1240px; margin:auto; min-height:66px; padding:14px 36px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
+		.brand { text-decoration:none; color:var(--ink); font-size:12px; font-weight:650; letter-spacing:.16em; }
+		.topbar nav { display:flex; gap:24px; font-size:13px; }
+		.topbar nav a { text-decoration:none; }
+		main { max-width:1240px; margin:auto; padding:0 36px; }
+		.hero { padding:69px 0 0; text-align:center; }
+		.eyebrow { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#79613f; font-weight:650; }
+		h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; font-weight:400; line-height:1.12; }
+		h1 { font-size:clamp(46px,6.4vw,84px); letter-spacing:-.045em; margin:18px auto 22px; max-width:850px; }
+		.hero .lead { color:var(--muted); max-width:580px; margin:0 auto; font-size:19px; }
+		.hero figure { margin:30px -20px 0; }
+		.hero img { display:block; width:100%; height:auto; border-radius:4px; }
+		figcaption { color:var(--muted); font-size:13px; margin-top:12px; }
+		.chapter-nav { display:flex; flex-wrap:wrap; justify-content:center; gap:9px 30px; border-bottom:1px solid var(--rule); padding:30px 0 34px; font-size:13px; }
+		.chapter-nav a { text-decoration:none; }
+		.chapter-nav span { color:var(--gold); margin-right:7px; font-family:Georgia,serif; font-style:italic; }
+		.chapter { padding:76px 0; border-bottom:1px solid var(--rule); display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:70px; align-items:start; }
+		.chapter.full { display:block; }
+		.chapter-no { color:var(--gold); font:italic 22px Georgia,serif; display:block; margin-bottom:16px; }
+		h2 { font-size:clamp(32px,3.6vw,47px); letter-spacing:-.025em; margin:0 0 24px; max-width:560px; }
+		h3 { font-size:25px; margin:0 0 15px; }
+		p { margin:0 0 18px; }
+		.story { color:#765e3d; font:italic 21px/1.65 Georgia,serif; }
+		.small { color:var(--muted); font-size:14px; }
+		code { font: .88em/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+		p code,li code { background:#eeece3; padding:2px 5px; border-radius:3px; }
+		pre { overflow:auto; padding:24px; margin:0; background:#eeeee6; border:1px solid #d7dbd1; border-radius:7px; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:2; }
+		pre code { font-size:14px; }
+		.paper-panel { padding:27px; background:#fffdf7; border:1px solid var(--rule); border-radius:6px; box-shadow:0 8px 25px #52636306; }
+		.caption-label { font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:17px; }
+		table { border-collapse:collapse; width:100%; text-align:left; font-variant-numeric:tabular-nums; }
+		th { font-size:12px; font-weight:600; color:var(--muted); border-bottom:1px solid var(--rule); padding:10px 12px; }
+		td { padding:14px 12px; border-bottom:1px solid #eae5da; font-size:15px; }
+		tbody tr:last-child td { border-bottom:0; }
+		.key { border:1px solid #bfd0ce; border-radius:50%; width:29px; height:29px; display:inline-grid; place-items:center; color:var(--teal); background:#edf2eb; font-size:13px; }
+		.identity-note { margin:18px 0 0; font-size:13px; color:var(--teal); border-top:1px dashed var(--rule); padding-top:16px; }
+		.rule { border-left:2px solid #b58b50; padding:6px 0 6px 18px; margin:23px 0 0; font-size:15px; }
+		.code-label { font-size:12px; color:var(--muted); margin:0 0 10px; }
+		details { margin-top:18px; }
+		summary { cursor:pointer; font-size:14px; color:var(--teal); margin-bottom:12px; }
+		.formula { padding:34px 28px; background:#eaf0ec; border:1px solid #cddbd3; border-radius:7px; text-align:center; }
+		.formula code { font-size:clamp(16px,1.9vw,23px); }
+		.formula-parts { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:15px; }
+		.formula-parts p { padding:18px; margin:0; border:1px solid var(--rule); border-radius:5px; font-size:14px; }
+		.formula-parts strong { display:block; font:24px Georgia,serif; margin-bottom:6px; }
+		.explorer-intro { max-width:670px; }
+		fieldset { margin:30px 0 25px; padding:0; border:0; }
+		legend { margin-bottom:12px; font-size:14px; font-weight:600; }
+		.choices { display:flex; flex-wrap:wrap; gap:10px; }
+		.choice { cursor:pointer; display:flex; gap:10px; align-items:center; border:1px solid #c8cfc5; border-radius:30px; padding:9px 18px; font-size:14px; background:#fffdf7; }
+		.choice:has(input:checked) { color:#fffdf7; background:var(--teal); border-color:var(--teal); }
+		.choice input { accent-color:var(--teal); margin:0; }
+		.explorer-grid { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+		#query-code { min-height:140px; }
+		.result-panel { min-height:235px; }
+		.result-panel td { padding:12px; }
+		.result-title { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:10px; }
+		.result-title p { margin:0; }
+		.result-count { font-size:12px; color:var(--teal); }
+		.grain-note { margin:22px 0 0; padding:18px 22px; background:#eee9dc; border-radius:5px; font-size:15px; }
+		.flow { display:flex; align-items:stretch; gap:10px; margin:30px 0 25px; }
+		.flow-item { flex:1; padding:20px 14px; border:1px solid var(--rule); border-radius:5px; background:#fffdf7; text-align:center; font-size:14px; }
+		.flow-item strong { display:block; font:23px Georgia,serif; margin-bottom:9px; }
+		.flow-arrow { align-self:center; color:var(--gold); }
+		.verification { max-width:760px; }
+		.next-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:25px; }
+		.next-links a { display:inline-block; text-decoration:none; border:1px solid var(--teal); border-radius:5px; padding:11px 18px; font-size:14px; }
+		.next-links a:first-child { color:var(--paper); background:var(--teal); }
+		footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:15px; padding:30px 0 40px; color:var(--muted); font-size:12px; }
+		footer p { margin:0; }
+		@media(max-width:800px) {
+			main { padding:0 22px; } .topbar-inner { padding:15px 22px; } .topbar nav { gap:15px; }
+			.hero { padding-top:45px; } .hero figure { margin:24px -15px 0; } .hero .lead { font-size:17px; }
+			.chapter { grid-template-columns:1fr; gap:30px; padding:48px 0; } .explorer-grid { grid-template-columns:1fr; }
+			.flow { flex-direction:column; } .flow-arrow { transform:rotate(90deg); } .flow-item { padding:15px; }
+		}
+		@media(max-width:420px) { .paper-panel { padding:18px; } td,th { padding:10px 8px; } .choices { display:grid; } }
+		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
+	</style>
+	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
+<meta name="description" content="用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 互动教程：定义指标、组合计算与分析上下文"><meta property="og:description" content="用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
+<body>
+	<a class="skip" href="#journey" data-i18n="common.text1">跳到课程介绍</a>
+	<header class="topbar">
+		<div class="topbar-inner">
+			<a class="brand" href="index.zh.html" aria-label="DML 概览" data-i18n-aria-label="common.a11y1">DML</a>
+			<nav class="course-location" aria-label="教程导航" data-i18n-aria-label="common.a11y2">
+				<details class="chapter-menu" id="chapter-menu">
+					<summary id="chapter-toggle"><span id="chapter-current">Introduction</span><span class="chapter-chevron" aria-hidden="true">⌄</span></summary>
+					<div class="chapter-menu-panel">
+						<div class="learning-progress" id="learning-progress" data-resume="identity">
+							<img class="journey-icon" src="assets--journey-planet.svg" width="36" height="36" alt="">
+							<div class="journey-overview"><label for="course-progress"><span data-i18n="common.label1">你的旅程</span></label><span id="progress-label" role="status" aria-label="0 of 12 chapters completed">0 of 12 completed</span><progress class="sr-only" id="course-progress" max="12" value="0"></progress><div id="journey-track" aria-hidden="true"></div></div>
+						</div>
+						<a id="resume-learning" class="resume-learning" href="#identity">继续学习</a>
+						<div class="chapter-menu-links" id="chapter-menu-links"><a href="#journey">Introduction</a><a href="#identity">1. The rows</a></div>
+						<div class="chapter-menu-footer"><button type="button" class="secondary reset" id="reset-progress">重置进度</button></div>
+					</div>
+				</details>
+			</nav>
+			<label class="language-control">
+				<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"></circle><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse><path d="M3 12h18M5 6.5c4 2 10 2 14 0M5 17.5c4-2 10-2 14 0"></path></svg>
+				<span class="sr-only" id="language-label">语言</span>
+				<select id="course-language" aria-label="Language"><option value="en" lang="en">English</option><option value="zh" lang="zh-CN" selected="">中文</option><option value="ja" lang="ja">日本語</option><option value="de" lang="de">Deutsch</option></select>
+			</label>
+		</div>
+	</header>
+	<main id="journey">
+		<section class="hero" aria-labelledby="title">
+			<div class="eyebrow" data-i18n="common.text2">图解互动教程</div>
+			<h1 id="title" data-i18n="common.text3">一段探索 DML<br>的小小旅程</h1>
+			<p class="lead" data-i18n="common.text4">定义指标，引用组合。<br>改变上下文，检查结果。</p>
+			<p class="offline-note" data-i18n="common.text5">用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。</p>
+			<div class="journey-start"><a class="download-link" id="start-learning" href="#identity">Start chapter 1</a></div>
+			<figure>
+				<img src="assets--little-worlds.png" width="1672" height="941" alt="围着金色围巾的小旅人，望向漂浮的水彩小世界：花园、笔记、望远镜和纸卡。" data-i18n-alt="common.a11y3">
+				<figcaption data-i18n="common.text6">原创水彩插画，灵感来自《小王子》温柔的绘本意境。</figcaption>
+			</figure>
+		</section>
+		<nav class="chapter-nav" id="chapters" aria-label="章节" data-i18n-aria-label="common.a11y4">
+			<a href="#identity"><span>01</span>The rows</a><a href="#model"><span>02</span>The model</a><a href="#expressions"><span>03</span>The expression</a><a href="#grouping"><span>04</span>The question</a><a href="#compiler"><span>05</span>The compiler</a>
+			<a href="#filters"><span>06</span>The filters</a><a href="#shares"><span>07</span>The denominator</a><a href="#grain"><span>08</span>The intermediate grain</a><a href="#time"><span>09</span>The previous month</a><a href="#lookups"><span>10</span>The lookup</a><a href="#missing"><span>11</span>The missing value</a><a href="#capstone"><span>12</span>Your report</a>
+		</nav>
+		<noscript><p>Enable JavaScript for the exercises, or follow the <a href="tutorials--interactive-journey.html">text exercise guide</a>. The source examples and compiler snapshots are included in the downloadable project.</p></noscript>
+		<section class="chapter" id="identity" aria-labelledby="identity-title">
+			<div>
+				<span class="chapter-no" data-i18n="identity.text1">01 / 数据行</span><h2 id="identity-title" data-i18n="identity.text2">先弄清楚，<br>一行代表什么。</h2>
+				<p class="story" data-i18n="identity.text3">旅人数了四笔销售。<br>每一笔，都需要自己的名字。</p>
+				<p data-i18n="identity.text4">数据集把源表映射到模型。<code>dimension: [id]</code> 声明完整的源行键：这里每行是一笔销售，由 <code>id</code> 标识。</p>
+				<p data-i18n="identity.text5">两笔销售可以属于同一地区。因此 <code>region</code> 适合分组，却不足以作为源数据的键。</p>
+				<p class="rule" data-i18n="identity.text6">找到两笔 North 销售：地区相同，ID 不同。源键必须能标识每一行。</p>
+			</div>
+			<div class="paper-panel">
+				<div class="caption-label" data-i18n="identity.text7">四笔虚构销售 · TABLE_SALES</div>
+				<p class="small field-guide" data-i18n="identity.fields"><code>id</code> = 销售编号，<code>region</code> = 地区，<code>amount</code> = 销售金额。</p>
+				<table><caption class="small" style="caption-side:bottom;padding-top:16px;text-align:left"><span data-i18n="identity.caption">仅为示例数据，未连接数据库。</span></caption><thead><tr><th scope="col">id</th><th scope="col">region</th><th scope="col">amount</th></tr></thead><tbody>
+					<tr><td><span class="key">1</span></td><td>North</td><td>10</td></tr><tr><td><span class="key">2</span></td><td>North</td><td>20</td></tr><tr><td><span class="key">3</span></td><td>South</td><td>30</td></tr><tr><td><span class="key">4</span></td><td>South</td><td>40</td></tr>
+				</tbody></table>
+				<p class="identity-note" data-i18n="identity.text8">即使报表按 region 分组，源键仍是 [id]。</p>
+			</div>
+		</section>
+		<section class="chapter" id="model" aria-labelledby="model-title">
+			<div>
+				<span class="chapter-no" data-i18n="model.text1">02 / DML</span><h2 id="model-title" data-i18n="model.text2">把定义收在<br>同一本笔记里。</h2>
+				<p class="story" data-i18n="model.text3">“给总额起个什么名字呢？”<br>旅人写下了：sales。</p>
+				<p data-i18n="model.text4">DML 用 YAML 定义模型。<code>FACT_SALES</code> 是数据集名称，<code>TABLE_SALES</code> 是物理源表。度量为可复用的业务计算命名。</p>
+				<p data-i18n="model.text5">原子度量绑定一个数据集，直接聚合其中的行或列表达式，公式不引用其他度量。这里 <code>sales</code> 求金额之和，<code>cnt</code> 统计行数。</p>
+				<details><summary data-i18n="model.text6">了解模型中的名称</summary><p data-i18n="model.text7">本教程约定：<code>FACT_</code> 命名事实数据集，<code>DIM_</code> 命名属性数据集，<code>TABLE_</code> 命名物理表；字段和度量采用 <code>lower_snake_case</code>。</p><p data-i18n="model.text8">可复用的计算放在模型中，报表分组和筛选放在查询中。参见 <a href="explanation--core-concepts.html">DML、DMX 与 Model Query</a>。</p></details>
+			</div>
+			<div><p class="code-label" data-i18n="model.text9">model.dml · 可复用模型</p><pre><code>FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> 引用模型列 <code>amount</code>。留空的列定义映射到同名物理列。</p></div>
+		</section>
+		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
+			<div>
+				<span class="chapter-no" data-i18n="expressions.text1">03 / DMX</span><h2 id="expressions-title" data-i18n="expressions.text2">新的计算，<br>可以复用已有定义。</h2>
+				<p data-i18n="expressions.text3">旅人想知道平均每笔销售额。模型里已经有了总额和笔数。</p>
+				<p data-i18n="expressions.text4">DMX 是公式中的表达式语法。<code>{sales}</code> 的花括号表示引用模型中的度量定义；它的值按这次引用的分组和筛选计算。</p>
+				<p data-i18n="expressions.text5"><code>average_sale</code> 复用其他度量，因此是复合度量。分母为零时，<code>DIVIDE</code> 返回 NULL，表示没有可用数值。</p>
+				<p class="small" data-i18n="expressions.text6">同一公式在 North 中得到 30 ÷ 2 = 15；在全部四笔销售中得到 100 ÷ 4 = 25。</p>
+			</div>
+			<div>
+				<div class="formula"><div class="caption-label" data-i18n="expressions.text7">用 DMX 写出的公式</div><code>DIVIDE({sales}, {cnt})</code></div>
+				<div class="formula-parts"><p data-i18n="expressions.text8"><strong>sales</strong>金额求和。</p><p data-i18n="expressions.text9"><strong>cnt</strong>统计源数据行数。</p></div>
+				<details><summary data-i18n="expressions.text10">查看完整度量定义</summary><pre><code>average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'</code></pre><p class="small" data-i18n="expressions.text11">这个复合度量省略了 <code>dataset:</code>；它依赖的原子度量会选定源数据集。DMX 也可以出现在查询表达式中。</p></details>
+			</div>
+		</section>
+		<section class="chapter full" id="grouping" aria-labelledby="grouping-title">
+			<span class="chapter-no" data-i18n="grouping.text1">04 / Model Query</span><h2 id="grouping-title" data-i18n="grouping.text2">相同的度量，<br>换一种视角。</h2>
+			<div class="explorer-intro"><p class="story" data-i18n="grouping.text3">旅人把望远镜转向了各个地区。</p><p data-i18n="grouping.text4">查询维度就是报表的分组，决定一行结果代表什么。<code>AGG(sales)</code> 请求命名度量；<code>SUM({amount})</code> 留在模型中。模型定义保持不变。</p><p class="small" data-i18n="grouping.text5">如果你熟悉数据透视表，<code>GROUP BY region</code> 就像把 region 放进“行”。<code>AGG</code> 属于 Model Query，并非标准 SQL 函数。</p></div>
+			<fieldset id="grouping-controls"><legend data-i18n="grouping.text6">选择报表分组</legend><div class="choices">
+				<label class="choice"><input type="radio" name="grouping" value="all"><span data-i18n="grouping.label1">全部销售</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="region" checked=""><span data-i18n="grouping.label2">按地区</span></label>
+				<label class="choice"><input type="radio" name="grouping" value="id"><span data-i18n="grouping.label3">按销售记录</span></label>
+			</div></fieldset>
+			<p class="small" data-i18n="grouping.text7">依次尝试<strong>全部销售</strong>和<strong>按销售记录</strong>：先看到一行总计，再看到四笔记录。最后回到<strong>按地区</strong>。</p>
+			<div class="explorer-grid">
+				<div><p class="code-label" data-i18n="grouping.text8">query.sql · Model Query</p><pre id="query-code"><code>SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region</code></pre><p class="small" style="margin-top:16px" data-i18n="grouping.text9">FROM MODEL 选择 model.dml，其中包含上面的数据集和三个度量。</p></div>
+				<div class="paper-panel result-panel"><div class="result-title"><p class="caption-label" data-i18n="grouping.text10">示例结果</p><p class="result-count" id="result-count" role="status">4 source rows → 2 result rows</p></div>
+					<table id="results"><thead><tr><th scope="col">region</th><th scope="col">sales</th><th scope="col">average_sale</th></tr></thead><tbody><tr><td>North</td><td>30</td><td>15</td></tr><tr><td>South</td><td>70</td><td>35</td></tr></tbody></table>
+				</div>
+			</div>
+			<div class="grain-note"><p id="grain-note">Each result row represents one region. The source dataset still has dimension: [id].</p><p class="small" id="average-note" role="status">North: 30 ÷ 2 = 15. South: 70 ÷ 2 = 35. The formula is evaluated for each result group.</p></div>
+			<p class="small" id="compiler-note" style="margin-top:14px">The regional query for this four-row model passes strict compilation on the checked dmlc build.</p>
+			<p class="small" style="margin-top:14px" data-i18n="grouping.text11">浏览器在本地计算这四行示例。这个演示不编译 DML、不执行 SQL，也不读取数据库。</p>
+			<noscript><p>JavaScript is disabled. The regional example remains visible. For all sales together, sales = 100 and average_sale = 25. By sale, sales and average_sale both equal that row's amount.</p></noscript>
+		</section>
+		<section class="chapter full" id="compiler" aria-labelledby="compiler-title">
+			<span class="chapter-no" data-i18n="compiler.text1">05 / dmlc</span><h2 id="compiler-title" data-i18n="compiler.text2">编译器生成 SQL，<br>数据库返回数据行。</h2>
+			<div class="flow" role="list" aria-label="编译与执行" data-i18n-aria-label="compiler.a11y1">
+				<div class="flow-item" role="listitem" data-i18n="compiler.text3"><strong>模型 + 查询</strong>定义与报表选择</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text4"><strong>dmlc</strong>编译为 SQL</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text5"><strong>数据库</strong>执行生成的 SQL</div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-item" role="listitem" data-i18n="compiler.text6"><strong>结果行</strong>读取答案</div>
+			</div>
+			<div class="verification"><p data-i18n="compiler.text7">编译会生成可供检查的 SQL。要验证自己的数据上的报表，请依次：</p><ol><li><span data-i18n="compiler.step1">编译，阅读诊断信息，检查生成的 SQL。</span></li><li><span data-i18n="compiler.step2">连接数据库后，运行 <code>--validate-only</code>，检查查询涉及的数据集键，并通过 EXPLAIN 探测 SQL。</span></li><li><span data-i18n="compiler.step3">执行报表，将结果行和值与独立计算的结果比较。</span></li></ol><p class="small" data-i18n="compiler.text8">浏览器展示的是计算示例。实时验证和结果比较仍需数据库。</p></div>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="compiler.text9">编译第一个查询</a><a href="explanation--core-concepts.html" data-i18n="compiler.text10">阅读核心概念</a><a href="explanation--visual-introduction.html" data-i18n="compiler.text11">阅读文字版</a></div>
+		</section>
+		<section class="chapter full" id="filters" aria-labelledby="filters-title">
+			<span class="chapter-no" data-i18n="filters.text1">06 / 筛选报表与度量</span><h2 id="filters-title" data-i18n="filters.text2">选择哪些销售，<br>回答哪个问题。</h2>
+			<div class="lesson-start"><p class="story" data-i18n="filters.text3">旅人在收据中发现了一笔退货。</p><p data-i18n="filters.text4">四笔销售现在有了二月、客户和状态字段；另加四笔一月销售，用于比较。选择 <strong>North</strong>：销售额应为 30，已完成销售额为 10。</p></div>
+			<details><summary data-i18n="filters.text5">查看全部八笔销售</summary><div class="lesson-table" id="extended-source"></div></details>
+			<details><summary data-i18n="filters.text6">查看第 6–12 章使用的完整模型</summary><pre class="model-preview"><code id="full-model"></code></pre></details>
+			<p class="code-label" style="margin-top:24px" data-i18n="filters.text7">model.dml · 可复用度量</p><pre><code>completed_sales:
+  type: measure
+  formula: '{sales: {+f: {status: completed}}}'</code></pre><p class="notation-note" data-i18n="filters.notation"><strong>修饰符（modifier）</strong>告诉模型，这一次如何计算引用的度量。<code>{sales: ...}</code> 的冒号前是度量，后面是修饰设置。这里 <code>+f</code> 增加“已完成”状态筛选，sales 原定义保持不变。</p>
+			<p class="small notation-note" data-i18n="filters.memory"><code>f</code> = filter（筛选），<code>+</code> = 加入。整句读作：计算 sales，这一次增加“已完成”筛选。</p>
+			<details class="syntax-note"><summary data-i18n="syntax.summary">修饰符的两种写法</summary><p data-i18n="syntax.named"><code>{sales: pp}</code> 使用命名修饰符，读作：计算 sales，这一次请求上一期值。第 9 章会用到。</p><p data-i18n="syntax.configured"><code>{sales: {+f: {status: completed}}}</code> 使用带参数的配置：增加 status = completed 条件。冒号后的花括号装的是这些修饰设置。</p><p class="small" data-i18n="syntax.reference">需要更多形式时，查阅<a href="reference--modifiers.html">修饰符规则与示例</a>。</p></details>
+			<div class="lab-controls"><label class="control"><span data-i18n="filters.label1">报表地区</span><select id="filter-region" aria-label="报表地区" data-i18n-aria-label="filters.a11y1"><option value="all" data-i18n="filters.text8">全部地区</option><option>North</option><option>South</option></select></label></div>
+			<div class="explorer-grid"><pre><code id="filter-query"></code></pre><div class="paper-panel lesson-table" id="filter-result" aria-label="筛选后的销售结果" data-i18n-aria-label="filters.a11y2"></div></div>
+			<p class="context-note" id="filter-note" role="status">Report WHERE selects the report's rows. +f restricts the inputs to completed_sales. The other measure still includes returned sales.</p>
+			<div class="compiler-observation" data-probe="filters"></div>
+		</section>
+		<section class="chapter full" id="shares" aria-labelledby="shares-title">
+			<span class="chapter-no" data-i18n="shares.text1">07 / 说清楚分母</span><h2 id="shares-title" data-i18n="shares.text2">三十，占谁的多少？</h2>
+			<p class="story" data-i18n="shares.text3">占比需要一部分，也需要一个整体。</p><p class="notation-note" data-i18n="shares.memory"><code>d</code> = dimension（维度），<code>f</code> = filter（筛选）。<code>-d</code> 减分组，<code>-df</code> 还减相关筛选；都只作用于这次引用。</p><p class="lesson-start" data-i18n="shares.text4">在本章选择 <strong>North</strong>，从 <code>-d</code> 切换到 <code>-df</code>。分母应从 30 变为 100，占比从 100% 变为 30%。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="shares.label1">报表地区</span><select id="share-region" aria-label="占比报表地区" data-i18n-aria-label="shares.a11y1"><option>North</option><option>South</option><option value="all" data-i18n="shares.text5">全部地区</option></select></label><label class="control"><span data-i18n="shares.label2">分母修饰符</span><select id="share-mode" aria-label="分母修饰符" data-i18n-aria-label="shares.a11y2"><option value="keep" data-i18n="shares.text6">-d: region · 保留筛选</option><option value="remove" data-i18n="shares.text7">-df: region · 移除筛选</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · 度量定义</p><pre><code id="share-formula"></code></pre><div class="stage-board"><div class="paper-panel"><h3 data-i18n="shares.text8">分母</h3><p id="share-denominator" role="status" data-i18n="shares.text9"><span id="share-context"></span><span>两种上下文都固定在二月。</span></p></div><div class="paper-panel lesson-table" id="share-result"></div></div>
+			<details><summary data-i18n="shares.text10">查看 Model Query</summary><pre><code id="share-query"></code></pre></details>
+			<p class="small" data-i18n="shares.text11">调整的只是分母的求值。二月筛选、源行键和报表 GROUP BY 保持不变。没有相关地区筛选时，这两种修饰符在本例得到相同分母。模型中的占比是小数，此处显示为百分比。</p><div class="compiler-observation" data-probe="shares"></div>
+		</section>
+		<section class="chapter full" id="grain" aria-labelledby="grain-title">
+			<span class="chapter-no" data-i18n="grain.text1">08 / 在中间粒度计算</span><h2 id="grain-title" data-i18n="grain.text2">先按客户汇总，<br>再取平均。</h2>
+			<p class="lesson-start" data-i18n="grain.text3">South 的两笔二月销售都属于客户 C。平均每笔为 35，唯一客户的总额为 70。尝试 <strong>SUM</strong> 和 <strong>MAX</strong>：North 分别变为 30 和 20，South 仍为 70。检查答案前回到 <strong>AVG</strong>。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="grain.label1">外层聚合</span><select id="grain-operation" aria-label="外层聚合" data-i18n-aria-label="grain.a11y1"><option value="AVG" data-i18n="grain.text4">AVG · 平均每客户销售额</option><option value="SUM" data-i18n="grain.text5">SUM · 客户销售额合计</option><option value="MAX" data-i18n="grain.text6">MAX · 最大客户销售额</option></select></label></div>
+			<p class="code-label" data-i18n="common.modelCodeLabel">model.dml · 度量定义</p><pre><code id="grain-formula"></code></pre><div class="stage-board"><div class="paper-panel"><p class="stage-number" data-i18n="grain.text7">第 1 步 · region + customer</p><div class="lesson-table" id="grain-detail"></div></div><div class="paper-panel"><p class="stage-number" data-i18n="grain.text8">第 2 步 · region</p><div class="lesson-table" id="grain-result"></div></div></div>
+			<p class="context-note" data-i18n="grain.text9"><code>d</code> = dimension（维度）；<code>+d: customer</code> 为这次引用的求值维度增加 customer。外层 AVG、SUM 或 MAX 再把客户总额汇总回查询维度。源行键和报表 GROUP BY 不变。</p><details><summary data-i18n="grain.text10">查看 Model Query</summary><pre><code id="grain-query"></code></pre><p data-i18n="grain.text11">对照<a href="explanation--dimensions.html">源维度、查询维度与求值维度</a>：分别对应源行标识、结果分组和中间计算。</p></details><div class="compiler-observation" data-probe="grain_avg"></div>
+		</section>
+		<section class="chapter full" id="time" aria-labelledby="time-title">
+			<span class="chapter-no" data-i18n="time.text1">09 / 比较期间</span><h2 id="time-title" data-i18n="time.text2">回望上一个月。</h2>
+			<p class="story" data-i18n="time.text3">旅人把一月的笔记，放在了二月旁边。</p>
+			<div class="time-definitions"><p class="code-label" data-i18n="time.text5">model.dml · 比较度量</p><div class="explorer-grid"><pre><code>previous_sales:
+  type: measure
+  formula: '{sales: pp}'</code></pre><pre><code>sales_change:
+  type: measure
+  formula: '{sales: pop}'</code></pre></div><p class="small" data-i18n="time.text6"><code>{sales: pp}</code> 中，sales 是度量，<code>pp</code> 是请求上一期值的修饰符。本例的月份上下文让它取得上月值。<code>pop</code> 返回本期 ÷ 上期 − 1 的小数增长率。参见<a href="explanation--core-concepts.html#3-time-context-and-dim_dt">时间上下文</a>。</p></div>
+			<p class="lesson-start" data-i18n="time.text4">在<strong>二月</strong>，North 的销售额为 30，上期销售额为 20，增长率为 30 ÷ 20 − 1 = 50%。切换到<strong>一月</strong>：由于没有十二月历史，对比结果应为 NULL。检查答案前回到<strong>二月</strong>。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="time.label1">当前月份</span><select id="time-month" aria-label="当前月份" data-i18n-aria-label="time.a11y1"><option value="2025-02-01" data-i18n="time.text7">2025 年 2 月</option><option value="2025-01-01" data-i18n="time.text8">2025 年 1 月</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.queryCodeLabel">query.sql · 报表问题</p><pre><code id="time-query"></code></pre></div><div class="paper-panel lesson-table" id="time-result"></div></div><p class="context-note" data-i18n="time.text9">查询保持对目标月份的筛选。上月值和增长率由模型中的度量分别计算。</p><div class="compiler-observation" data-probe="time"></div>
+		</section>
+		<section class="chapter full" id="lookups" aria-labelledby="lookups-title">
+			<span class="chapter-no" data-i18n="lookups.text1">10 / 关联属性</span><h2 id="lookups-title" data-i18n="lookups.text2">一次查找，<br>需要唯一的匹配。</h2>
+			<p class="lesson-start" data-i18n="lookups.text3">地区目录中，North 的负责人是 Ada，South 是 Lin。模型通过目录的完整键 <code>[region]</code> 查找负责人。加入一条无效的重复 North 记录，观察关联后的行。</p>
+			<pre><code>DIM_REGION:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [region]
+  columns:
+    region:
+    manager:
+
+# Inside FACT_SALES.columns:
+manager: 'pk(region).{DIM_REGION}.manager'</code></pre>
+			<div class="lab-controls"><label class="answer-option"><input type="checkbox" id="duplicate-key"><span data-i18n="lookups.label1">加入一条无效的重复 North 目录记录</span></label></div><div class="stage-board"><div class="paper-panel"><h3 data-i18n="lookups.text4">地区目录</h3><div class="lesson-table" id="lookup-directory"></div></div><div class="paper-panel"><h3 data-i18n="lookups.text5">关联后的二月记录</h3><div class="lesson-table" id="lookup-rows"></div></div></div><p class="context-note" id="lookup-note" role="status"></p>
+			<p class="small" data-i18n="lookups.text6">这个开关有意违反声明的键。普通编译不会读取源数据；连接数据库后，<code>dmlc --validate-only</code> 会检查查询涉及的数据集的完整维度。键不唯一时会报告 <code>DIMENSION_NOT_UNIQUE</code>。</p>
+			<details><summary data-i18n="lookups.text7">用 dmlc 检出重复键</summary><p data-i18n="lookups.text8">数据库练习中，把查询保存为 <code>lookup.sql</code>，与下载项目中的 <code>model.dml</code> 放在一起。选择 manager 会使查询访问 DIM_REGION 数据集。</p><pre><code>SELECT manager, AGG(sales)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY manager</code></pre><p data-i18n="lookups.text9">在存放示例表的连接上运行验证。把 <code>default</code> 换成该连接的 ID。</p><pre><code>dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json</code></pre><p data-i18n="lookups.text10">若该连接中的 TABLE_REGION 同时包含两条 North 记录，预期会对 DIM_REGION 报告 <code>DIMENSION_NOT_UNIQUE</code>。修正维度声明或源数据后重新验证。</p><p class="small" data-i18n="lookups.text11">验证检查实际键值，并通过 EXPLAIN 探测主查询，不会执行报表结果查询。浏览器开关只改变本页虚构数据，不改变数据库。</p></details>
+			<div class="compiler-observation" data-probe="lookup"></div>
+		</section>
+		<section class="chapter full" id="missing" aria-labelledby="missing-title">
+			<span class="chapter-no" data-i18n="missing.text1">11 / 判断缺失的含义</span><h2 id="missing-title" data-i18n="missing.text2">空白的一页，<br>不一定是零。</h2>
+			<p class="lesson-start" data-i18n="missing.text3">选择<strong>用字面量 0 填补</strong>。一月的两行地区记录保留，上期销售额从 NULL 变为 0。NULL 在此表示没有可用上期值，填补并不能证明十二月销售额为零。</p><div class="lab-controls"><label class="control"><span data-i18n="missing.label1">缺失的上期值</span><select id="missing-mode" aria-label="缺失的上期值" data-i18n-aria-label="missing.a11y1"><option value="null" data-i18n="missing.text4">保留 NULL</option><option value="zero" data-i18n="missing.text5">用字面量 0 填补</option></select></label></div>
+			<div class="explorer-grid"><div><p class="code-label" data-i18n="common.modelCodeLabel">model.dml · 度量定义</p><pre><code id="missing-formula"></code></pre></div><div class="paper-panel lesson-table" id="missing-result"></div></div><p class="context-note" data-i18n="missing.text6">最外层的 <code>ISNULL(..., 0)</code> 会在该度量使用处提供字面量回退值，不会创建新的月份或客户。</p><div class="compiler-observation" data-probe="missing"></div>
+		</section>
+		<section class="chapter full" id="capstone" aria-labelledby="capstone-title">
+			<span class="chapter-no" data-i18n="capstone.text1">12 / 构建你的报表</span><h2 id="capstone-title" data-i18n="capstone.text2">把笔记与问题，<br>连在一起。</h2>
+			<form class="chapter-check final-check" id="capstone-check" aria-labelledby="capstone-question">
+			<fieldset><legend id="capstone-question" data-i18n="capstone.text3">试一试 · 为 North 和 South 构建 2025 年二月销售报表</legend>
+			<p class="lesson-start" data-i18n="capstone.text4">每个地区一行，包含销售额（sales）、已完成销售额（completed_sales）、上月销售额（previous_sales）、平均每客户销售额（average_customer_sales）和该地区销售额占全部地区的比例（all_region_share）。设置下方选项，再点击“提交答案”。</p>
+			<div class="lab-controls"><label class="control"><span data-i18n="capstone.label1">报表月份</span><select id="final-month" aria-label="报表月份" data-i18n-aria-label="capstone.a11y1"><option value="2025-02-01" data-i18n="capstone.text5">2025 年 2 月</option><option value="2025-01-01" data-i18n="capstone.text6">2025 年 1 月</option></select></label><label class="control"><span data-i18n="capstone.label2">报表分组</span><select id="final-group" aria-label="报表分组" data-i18n-aria-label="capstone.a11y2"><option value="region" data-i18n="capstone.text7">按地区</option><option value="all" data-i18n="capstone.text8">汇总全部销售</option></select></label><label class="control"><span data-i18n="capstone.label3">报表地区筛选</span><select id="final-region" aria-label="报表地区筛选" data-i18n-aria-label="capstone.a11y3"><option value="all" data-i18n="capstone.text9">全部地区</option><option>North</option><option>South</option></select></label></div>
+			<fieldset><legend data-i18n="capstone.text10">包含的度量</legend><div class="metric-options" id="final-measures"><label><input type="checkbox" value="sales" checked="" disabled=""><span data-i18n="capstone.label4">sales · 必选</span></label><label><input type="checkbox" value="completed_sales">completed_sales</label><label><input type="checkbox" value="previous_sales">previous_sales</label><label><input type="checkbox" value="average_customer_sales">average_customer_sales</label><label><input type="checkbox" value="all_region_share">all_region_share</label><label><input type="checkbox" value="sales_change"><span data-i18n="capstone.label5">sales_change · 可选</span></label></div></fieldset>
+			</fieldset>
+			<p class="answer-submit-note" data-i18n="capstone.submitHelp">设置好上面的报表选项，再点击“提交答案”。</p><div class="actions"><button type="submit" id="check-final">Submit answer</button><button type="button" class="secondary" id="final-hint">Show explanation</button></div>
+			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North：销售额 30，已完成 10，上月 20，平均每客户 15，占比 30%。South：销售额 70，已完成 70，上月 50，平均每客户 70，占比 70%。</p><p data-i18n="capstone.text12">要在浏览器之外运行，请打开项目的 START-HERE.txt。在空的练习数据库中建立示例表，检查模型，严格编译查询并查看生成的 SQL。记录严格检查发现的问题，再做实时验证和结果比较。</p></div>
+			</form>
+			<div class="explorer-grid final-preview">
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">模型笔记 · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">展示所选度量，以及它们引用的其他度量；随报表选项更新。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">查看完整模型笔记</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">下载 model.dml</a></details></div>
+				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">报表问题 · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">查询复用这些定义，分组和筛选由报表控件决定。</p><pre><code id="final-query"></code></pre></div>
+			</div>
+			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">示例结果</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">预览只计算本页虚构数据，不能执行任意 DML。只有已记录的配套查询带有编译器证据，其他组合仍需单独编译检查。本页不连接数据库。</p>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">下载已检查的项目</a></div>
+			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">查看本地编译命令</summary><pre><code>dmlc.exe --lint model.dml --output-format=json
+dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen</code></pre><p class="small" data-i18n="capstone.text16">这些编译命令无需数据库连接。项目还含有示例数据和 SQL Server 建表脚本，供独立数据库练习使用。预期关联警告已记录在编译快照中；预期警告不代表严格检查通过。</p></details>
+			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="capstone.text17">进入编译器教程</a><a href="reference--README.html" data-i18n="capstone.text18">探索语言参考</a><a href="tutorials--interactive-journey.html" data-i18n="capstone.text19">阅读练习指南</a></div>
+			<details><summary data-i18n="capstone.text20">应用到自己的报表</summary><ol><li><span data-i18n="capstone.step1">说明一行源数据和一行结果各代表什么，检查完整源键。</span></li><li><span data-i18n="capstone.step2">列清每个度量的输入、筛选、时间范围和中间粒度。</span></li><li><span data-i18n="capstone.step3">计算比例时明确分母范围；填补缺失值前先确定业务含义。</span></li><li><span data-i18n="capstone.step4">编译并检查 SQL，在目标连接上验证，再与独立结果比较键、重复行、NULL 和各度量。</span></li></ol><p data-i18n="capstone.text21">从<a href="how-to--build-analysis.html">把业务问题转为模型</a>开始；新增计算时参考<a href="how-to--design-measures.html">设计可复用度量</a>。</p></details>
+		<p class="context-note" data-i18n="capstone.reuse">你已定义模型、组合度量、改变上下文并检查报表。同样的思路也适用于<a href="reference--examples--composable-metrics.html">累计毛利率的同期比较</a>。</p>
+</section>
+		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">带上这些符号 · 随手速查</summary><p data-i18n="recall.intro">读引用时，先看“哪个度量”，再看“这一次怎么算”。这些是记忆提示，不是额外语法或算术运算。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">符号</th><th data-i18n="recall.meaning">回想它的含义</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。</p><p class="small" data-i18n="syntax.reference">需要更多形式时，查阅<a href="reference--modifiers.html">修饰符规则与示例</a>。</p></details>
+		<footer><p data-i18n="common.text7">DML 定义，DMX 表达，Model Query 选择并分组。</p><p data-i18n="common.text8"><a href="compiler-observations.json">编译器记录</a> · <a href="explanation--visual-introduction.html">原文字版介绍</a> · 可离线使用</p></footer>
+	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
+	<script src="locales--en.js?v=ff69134b9f"></script>
+	<script src="locales--zh.js?v=3119955a84"></script>
+	<script src="locales--ja.js?v=5e6c62ee91"></script>
+	<script src="locales--de.js?v=fde097b30c"></script>
+	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script>
+		(() => {
+			const i18n = window.SmallJourneyI18n, t = i18n.t;
+			const rows = [
+				{ id:1, region:'North', amount:10 }, { id:2, region:'North', amount:20 },
+				{ id:3, region:'South', amount:30 }, { id:4, region:'South', amount:40 }
+			];
+			const results = document.getElementById('results');
+			const query = document.querySelector('#query-code code');
+			const count = document.getElementById('result-count');
+			const grain = document.getElementById('grain-note');
+			const compilerNote = document.getElementById('compiler-note');
+			const format = value => i18n.number(value);
+			function render(grouping) {
+				const field = grouping === 'all' ? null : grouping;
+				const groups = new Map();
+				for (const row of rows) {
+					const key = field ? row[field] : 'all';
+					if (!groups.has(key)) groups.set(key,{ key, sales:0, cnt:0 });
+					const group = groups.get(key); group.sales += row.amount; group.cnt++;
+				}
+				const header = document.createElement('tr');
+				for (const name of [...(field ? [field] : []),'sales','average_sale']) {
+					const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = name; header.append(cell);
+				}
+				results.tHead.replaceChildren(header);
+				const body = document.createDocumentFragment();
+				for (const group of groups.values()) {
+					const tr = document.createElement('tr');
+					const values = [...(field ? [group.key] : []),format(group.sales),format(group.sales/group.cnt)];
+					for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
+					body.append(tr);
+				}
+				results.tBodies[0].replaceChildren(body);
+				query.textContent = `SELECT ${field ? field+', ' : ''}AGG(sales), AGG(average_sale)\nFROM MODEL${field ? '\nGROUP BY '+field : ''}`;
+				count.textContent = t('resultCount',{source:4,n:groups.size});
+				grain.textContent = t(field === 'id' ? 'grainSale' : field ? 'grainRegion' : 'grainAll');
+				document.getElementById('average-note').textContent = t('averageNote',{calculations:[...groups.values()].map(group => `${field ? (field === 'id' ? t('averageSale',{id:group.key}) : group.key) : t('averageAll')}: ${format(group.sales)} ÷ ${group.cnt} = ${format(group.sales/group.cnt)}`).join('; ')});
+				compilerNote.textContent = field === 'id'
+					? t('compileSimplified')
+					: t(field ? 'compileRegional' : 'compileTotal');
+				document.dispatchEvent(new Event('course-query-change'));
+			}
+			document.getElementById('grouping-controls').addEventListener('change',event => {
+				if (event.target.name === 'grouping') render(event.target.value);
+			});
+			render('region');
+			document.addEventListener('course-language-change',() => render(document.querySelector('input[name="grouping"]:checked').value));
+		})();
+	</script>
+	<script src="course-data.js?v=f376cc3f21"></script>
+	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="compiler-observations.js?v=9584a66e1d"></script>
+	<script src="course-rewards.js?v=445824a005"></script>
+	<script src="course.js?v=3b675d296b"></script>
+	<script src="course-navigation.js?v=5181d006d7"></script>
+
+
+</body></html>
