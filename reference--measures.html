@@ -1,6 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure declarations · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="This page owns measure properties and formula forms. Design measures covers authoring decisions. Formula examples contains business patterns."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.html"><meta property="og:type" content="website"><meta property="og:title" content="Measure declarations · DML"><meta property="og:description" content="This page owns measure properties and formula forms. Design measures covers authoring decisions. Formula examples contains business patterns."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--measures.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="measure-declarations">Measure declarations</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Measure declarations · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="This page owns measure properties and formula forms. Design measures covers authoring decisions. Formula examples contains business patterns."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.html"><meta property="og:type" content="website"><meta property="og:title" content="Measure declarations · DML"><meta property="og:description" content="This page owns measure properties and formula forms. Design measures covers authoring decisions. Formula examples contains business patterns."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--measures.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="measure-declarations">Measure declarations</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#basic-syntax">Basic syntax</a></li><li><a href="#simple-aggregations">Simple aggregations</a></li><li><a href="#count">COUNT</a></li><li><a href="#sum">SUM</a></li><li><a href="#maxmin">MAX/MIN</a></li><li><a href="#avg">AVG</a></li><li><a href="#filtered-measures">Filtered measures</a></li><li><a href="#measure-references">Measure references</a></li><li><a href="#measure-aliases">Measure aliases</a></li><li><a href="#complex-formulas">Complex formulas</a></li><li><a href="#conditional-aggregations">Conditional aggregations</a></li><li><a href="#nested-aggregations">Nested aggregations</a></li><li><a href="#window-functions">Window functions</a></li><li><a href="#isnull-and-iif">ISNULL and IIF</a></li><li><a href="#fill-default-when-row-missing">Fill default when row missing</a></li></ul></details>
 <p>This page owns measure properties and formula forms. <a href="how-to--design-measures.html">Design measures</a> covers authoring decisions. <a href="reference--examples--measure-formulas.html">Formula examples</a> contains business patterns.</p>
-<h2 id="basic-syntax">Basic syntax</h2>
+<h2 id="basic-syntax">Basic syntax <a class="section-link" aria-label="Link to section" href="#basic-syntax">#</a></h2>
 <pre><code class="language-yaml">measure_name:
     type: measure
     description: Business description
@@ -23,8 +23,8 @@
 <li>When business rules rely on <code>&gt; 0</code> / <code>&lt; 0</code> comparisons, ensure the base measure is already typed as intended (e.g. DECIMAL) before reusing it in <code>MINIF</code>/<code>MAXIF</code>/<code>DISTINCTCOUNTIF</code> conditions.</li>
 </ul>
 <hr>
-<h2 id="simple-aggregations">Simple aggregations</h2>
-<h3 id="count">COUNT</h3>
+<h2 id="simple-aggregations">Simple aggregations <a class="section-link" aria-label="Link to section" href="#simple-aggregations">#</a></h2>
+<h3 id="count">COUNT <a class="section-link" aria-label="Link to section" href="#count">#</a></h3>
 <pre><code class="language-yaml">number_of_transactions:
     type: measure
     dataset: transactions
@@ -35,7 +35,7 @@ number_of_products:
     dataset: transactions
     formula: count(distinct product)
 </code></pre>
-<h3 id="sum">SUM</h3>
+<h3 id="sum">SUM <a class="section-link" aria-label="Link to section" href="#sum">#</a></h3>
 <pre><code class="language-yaml">amount:
     type: measure
     dataset: transactions
@@ -46,19 +46,19 @@ transaction_quantity:
     dataset: transactions
     formula: SUM(quantity)
 </code></pre>
-<h3 id="maxmin">MAX/MIN</h3>
+<h3 id="maxmin">MAX/MIN <a class="section-link" aria-label="Link to section" href="#maxmin">#</a></h3>
 <pre><code class="language-yaml">last_order_date:
     type: measure
     dataset: transactions
     formula: MAX(dt_date)
 </code></pre>
-<h3 id="avg">AVG</h3>
+<h3 id="avg">AVG <a class="section-link" aria-label="Link to section" href="#avg">#</a></h3>
 <pre><code class="language-yaml">avg_invoice_quantity:
     type: measure
     formula: &#39;AVG({invoice_quantity: {+d: transaction_id}})&#39;
 </code></pre>
 <hr>
-<h2 id="filtered-measures">Filtered measures</h2>
+<h2 id="filtered-measures">Filtered measures <a class="section-link" aria-label="Link to section" href="#filtered-measures">#</a></h2>
 <p>Use inline filters with <code>{+f: condition}</code>. Modifier syntax reference: <a href="reference--modifiers.html#22-function-modifiers">Function modifiers</a>.</p>
 <pre><code class="language-yaml">expense:
     type: measure
@@ -88,7 +88,7 @@ number_of_unpaid_invoices:
         {number_of_invoices: {+f: &#39;open_balance &gt; 0&#39;}}
 </code></pre>
 <hr>
-<h2 id="measure-references">Measure references</h2>
+<h2 id="measure-references">Measure references <a class="section-link" aria-label="Link to section" href="#measure-references">#</a></h2>
 <p>Reference other measures in formulas:</p>
 <blockquote>
 <p><strong>Composite measures must not declare <code>dataset:</code>.</strong> If <code>formula:</code> references another measure, omit <code>dataset:</code>. Atomic measures use <code>dataset:</code> to bind the source rows or column expressions they aggregate without referencing other measures. Atomic examples below (<code>credit</code> / <code>debit</code>) keep <code>dataset:</code>; the composite <code>profit</code> omits it. See pitfalls <a href="reference--troubleshooting--models.html#p39"><code>P39</code></a>.</p>
@@ -112,7 +112,7 @@ profit:
         {debit: {+f: {transaction_type: [&#39;Income&#39;,&#39;Other Income&#39;,&#39;Expense&#39;,&#39;Other Expense&#39;]}}}
 </code></pre>
 <hr>
-<h2 id="measure-aliases">Measure aliases</h2>
+<h2 id="measure-aliases">Measure aliases <a class="section-link" aria-label="Link to section" href="#measure-aliases">#</a></h2>
 <p>Create aliases for existing measures:</p>
 <pre><code class="language-yaml">revenue: |-
     {sales}
@@ -124,8 +124,8 @@ outgoing: |-
     {expense}
 </code></pre>
 <hr>
-<h2 id="complex-formulas">Complex formulas</h2>
-<h3 id="conditional-aggregations">Conditional aggregations</h3>
+<h2 id="complex-formulas">Complex formulas <a class="section-link" aria-label="Link to section" href="#complex-formulas">#</a></h2>
+<h3 id="conditional-aggregations">Conditional aggregations <a class="section-link" aria-label="Link to section" href="#conditional-aggregations">#</a></h3>
 <p><code>SUMIF</code> / <code>DISTINCTCOUNTIF</code> / <code>MINIF</code> / <code>MAXIF</code> that reference other measures are composite: do not declare <code>dataset:</code> (even when a column in the formula “belongs” to a known dataset). Use <code>dataset:</code> only on a separate atomic measure if you need column-scoped aggregation. See <a href="reference--measures.html#measure-references">Measure References</a> and pitfalls <a href="reference--troubleshooting--models.html#p39"><code>P39</code></a>.</p>
 <pre><code class="language-yaml">incoming_payment:
     type: measure
@@ -137,7 +137,7 @@ outgoing_payment:
     formula: |-
         SUMIF({payment: {+d: vendor}}, {vendor} is not null)
 </code></pre>
-<h3 id="nested-aggregations">Nested aggregations</h3>
+<h3 id="nested-aggregations">Nested aggregations <a class="section-link" aria-label="Link to section" href="#nested-aggregations">#</a></h3>
 <pre><code class="language-yaml">max_amount_per_invoice:
     type: measure
     formula: |-
@@ -158,7 +158,7 @@ avg_sales_per_trx:
     formula: |-
         divide(sum({sales: {+d: transaction_id}}), distinctcount({transaction_id}))
 </code></pre>
-<h3 id="window-functions">Window functions</h3>
+<h3 id="window-functions">Window functions <a class="section-link" aria-label="Link to section" href="#window-functions">#</a></h3>
 <p><strong>Window placement</strong> — full contract: <a href="explanation--window-placement.html">Window placement</a>. Summary:</p>
 <table>
 <thead>
@@ -207,7 +207,7 @@ SELECT product, AGG({sales: pot}) AS share
 FROM MODEL GROUP BY product
 </code></pre>
 <p>See <a href="reference--modifiers.html#22-function-modifiers">function modifiers</a> for macro categories and behavior.</p>
-<h3 id="isnull-and-iif">ISNULL and IIF</h3>
+<h3 id="isnull-and-iif">ISNULL and IIF <a class="section-link" aria-label="Link to section" href="#isnull-and-iif">#</a></h3>
 <pre><code class="language-yaml">all_product_sales:
     type: measure
     description: Product sales including products with zero sales
@@ -220,7 +220,7 @@ all_customer_sales:
     formula: |-
         SUM(isnull({sales: {+d: customer}}, 0) * iif({DATASET_CUSTOMER}.customer is not null, 1, 0))
 </code></pre>
-<h3 id="fill-default-when-row-missing">Fill default when row missing</h3>
+<h3 id="fill-default-when-row-missing">Fill default when row missing <a class="section-link" aria-label="Link to section" href="#fill-default-when-row-missing">#</a></h3>
 <p><strong>Feature:</strong> fill default when a joined / FOJ / materialize row is missing (blocks null contagion into further math).</p>
 <p><strong>Activate</strong> by wrapping the measure formula <strong>outermost</strong> with <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>.</p>
 <p>The default applies at <strong>use sites of that measure</strong> (query column, rename, <code>{m: pp}</code> / other dt modifiers, or embedded in another formula) when the site can be sparse (FOJ / <code>nullpk</code> / materialize wrap).</p>

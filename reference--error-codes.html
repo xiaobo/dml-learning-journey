@@ -1,13 +1,13 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC Error Codes Reference · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><meta property="og:type" content="website"><meta property="og:title" content="DMLC Error Codes Reference · DML"><meta property="og:description" content="Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="dmlc-error-codes-reference">DMLC Error Codes Reference</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC Error Codes Reference · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><meta property="og:type" content="website"><meta property="og:title" content="DMLC Error Codes Reference · DML"><meta property="og:description" content="Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dmlc-error-codes-reference">DMLC Error Codes Reference</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#path-display-convention">Path display convention</a></li><li><a href="#error-code-categories">Error Code Categories</a></li><li><a href="#error-codes">Error Codes</a></li><li><a href="#file-io-errors">File I/O Errors</a></li><li><a href="#connection-errors">Connection Errors</a></li><li><a href="#query-execution-errors">Query Execution Errors</a></li><li><a href="#compilation-errors">Compilation Errors</a></li><li><a href="#generation-errors">Generation Errors</a></li><li><a href="#dimension-validation-errors">Dimension Validation Errors</a></li><li><a href="#workspaceoperation-errors">Workspace/Operation Errors</a></li><li><a href="#general-errors">General Errors</a></li></ul></details>
 <p>Use these codes to identify the failing stage and choose a corrective action. Inspect diagnostics and generated SQL as well as the process exit code.</p>
-<h2 id="path-display-convention">Path display convention</h2>
+<h2 id="path-display-convention">Path display convention <a class="section-link" aria-label="Link to section" href="#path-display-convention">#</a></h2>
 <p>User-visible file paths use <strong>forward slashes</strong> (<code>/</code>) on every platform:</p>
 <ul>
 <li>User input such as <code>..\data</code> or <code>../data</code> is normalized to <code>../data</code> in errors.</li>
 <li>Workspace placeholders use <code>&lt;workspaceFolder&gt;/relative/path</code> (never backslashes under the placeholder).</li>
 <li>Resolved filesystem paths prefer cwd-relative form when possible.</li>
 </ul>
-<h2 id="error-code-categories">Error Code Categories</h2>
+<h2 id="error-code-categories">Error Code Categories <a class="section-link" aria-label="Link to section" href="#error-code-categories">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -62,8 +62,8 @@
 <td>77</td>
 </tr>
 </tbody></table>
-<h2 id="error-codes">Error Codes</h2>
-<h3 id="file-io-errors">File I/O Errors</h3>
+<h2 id="error-codes">Error Codes <a class="section-link" aria-label="Link to section" href="#error-codes">#</a></h2>
+<h3 id="file-io-errors">File I/O Errors <a class="section-link" aria-label="Link to section" href="#file-io-errors">#</a></h3>
 <h4 id="file_not_found">FILE_NOT_FOUND</h4>
 <ul>
 <li><strong>Category</strong>: NOT_FOUND</li>
@@ -106,7 +106,7 @@
 <li><strong>Suggested Fixes</strong>: Provide a valid Excel file with at least one sheet</li>
 <li><strong>Example</strong>: <code>Excel file has no sheets: /path/to/file.xlsx</code></li>
 </ul>
-<h3 id="connection-errors">Connection Errors</h3>
+<h3 id="connection-errors">Connection Errors <a class="section-link" aria-label="Link to section" href="#connection-errors">#</a></h3>
 <h4 id="connection_not_found">CONNECTION_NOT_FOUND</h4>
 <ul>
 <li><strong>Category</strong>: CONFIG</li>
@@ -123,7 +123,7 @@
 <li><strong>Suggested Fixes</strong>: Check connection configuration and database accessibility</li>
 <li><strong>Example</strong>: <code>Failed to list connections: Connection refused</code></li>
 </ul>
-<h3 id="query-execution-errors">Query Execution Errors</h3>
+<h3 id="query-execution-errors">Query Execution Errors <a class="section-link" aria-label="Link to section" href="#query-execution-errors">#</a></h3>
 <h4 id="execution_error">EXECUTION_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: EXECUTION</li>
@@ -149,12 +149,12 @@
 <li><strong>Suggested Fixes</strong>: Increase timeoutSeconds parameter or simplify query, consider adding materialize to improve performance</li>
 <li><strong>Example</strong>: <code>Query timed out after 30 seconds</code></li>
 </ul>
-<h3 id="compilation-errors">Compilation Errors</h3>
+<h3 id="compilation-errors">Compilation Errors <a class="section-link" aria-label="Link to section" href="#compilation-errors">#</a></h3>
 <h4 id="compile_error">COMPILE_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: VALIDATION</li>
 <li><strong>Code</strong>: COMPILE_ERROR</li>
-<li><strong>Common Causes</strong>: DML syntax error, model validation error, SQL generation error; illegal modifier composition (e.g. same-dimension <code>+d</code> with <code>-d</code>/<code>-df</code> in one modifier object — language contract: fail loudly, see <a href="reference--semantics.html#45-modifier-composition">dml-core-spec §4.5</a> / pitfalls P79)</li>
+<li><strong>Common Causes</strong>: DML syntax error, model validation error, SQL generation error; illegal modifier composition (e.g. same-dimension <code>+d</code> with <code>-d</code>/<code>-df</code> in one modifier object — language contract: fail loudly, see <a href="reference--semantics.html#45-modifier-composition">modifier composition</a> / pitfalls P79)</li>
 <li><strong>Suggested Fixes</strong>: Fix compilation errors, check model.dml exists in workspace folder, review generated SQL in error.details.generatedSql; for conflicting <code>+d</code>/<code>-d</code>/<code>-df</code>, rewrite to one explicit intent instead of relying on cancel</li>
 <li><strong>Example</strong>: <code>Compilation failed — see details.compilationErrors</code></li>
 <li><strong>Notes</strong>: The 2026-10-16 build accepts the checked same-field <code>+d</code> conflicts without an error. Express one evaluation stage explicitly and inspect the generated SQL; do not rely on cancellation.</li>
@@ -175,7 +175,7 @@
 <li><strong>Suggested Fixes</strong>: Fix invalid parameters or configuration</li>
 <li><strong>Example</strong>: <code>Validation failed — see details.validationErrors</code></li>
 </ul>
-<h3 id="generation-errors">Generation Errors</h3>
+<h3 id="generation-errors">Generation Errors <a class="section-link" aria-label="Link to section" href="#generation-errors">#</a></h3>
 <h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: NOT_FOUND</li>
@@ -192,7 +192,7 @@
 <li><strong>Suggested Fixes</strong>: Fix filter field name or syntax</li>
 <li><strong>Example</strong>: <code>Filter validation failed: invalid field &#39;dt_invalid&#39;</code></li>
 </ul>
-<h3 id="dimension-validation-errors">Dimension Validation Errors</h3>
+<h3 id="dimension-validation-errors">Dimension Validation Errors <a class="section-link" aria-label="Link to section" href="#dimension-validation-errors">#</a></h3>
 <h4 id="dimension_not_unique">DIMENSION_NOT_UNIQUE</h4>
 <ul>
 <li><strong>Category</strong>: VALIDATION</li>
@@ -209,7 +209,7 @@
 <li><strong>Suggested Fixes</strong>: Check connection configuration and database accessibility</li>
 <li><strong>Example</strong>: <code>Validation query failed: Connection refused</code></li>
 </ul>
-<h3 id="workspaceoperation-errors">Workspace/Operation Errors</h3>
+<h3 id="workspaceoperation-errors">Workspace/Operation Errors <a class="section-link" aria-label="Link to section" href="#workspaceoperation-errors">#</a></h3>
 <h4 id="no_workspace">NO_WORKSPACE</h4>
 <ul>
 <li><strong>Category</strong>: BLOCKED</li>
@@ -234,13 +234,13 @@
 <li><strong>Suggested Fixes</strong>: Retry with overwrite enabled, check file path and permissions</li>
 <li><strong>Example</strong>: <code>File export failed: Permission denied</code></li>
 </ul>
-<h3 id="general-errors">General Errors</h3>
+<h3 id="general-errors">General Errors <a class="section-link" aria-label="Link to section" href="#general-errors">#</a></h3>
 <h4 id="unexpected_error">UNEXPECTED_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: INTERNAL</li>
 <li><strong>Code</strong>: UNEXPECTED_ERROR</li>
 <li><strong>Common Causes</strong>: Unexpected internal error occurred</li>
-<li><strong>Suggested Fixes</strong>: Report this error to the development team</li>
+<li><strong>Suggested Fixes</strong>: Prepare a minimal reproduction using the <a href="support.html">support checklist</a>; send it through your existing product contact. A public support channel has not yet been listed</li>
 <li><strong>Example</strong>: <code>Unexpected error: NullPointerException</code></li>
 </ul>
 </main></body></html>

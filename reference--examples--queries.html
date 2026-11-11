@@ -1,30 +1,32 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query examples · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="The introductory examples use the shared sales model. Domain-specific examples require their named dependencies."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:type" content="website"><meta property="og:title" content="Query examples · DML"><meta property="og:description" content="The introductory examples use the shared sales model. Domain-specific examples require their named dependencies."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="query-examples">Query examples</h1>
-<p>The introductory examples use the <a href="reference--examples--shared-model.html">shared sales model</a>. Domain-specific examples require their named dependencies.</p>
-<h2 id="basic-queries">Basic queries</h2>
-<h3 id="total-sales">Total sales</h3>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Query examples · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="The introductory examples use the shared sales model. The shared model supplies sales and the listed transaction columns; it does not create source data. Date examples use the current date, so a historical fixt"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:type" content="website"><meta property="og:title" content="Query examples · DML"><meta property="og:description" content="The introductory examples use the shared sales model. The shared model supplies sales and the listed transaction columns; it does not create source data. Date examples use the current date, so a historical fixt"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="query-examples">Query examples</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#basic-queries">Basic queries</a></li><li><a href="#total-sales">Total sales</a></li><li><a href="#sales-by-region">Sales by region</a></li><li><a href="#sales-this-month">Sales this month</a></li><li><a href="#sales-this-month-by-region">Sales this month by region</a></li><li><a href="#detail-query--paid-transactions">Detail query — paid transactions</a></li><li><a href="#time-modifiers">Time modifiers</a></li><li><a href="#this-month-vs-last-month">This month vs last month</a></li><li><a href="#this-month-vs-same-month-last-year">This month vs same month last year</a></li><li><a href="#year-to-date-growth">Year-to-date growth</a></li><li><a href="#rolling-12-month-total">Rolling 12-month total</a></li><li><a href="#specific-monthsquarters">Specific months/quarters</a></li><li><a href="#nested-modifiers-in-dml">Nested modifiers in <code>.dml</code></a></li><li><a href="#rank-and-filters">Rank and filters</a></li><li><a href="#top-10-products-by-sales">Top 10 products by sales</a></li><li><a href="#using-rank-modifier">Using rank modifier</a></li><li><a href="#rank-within-the-selected-period">Rank within the selected period</a></li><li><a href="#filtering-by-rank">Filtering by rank</a></li><li><a href="#having-clause--customers-with-outstanding-balance">HAVING clause — customers with outstanding balance</a></li><li><a href="#share-of-total-pot">Share of total (<code>pot</code>)</a></li><li><a href="#rfm-amp-co-occurrence-patterns">RFM &amp; co-occurrence patterns</a></li><li><a href="#dimension-without-dt">Dimension without dt</a></li><li><a href="#sales-by-region-all-time">Sales by region (all time)</a></li><li><a href="#product-share-by-region-no-time-grouping">Product share by region (no time grouping)</a></li><li><a href="#selected-period-versus-all-history">Selected period versus all history</a></li><li><a href="#period-conversion">Period conversion</a></li><li><a href="#comparison-patterns">Comparison patterns</a></li><li><a href="#period-over-period">Period-over-period</a></li><li><a href="#growth-rate-by-account">Growth rate by account</a></li><li><a href="#year-to-date-vs-last-year">Year to date vs last year</a></li><li><a href="#conditional-counts">Conditional counts</a></li></ul></details>
+<p>The introductory examples use the <a href="reference--examples--shared-model.html">shared sales model</a>. The shared model supplies <code>sales</code> and the listed transaction columns; it does not create source data. Date examples use the current date, so a historical fixture may return no rows.</p>
+<p><strong>Example prerequisites:</strong> Basic queries, time comparisons of sales, rankings, shares and product counts use that model. The expense examples additionally require an <code>expense</code> measure; outstanding-balance examples require <code>customer</code> and <code>outstanding</code>; account-growth examples require <code>account</code> and <code>revenue</code>. Those are adaptation fragments, not runnable additions to the shared model. For an executable dataset with fixed dates and expected results, use the <a href="checked-exercise.html">checked sales exercise</a>.</p>
+<h2 id="basic-queries">Basic queries <a class="section-link" aria-label="Link to section" href="#basic-queries">#</a></h2>
+<h3 id="total-sales">Total sales <a class="section-link" aria-label="Link to section" href="#total-sales">#</a></h3>
 <pre><code class="language-sql">SELECT AGG(sales) FROM MODEL
 </code></pre>
-<h3 id="sales-by-region">Sales by region</h3>
+<h3 id="sales-by-region">Sales by region <a class="section-link" aria-label="Link to section" href="#sales-by-region">#</a></h3>
 <pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
 </code></pre>
-<h3 id="sales-this-month">Sales this month</h3>
+<h3 id="sales-this-month">Sales this month <a class="section-link" aria-label="Link to section" href="#sales-this-month">#</a></h3>
 <pre><code class="language-sql">SELECT AGG(sales) FROM MODEL WHERE dt_month = date(current_date, &#39;start of month&#39;)
 </code></pre>
-<h3 id="sales-this-month-by-region">Sales this month by region</h3>
+<h3 id="sales-this-month-by-region">Sales this month by region <a class="section-link" aria-label="Link to section" href="#sales-this-month-by-region">#</a></h3>
 <pre><code class="language-sql">SELECT region, AGG(sales)
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY region
 </code></pre>
-<h3 id="detail-query--customer-payment-history">Detail query — customer payment history</h3>
-<pre><code class="language-sql">SELECT dt_date, transaction_id, transaction_type, raw_amount
+<p><a id="detail-query--customer-payment-history"></a></p>
+<h3 id="detail-query--paid-transactions">Detail query — paid transactions <a class="section-link" aria-label="Link to section" href="#detail-query--paid-transactions">#</a></h3>
+<pre><code class="language-sql">SELECT dt_date, transaction_id, amount, is_paid
 FROM MODEL.transactions
-WHERE transaction_type = &#39;payment&#39; AND customer = &#39;Jane Smith&#39;
+WHERE is_paid = 1
 ORDER BY dt_date DESC
 </code></pre>
 <hr>
-<h2 id="time-modifiers">Time modifiers</h2>
-<h3 id="this-month-vs-last-month">This month vs last month</h3>
+<h2 id="time-modifiers">Time modifiers <a class="section-link" aria-label="Link to section" href="#time-modifiers">#</a></h2>
+<h3 id="this-month-vs-last-month">This month vs last month <a class="section-link" aria-label="Link to section" href="#this-month-vs-last-month">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
        AGG(sales) as this_month,
        AGG(sales, &#39;pp&#39;) as last_month,
@@ -33,7 +35,7 @@ FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY dt_month
 </code></pre>
-<h3 id="this-month-vs-same-month-last-year">This month vs same month last year</h3>
+<h3 id="this-month-vs-same-month-last-year">This month vs same month last year <a class="section-link" aria-label="Link to section" href="#this-month-vs-same-month-last-year">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
        AGG(sales) as this_month,
        AGG(sales, &#39;ya&#39;) as last_year_month,
@@ -42,7 +44,7 @@ FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY dt_month
 </code></pre>
-<h3 id="year-to-date-growth">Year-to-date growth</h3>
+<h3 id="year-to-date-growth">Year-to-date growth <a class="section-link" aria-label="Link to section" href="#year-to-date-growth">#</a></h3>
 <pre><code class="language-sql">SELECT dt_date,
        AGG(sales, &#39;ytd&#39;) as ytd_sales,
        AGG(sales, &#39;ytd&#39;, &#39;ya&#39;) as ytd_last_year,
@@ -52,21 +54,21 @@ WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <p>Note the <strong>stacking</strong>: <code>&#39;ytd&#39;, &#39;ya&#39;</code> means &quot;year-to-date one year ago&quot;.</p>
-<h3 id="rolling-12-month-total">Rolling 12-month total</h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+<h3 id="rolling-12-month-total">Rolling 12-month total <a class="section-link" aria-label="Link to section" href="#rolling-12-month-total">#</a></h3>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat}) AS rolling_sales
 FROM MODEL
 GROUP BY dt_month
 ORDER BY dt_month DESC
 LIMIT 12
 </code></pre>
-<h3 id="specific-monthsquarters">Specific months/quarters</h3>
+<h3 id="specific-monthsquarters">Specific months/quarters <a class="section-link" aria-label="Link to section" href="#specific-monthsquarters">#</a></h3>
 <pre><code class="language-sql">-- August this year
 SELECT AGG(expense) FROM MODEL WHERE dt_month = date(current_date, &#39;start of year&#39;, &#39;+7 months&#39;)
 
 -- Q2 this year
 SELECT AGG(expense) FROM MODEL WHERE dt_quarter = date(current_date, &#39;start of year&#39;, &#39;+1 quarter&#39;)
 </code></pre>
-<h3 id="nested-modifiers-in-dml">Nested modifiers in <code>.dml</code></h3>
+<h3 id="nested-modifiers-in-dml">Nested modifiers in <code>.dml</code> <a class="section-link" aria-label="Link to section" href="#nested-modifiers-in-dml">#</a></h3>
 <pre><code class="language-yaml"># In model.dml
 sales_ytd:
     type: measure
@@ -84,8 +86,8 @@ GROUP BY dt_date
 </code></pre>
 <p><strong>Key points</strong>: Time modifiers need a resolved time context and must satisfy macro prerequisites; time filters can supply context too. <code>yoy</code> and <code>pop</code> return decimal growth rates (0.15 = 15%). <code>pp</code> and <code>ya</code> return the absolute previous-period value. Prefer modifiers over manual date math.</p>
 <hr>
-<h2 id="rank-and-filters">Rank and filters</h2>
-<h3 id="top-10-products-by-sales">Top 10 products by sales</h3>
+<h2 id="rank-and-filters">Rank and filters <a class="section-link" aria-label="Link to section" href="#rank-and-filters">#</a></h2>
+<h3 id="top-10-products-by-sales">Top 10 products by sales <a class="section-link" aria-label="Link to section" href="#top-10-products-by-sales">#</a></h3>
 <pre><code class="language-sql">SELECT product, AGG(sales)
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
@@ -93,24 +95,23 @@ GROUP BY product
 ORDER BY AGG(sales) DESC
 LIMIT 10
 </code></pre>
-<h3 id="using-rank-modifier">Using rank modifier</h3>
-<pre><code class="language-sql">SELECT product, AGG(sales), AGG({sales: rank})
+<h3 id="using-rank-modifier">Using rank modifier <a class="section-link" aria-label="Link to section" href="#using-rank-modifier">#</a></h3>
+<pre><code class="language-sql">SELECT product, AGG(sales), AGG({sales: rank}) AS sales_rank
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY product
 </code></pre>
 <p><code>{sales: rank}</code> returns the rank of each product&#39;s sales within the query result (descending).</p>
-<h3 id="rank-within-the-selected-period">Rank within the selected period</h3>
+<h3 id="rank-within-the-selected-period">Rank within the selected period <a class="section-link" aria-label="Link to section" href="#rank-within-the-selected-period">#</a></h3>
 <pre><code class="language-sql">SELECT product,
        AGG(sales) as period_sales,
-       AGG({sales: {-d: dim_dt}}) as selected_period_sales,
-       AGG({sales: {-d: dim_dt, rank}}) as selected_period_rank
+       AGG({sales: rank}) as selected_period_rank
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY product
 </code></pre>
-<p><code>{-d: dim_dt}</code> drops time grouping but retains the time filter, so this is a selected-period calculation, not an all-history rank. Use <code>-df</code> only when removing both the time grouping and that filter is the intended contract. Use <code>-d: dim_dt</code> (not <code>-d: dt_date</code>) when the query filters by a coarser grain like <code>dt_month</code> — <code>-d</code> can only remove a dimension field that is in the current query dimension, and <code>dim_dt</code> always refers to the active time field.</p>
-<h3 id="filtering-by-rank">Filtering by rank</h3>
+<p>The query already groups only by product. Keep the month filter and rank <code>sales</code> directly; no time-grain removal is needed. Removing a grouping field is not the same as removing the time filter.</p>
+<h3 id="filtering-by-rank">Filtering by rank <a class="section-link" aria-label="Link to section" href="#filtering-by-rank">#</a></h3>
 <pre><code class="language-sql">SELECT product, AGG(sales)
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
@@ -118,14 +119,14 @@ GROUP BY product
 HAVING AGG({sales: rank}) &lt;= 10
 </code></pre>
 <p><code>HAVING</code> filters after aggregation, so <code>rank</code> is available there.</p>
-<h3 id="having-clause--customers-with-outstanding-balance">HAVING clause — customers with outstanding balance</h3>
+<h3 id="having-clause--customers-with-outstanding-balance">HAVING clause — customers with outstanding balance <a class="section-link" aria-label="Link to section" href="#having-clause--customers-with-outstanding-balance">#</a></h3>
 <pre><code class="language-sql">SELECT customer, AGG(outstanding)
 FROM MODEL
 GROUP BY customer
 HAVING AGG(outstanding) &gt; 0
 </code></pre>
 <p><strong>Key points</strong>: <code>rank</code> returns <code>RANK() OVER (ORDER BY measure DESC)</code>. <code>rank_asc</code> returns ascending rank. Use <code>-d</code> to remove time or other dimensions before ranking. Combine with <code>HAVING</code> for dynamic Top N filtering.</p>
-<h3 id="share-of-total-pot">Share of total (<code>pot</code>)</h3>
+<h3 id="share-of-total-pot">Share of total (<code>pot</code>) <a class="section-link" aria-label="Link to section" href="#share-of-total-pot">#</a></h3>
 <pre><code class="language-sql">SELECT product, AGG(sales) AS sales,
        AGG(sales, &#39;rank&#39;) AS sales_rank,
        AGG({sales: pot}) AS share_of_total
@@ -135,28 +136,33 @@ GROUP BY product
 ORDER BY AGG(sales, &#39;rank&#39;)
 </code></pre>
 <p><code>pot</code> is <code>measure / grand</code>. Cumulative Pareto share is not a system fn-macro; use <code>OVER()</code> in Model Query SQL when you need a running total.</p>
-<h3 id="rfm-amp-co-occurrence-patterns">RFM &amp; co-occurrence patterns</h3>
+<h3 id="rfm-amp-co-occurrence-patterns">RFM &amp; co-occurrence patterns <a class="section-link" aria-label="Link to section" href="#rfm-amp-co-occurrence-patterns">#</a></h3>
 <p>For RFM analysis and co-occurrence analysis, see the worked <a href="reference--examples--aggregation.html">fine-grain aggregation examples</a>.</p>
 <hr>
-<h2 id="dimension-without-dt">Dimension without dt</h2>
-<h3 id="sales-by-region-all-time">Sales by region (all time)</h3>
+<h2 id="dimension-without-dt">Dimension without dt <a class="section-link" aria-label="Link to section" href="#dimension-without-dt">#</a></h2>
+<h3 id="sales-by-region-all-time">Sales by region (all time) <a class="section-link" aria-label="Link to section" href="#sales-by-region-all-time">#</a></h3>
 <pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
 </code></pre>
-<h3 id="product-share-by-region-no-time-grouping">Product share by region (no time grouping)</h3>
+<h3 id="product-share-by-region-no-time-grouping">Product share by region (no time grouping) <a class="section-link" aria-label="Link to section" href="#product-share-by-region-no-time-grouping">#</a></h3>
 <pre><code class="language-sql">SELECT region, product, AGG(sales)
 FROM MODEL
 GROUP BY region, product
 </code></pre>
-<h3 id="using--d-to-drop-time">Using <code>-d</code> to drop time</h3>
-<pre><code class="language-sql">SELECT region, product,
-       AGG(sales) as period_sales,
-       AGG({sales: {-d: dim_dt}}) as all_time_sales
+<p><a id="using--d-to-drop-time"></a></p>
+<h3 id="selected-period-versus-all-history">Selected period versus all history <a class="section-link" aria-label="Link to section" href="#selected-period-versus-all-history">#</a></h3>
+<pre><code class="language-sql">-- Selected month: retain the month filter.
+SELECT region, product, AGG(sales) AS selected_period_sales
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY region, product
+
+-- All history: remove the month filter, retain the same grouping.
+SELECT region, product, AGG(sales) AS all_time_sales
+FROM MODEL
+GROUP BY region, product
 </code></pre>
-<p><code>{-d: dim_dt}</code> removes the time dimension from the measure&#39;s grain, so it evaluates across all time even though the query is filtered to this month. Use <code>-d: dim_dt</code> to drop the active time grain regardless of whether the query filters by <code>dt_date</code>, <code>dt_month</code>, etc.</p>
-<h3 id="period-conversion">Period conversion</h3>
+<p>Run these as separate queries. <code>-d</code> removes grouping, not the time filter. These queries do not group by time, so they do not need <code>-d: dim_dt</code>. Applying time-grain removal to individual measures here is rejected by the checked compiler. For denominator-specific removal of grouping and filters, see <a href="reference--modifiers.html">dimension and filter modifiers</a>.</p>
+<h3 id="period-conversion">Period conversion <a class="section-link" aria-label="Link to section" href="#period-conversion">#</a></h3>
 <pre><code class="language-sql">SELECT dt_year,
        AGG({sales: {dim_dt as quarter: pp}}) as last_quarter_at_quarter_grain
 FROM MODEL
@@ -169,27 +175,27 @@ GROUP BY dt_year
 </blockquote>
 <p><strong>Key points</strong>: Queries without time filters analyze all historical data. <code>-d: dim_dt</code> removes the active time field from a measure&#39;s evaluation dimension (use <code>dim_dt</code> to target the active time field, not a specific field like <code>dt_date</code> — <code>-d</code> can only remove dimension fields that are in the current query dimension). <code>dim_dt as &lt;grain&gt;</code> changes the time granularity for one measure reference. Be careful with mixing: a measure without time may not be comparable to a measure with time in the same row.</p>
 <hr>
-<h2 id="comparison-patterns">Comparison patterns</h2>
-<h3 id="period-over-period">Period-over-period</h3>
+<h2 id="comparison-patterns">Comparison patterns <a class="section-link" aria-label="Link to section" href="#comparison-patterns">#</a></h2>
+<h3 id="period-over-period">Period-over-period <a class="section-link" aria-label="Link to section" href="#period-over-period">#</a></h3>
 <pre><code class="language-sql">SELECT AGG(sales) as this_month, AGG(sales, &#39;pp&#39;) as last_month
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 </code></pre>
-<h3 id="growth-rate-by-account">Growth rate by account</h3>
+<h3 id="growth-rate-by-account">Growth rate by account <a class="section-link" aria-label="Link to section" href="#growth-rate-by-account">#</a></h3>
 <pre><code class="language-sql">SELECT account, AGG(revenue) as current, AGG(revenue, &#39;pp&#39;) as previous
 FROM MODEL
 WHERE dt_month = date(current_date, &#39;start of month&#39;)
 GROUP BY account
 HAVING AGG(revenue, &#39;pop&#39;) &gt; 0.10  -- 10% growth
 </code></pre>
-<h3 id="year-to-date-vs-last-year">Year to date vs last year</h3>
+<h3 id="year-to-date-vs-last-year">Year to date vs last year <a class="section-link" aria-label="Link to section" href="#year-to-date-vs-last-year">#</a></h3>
 <pre><code class="language-sql">SELECT AGG(sales, &#39;ytd&#39;) as this_ytd, AGG(sales, &#39;ytd&#39;, &#39;ya&#39;) as last_ytd
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <hr>
-<h2 id="conditional-counts">Conditional counts</h2>
+<h2 id="conditional-counts">Conditional counts <a class="section-link" aria-label="Link to section" href="#conditional-counts">#</a></h2>
 <p>Modifiers apply to <strong>measures</strong>, not columns. Use <code>{+d: product}</code> on the measure inside the condition:</p>
 <pre><code class="language-sql">-- Count of products with per-product sales above threshold
 SELECT DISTINCTCOUNTIF(product, AGG({sales: {+d: product}}) &gt; 1000) as prod_cnt FROM MODEL

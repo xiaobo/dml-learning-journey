@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>跑通销售报表，再核对每一列 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="本练习已通过严格编译、源键验证和实际执行，两行六列与标准结果一致。 使用教程同一组八条销售数据；独立练习模型明确指定 DuckDB 方言，不改写原 SQL Server 项目和历史记录。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/checked-exercise.html"><meta property="og:type" content="website"><meta property="og:title" content="跑通销售报表，再核对每一列 · DML"><meta property="og:description" content="本练习已通过严格编译、源键验证和实际执行，两行六列与标准结果一致。 使用教程同一组八条销售数据；独立练习模型明确指定 DuckDB 方言，不改写原 SQL Server 项目和历史记录。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/checked-exercise.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="跑通销售报表再核对每一列">跑通销售报表，再核对每一列</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#下载与前提">下载与前提</a></li><li><a href="#应看到什么">应看到什么？</a></li><li><a href="#验证范围">验证范围</a></li></ul></details>
+<p><strong>本练习已通过严格编译、源键验证和实际执行，两行六列与标准结果一致。</strong> 使用教程同一组八条销售数据；独立练习模型明确指定 DuckDB 方言，不改写原 SQL Server 项目和历史记录。</p>
+<h2 id="下载与前提">下载与前提 <a class="section-link" aria-label="Link to section" href="#下载与前提">#</a></h2>
+<p><a href="checked-exercise.zip">下载可复现练习</a>。你需要已有的 <code>dmlc.exe</code>、Python 和 <code>duckdb==1.5.5</code>。压缩包不含编译器或第三方运行时。解压到一个新的可写目录，脚本只在该目录创建练习库及配置，不连接业务数据库。</p>
+<pre><code class="language-powershell">py -m pip install duckdb==1.5.5
+py verify.py C:/path/to/dmlc.exe
+</code></pre>
+<p>已有 practice.duckdb 时脚本停止；再次复现请重新解压到新目录。脚本保存版本、编译器 SHA-256、退出码、诊断及执行结果。</p>
+<h2 id="应看到什么">应看到什么？ <a class="section-link" aria-label="Link to section" href="#应看到什么">#</a></h2>
+<p>compile、validate、execute 退出码均为 0，最后 <code>result_matches</code> 为 true。脚本独立检查行数、唯一地区键、列集合、NULL 和未格式化数值。</p>
+<table>
+<thead>
+<tr>
+<th>地区</th>
+<th align="right">销售额</th>
+<th align="right">已完成</th>
+<th align="right">上月</th>
+<th align="right">客户平均</th>
+<th align="right">全地区占比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td align="right">30</td>
+<td align="right">10</td>
+<td align="right">20</td>
+<td align="right">15</td>
+<td align="right">0.3</td>
+</tr>
+<tr>
+<td>South</td>
+<td align="right">70</td>
+<td align="right">70</td>
+<td align="right">50</td>
+<td align="right">70</td>
+<td align="right">0.7</td>
+</tr>
+</tbody></table>
+<h2 id="验证范围">验证范围 <a class="section-link" aria-label="Link to section" href="#验证范围">#</a></h2>
+<p>本次记录：dmlc 0.3.16，构建 2026-11-06 02:59:12 Z，Windows/amd64；指纹见下载包 verification.json。实际使用的 Python DuckDB 版本见同一记录。结果与 expected.csv 逐键逐列比较，销售额和已完成销售额另外用独立 SQL 核对。</p>
+<p>这里只确认该数据、模型、查询和 DuckDB 路径；不代表其他数据库都已验证。原<a href="tutorials--interactive-journey.html">互动项目</a>的编译观察保持原样。遇到差异保留诊断，按<a href="support.html">排错步骤</a>处理。</p>
+</main></body></html>

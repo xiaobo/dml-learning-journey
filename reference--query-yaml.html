@@ -1,10 +1,10 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YAML query declarations · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="This page owns type: query, columns, filters, materialization selection, and after:. The query consumes the same model measures as Model Query SQL."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><meta property="og:type" content="website"><meta property="og:title" content="YAML query declarations · DML"><meta property="og:description" content="This page owns type: query, columns, filters, materialization selection, and after:. The query consumes the same model measures as Model Query SQL."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="yaml-query-declarations">YAML query declarations</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YAML query declarations · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="This page owns type: query, columns, filters, materialization selection, and after:. The query consumes the same model measures as Model Query SQL."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><meta property="og:type" content="website"><meta property="og:title" content="YAML query declarations · DML"><meta property="og:description" content="This page owns type: query, columns, filters, materialization selection, and after:. The query consumes the same model measures as Model Query SQL."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="yaml-query-declarations">YAML query declarations</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#basic-structure">Basic structure</a></li><li><a href="#detail-vs-aggregation">Detail vs aggregation</a></li><li><a href="#auto-join-of-multi-dataset-measures">Auto-join of multi-dataset measures</a></li><li><a href="#column-references-in-dml-format">Column references in DML format</a></li><li><a href="#auto-aliasing-and-direct-reference">Auto-aliasing and direct reference</a></li><li><a href="#visibility-hidden"><code>visibility: hidden</code></a></li><li><a href="#query-dimension-format">Query dimension format</a></li><li><a href="#filter-placement-hierarchy">Filter placement hierarchy</a></li><li><a href="#pk-chaining"><code>pk</code> chaining</a></li><li><a href="#after-clause"><code>after:</code> clause</a></li><li><a href="#allows-all"><code>allows: ALL</code></a></li><li><a href="#yaml-syntax-pitfalls">YAML syntax pitfalls</a></li></ul></details>
 <p>This page owns <code>type: query</code>, columns, filters, materialization selection, and <code>after:</code>. The query consumes the same model measures as <a href="reference--model-query-sql.html">Model Query SQL</a>.</p>
 <blockquote>
 <p><strong>Filename constraint:</strong> When compiling a <code>.dml</code> file with <code>dmlc -c</code>, the <code>type: query</code> block name must match the filename (without <code>.dml</code>). For example, a file named <code>my_report.dml</code> must contain <code>my_report: type: query</code>, not <code>some_other_name: type: query</code>. The compiler rejects mismatches with: <code>query name should be &lt;filename&gt; (the same as filename) instead of &lt;block_name&gt;</code>.</p>
 </blockquote>
 <p><a id="41-basic-structure"></a></p>
-<h2 id="basic-structure">Basic structure</h2>
+<h2 id="basic-structure">Basic structure <a class="section-link" aria-label="Link to section" href="#basic-structure">#</a></h2>
 <pre><code class="language-yaml">my_report:
     type: query
     allows: ALL              # optional: consider compatible materializations
@@ -49,7 +49,7 @@
 </tbody></table>
 <p>The <a href="#48-filter-placement-hierarchy">filter placement rules</a> define which stage receives each predicate.</p>
 <p><a id="42-detail-vs-aggregation"></a></p>
-<h2 id="detail-vs-aggregation">Detail vs aggregation</h2>
+<h2 id="detail-vs-aggregation">Detail vs aggregation <a class="section-link" aria-label="Link to section" href="#detail-vs-aggregation">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -78,12 +78,12 @@ product_list:
             - product
 </code></pre>
 <p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
-<h2 id="auto-join-of-multi-dataset-measures">Auto-join of multi-dataset measures</h2>
+<h2 id="auto-join-of-multi-dataset-measures">Auto-join of multi-dataset measures <a class="section-link" aria-label="Link to section" href="#auto-join-of-multi-dataset-measures">#</a></h2>
 <p>When an aggregate query references measures from <strong>different datasets</strong>, they compose through <strong>FULL OUTER JOIN</strong> semantics on the shared dimension fields: rows that exist in only one dataset still appear, with NULL for the other dataset&#39;s measures.</p>
 <p>The <strong>emitted</strong> join type follows the proven population contract. The compiler starts from <code>FULL OUTER JOIN</code> and reduces each join to the strongest type proven by query filters: <code>&quot;{primary_measure} is not null&quot;:</code> in <code>filters:</code> both prunes secondary-only rows and lowers the emitted join to <code>LEFT JOIN</code>; presence guards on both sides yield <code>INNER JOIN</code>. The guard matches a golden SQL <code>LEFT JOIN</code> only when valid primary groups cannot have a NULL primary measure. Prove that NULL/empty-group contract and inspect generated join types and output; otherwise the filter also deletes valid groups. Keep the guard out of <code>after:</code> so it remains visible to lineage, review, and reuse.</p>
 <p>The formula-as-key shape is required: <code>&quot;{expr}&quot;:</code> with an empty value. <code>name: {condition: …}</code> is schema-invalid.</p>
 <p><a id="44-column-references-in-dml-format"></a></p>
-<h2 id="column-references-in-dml-format">Column references in DML format</h2>
+<h2 id="column-references-in-dml-format">Column references in DML format <a class="section-link" aria-label="Link to section" href="#column-references-in-dml-format">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -115,7 +115,7 @@ product_list:
 </tbody></table>
 <p><strong>Pitfall</strong>: A bare column name in an aggregate query without <code>dataset:</code> will fail if the column lives on a specific dataset. Use <code>&quot;{DATASET}.column&quot;</code> form.</p>
 <p><a id="45-auto-aliasing-and-direct-reference"></a></p>
-<h2 id="auto-aliasing-and-direct-reference">Auto-aliasing and direct reference</h2>
+<h2 id="auto-aliasing-and-direct-reference">Auto-aliasing and direct reference <a class="section-link" aria-label="Link to section" href="#auto-aliasing-and-direct-reference">#</a></h2>
 <p>A query column with no formula can resolve to a measure or dataset column by name match — this is <strong>auto-aliasing</strong>. Three levels exist:</p>
 <table>
 <thead>
@@ -154,7 +154,7 @@ product_list:
 <li>A pass-through column (no <code>formula:</code>) may carry metadata properties (<code>description:</code>, <code>visibility:</code>) in object form without requiring <code>formula:</code>. Example: <code>revenue: { description: &#39;Total revenue&#39; }</code> auto-aliases to measure <code>revenue</code> while attaching the description.</li>
 </ul>
 <p><a id="46-visibility-hidden"></a></p>
-<h2 id="visibility-hidden"><code>visibility: hidden</code></h2>
+<h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="Link to section" href="#visibility-hidden">#</a></h2>
 <p>Hides a column from the final query output while keeping it available in intermediate temp tables.</p>
 <table>
 <thead>
@@ -187,7 +187,7 @@ product_list:
 <p><strong>Guidance:</strong> Remove <code>visibility: hidden</code> if <code>after:</code> references the dimension field by name. Keep it if <code>after:</code> only uses measure columns. For contracted outputs, compile and confirm that no hidden helper reaches the final result; extra columns are acceptable only when the output contract explicitly allows them.</p>
 <p><strong>YAML forms that work:</strong> <code>- dim: {visibility: hidden}</code> or a nested map whose keys sit <strong>under</strong> the dim entry. Sibling <code>visibility:</code> at the same indent as the dim key (under-indent) is a schema lint error — write the inline or nested form instead. Always inspect compiled SELECT when using <code>dmlc -c</code> alone (schema lint runs in the editor / <code>dmlc --lint</code>).</p>
 <p><a id="47-query-dimension-format"></a></p>
-<h2 id="query-dimension-format">Query dimension format</h2>
+<h2 id="query-dimension-format">Query dimension format <a class="section-link" aria-label="Link to section" href="#query-dimension-format">#</a></h2>
 <pre><code class="language-yaml">columns:
     dimension:
         - dt_month
@@ -214,7 +214,7 @@ columns:
 </code></pre>
 <p>Declare the classification entity key explicitly with <code>+d</code> (preferred) or <code>dimension:</code>. Multiple independent fields are allowed when their complete keys match; ordinary output measures must safely roll up from <code>Q ∪ K</code>. Label-channel filters (formula <code>filters:</code> / Model Query <code>HAVING</code>) apply <strong>after</strong> the label exists — see <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. Do not use this exception for physical/<code>{DATASET}.col</code> mappings.</p>
 <p><a id="48-filter-placement-hierarchy"></a></p>
-<h2 id="filter-placement-hierarchy">Filter placement hierarchy</h2>
+<h2 id="filter-placement-hierarchy">Filter placement hierarchy <a class="section-link" aria-label="Link to section" href="#filter-placement-hierarchy">#</a></h2>
 <p>Filter placement is a semantic decision, not a syntax preference:</p>
 <table>
 <thead>
@@ -278,7 +278,7 @@ filters:
 </tr>
 </tbody></table>
 <p><a id="49-pk-chaining"></a></p>
-<h2 id="pk-chaining"><code>pk</code> chaining</h2>
+<h2 id="pk-chaining"><code>pk</code> chaining <a class="section-link" aria-label="Link to section" href="#pk-chaining">#</a></h2>
 <pre><code class="language-yaml"># Single PK lookup
 formula: &#39;pk(customer_id).{DATASET_CUSTOMERS}.tier&#39;
 
@@ -300,7 +300,7 @@ columns:
 </code></pre>
 <p>Same-file forward references are supported in the checked build, including column dependencies and <code>pk()</code> targets. Keep dependency-first order for readability. Includes have a separate visibility boundary; see <a href="reference--model-composition.html">model composition</a>.</p>
 <p><a id="410-after-clause"></a></p>
-<h2 id="after-clause"><code>after:</code> clause</h2>
+<h2 id="after-clause"><code>after:</code> clause <a class="section-link" aria-label="Link to section" href="#after-clause">#</a></h2>
 <p><code>after:</code> is optional. Without it, the compiler orders ascending by the
 compiler-resolved <strong>visible output columns</strong> that represent the query dimension fields, in
 resolved dimension-field order. A hidden dimension field may therefore be ordered through a visible
@@ -321,7 +321,7 @@ measure/expression order, or TOP/LIMIT differs from the default. Don&#39;t re-ag
 <p>When <code>after:</code> is present, <code>{QUERY}</code> is mandatory: it names the compiled query result consumed by the post-query statement. “Ordering only” means no business logic beyond this wrapper plus ORDER BY/TOP/LIMIT. The upstream compiler emits a <code>redundant ORDER BY</code> warning when an authored order matches the query&#39;s default output order. Follow its contextual hint: remove only the redundant <code>ORDER BY</code> clause when other important <code>after:</code> processing remains; remove the entire block only when nothing else remains.</p>
 <p><strong>Wrong</strong>: Re-aggregating with <code>group by</code> in <code>after:</code> on a standard measure query. Let the query block aggregate measures.</p>
 <p><a id="411-allows-all"></a></p>
-<h2 id="allows-all"><code>allows: ALL</code></h2>
+<h2 id="allows-all"><code>allows: ALL</code> <a class="section-link" aria-label="Link to section" href="#allows-all">#</a></h2>
 <p>To permit the compiler to consider all compatible materializations:</p>
 <pre><code class="language-yaml">my_report:
     type: query
@@ -333,7 +333,7 @@ measure/expression order, or TOP/LIMIT differs from the default. Don&#39;t re-ag
 </code></pre>
 <p><code>allows:</code> controls eligible materializations. <code>ALL</code> permits candidates; <code>NONE</code> disables their use; explicit names constrain candidates. Eligibility still depends on grain and filter compatibility. It does not relax measure <code>dimensions:</code> or grant arbitrary query grain. See <a href="reference--materialization.html">materialization declarations</a>.</p>
 <p><a id="412-yaml-syntax-pitfalls"></a></p>
-<h2 id="yaml-syntax-pitfalls">YAML syntax pitfalls</h2>
+<h2 id="yaml-syntax-pitfalls">YAML syntax pitfalls <a class="section-link" aria-label="Link to section" href="#yaml-syntax-pitfalls">#</a></h2>
 <ul>
 <li><strong>Quote formulas</strong> containing <code>:</code>, <code>{</code>, or <code>-</code>: <code>formula: &#39;SUMIF(...)&#39;</code></li>
 <li><strong>Dimension field under <code>measures:</code></strong>: Wrong — declare under <code>dimension:</code> only</li>

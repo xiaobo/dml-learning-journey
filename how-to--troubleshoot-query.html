@@ -1,6 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Troubleshoot a query · DML</title><link rel="stylesheet" href="docs.css?v=9c82189c16"><meta name="description" content="Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected dmlc.exe to resolve uncertain behavior."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><meta property="og:type" content="website"><meta property="og:title" content="Troubleshoot a query · DML"><meta property="og:description" content="Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected dmlc.exe to resolve uncertain behavior."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a></header><main><h1 id="troubleshoot-a-query">Troubleshoot a query</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Troubleshoot a query · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected dmlc.exe to resolve uncertain behavior."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><meta property="og:type" content="website"><meta property="og:title" content="Troubleshoot a query · DML"><meta property="og:description" content="Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected dmlc.exe to resolve uncertain behavior."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="troubleshoot-a-query">Troubleshoot a query</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#debugging-workflow-model-query-sql">Debugging workflow (Model Query SQL)</a></li><li><a href="#reading-compiler-errors">Reading compiler errors</a></li><li><a href="#prevention-checklist">Prevention Checklist</a></li></ul></details>
 <p>Use this procedure when compilation fails, a strict warning appears, or emitted SQL contradicts the intended query. Use the selected <code>dmlc.exe</code> to resolve uncertain behavior.</p>
-<h2 id="debugging-workflow-model-query-sql">Debugging workflow (Model Query SQL)</h2>
+<h2 id="debugging-workflow-model-query-sql">Debugging workflow (Model Query SQL) <a class="section-link" aria-label="Link to section" href="#debugging-workflow-model-query-sql">#</a></h2>
 <p>Use when compilation reports <code>COMPILE_ERROR</code> or messages mention <code>UNION</code>, <code>JOIN</code>, <code>subquery</code>, <code>aggregation is not possible</code>, <code>ref {...} not defined</code>, <code>measure cannot be redefined</code>, or <code>use existing measure</code>.</p>
 <ol>
 <li><strong>Read the full error</strong> — including generated <code>-- dialect: …</code> SQL in the payload.</li>
@@ -11,9 +11,9 @@
 <li><strong>Debug incrementally</strong> — validate <code>SELECT AGG(one_measure) FROM MODEL</code>, then add <code>GROUP BY</code> and filters. Use <code>dmlc --validate-only &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --output-format=json</code>.</li>
 </ol>
 <p><a id="reading-mcp-wrapped-errors"></a></p>
-<h3 id="reading-compiler-errors">Reading compiler errors</h3>
+<h3 id="reading-compiler-errors">Reading compiler errors <a class="section-link" aria-label="Link to section" href="#reading-compiler-errors">#</a></h3>
 <p>Read the compiler message and generated SQL together. If the cause is unclear, reduce the query to one measure, then add columns and filters one at a time.</p>
-<h2 id="prevention-checklist">Prevention Checklist</h2>
+<h2 id="prevention-checklist">Prevention Checklist <a class="section-link" aria-label="Link to section" href="#prevention-checklist">#</a></h2>
 <p>Before submitting any DML or Model Query SQL:</p>
 <ol>
 <li>Measures use business names, not technical ones</li>
@@ -21,7 +21,7 @@
 <li>No redundant aliases on plain <code>AGG(measure)</code></li>
 <li>Time modifiers have a resolved time context and satisfy macro prerequisites</li>
 <li>Time filters use first-day format</li>
-<li>Time filters placed last in WHERE</li>
+<li>Time filters may be placed last for readability; predicate order is not a syntax requirement</li>
 <li>No subqueries, JOINs, or UNIONs</li>
 <li>Save readable Model Query SQL in a <code>.sql</code> file</li>
 <li>Query type matches intent (detail vs aggregation)</li>

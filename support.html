@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>排错：先确定失败在哪一步 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="先保存完整诊断，再缩小到一个指标。 编译通过不代表源键与数据一致；validate-only 通过也不代替业务结果核对。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/support.html"><meta property="og:type" content="website"><meta property="og:title" content="排错：先确定失败在哪一步 · DML"><meta property="og:description" content="先保存完整诊断，再缩小到一个指标。 编译通过不代表源键与数据一致；validate-only 通过也不代替业务结果核对。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/support.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="排错先确定失败在哪一步">排错：先确定失败在哪一步</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#准备可复现材料">准备可复现材料</a></li><li><a href="#版本与已知限制">版本与已知限制</a></li></ul></details>
+<p><strong>先保存完整诊断，再缩小到一个指标。</strong> 编译通过不代表源键与数据一致；validate-only 通过也不代替业务结果核对。</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>下一步</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>找不到模型</td>
+<td>核对文件名与 FROM；<a href="reference--model-query-sql.html">查询发现规则（英文）</a></td>
+</tr>
+<tr>
+<td>编译报错</td>
+<td>保留退出码和 JSON；<a href="reference--error-codes.html">错误码参考（英文）</a></td>
+</tr>
+<tr>
+<td>DIMENSION_NOT_UNIQUE</td>
+<td>修正键或数据后重测；<a href="guide--duplicate-lookup-zh.html">重复键验证</a></td>
+</tr>
+<tr>
+<td>总数、占比或历史值不符</td>
+<td>核对输入行、筛选、分组；<a href="reference--modifiers.html">修饰符（英文）</a></td>
+</tr>
+<tr>
+<td>物化结果过期</td>
+<td><a href="materialization-workflow.html">物化生命周期</a></td>
+</tr>
+</tbody></table>
+<h2 id="准备可复现材料">准备可复现材料 <a class="section-link" aria-label="Link to section" href="#准备可复现材料">#</a></h2>
+<p>保存 <code>dmlc --version</code>、命令、退出码、完整诊断、最小模型/查询、脱敏输入和预期结果。删除密码、令牌、真实连接串及个人信息。通过已有产品联系人反馈；本站尚未列出公开支持渠道，不要把私密数据提交到无关仓库。</p>
+<h2 id="版本与已知限制">版本与已知限制 <a class="section-link" aria-label="Link to section" href="#版本与已知限制">#</a></h2>
+<p>具体构建的观察只适用于所记录的构建和夹具。历史问题不是当前版本缺陷清单。遇到差异时，用当前编译器重现并保留生成 SQL。先看<a href="checked-exercise.html">销售练习</a>的验证状态；其他方言或未执行场景应标记“未验证”。</p>
+</main></body></html>
