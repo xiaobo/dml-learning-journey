@@ -1,5 +1,6 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档：按问题找答案 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档：按问题找答案 · DML"><meta property="og:description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-文档按问题找答案">DML 文档：按问题找答案</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#按业务问题运行完整案例">按业务问题运行完整案例</a></li><li><a href="#开始与验证">开始与验证</a></li><li><a href="#我想解决什么问题">我想解决什么问题？</a></li><li><a href="#扩展自己的计算规则">扩展自己的计算规则</a></li><li><a href="#术语与完整参考">术语与完整参考</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档：按问题找答案 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档：按问题找答案 · DML"><meta property="og:description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-文档按问题找答案">DML 文档：按问题找答案</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#按业务问题运行完整案例">按业务问题运行完整案例</a></li><li><a href="#开始与验证">开始与验证</a></li><li><a href="#我想解决什么问题">我想解决什么问题？</a></li><li><a href="#先确认集成需要的能力">先确认集成需要的能力</a></li><li><a href="#扩展自己的计算规则">扩展自己的计算规则</a></li><li><a href="#术语与完整参考">术语与完整参考</a></li></ul></details>
 <p><strong>先选要完成的事，再查语法。</strong> 标注“英文”的链接通向完整参考，不代表已有中文翻译。</p>
+<p>DML 是可独立使用的语义层编译器，保存可复用指标并生成 SQL，由数据库执行。它检查模型结构、粒度与上下文；业务口径、结果正确性和访问权限仍需使用者、数据库与应用负责。</p>
 <h2 id="按业务问题运行完整案例">按业务问题运行完整案例 <a class="section-link" aria-label="Link to section" href="#按业务问题运行完整案例">#</a></h2>
 <p><a href="examples--index.html">关联、累计与分母案例集</a>提供数据、完整模型、查询、预期输出和可重跑校验。</p>
 <h2 id="开始与验证">开始与验证 <a class="section-link" aria-label="Link to section" href="#开始与验证">#</a></h2>
@@ -37,6 +38,14 @@
 <tr>
 <td>只显示一月，分母要包含其他月份吗？</td>
 <td><a href="examples--fixed-total-zh.html">分母范围</a></td>
+</tr>
+<tr>
+<td>查找属性、准备源关系、组合独立指标有什么区别？</td>
+<td><a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">源关系与指标组合（英文）</a></td>
+</tr>
+<tr>
+<td>能面向哪些数据库，是否都执行验证过？</td>
+<td><a href="reference--model-structure.html#sql-dialect">方言与验证范围（英文）</a></td>
 </tr>
 <tr>
 <td>应用能绑定查询参数吗？</td>
@@ -87,6 +96,10 @@
 <td><a href="materialization-workflow.html">物化运行与验证</a></td>
 </tr>
 </tbody></table>
+<h2 id="先确认集成需要的能力">先确认集成需要的能力 <a class="section-link" aria-label="Link to section" href="#先确认集成需要的能力">#</a></h2>
+<p>需要应用传入筛选参数时，先确认语义查询的绑定方式。已测物理 SQL 的 JDBC <code>?</code> 可绑定，但 <code>FROM MODEL</code> 查询的占位符解析失败。物化参数和内部字面量参数化不能替代这个接口，也不能用不可信文本拼接补齐。</p>
+<p>按目标数据库显式设置 <code>dialect:</code>；遗漏时已测默认是 <code>mssql</code>，连接配置不会代替该声明。识别方言不等于各引擎所有功能都执行验证过。列值类型由数据库定义，已测列声明不接受 <code>type:</code>，编译通过仍可能出现数据库类型错误。</p>
+<p>累计指标要区分时间范围与筛选后行窗口。二月的窗口累计不会自动包含一月；日历累计则要明确截止点和输出期间。键验证也不保证与后续执行使用同一数据快照。根据上表的对应指南验证边界，再对照完整结果。</p>
 <h2 id="扩展自己的计算规则">扩展自己的计算规则 <a class="section-link" aria-label="Link to section" href="#扩展自己的计算规则">#</a></h2>
 <p><strong>可以扩展修饰符，也可以调用数据库中的标量函数。</strong> 自定义 <code>fn-macro</code> 包装指标公式，<code>dt-macro</code> 调整时间上下文，并按同一语法组合。数据库函数的实现、部署和权限由数据库负责；编译通过不代表函数存在，应在目标连接上验证。</p>
 <p><a href="how-to--define-macros.html#a-verified-composition-example">完整定义、实测结果与边界（英文）</a></p>

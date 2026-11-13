@@ -69,6 +69,7 @@
 </tbody></table>
 <p><strong>Key rule</strong>: <code>{...}</code> braces are for <code>.dml</code> only. In Model Query SQL, use bare names for dimensions and <code>AGG(...)</code> for measures. The only exception: <code>AGG({measure: modifier})</code> for modifier form.</p>
 <h3 id="pk-lookups"><code>pk(...)</code> lookups <a class="section-link" aria-label="Link to section" href="#pk-lookups">#</a></h3>
+<p>Lookups support single, compound and effective-date keys. Supply the target&#39;s complete key, not the consumer query&#39;s grouping fields. These attribute lookups differ from preparing a relation in dataset SQL or composing independently aggregated measures; see <a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">source relations, lookups and metric composition</a>.</p>
 <p>Cross-dataset column lookups in <code>.dml</code> formulas:</p>
 <pre><code class="language-yaml"># Single PK
 formula: &#39;SUM({amount} * pk(customer_id).{customers}.tier_discount)&#39;

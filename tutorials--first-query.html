@@ -30,6 +30,7 @@ average_sale:
   type: measure
   formula: &#39;DIVIDE({sales}, {cnt})&#39;
 </code></pre>
+<p>This model uses the checked default SQL dialect, <code>mssql</code>. For another target, declare <code>dialect:</code> at the model root before compiling; the connection does not choose the dialect. The <a href="reference--model-structure.html#sql-dialect">dialect reference</a> separates recognized targets from executed coverage.</p>
 <p><code>FACT_SALES</code> declares one source row per <code>id</code>. <code>sales</code> and <code>cnt</code> aggregate those rows. <code>average_sale</code> divides their results.</p>
 <p>Now, lint the model.</p>
 <pre><code class="language-powershell">&amp; $dmlc --lint model.dml --output-format=json

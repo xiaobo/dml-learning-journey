@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML, DMX, and Model Query · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><meta property="og:type" content="website"><meta property="og:title" content="DML, DMX, and Model Query · DML"><meta property="og:description" content="A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-dmx-and-model-query">DML, DMX, and Model Query</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#1-the-model-query-and-expression-layers">1. The model, query, and expression layers</a></li><li><a href="#2-dimension-roles-and-grain">2. Dimension roles and grain</a></li><li><a href="#3-time-context-and-dim_dt">3. Time context and <code>dim_dt</code></a></li></ul></details>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML, DMX, and Model Query · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><meta property="og:type" content="website"><meta property="og:title" content="DML, DMX, and Model Query · DML"><meta property="og:description" content="A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-dmx-and-model-query">DML, DMX, and Model Query</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#1-the-model-query-and-expression-layers">1. The model, query, and expression layers</a></li><li><a href="#2-source-relations-lookups-and-metric-composition">2. Source relations, lookups and metric composition</a></li><li><a href="#3-dimension-roles-and-grain">3. Dimension roles and grain</a></li><li><a href="#4-time-context-and-dim_dt">4. Time context and <code>dim_dt</code></a></li><li><a href="#5-reuse-and-integration">5. Reuse and integration</a></li></ul></details>
 <p>A report combines business definitions with choices about grouping, filters, and presentation. DML keeps reusable definitions in a model, so reports can consume the same measures at compatible grains.</p>
 <p>Metrics can reference other metrics, while analytical context determines how each reference is evaluated. A margin definition can therefore serve a regional report and a year-to-date KPI: the time transformation recalculates profit and revenue before division rather than averaging monthly margins. Measures from separate datasets can also compose at compatible grains; their output keys and missing sides must still match the intended report population. The <a href="reference--examples--composable-metrics.html">profitability example</a> follows this through composition, accumulation and comparison. DML models, DMX expressions and the compiler can provide the calculation core of an analytical semantic layer; agreeing business definitions remains a human responsibility.</p>
 <p>The illustrated <a href="explanation--visual-introduction.html">small journey through DML</a> introduces these ideas with four example sales and a grouping explorer.</p>
@@ -32,7 +32,8 @@
 <td>Model formulas and query expressions</td>
 </tr>
 </tbody></table>
-<p>DML checks declaration structure and analytical compatibility, such as grain and time context. Physical SQL value types belong to the database; function acceptance and result correctness need separate checks on the intended connection.</p>
+<p>DML is a standalone semantic-layer compiler that works with model files and generates SQL for a database to execute. Database permissions and application authorization control access; dashboards and scheduling belong to the surrounding system. A model filter alone is not an access-control policy.</p>
+<p>DML checks declaration structure and analytical compatibility, such as grain and time context. It does not provide complete static SQL expression type checking. Physical value types belong to the database, and the checked model schema rejects column <code>type:</code> declarations. A bad conversion or function argument can therefore survive compilation and fail at the database. See <a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">column metadata and value types</a>.</p>
 <p>A dataset binds columns to a physical table or SQL relation. Its <code>dimension:</code> declares the complete source-row key.</p>
 <pre><code class="language-yaml">transactions:
   type: dataset
@@ -53,9 +54,44 @@ avg_transaction_value:
 </code></pre>
 <p><code>sales</code> and <code>number_of_transactions</code> are atomic measures. They inherit the enclosing dataset and directly aggregate its rows or column expressions without referencing other measures. <code>avg_transaction_value</code> is composite because its formula references other measures, even though both use <code>transactions</code>. A composite measure has no <code>dataset:</code> property.</p>
 <p>In a model formula, bare <code>amount</code> names a physical SQL column. <code>{net_amount}</code> expands the model&#39;s calculated column. Braces retain that distinction even when logical and physical names happen to match.</p>
-<p>Column macros define reusable column expressions or cross-dataset lookups. They can expose attributes to measures without putting a join in each consumer query. Lookup correctness still depends on the target dataset&#39;s complete key.</p>
+<p>Column macros define reusable column expressions or cross-dataset lookups. They can expose attributes to measures without putting a join in each consumer query. The target dataset&#39;s complete key determines the lookup arguments; see <a href="#2-source-relations-lookups-and-metric-composition">source relations and lookups</a>.</p>
 <p>Model Query references measures through <code>AGG(...)</code>. Model formulas use aggregation functions such as <code>SUM</code> and <code>COUNT</code> directly. <code>AGG</code> is the query interface to a measure, not a replacement for <code>SUM</code> inside a model formula.</p>
-<h2 id="2-dimension-roles-and-grain">2. Dimension roles and grain <a class="section-link" aria-label="Link to section" href="#2-dimension-roles-and-grain">#</a></h2>
+<p>A one-off measure can start in an <a href="reference--model-query-sql.html#312-inline-measures--dml--">inline DML block</a> in the query file. Exploration does not require changing the shared model first. Review useful definitions before promoting them to shared measures.</p>
+<h2 id="2-source-relations-lookups-and-metric-composition">2. Source relations, lookups and metric composition <a class="section-link" aria-label="Link to section" href="#2-source-relations-lookups-and-metric-composition">#</a></h2>
+<p>DML combines data at different stages. Choosing the stage determines which keys, filters and row populations you must check.</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Mechanism</th>
+<th>Result contract</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reuse an attribute by its complete key</td>
+<td><code>pk(...)</code> lookup in a model formula</td>
+<td>One target row per lookup key. Single and compound keys are supported.</td>
+</tr>
+<tr>
+<td>Find the attribute valid at an event date</td>
+<td><code>pk(id, event_date)</code> against <code>[id, &#39;range(valid_from, valid_to)&#39;]</code></td>
+<td>The checked finite intervals match <code>[start,end)</code>. Intervals for the same id must not overlap.</td>
+</tr>
+<tr>
+<td>Compare independent facts such as sales and budget</td>
+<td>Measures evaluated on aligned dimensions</td>
+<td>The normal key-union composition preserves groups present on either side, including missing values on the other.</td>
+</tr>
+<tr>
+<td>Prepare a bridge, join, union or subquery relation</td>
+<td>Dataset <code>sql:</code> or a database view</td>
+<td>The prepared relation needs its own complete key. Define allocation weights and verify totals when one source row can match several rows.</td>
+</tr>
+</tbody></table>
+<p>Consumer Model Query SQL does not directly accept JOIN, UNION or subqueries. That restriction does not prohibit preparing supported relations in dataset SQL. Filters built into source SQL remain part of its population; they do not automatically become rules that respond to every consumer context.</p>
+<p>Compound and effective-date lookups do not imply a general relationship graph with arbitrary path selection or automatic many-to-many allocation. Independent measure aggregation also does not repair duplicate lookup keys or a wrong alignment contract. Follow the <a href="examples--compound-key-en.html">compound-key</a> and <a href="examples--range-lookup-en.html">effective-date</a> examples for complete models, deliberate key failures and repair. See <a href="reference--semantics.html#34-cross-dataset-auto-join">composition semantics</a> for unmatched groups and NULL keys, and <a href="reference--model-structure.html#52-dataset-definition-type-dataset">dataset SQL</a> for source ownership and the disclosed derived-relation validation-probe limitation.</p>
+<p><a id="2-dimension-roles-and-grain"></a></p>
+<h2 id="3-dimension-roles-and-grain">3. Dimension roles and grain <a class="section-link" aria-label="Link to section" href="#3-dimension-roles-and-grain">#</a></h2>
 <p>A dimension field is one named DML field. A dimension is a list of fields. The declaration site determines its role.</p>
 <table>
 <thead>
@@ -89,10 +125,16 @@ avg_transaction_value:
 <p>The modifier <code>dimension: []</code> clears the evaluation dimension for a grand total. It does not declare dataset identity. <code>+d</code> adds fields for an intermediate calculation. An explicit outer aggregate combines those intermediate values when a formula needs a coarser result.</p>
 <p>The compiler trusts the declared source key. Duplicate <code>pk(...)</code> targets can multiply rows even when compilation succeeds. Live validation checks observed key uniqueness. Result comparisons establish a different claim: whether the query returns the intended answer.</p>
 <p><a href="explanation--dimensions.html">Dimension semantics</a> explains these roles and their consequences in more detail.</p>
-<h2 id="3-time-context-and-dim_dt">3. Time context and <code>dim_dt</code> <a class="section-link" aria-label="Link to section" href="#3-time-context-and-dim_dt">#</a></h2>
+<p><a id="3-time-context-and-dim_dt"></a></p>
+<h2 id="4-time-context-and-dim_dt">4. Time context and <code>dim_dt</code> <a class="section-link" aria-label="Link to section" href="#4-time-context-and-dim_dt">#</a></h2>
 <p><code>dim_dt</code> represents the active time field of a measure&#39;s query context. It lets a formula refer to the current time grain without naming <code>dt_date</code>, <code>dt_month</code>, or <code>dt_quarter</code> directly. Macro prerequisites still limit which grains a macro accepts.</p>
 <p>A grouped time field or a time filter can supply the context. Read strict diagnostics and inspect generated joins separately from syntax acceptance. The presence of a time comparison or key-union join does not itself imply a strict warning.</p>
 <p>Declaring a standard fine time field such as <code>dt_date</code> makes supported coarser fields available through the system calendar. These virtual fields do not require duplicate physical declarations. Editor go-to-definition for a derived <code>dt_month</code> resolves to the explicit source time column.</p>
 <p>A single KPI still needs an explicit cutoff. In the <a href="examples--time-context-en.html">runnable example</a>, a February filter gives YTD margin 20% over January and February, while ordinary sibling revenue is February-only. Without time context the query fails. Grouped calendar queries can also return months with cumulative values but NULL current revenue, so select output periods deliberately. The calendar must cover the intended dates on the executing connection.</p>
 <p>The <a href="reference--semantics.html">time context specification</a> defines <code>dim_dt</code> and standard time fields. <a href="02-syntax--system_macros.dml">System macros</a> provides a reference copy of time and formula macro definitions.</p>
+<h2 id="5-reuse-and-integration">5. Reuse and integration <a class="section-link" aria-label="Link to section" href="#5-reuse-and-integration">#</a></h2>
+<p>Custom <code>fn-macro</code> definitions wrap a caller&#39;s measure formula, while <code>dt-macro</code> definitions change its time context. Both compose through the modifier syntax without changing the compiler. Database scalar calls reuse functions installed on the executing connection. The <a href="how-to--define-macros.html">extension guide</a> shows executed examples and a missing-function failure. These mechanisms do not establish a general module system or portable support for every UDF kind.</p>
+<p>Set the model&#39;s <a href="reference--model-structure.html#sql-dialect">SQL dialect</a> explicitly. A recognized dialect is not evidence that every feature has executed successfully on that engine. Generated SQL can contain multiple statements, intermediate relations and calendar dependencies, so verify the execution environment too.</p>
+<p>For an application that needs caller-bound filters, check the <a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">JDBC parameter boundary</a> before adopting the query interface. The checked physical SQL parameters work, while semantic Model Query placeholders fail. Materialization parameters and internal literal parameterization do not supply the missing caller-visible binding API.</p>
+<p><a href="how-to--compile-and-validate.html">Compilation, validation and execution</a> establish different facts. Live key validation can catch duplicates before a lookup multiplies rows, but it does not share a guaranteed snapshot with subsequent execution. Database EXPLAIN acceptance does not prove the returned numbers. Compare complete keys, row multiplicity, NULLs and unrounded values against an independent answer on the intended scope.</p>
 </main></body></html>
