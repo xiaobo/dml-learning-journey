@@ -33,7 +33,7 @@
 <p>The cumulative result is (400 − 300) / 400 = <strong>25%</strong>. Averaging 40% and 20% gives 30%, which answers a different question: the unweighted average of monthly ratios. The two methods agree in some cases, such as equal monthly revenue, but cannot be substituted generally.</p>
 <h2 id="see-the-calculation-change">See the calculation change <a class="section-link" aria-label="Link to section" href="#see-the-calculation-change">#</a></h2>
 <p><a href="index.en.html#metric-theatre">Open the metric theatre</a>, select North, and choose the fourth scene. Switch from the monthly context to year to date. Revenue changes from 300 to 400, cost from 240 to 300, and the margin from 20% to 25%.</p>
-<p>The checked model accumulates the atomic revenue and cost measures before dividing. It does not sum the monthly margins:</p>
+<p>Apply the period to the named ratio with <code>formula: &#39;{gross_margin: ytd}&#39;</code>. This recalculates the ratio over the cumulative period, rather than adding monthly ratios. The short form was executed on DuckDB and checked against independent SQL; the SQL Server compiler record alone is not evidence of database execution. The model is:</p>
 <details><summary>Inspect the complete DML model</summary>
 
 <pre><code class="language-yaml">FACT_PROFITABILITY:
@@ -60,11 +60,11 @@ gross_margin:
 
 gross_margin_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: &#39;{gross_margin: ytd}&#39;
 
 gross_margin_prior_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: &#39;{gross_margin: {ytd, ya}}&#39;
 
 margin_change_pp:
   type: measure

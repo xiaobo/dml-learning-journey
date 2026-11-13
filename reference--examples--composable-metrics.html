@@ -28,11 +28,11 @@ gross_margin:
 
 gross_margin_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: &#39;{gross_margin: ytd}&#39;
 
 gross_margin_prior_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: &#39;{gross_margin: {ytd, ya}}&#39;
 
 margin_change_pp:
   type: measure
@@ -41,7 +41,7 @@ margin_change_pp:
 <p><a href="profitability-model.dml">Download model.dml</a>, <a href="TABLE_PROFITABILITY.csv">source CSV</a>, or <a href="profitability-data.json">source data as JSON</a>.</p>
 <h2 id="change-the-context">Change the context <a class="section-link" aria-label="Link to section" href="#change-the-context">#</a></h2>
 <p>For North in February 2025, revenue is 300 and cost is 240, giving a 20% margin. January revenue is 100 and cost is 60, giving a 40% margin. Year-to-date revenue is 400 and cost is 300: the cumulative margin is 25%, not the 30% simple average of monthly margins.</p>
-<p>The checked compiler requires cumulative atomic components before division. Apply the time rule to revenue and cost, then recalculate profit and margin. Do not sum ratios or assume every composite formula can be reaggregated by attaching a time modifier directly.</p>
+<p>Apply the time modifier directly to the named ratio: <code>formula: &#39;{gross_margin: ytd}&#39;</code>. This recalculates gross margin over the cumulative period from its revenue and cost dependencies; it does not sum or average monthly percentages. Prior-year YTD uses <code>&#39;{gross_margin: {ytd, ya}}&#39;</code>.</p>
 <pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
 FROM MODEL
 WHERE dt_month = &#39;2025-02-01&#39;
@@ -57,7 +57,7 @@ GROUP BY region, dt_month
 <p><a href="profitability-monthly.sql">Download the monthly query</a>, <a href="profitability-cumulative.sql">cumulative query</a>, or <a href="profitability-comparison.sql">comparison query</a>. Standard time calculations also require the compiler&#39;s DML_CALENDAR on the target connection.</p>
 <h2 id="inspect-the-evidence">Inspect the evidence <a class="section-link" aria-label="Link to section" href="#inspect-the-evidence">#</a></h2>
 <p>The <a href="profitability-compiler-observations.json">compiler record</a> includes the executable identity, exact queries, process exits, statuses, diagnostics and generated SQL. The three checked queries pass strict compilation. Inspection confirms that the cumulative branches sum revenue and cost before division; the prior-year branch shifts the cumulative range by one year.</p>
-<p>These observations cover this example and compiler build. Database execution, source-key validation and result parity have not been run. The browser independently calculates the invented rows; it does not execute DML. A zero revenue denominator produces NULL, and a missing prior period remains missing rather than becoming a fabricated zero.</p>
+<p>These observations cover this example and compiler build. A separate DuckDB execution check of these short formulas passed strict compilation and source-key validation. Independent SQL confirmed February YTD margins of 25% for North and 33⅓% for South, with prior-year YTD of 20% for both. This does not establish SQL Server execution parity. The browser independently calculates the invented rows; it does not execute DML. A zero revenue denominator produces NULL, and a missing prior period remains missing rather than becoming a fabricated zero.</p>
 <h2 id="continue">Continue <a class="section-link" aria-label="Link to section" href="#continue">#</a></h2>
 <p>Use the <a href="explanation--core-concepts.html">core concepts</a>, <a href="reference--modifiers.html">modifier reference</a>, and <a href="how-to--compile-and-validate.html">compile and validate guide</a> for the exact rules and checks.</p>
 </main></body></html>

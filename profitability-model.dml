@@ -22,11 +22,11 @@ gross_margin:
 
 gross_margin_ytd:
   type: measure
-  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+  formula: '{gross_margin: ytd}'
 
 gross_margin_prior_ytd:
   type: measure
-  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+  formula: '{gross_margin: {ytd, ya}}'
 
 margin_change_pp:
   type: measure
