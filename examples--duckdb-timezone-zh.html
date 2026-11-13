@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DuckDB：按固定业务时区划分一天 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="先把时刻映射到业务时区，再定义日期和一天的边界。 本配方固定使用 America/New_York，只验证 DuckDB 的物理 SQL，不宣称 DML 提供跨数据库或每个用户可切换的时区能力。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DuckDB：按固定业务时区划分一天 · DML"><meta property="og:description" content="先把时刻映射到业务时区，再定义日期和一天的边界。 本配方固定使用 America/New_York，只验证 DuckDB 的物理 SQL，不宣称 DML 提供跨数据库或每个用户可切换的时区能力。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="duckdb按固定业务时区划分一天">DuckDB：按固定业务时区划分一天</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#明确输入的含义">明确输入的含义</a></li><li><a href="#用两个当地零点界定一天">用两个当地零点界定一天</a></li><li><a href="#重复的当地时间不是重复的时刻">重复的当地时间不是重复的时刻</a></li><li><a href="#复现和复用">复现和复用</a></li></ul></details>
+<p><strong>先把时刻映射到业务时区，再定义日期和一天的边界。</strong> 本配方固定使用 America/New_York，只验证 DuckDB 的物理 SQL，不宣称 DML 提供跨数据库或每个用户可切换的时区能力。</p>
+<h2 id="明确输入的含义">明确输入的含义 <a class="section-link" aria-label="Link to section" href="#明确输入的含义">#</a></h2>
+<p>输入使用带明确 UTC 偏移的 <code>TIMESTAMPTZ</code>，表示实际时刻；连接会话设为 UTC。业务时区是 America/New_York。没有偏移的时间戳不能直接当作 UTC；需要先确认源系统如何记录它。</p>
+<pre><code class="language-sql">SET TimeZone = &#39;UTC&#39;;
+SELECT timezone(&#39;America/New_York&#39;, TIMESTAMPTZ &#39;2024-01-01 02:00:00+00&#39;);
+</code></pre>
+<p>得到当地时间2023-12-31 21:00:00，业务日期属于前一天。按业务日期分组时，先做同样的转换，再取日期。</p>
+<h2 id="用两个当地零点界定一天">用两个当地零点界定一天 <a class="section-link" aria-label="Link to section" href="#用两个当地零点界定一天">#</a></h2>
+<pre><code class="language-sql">SELECT count(*)
+FROM (VALUES
+  (TIMESTAMPTZ &#39;2024-03-10 04:59:59+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-10 05:00:00+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-11 03:59:59+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-11 04:00:00+00&#39;)
+) events(ts)
+WHERE ts &gt;= timezone(&#39;America/New_York&#39;, TIMESTAMP &#39;2024-03-10 00:00:00&#39;)
+  AND ts &lt; timezone(&#39;America/New_York&#39;, TIMESTAMP &#39;2024-03-11 00:00:00&#39;);
+</code></pre>
+<p>结果为2。起点包含、终点不包含；不要假定结束时间总是起点加24小时。验证中，春季切换日为23小时，秋季切换日为25小时。</p>
+<h2 id="重复的当地时间不是重复的时刻">重复的当地时间不是重复的时刻 <a class="section-link" aria-label="Link to section" href="#重复的当地时间不是重复的时刻">#</a></h2>
+<p>2024-11-03 05:30 UTC 和06:30 UTC 均映射为当地01:30。这两个时刻不同，不能只凭当地日期时间去重；保留事件主键和原始时刻。</p>
+<h2 id="复现和复用">复现和复用 <a class="section-link" aria-label="Link to section" href="#复现和复用">#</a></h2>
+<p><a href="task-examples.zip">下载项目</a>，按 README 的 JDBC 步骤运行 <code>jdbc/VerifyJdbc.java</code>。验证器检查跨午夜、重复小时、23/25小时日和半开区间筛选的实际结果；失败会以非零退出。</p>
+<p>本次使用 JDBC 分发中的 DuckDB 1.5.4 驱动。若要在 DML 数据集中复用业务日期，可先用经过验证的数据库视图完成时区归一化，再把业务日期作为模型列；这个接入步骤仍需在你的模型和连接中验证。不要将此配方描述为已验证的任意时区模型。</p>
+<p><a href="examples--index.html">返回案例目录</a></p>
+</main></body></html>

@@ -1,0 +1,68 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>同一编号在不同地区重复，怎样正确关联？ · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="将完整业务键声明为复合键，并按声明顺序查找。 id=1 可以同时出现在 east 和 west；必须唯一的是 (id, region) 组合。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="同一编号在不同地区重复，怎样正确关联？ · DML"><meta property="og:description" content="将完整业务键声明为复合键，并按声明顺序查找。 id=1 可以同时出现在 east 和 west；必须唯一的是 (id, region) 组合。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--compound-key-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="同一编号在不同地区重复怎样正确关联">同一编号在不同地区重复，怎样正确关联？</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#先看输入和结果">先看输入和结果</a></li><li><a href="#声明一次在查询中复用">声明一次，在查询中复用</a></li><li><a href="#数据变更后检查键声明">数据变更后检查键声明</a></li><li><a href="#运行与验证范围">运行与验证范围</a></li></ul></details>
+<p><strong>将完整业务键声明为复合键，并按声明顺序查找。</strong> <code>id=1</code> 可以同时出现在 east 和 west；必须唯一的是 <code>(id, region)</code> 组合。</p>
+<h2 id="先看输入和结果">先看输入和结果 <a class="section-link" aria-label="Link to section" href="#先看输入和结果">#</a></h2>
+<p>目标表中 <code>(1,east)</code> 对应 East，<code>(1,west)</code> 对应 West。两条销售分别为10和20。查询应得到：</p>
+<table>
+<thead>
+<tr>
+<th>标签</th>
+<th align="right">销售额</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>East</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>West</td>
+<td align="right">20</td>
+</tr>
+</tbody></table>
+<p>只按 id 关联不足以区分这两条目标记录。示例使用最小夹具突出这个边界，金额单位不影响结果。</p>
+<h2 id="声明一次在查询中复用">声明一次，在查询中复用 <a class="section-link" aria-label="Link to section" href="#声明一次在查询中复用">#</a></h2>
+<p>模型的目标数据集声明 <code>dimension: [id, region]</code>。事实表中的标签定义为 <code>pk({id}, {region}).{D}.label</code>；参数顺序与目标 dimension 一致。</p>
+<details><summary>完整文件 / Complete file: compound/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+D:
+  type: dataset
+  table: DIM
+  dimension: [id, region]
+  columns:
+    id:
+    region:
+    label:
+F:
+  type: dataset
+  table: FACT
+  dimension: [fid]
+  columns:
+    fid:
+    id:
+    region:
+    amount:
+    label: &#39;pk({id}, {region}).{D}.label&#39;
+  measures:
+    sales: SUM({amount})
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: compound/setup.sql</summary>
+
+<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, region VARCHAR, label VARCHAR); INSERT INTO DIM VALUES (1,&#39;east&#39;,&#39;East&#39;),(1,&#39;west&#39;,&#39;West&#39;); CREATE TABLE FACT(fid INTEGER,id INTEGER,region VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,1,&#39;east&#39;,10),(2,1,&#39;west&#39;,20);
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: compound/normal.sql</summary>
+
+<pre><code class="language-sql">SELECT label, AGG(sales) FROM MODEL GROUP BY label ORDER BY label
+</code></pre>
+</details>
+
+<p>业务标签查找定义在模型中。查询按标签分组时复用它，不必再次手写关联条件。换成自己的数据时，应确认实际复合键，而不是机械复制 <code>id, region</code>。</p>
+<h2 id="数据变更后检查键声明">数据变更后检查键声明 <a class="section-link" aria-label="Link to section" href="#数据变更后检查键声明">#</a></h2>
+<p>校验脚本按顺序执行：正常数据编译、验证、查询通过；插入重复 <code>(1,east)</code> 后，<code>--validate-only</code> 检出 <code>DIMENSION_NOT_UNIQUE</code>；删除重复数据并恢复唯一组合后，重新验证和结果比对通过。</p>
+<p>这说明验证能够发现键声明与当前数据的不一致，帮助在信任结果前避免关联放大。它不证明以后写入的数据仍唯一。实际业务应修正来源、完整键或数据，在最终结果加 DISTINCT 不能可靠修复已经放大的聚合。</p>
+<h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="Link to section" href="#运行与验证范围">#</a></h2>
+<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
+<p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate.html">编译与验证（英文）</a></p>
+</main></body></html>
