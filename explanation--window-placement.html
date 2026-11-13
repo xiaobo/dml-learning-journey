@@ -42,6 +42,13 @@
 </code></pre>
 <p>The window repeats a customer&#39;s total on every detail row for that customer. Summing the calculated column counts the repeated total once per source row. The result is not a deduplicated customer total, so this example illustrates placement rather than a recommended sales metric.</p>
 <p>A row-order-sensitive window also depends on its ordering, frame, tie-break key, and source population. Changing a filter&#39;s stage can change every window result in a partition.</p>
+<p>A detail window can also select a last observation before aggregation. For a source with <code>dt_month</code> and <code>revenue_amount</code>, the checked pattern adds this column and measure:</p>
+<pre><code class="language-yaml"># Under the dataset&#39;s columns:
+is_last_month: &#39;IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)&#39;
+# Under the same dataset&#39;s measures:
+last_month_revenue: &#39;SUM({revenue_amount} * {is_last_month})&#39;
+</code></pre>
+<p><code>MAX(...) OVER ()</code> chooses one latest month in the detail-window input. The measure sums only amounts from that month. There is no entity partition: if one entity has no observation in that month, this does not carry forward its last known balance. For inventory or account balances, define whether “last” is per entity or global, how missing observations behave, and which filters scope the window before adopting a formula.</p>
 <h2 id="post-aggregation-window">Post-aggregation window <a class="section-link" aria-label="Link to section" href="#post-aggregation-window">#</a></h2>
 <p>Given atomic <code>sales: SUM({amount})</code>, this composite formula ranks aggregated sales.</p>
 <pre><code class="language-yaml">customer_rank:

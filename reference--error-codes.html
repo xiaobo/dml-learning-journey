@@ -157,7 +157,7 @@
 <li><strong>Common Causes</strong>: DML syntax error, model validation error, SQL generation error; illegal modifier composition (e.g. same-dimension <code>+d</code> with <code>-d</code>/<code>-df</code> in one modifier object — language contract: fail loudly, see <a href="reference--semantics.html#45-modifier-composition">modifier composition</a> / pitfalls P79)</li>
 <li><strong>Suggested Fixes</strong>: Fix compilation errors, check model.dml exists in workspace folder, review generated SQL in error.details.generatedSql; for conflicting <code>+d</code>/<code>-d</code>/<code>-df</code>, rewrite to one explicit intent instead of relying on cancel</li>
 <li><strong>Example</strong>: <code>Compilation failed — see details.compilationErrors</code></li>
-<li><strong>Notes</strong>: The 2026-10-16 build accepts the checked same-field <code>+d</code> conflicts without an error. Express one evaluation stage explicitly and inspect the generated SQL; do not rely on cancellation.</li>
+<li><strong>Notes</strong>: The current checked build accepts the checked same-field <code>+d</code> conflicts without an error. Express one evaluation stage explicitly and inspect the generated SQL; do not rely on cancellation.</li>
 </ul>
 <h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
 <ul>

@@ -187,7 +187,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tbody></table>
 <p><a id="same-dimension-d-with--d--df--illegal"></a></p>
 <h3 id="same-dimension-modifier-conflicts">Same-dimension modifier conflicts <a class="section-link" aria-label="Link to section" href="#same-dimension-modifier-conflicts">#</a></h3>
-<p>The language contract prohibits intersecting field sets in <code>+d</code> and either <code>-d</code> or <code>-df</code> within one modifier object. Different fields can coexist, as in <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>. The 2026-10-16 build accepts the checked same-field conflicts and emits repeated regional totals followed by an outer sum. This is an implementation gap. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a>.</p>
+<p>The language contract prohibits intersecting field sets in <code>+d</code> and either <code>-d</code> or <code>-df</code> within one modifier object. Different fields can coexist, as in <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>. The current checked build accepts the checked same-field conflicts and emits repeated regional totals followed by an outer sum. This is an implementation gap. See <a href="reference--semantics.html#45-modifier-composition">modifier composition</a>.</p>
 <p><a id="23a--df--combined--d-and--f"></a></p>
 <h3 id="-df--combined--d-and--f"><code>-df</code> — combined <code>-d</code> and <code>-f</code> <a class="section-link" aria-label="Link to section" href="#-df--combined--d-and--f">#</a></h3>
 <p><code>-df</code> combines the semantics of two modifiers:</p>

@@ -1,5 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML and DMX documentation · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="Define and compose reusable business metrics with DML. Write formulas and adjust a measure's calculation with DMX. Ask questions of the model with Model Query."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:type" content="website"><meta property="og:title" content="DML and DMX documentation · DML"><meta property="og:description" content="Define and compose reusable business metrics with DML. Write formulas and adjust a measure's calculation with DMX. Ask questions of the model with Model Query."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-and-dmx-documentation">DML and DMX documentation</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#continue-from-the-journey">Continue from the journey</a></li><li><a href="#find-a-task">Find a task</a></li><li><a href="#concepts">Concepts</a></li><li><a href="#language-reference">Language reference</a></li><li><a href="#examples">Examples</a></li><li><a href="#usage-guides">Usage guides</a></li><li><a href="#solve-an-analytical-question">Solve an analytical question</a></li></ul></details>
 <p>Define and compose reusable business metrics with <strong>DML</strong>. Write formulas and adjust a measure&#39;s calculation with <strong>DMX</strong>. Ask questions of the model with <strong>Model Query</strong>.</p>
+<p>A measure can reference other measures, including measures from different datasets at compatible grains. Applying a time rule to a ratio recalculates its components in that period; it does not average displayed percentages. The <a href="reference--examples--composable-metrics.html">profitability example</a> follows one definition through these changes.</p>
 <p>New to DML? Open the <a href="index.html">overview</a> for the idea, then follow the <a href="journey.html">interactive journey</a>: twelve illustrated lessons with exercises in English, 中文, 日本語 and Deutsch. Core reference pages are in English; the problem guides below are available in English and Chinese.</p>
 <h2 id="continue-from-the-journey">Continue from the journey <a class="section-link" aria-label="Link to section" href="#continue-from-the-journey">#</a></h2>
 <table>
@@ -40,8 +41,56 @@
 <h2 id="language-reference">Language reference <a class="section-link" aria-label="Link to section" href="#language-reference">#</a></h2>
 <p>The <a href="reference--README.html">reference index</a> covers model declarations, measures, DMX expressions, modifiers, SQL and YAML queries, materialization and model composition.</p>
 <h2 id="examples">Examples <a class="section-link" aria-label="Link to section" href="#examples">#</a></h2>
-<p><a href="examples--index.html">Runnable task examples (中文)</a> include source data, complete models, queries, expected results and replay instructions for lookups, time context, running totals and fixed denominators.</p>
+<p><a href="examples--index-en.html">Runnable task examples</a> · <a href="examples--index.html">中文</a> include source data, complete models, queries, expected results and replay instructions for lookups, time context, running totals and fixed denominators.</p>
 <p>Browse the <a href="reference--examples--README.html">example catalog</a> for models, queries, aggregation, measure formulas and advanced calculations. Each example states the definitions it needs.</p>
+<table>
+<thead>
+<tr>
+<th>Your question</th>
+<th>Start here</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Which price was valid when a transaction happened?</td>
+<td><a href="examples--range-lookup-en.html">Effective-date lookup</a></td>
+</tr>
+<tr>
+<td>Can an id repeat in different regions?</td>
+<td><a href="examples--compound-key-en.html">Compound keys</a></td>
+</tr>
+<tr>
+<td>Can a running total be a reusable metric?</td>
+<td><a href="examples--running-total-en.html">Named running sales</a></td>
+</tr>
+<tr>
+<td>Does a February KPI include January?</td>
+<td><a href="examples--time-context-en.html">Time context and sibling measures</a></td>
+</tr>
+<tr>
+<td>Should a denominator retain the report filter?</td>
+<td><a href="examples--fixed-total-en.html">Fixed totals</a></td>
+</tr>
+<tr>
+<td>Can my application bind query parameters?</td>
+<td><a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">Physical and semantic query binding</a></td>
+</tr>
+<tr>
+<td>What does checking a model prove about column types?</td>
+<td><a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">Declaration schemas and SQL value types</a></td>
+</tr>
+<tr>
+<td>Can I explore a metric before saving its definition?</td>
+<td><a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures</a></td>
+</tr>
+<tr>
+<td>How do I investigate a change or reuse existing SQL?</td>
+<td><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">Contribution analysis and SQL recovery</a></td>
+</tr>
+<tr>
+<td>How should a business day handle daylight saving?</td>
+<td><a href="examples--duckdb-timezone-en.html">DuckDB timezone recipe</a></td>
+</tr>
+</tbody></table>
 <h2 id="usage-guides">Usage guides <a class="section-link" aria-label="Link to section" href="#usage-guides">#</a></h2>
 <ul>
 <li><a href="tutorials--first-query.html">Compile your first query</a>.</li>

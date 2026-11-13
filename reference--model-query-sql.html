@@ -111,18 +111,18 @@ FROM acme.Claim
 </thead>
 <tbody><tr>
 <td>Subqueries</td>
-<td>Not supported</td>
-<td>DML measures with modifiers or <code>HAVING</code></td>
+<td>Not supported in Model Query SQL</td>
+<td>Model the calculation with measures, or prepare the relation in dataset <code>sql:</code></td>
 </tr>
 <tr>
 <td><code>UNION</code> / <code>UNION ALL</code></td>
-<td>Not supported</td>
-<td>Separate queries or measures with different filters</td>
+<td>Not supported in Model Query SQL</td>
+<td>Prepare a union relation in dataset <code>sql:</code> or a database view</td>
 </tr>
 <tr>
 <td><code>JOIN</code></td>
-<td>Not supported</td>
-<td><code>pk(...)</code> in <code>.dml</code></td>
+<td>Not supported in Model Query SQL</td>
+<td>Model attribute lookups with <code>pk(...)</code>, or prepare a relation in dataset <code>sql:</code></td>
 </tr>
 <tr>
 <td><code>{...}</code> on bare columns</td>
@@ -130,6 +130,7 @@ FROM acme.Claim
 <td>Use bare names: <code>SELECT product, AGG(sales)</code></td>
 </tr>
 </tbody></table>
+<p>These consumer-query restrictions do not prohibit SQL throughout DML. Dataset <code>sql:</code> can prepare supported joins, unions and subqueries; reference declared datasets as <code>{DATASET}</code> and respect physical table ownership. That relation must have an explicit correct key. The <a href="reference--model-structure.html#52-dataset-definition-type-dataset">dataset reference</a> also describes the validation-probe failure observed for the checked derived relations, separately from their successful execution. Filters baked into its SQL remain part of its population; moving SQL to the model does not automatically make every rule responsive to consumer context. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">dataset definitions</a>.</p>
 <p>Window functions (<code>OVER()</code>) are <strong>allowed</strong> in Model Query SQL — the compiler passes them through to generated SQL. For common patterns, prefer fn-macros from <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>rank_asc</code>, <code>pot</code>, <code>grand</code>) — see <a href="reference--modifiers.html#22-function-modifiers">Function modifiers</a>. Where <code>OVER</code> belongs in a <code>.dml</code> model (<strong>window placement</strong>): <a href="explanation--window-placement.html">Window placement</a>.</p>
 <p><a id="32-select-rules"></a></p>
 <h3 id="select-rules">SELECT rules <a class="section-link" aria-label="Link to section" href="#select-rules">#</a></h3>
@@ -232,7 +233,7 @@ query, filter, or editor diagnostic. Go-to-definition on the derived name resolv
 explicit source time column.</p>
 <p><strong>Filtering</strong>: <code>WHERE dt_month = &#39;2024-01-01&#39;</code> (first day, <code>=</code> not <code>BETWEEN</code> for single periods).</p>
 <p>The <a href="reference--expressions.html#34-date-functions-sqlite-dialect">date function reference</a> describes SQLite-style expression forms. The compiler lowers supported forms to the selected dialect.</p>
-<p>Multiple time fields are accepted as input, but acceptance does not guarantee that every requested field survives in the result. On the 2026-10-16 build, the <code>two_times</code> probe requests <code>dt_year</code> and <code>dt_month</code> but emits only <code>dt_month</code> and the measure. This is a known output defect.</p>
+<p>For the checked query requesting both <code>dt_year</code> and <code>dt_month</code>, compilation rejects the query because <code>dt_year</code> is absent from the generated output. Do not treat this combination as a successful two-field report. If you only need the year as a display label, query at the required month grain and derive the label from that key after querying; verify the result grain separately. This does not establish that every query containing multiple time fields is unsupported.</p>
 <p><a id="39-having"></a></p>
 <h3 id="having">HAVING <a class="section-link" aria-label="Link to section" href="#having">#</a></h3>
 <pre><code class="language-sql">-- Customers with outstanding balance
@@ -353,6 +354,7 @@ temp_sales:
 **/
 SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
 </code></pre>
+<p>After the exploratory calculation has a shared business meaning, move the same formula into the <code>.dml</code> model under a stable name. Consumers can keep referring to the named measure without repeating its formula. A composite margin can be defined inline or in the model as <code>DIVIDE({net_revenue} - {sales_cost}, {net_revenue})</code>; applying <code>ytd</code> to that measure recalculates its components over the cumulative scope. It does not average the displayed monthly ratios.</p>
 <p><strong>Use cases</strong>:</p>
 <ul>
 <li>Ad-hoc aggregation without modifying <code>.dml</code> (solves the <a href="#311-aggregation-lookup-table">measure requirement</a>)</li>
@@ -386,7 +388,7 @@ SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
 </tbody></table>
 <h2 id="jdbc-parameters-and-query-kind">JDBC parameters and query kind <a class="section-link" aria-label="Link to section" href="#jdbc-parameters-and-query-kind">#</a></h2>
 <p>The checked JDBC distribution binds positional <code>?</code> parameters in physical SQL. <code>SELECT value FROM t WHERE id = ?</code> and <code>SELECT SUM(value) * ? FROM t</code>, with 2 bound, returned 20 and 60 in the fixture. Equivalent semantic queries <code>SELECT AGG(sales) FROM MODEL WHERE id = ?</code> and <code>SELECT AGG(sales) * ? FROM MODEL</code> failed during parsing; their literal controls with 2 returned 20 and 60.</p>
-<p>Physical SQL parameter binding does not establish semantic Model Query parameter support. Internal literal parameterization for compilation-cache reuse is also distinct from a caller-visible binding API or result caching. The literal controls demonstrate expression behavior, not a recommendation to concatenate untrusted values into SQL. The replay source is in the <a href="examples--index.html">task-example project</a>.</p>
+<p>Physical SQL parameter binding does not establish semantic Model Query parameter support. Internal literal parameterization for compilation-cache reuse is also distinct from a caller-visible binding API or result caching. The literal controls demonstrate expression behavior, not a recommendation to concatenate untrusted values into SQL. For an application that needs caller-bound semantic queries, this is an integration constraint; physical SQL binding does not meet that requirement. A rejected guessed CLI flag alone would not establish this boundary. The replay source is in the <a href="examples--index-en.html">task-example project</a>.</p>
 <h2 id="a-time-filter-also-scopes-sibling-measures">A time filter also scopes sibling measures <a class="section-link" aria-label="Link to section" href="#a-time-filter-also-scopes-sibling-measures">#</a></h2>
-<p>A query-level month filter can supply a YTD measure&#39;s time anchor, but it also scopes ordinary measures in the query. In the <a href="examples--time-context-zh.html">single-KPI example (中文)</a>, February YTD margin uses January and February while ordinary revenue is February-only. An unanchored query fails, and grouped calendar queries can produce months with a cumulative value but no current-period revenue. These are separate output-membership and metric-scope questions; do not silently choose today&#39;s date or the latest fact date.</p>
+<p>A query-level month filter can supply a YTD measure&#39;s time anchor, but it also scopes ordinary measures in the query. In the <a href="examples--time-context-en.html">single-KPI example</a>, February YTD margin uses January and February while ordinary revenue is February-only. An unanchored query fails, and grouped calendar queries can produce months with a cumulative value but no current-period revenue. These are separate output-membership and metric-scope questions; do not silently choose today&#39;s date or the latest fact date.</p>
 </main></body></html>

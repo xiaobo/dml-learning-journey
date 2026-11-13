@@ -41,7 +41,7 @@ window.DMLOverviewLocales={
     "boundary": "Metrics compose within semantic constraints. Context and rule order matter. The model makes definitions explicit; people still agree the business meaning.",
     "inspect": "Inspect the model, queries and compiler record",
     "implementation": "Apply ytd directly to gross_margin. The cumulative context recalculates the ratio from cumulative revenue and cost; it does not sum monthly margins.",
-    "compilerScope": "Compilation and SQL inspection are recorded. Live key validation, SQL execution and database result parity have not been run.",
+    "compilerScope": "This record covers strict compilation and SQL inspection for SQL Server. The worked example explains separate DuckDB result checks; these do not establish SQL Server execution parity.",
     "model": "Model",
     "query": "Comparison query",
     "sampleData": "Sample data",
@@ -86,7 +86,9 @@ window.DMLOverviewLocales={
     "questionsTitle": "Start with a real question.",
     "questionMargin": "Why can’t monthly margins be averaged?",
     "questionShare": "Which sales belong in the denominator?",
-    "questionLookup": "Why did a lookup double sales?"
+    "questionLookup": "Why did a lookup double sales?",
+    "questionRange": "Which price was valid at the transaction date?",
+    "questionRunning": "Can a running total be reused across queries?"
   },
   "zh": {
     "home": "概览",
@@ -130,7 +132,7 @@ window.DMLOverviewLocales={
     "boundary": "指标组合受语义约束，上下文和规则顺序很重要。模型让定义明确；业务口径仍需由人共同确认。",
     "inspect": "查看模型、查询与编译记录",
     "implementation": "直接写 {gross_margin: ytd}，在累计期间重新计算毛利率：先累计收入和成本，再计算比率，不累加各月毛利率。",
-    "compilerScope": "已记录编译结果并检查生成 SQL；尚未进行数据库键验证、SQL 执行或结果对比。",
+    "compilerScope": "此记录覆盖 SQL Server 严格编译与 SQL 检查。完整示例另有 DuckDB 结果验证说明；它不证明 SQL Server 执行结果已核对。",
     "model": "模型",
     "query": "同期比较查询",
     "sampleData": "示例数据",
@@ -175,7 +177,9 @@ window.DMLOverviewLocales={
     "questionsTitle": "从一个真实问题开始。",
     "questionMargin": "为什么累计毛利率不能直接平均？",
     "questionShare": "销售占比的分母应该保留哪些筛选？",
-    "questionLookup": "为什么属性查找让销售额翻倍？"
+    "questionLookup": "为什么属性查找让销售额翻倍？",
+    "questionRange": "交易发生时哪条价格有效？",
+    "questionRunning": "累计指标可以在多个查询中复用吗？"
   },
   "ja": {
     "home": "概要",
@@ -219,7 +223,7 @@ window.DMLOverviewLocales={
     "boundary": "指標の組み合わせには意味上の制約があります。文脈とルールの順序が重要です。モデルは定義を明確にし、業務上の合意は人が形成します。",
     "inspect": "モデル、クエリ、コンパイル記録を見る",
     "implementation": "gross_margin に ytd を直接適用できます。累計期間の売上高と原価から利益率を再計算し、月次利益率は合計しません。",
-    "compilerScope": "コンパイル結果と生成 SQL を記録・確認しています。実データのキー検証、SQL 実行、結果比較は行っていません。",
+    "compilerScope": "この記録は SQL Server 向けの厳密なコンパイルと SQL の確認です。実例では DuckDB の結果検証も説明していますが、SQL Server の実行結果と同じであることは保証しません。",
     "model": "モデル",
     "query": "前年同期比較クエリ",
     "sampleData": "サンプルデータ",
@@ -264,7 +268,9 @@ window.DMLOverviewLocales={
     "questionsTitle": "実際の疑問から始める。",
     "questionMargin": "月次利益率を単純平均できない理由（英語）",
     "questionShare": "売上構成比の分母を決める（英語）",
-    "questionLookup": "参照後に売上が倍になる理由（英語）"
+    "questionLookup": "参照後に売上が倍になる理由（英語）",
+    "questionRange": "取引日時に有効だった価格は？",
+    "questionRunning": "累計指標を別のクエリでも再利用するには？"
   },
   "de": {
     "home": "Überblick",
@@ -308,7 +314,7 @@ window.DMLOverviewLocales={
     "boundary": "Kennzahlen lassen sich innerhalb semantischer Regeln kombinieren. Kontext und Reihenfolge sind wichtig. Das Modell macht Definitionen explizit; die fachliche Abstimmung bleibt Aufgabe der Menschen.",
     "inspect": "Modell, Abfragen und Compilerprotokoll ansehen",
     "implementation": "ytd lässt sich direkt auf gross_margin anwenden. Die Marge wird aus kumuliertem Erlös und Kosten neu berechnet; Monatsmargen werden nicht addiert.",
-    "compilerScope": "Kompilierung und erzeugtes SQL wurden aufgezeichnet und geprüft. Schlüsselprüfung mit Echtdaten, SQL-Ausführung und Ergebnisvergleich wurden nicht durchgeführt.",
+    "compilerScope": "Dieser Bericht umfasst strikte Kompilierung und SQL-Prüfung für SQL Server. Das Beispiel erläutert separate DuckDB-Ergebnisprüfungen; diese belegen keine Ausführungsgleichheit mit SQL Server.",
     "model": "Modell",
     "query": "Abfrage zum Vorjahresvergleich",
     "sampleData": "Beispieldaten",
@@ -353,6 +359,8 @@ window.DMLOverviewLocales={
     "questionsTitle": "Mit einer konkreten Frage beginnen.",
     "questionMargin": "Warum Monatsmargen nicht einfach mitteln? (Englisch)",
     "questionShare": "Welche Umsätze gehören in den Nenner? (Englisch)",
-    "questionLookup": "Warum verdoppelt ein Lookup den Umsatz? (Englisch)"
+    "questionLookup": "Warum verdoppelt ein Lookup den Umsatz? (Englisch)",
+    "questionRange": "Welcher Preis galt zum Transaktionsdatum?",
+    "questionRunning": "Wie lässt sich eine laufende Summe wiederverwenden?"
   }
 };

@@ -12,7 +12,7 @@
 </code></pre>
 <p>The explicit outer <code>SUM</code> adds the sales of customers with the same label. This example uses the sales value itself as the label. A business bucket requires its own classifier definition and verification.</p>
 <p>The classification use site requires an explicit key. A bare <code>{measure}</code> is rejected. A finer stage inside the measure definition or a sibling metric does not supply the missing key.</p>
-<p>The 2026-10-16 build compiles the checked <code>+d: customer</code> and <code>dimension: [customer]</code> count classifiers to customer aggregation followed by label grouping. These probes establish the checked forms only.</p>
+<p>The current checked build compiles the checked <code>+d: customer</code> and <code>dimension: [customer]</code> count classifiers to customer aggregation followed by label grouping. These probes establish the checked forms only.</p>
 <h2 id="population-and-reaggregation">Population and reaggregation <a class="section-link" aria-label="Link to section" href="#population-and-reaggregation">#</a></h2>
 <p>Classification scope, entity membership, and report scope are separate decisions. <code>-d</code> retains time filters, so removing time grouping does not imply lifetime classification. A NULL label can be a valid bucket. It does not prove that an entity is absent, and classification does not create inactive entities.</p>
 <p>Multiple labels need compatible complete entity keys and independent definitions. Additive amounts can be summed from entity grain. Ratios, averages, and distinct counts need components that preserve their definitions across reaggregation.</p>

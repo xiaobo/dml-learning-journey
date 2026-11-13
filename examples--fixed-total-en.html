@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choose which months belong in a denominator · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="-d retains the month filter; -df removes it for that measure. Both can display January only. Check the denominator's population separately from the output row population."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--fixed-total-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Choose which months belong in a denominator · DML"><meta property="og:description" content="-d retains the month filter; -df removes it for that measure. Both can display January only. Check the denominator's population separately from the output row population."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--fixed-total-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="choose-which-months-belong-in-a-denominator">Choose which months belong in a denominator</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#compare-the-same-data">Compare the same data</a></li><li><a href="#save-both-definitions-then-change-the-query">Save both definitions, then change the query</a></li><li><a href="#keep-the-demonstrated-boundary">Keep the demonstrated boundary</a></li><li><a href="#run-and-interpret-the-checks">Run and interpret the checks</a></li></ul></details>
+<p><code>-d</code> retains the month filter; <code>-df</code> removes it for that measure. Both can display January only. Check the denominator&#39;s population separately from the output row population.</p>
+<h2 id="compare-the-same-data">Compare the same data <a class="section-link" aria-label="Link to section" href="#compare-the-same-data">#</a></h2>
+<p>Region a has January sales 10 and February sales 20. Region b has January sales 30. After selecting January:</p>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Month</th>
+<th align="right">Sales</th>
+<th align="right"><code>-d</code> region total</th>
+<th align="right"><code>-df</code> region total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>a</td>
+<td>2024-01-01</td>
+<td align="right">10</td>
+<td align="right">10</td>
+<td align="right">30</td>
+</tr>
+<tr>
+<td>b</td>
+<td>2024-01-01</td>
+<td align="right">30</td>
+<td align="right">30</td>
+<td align="right">30</td>
+</tr>
+</tbody></table>
+<p>Region a&#39;s share can therefore be 10/10 or 10/30, depending on the business definition. Without a month filter both region totals are 30; a&#39;s January and February rows retain sales 10 and 20 respectively.</p>
+<h2 id="save-both-definitions-then-change-the-query">Save both definitions, then change the query <a class="section-link" aria-label="Link to section" href="#save-both-definitions-then-change-the-query">#</a></h2>
+<p>The model defines <code>region_selected: &#39;{sales: {-d: month}}&#39;</code> and <code>region_all_months: &#39;{sales: {-df: month}}&#39;</code>. Here <code>month</code> is an ordinary ISO-formatted string, not the automatic time context <code>dim_dt</code>.</p>
+<details><summary>完整文件 / Complete file: fixed/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+F:
+  type: dataset
+  table: FACT
+  dimension: [id]
+  columns:
+    id:
+    region:
+    month:
+    amount:
+  measures:
+    sales: SUM({amount})
+region_selected:
+  type: measure
+  formula: &#39;{sales: {-d: month}}&#39;
+region_all_months:
+  type: measure
+  formula: &#39;{sales: {-df: month}}&#39;
+running_sales:
+  type: measure
+  formula: &#39;SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)&#39;
+  dimensions:
+    - [month]
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: fixed/setup.sql</summary>
+
+<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,&#39;a&#39;,&#39;2024-01-01&#39;,10),(2,&#39;a&#39;,&#39;2024-02-01&#39;,20),(3,&#39;b&#39;,&#39;2024-01-01&#39;,30);
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: fixed/january.sql</summary>
+
+<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE month=&#39;2024-01-01&#39; GROUP BY region,month ORDER BY region,month
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: fixed/unfiltered.sql</summary>
+
+<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, month ORDER BY region,month
+</code></pre>
+</details>
+
+<p>The query chooses which months to display without changing the model. The verifier compares every column and the full row set, checking that <code>-df</code> does not restore February output rows.</p>
+<h2 id="keep-the-demonstrated-boundary">Keep the demonstrated boundary <a class="section-link" aria-label="Link to section" href="#keep-the-demonstrated-boundary">#</a></h2>
+<p>This example uses known region/month groupings, not dynamic pivot axes or an automatic subtotal API. Ordinary-field behavior does not verify removal of a <code>dim_dt</code> time grain. For time queries, read the <a href="examples--time-context-en.html">cumulative KPI context</a> before substituting fields.</p>
+<p><a href="examples--fixed-total-zh.html">中文</a> · <a href="examples--index-en.html">Task examples</a> · <a href="how-to--compile-and-validate.html">Compile and validate</a></p>
+<h2 id="run-and-interpret-the-checks">Run and interpret the checks <a class="section-link" aria-label="Link to section" href="#run-and-interpret-the-checks">#</a></h2>
+<p><a href="task-examples.zip">Download the complete project</a> and run <code>verify.py</code> as described in its README. It needs your existing dmlc, Python and DuckDB. The script creates a practice database only in the new output directory you specify. The shared verifier records results and diagnostics there.</p>
+<p>This example was checked on DuckDB with dmlc 0.3.16, build 2026-11-13. The executable fingerprint and case statuses are in <code>verification-summary.json</code> in the download. Database validation and subsequent execution are independent operations; they do not guarantee a shared snapshot. Verify other engines separately.</p>
+</main></body></html>

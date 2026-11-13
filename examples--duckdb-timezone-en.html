@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Define a business day in a fixed DuckDB timezone · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="Map instants to the business timezone before deriving a date or day boundary. This recipe uses America/New_York and tests DuckDB physical SQL. It does not establish automatic per-user or cross-database timezone"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Define a business day in a fixed DuckDB timezone · DML"><meta property="og:description" content="Map instants to the business timezone before deriving a date or day boundary. This recipe uses America/New_York and tests DuckDB physical SQL. It does not establish automatic per-user or cross-database timezone"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="define-a-business-day-in-a-fixed-duckdb-timezone">Define a business day in a fixed DuckDB timezone</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#identify-what-the-input-represents">Identify what the input represents</a></li><li><a href="#bound-a-day-with-two-local-midnights">Bound a day with two local midnights</a></li><li><a href="#preserve-distinct-instants-during-a-repeated-local-hour">Preserve distinct instants during a repeated local hour</a></li><li><a href="#replay-and-adapt-the-recipe">Replay and adapt the recipe</a></li></ul></details>
+<p>Map instants to the business timezone before deriving a date or day boundary. This recipe uses America/New_York and tests DuckDB physical SQL. It does not establish automatic per-user or cross-database timezone support in DML.</p>
+<h2 id="identify-what-the-input-represents">Identify what the input represents <a class="section-link" aria-label="Link to section" href="#identify-what-the-input-represents">#</a></h2>
+<p>Input values are <code>TIMESTAMPTZ</code> instants with explicit UTC offsets. The connection&#39;s session zone is UTC; the business zone is America/New_York. A timestamp without an offset is not automatically UTC. Establish how the source records it first.</p>
+<pre><code class="language-sql">SET TimeZone = &#39;UTC&#39;;
+SELECT timezone(&#39;America/New_York&#39;, TIMESTAMPTZ &#39;2024-01-01 02:00:00+00&#39;);
+</code></pre>
+<p>The local time is 2023-12-31 21:00:00, so the business date is the previous day. Convert to the business zone before extracting a grouping date.</p>
+<h2 id="bound-a-day-with-two-local-midnights">Bound a day with two local midnights <a class="section-link" aria-label="Link to section" href="#bound-a-day-with-two-local-midnights">#</a></h2>
+<pre><code class="language-sql">SELECT count(*)
+FROM (VALUES
+  (TIMESTAMPTZ &#39;2024-03-10 04:59:59+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-10 05:00:00+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-11 03:59:59+00&#39;),
+  (TIMESTAMPTZ &#39;2024-03-11 04:00:00+00&#39;)
+) events(ts)
+WHERE ts &gt;= timezone(&#39;America/New_York&#39;, TIMESTAMP &#39;2024-03-10 00:00:00&#39;)
+  AND ts &lt; timezone(&#39;America/New_York&#39;, TIMESTAMP &#39;2024-03-11 00:00:00&#39;);
+</code></pre>
+<p>The result is 2. Include the start and exclude the end. The end is not always the start plus 24 hours: the verifier checks a 23-hour spring transition day and a 25-hour autumn transition day.</p>
+<h2 id="preserve-distinct-instants-during-a-repeated-local-hour">Preserve distinct instants during a repeated local hour <a class="section-link" aria-label="Link to section" href="#preserve-distinct-instants-during-a-repeated-local-hour">#</a></h2>
+<p>2024-11-03 05:30 UTC and 06:30 UTC both map to local 01:30. They are distinct instants. Retain the event key and original instant rather than deduplicating by local timestamp alone.</p>
+<h2 id="replay-and-adapt-the-recipe">Replay and adapt the recipe <a class="section-link" aria-label="Link to section" href="#replay-and-adapt-the-recipe">#</a></h2>
+<p><a href="task-examples.zip">Download the project</a> and follow its README&#39;s JDBC steps to run <code>jdbc/VerifyJdbc.java</code>. With the existing JDK and matching installed jars, run from the extracted project directory:</p>
+<pre><code class="language-powershell">java -cp &quot;C:/path/to/dmlc-assembly.jar;C:/path/to/duckdb-jdbc.jar&quot; jdbc/VerifyJdbc.java &quot;$PWD/jdbc&quot; C:/path/to/driver-directory
+</code></pre>
+<p>Replace the paths; use a colon instead of a semicolon in the classpath on other systems. The program also tests the parameter-binding boundary, so expected semantic-placeholder parsing errors appear in the output. Check the final pass messages and process exit rather than treating every diagnostic as a failed replay. It does not download third-party runtimes.</p>
+<p>The verifier checks midnight, repeated hours, 23/25-hour days and half-open interval filtering. Failures exit with a nonzero code.</p>
+<p>The checked JDBC distribution uses the DuckDB 1.5.4 driver. To reuse a business date in DML, a database view can normalize timestamps first and expose the business date as a model column. Verify that integration on your model and connection; this physical SQL recipe does not establish arbitrary timezone-aware models.</p>
+<p><a href="examples--duckdb-timezone-zh.html">中文</a> · <a href="examples--index-en.html">Task examples</a> · <a href="how-to--compile-and-validate.html">Compile and validate</a></p>
+</main></body></html>

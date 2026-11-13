@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choose a runnable example by business question · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="Each example includes input data, complete model definitions, queries, expected results and replay instructions. Each guide explains the calculation, its applicable scope and what to check before adapting it."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--index-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Choose a runnable example by business question · DML"><meta property="og:description" content="Each example includes input data, complete model definitions, queries, expected results and replay instructions. Each guide explains the calculation, its applicable scope and what to check before adapting it."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--index-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="choose-a-runnable-example-by-business-question">Choose a runnable example by business question</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#replay-the-examples">Replay the examples</a></li></ul></details>
+<p>Each example includes input data, complete model definitions, queries, expected results and replay instructions. Each guide explains the calculation, its applicable scope and what to check before adapting it.</p>
+<p><a href="examples--index.html">中文</a></p>
+<table>
+<thead>
+<tr>
+<th>Your question</th>
+<th>Runnable guide</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>How do I distinguish an id that repeats across regions?</td>
+<td><a href="examples--compound-key-en.html">Compound keys and uniqueness</a></td>
+</tr>
+<tr>
+<td>Which price or category was valid when an event happened?</td>
+<td><a href="examples--range-lookup-en.html">Effective-date range lookup</a></td>
+</tr>
+<tr>
+<td>What cutoff should a single cumulative KPI use?</td>
+<td><a href="examples--time-context-en.html">Explicit time context</a></td>
+</tr>
+<tr>
+<td>Can I define a running sales total once and reuse it?</td>
+<td><a href="examples--running-total-en.html">Named running total</a></td>
+</tr>
+<tr>
+<td>Should January&#39;s denominator include other months?</td>
+<td><a href="examples--fixed-total-en.html">Filter scope and fixed totals</a></td>
+</tr>
+<tr>
+<td>How do I handle business-day midnight and daylight saving?</td>
+<td><a href="examples--duckdb-timezone-en.html">Fixed DuckDB timezone recipe</a></td>
+</tr>
+</tbody></table>
+<h2 id="replay-the-examples">Replay the examples <a class="section-link" aria-label="Link to section" href="#replay-the-examples">#</a></h2>
+<p><a href="task-examples.zip">Download the project</a>. From the extracted directory, use Python 3 with the example&#39;s <code>duckdb==1.5.5</code> dependency and your already-installed compiler:</p>
+<pre><code class="language-powershell">py verify.py --dmlc C:/path/to/dmlc.exe --output C:/path/to/new-practice-output
+</code></pre>
+<p>Replace both paths. The output directory must not exist; use a new one for each replay. The script creates its own practice database and local connection configuration there and does not read business data. Do not use Python <code>-O</code>, which disables assertions. Non-Windows users can invoke their Python 3 executable instead of <code>py</code>.</p>
+<p>Successful replay ends with passed case statuses and records <code>results.json</code>, raw diagnostics and generated SQL under the output directory. Expected failure cases must fail with their specified diagnostics before repair succeeds. The package README also gives JDBC invocation details. It includes readable sources and expected outputs, not compiler binaries or third-party runtimes. The JDBC checks additionally need a JDK and the matching installed jars.</p>
+<p>Compilation, live validation, execution and result comparison are separate checks. Deliberately invalid cases must produce the expected failure, then pass after repair. Before substituting your tables, check complete keys, time fields, grouping and filter scope.</p>
+<p>A successful example on one database does not establish every dialect, metric or query grain. The language reference owns syntax; these guides show specific tasks with reproducible answers.</p>
+</main></body></html>

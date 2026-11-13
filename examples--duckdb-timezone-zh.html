@@ -24,4 +24,5 @@ WHERE ts &gt;= timezone(&#39;America/New_York&#39;, TIMESTAMP &#39;2024-03-10 00
 <p><a href="task-examples.zip">下载项目</a>，按 README 的 JDBC 步骤运行 <code>jdbc/VerifyJdbc.java</code>。验证器检查跨午夜、重复小时、23/25小时日和半开区间筛选的实际结果；失败会以非零退出。</p>
 <p>本次使用 JDBC 分发中的 DuckDB 1.5.4 驱动。若要在 DML 数据集中复用业务日期，可先用经过验证的数据库视图完成时区归一化，再把业务日期作为模型列；这个接入步骤仍需在你的模型和连接中验证。不要将此配方描述为已验证的任意时区模型。</p>
 <p><a href="examples--index.html">返回案例目录</a></p>
+<p><a href="examples--duckdb-timezone-en.html">English</a></p>
 </main></body></html>

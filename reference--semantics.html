@@ -431,7 +431,7 @@ GROUP BY dt_quarter, brand
 <p><a id="37-measure-as-dimension"></a></p>
 <h3 id="measure-as-dimension">Measure-as-dimension <a class="section-link" aria-label="Link to section" href="#measure-as-dimension">#</a></h3>
 <p>A <strong>measure-as-dimension</strong> field is a member of the <strong>query dimension</strong> whose value is the result of evaluating a measure (or a scalar expression over such a measure), not a physical dataset column. It remains a query-dimension role (<a href="explanation--dimensions.html">dimension roles</a>): it contributes to the <strong>query result grain</strong>. It does not declare dataset identity.</p>
-<p>Explanation: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. This section states the intended multi-pass contract. The <a href="explanation--measure-as-dimension.html">explanation</a> separates working shapes from shipped lowering defects. The compiler models these query columns separately from physical dimension columns and ordinary output measures while reusing normal measure calculation behavior.</p>
+<p>Explanation: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>. This section states the intended multi-pass contract. The <a href="explanation--measure-as-dimension.html">explanation</a> identifies checked shapes and the classification stages to inspect. The compiler models these query columns separately from physical dimension columns and ordinary output measures while reusing normal measure calculation behavior.</p>
 <p><a id="371-syntax-on-columnsdimension"></a></p>
 <h4 id="syntax-on-columnsdimension">Syntax on <code>columns.dimension</code></h4>
 <p>Authoring forms and capability boundaries (DML-format query):</p>
@@ -488,7 +488,7 @@ GROUP BY dt_quarter, brand
 <h4 id="d-compatibility"><code>+d</code> compatibility</h4>
 <p>Use explicit entity keys on the classification and participating sibling drill-down references. Compatibility is determined by resolved evaluation dimensions and scope, not only the spelling of <code>+d</code> payloads.</p>
 <p><strong>Shared <code>+d</code>.</strong> Every measure-as-dimension requires an explicit complete key. Several independent labels are allowed only when their keys are equal as sets; declaration order within the key is irrelevant.</p>
-<p><strong>Bare references.</strong> Do not infer entity grain from sibling measures. Use an explicit <code>+d</code> or <code>dimension:</code> entity key; a bare measure binding is rejected. <code>dimension:</code> is recognized but not reliable for all shapes in the checked build. Adding or removing an output metric must not change classification membership.</p>
+<p><strong>Bare references.</strong> Do not infer entity grain from sibling measures. Use an explicit <code>+d</code> or <code>dimension:</code> entity key; a bare measure binding is rejected. Both forms compile for the checked customer-count classifier; that observation does not establish every classification shape. Adding or removing an output metric must not change classification membership.</p>
 <p><strong>Different keys.</strong> Independent labels with unequal keys are rejected. A label may not depend on another label in the same query. General bridging between different entity grains requires a separate modeled relation.</p>
 <p><a id="374-constraints"></a></p>
 <h4 id="constraints">Constraints</h4>
@@ -562,5 +562,5 @@ report:
 </tr>
 </tbody></table>
 <p>Authors who intend a clear reading must write one of: <code>{销量}</code> / <code>SUM({销量: {+d: 门店}})</code> / <code>{销量: {-d:…\|-df:…\|-f:…}}</code>.<br><strong>Different</strong> dimensions may still coexist, e.g. <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>.</p>
-<p>The 2026-10-16 build accepts the checked same-field dimension conflicts and repeats regional totals at customer grain before summing them. This is a known implementation gap, not an accepted authoring pattern. Express one evaluation stage explicitly and inspect its SQL.</p>
+<p>The current checked build accepts the checked same-field dimension conflicts and repeats regional totals at customer grain before summing them. This is a known implementation gap, not an accepted authoring pattern. Express one evaluation stage explicitly and inspect its SQL.</p>
 </main></body></html>

@@ -82,6 +82,7 @@ sales:
 <li><code>materialize:</code> accepts either a scalar name or an object with required <code>name:</code> and optional
 <code>parameters:</code>. Both forms define the same dataset-scoped materialize identity.</li>
 </ul>
+<p>Dataset SQL can prepare supported joins, unions and subqueries before measure evaluation. <code>UNION ALL</code> retains row multiplicity: a key that identifies each input separately may not identify the combined rows. Define identity for the combined relation rather than assuming a branch&#39;s original key remains unique. The checked examples use column-only source datasets through <code>{DATASET}</code> references. Their ability to execute does not establish every validation path: in the checked derived-query fixtures, validate-only fails with <code>VALIDATION_QUERY_FAILED</code> because its uniqueness probe refers to an unavailable intermediate source relation. This is a validation execution failure, not evidence of a duplicate key or of uniqueness. Keep that failure visible; independently check the derived relation&#39;s complete key and compare query results on the intended connection before trusting the model. This additional check does not make the failed compiler validation pass.</p>
 <p><strong>Column definition shapes</strong>:</p>
 <table>
 <thead>
@@ -109,7 +110,7 @@ sales:
 <tr>
 <td>Verified</td>
 <td><code>net: { source: amount - discount }</code></td>
-<td>Compiler verifies formula matches underlying value</td>
+<td>Declares a data-source verification formula; compilation alone does not establish equality of source values</td>
 </tr>
 </tbody></table>
 <p><strong>Brace binding in formulas</strong>:</p>
@@ -181,5 +182,5 @@ sales:
 </tr>
 </tbody></table>
 <h2 id="column-metadata-is-not-a-sql-type-declaration">Column metadata is not a SQL type declaration <a class="section-link" aria-label="Link to section" href="#column-metadata-is-not-a-sql-type-declaration">#</a></h2>
-<p>Column properties must conform to the DML schema. In the checked build, both <code>type: text</code> and <code>type: banana</code> under a column are rejected as an unsupported property. This is metadata-schema validation, not evidence of complete static expression type checking. Define physical column types in the database and use supported expressions or casts when a conversion is required. Top-level <code>type: dataset</code> and <code>type: measure</code> identify DML object kinds; they do not declare SQL value types.</p>
+<p>Column properties must conform to the DML schema. Nest properties under the intended column: a sibling <code>type: text</code> inside <code>columns:</code> instead defines a different column named <code>type</code>, so accepting that model says nothing about the intended column&#39;s type. In the checked build, both <code>type: text</code> and <code>type: banana</code> under a column are rejected as an unsupported property. This is metadata-schema validation, not evidence of complete static expression type checking. Define physical column types in the database and use supported expressions or casts when a conversion is required. Top-level <code>type: dataset</code> and <code>type: measure</code> identify DML object kinds; they do not declare SQL value types.</p>
 </main></body></html>
