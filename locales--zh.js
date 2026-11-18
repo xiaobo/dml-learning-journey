@@ -150,6 +150,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text16": "这些编译命令无需数据库连接。项目还含有示例数据和 SQL Server 建表脚本，供独立数据库练习使用。预期关联警告已记录在编译快照中；预期警告不代表严格检查通过。",
     "capstone.text17": "进入编译器教程",
     "capstone.text18": "探索语言参考",
+    "capstone.mazExtension": "查看 SQL Server 物化练习与新接口设计（待实施）",
     "capstone.text19": "阅读练习指南",
     "capstone.text20": "应用到自己的报表",
     "capstone.step1": "说明一行源数据和一行结果各代表什么，检查完整源键。",

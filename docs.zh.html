@@ -95,6 +95,14 @@
 <td>怎样确认预计算命中和刷新？</td>
 <td><a href="materialization-workflow.html">物化运行与验证</a></td>
 </tr>
+<tr>
+<td>SQL Server 中的月汇总和季度汇总，如何处理新月份与历史更正？</td>
+<td><a href="maz-sqlserver.html">在 SQL Server 上使用 Maz（新接口待实施）</a></td>
+</tr>
+<tr>
+<td>查询准备、主动刷新、只失效和中断重试如何选择？</td>
+<td><a href="maz-prepare-refresh.html">prepare 与 refresh 使用约定（新接口待实施）</a></td>
+</tr>
 </tbody></table>
 <h2 id="先确认集成需要的能力">先确认集成需要的能力 <a class="section-link" aria-label="Link to section" href="#先确认集成需要的能力">#</a></h2>
 <p>需要应用传入筛选参数时，先确认语义查询的绑定方式。已测物理 SQL 的 JDBC <code>?</code> 可绑定，但 <code>FROM MODEL</code> 查询的占位符解析失败。物化参数和内部字面量参数化不能替代这个接口，也不能用不可信文本拼接补齐。</p>

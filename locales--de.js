@@ -150,6 +150,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text16": "Diese Compilerbefehle benötigen keine Datenbankverbindung. Beispieldaten und SQL-Server-Setup dienen einer getrennten Datenbankübung. Erwartete Join-Warnungen sind aufgezeichnet; eine erwartete Warnung bedeutet nicht, dass die strenge Prüfung bestanden wurde.",
     "capstone.text17": "Zum Compiler-Tutorial",
     "capstone.text18": "Sprachreferenz erkunden",
+    "capstone.mazExtension": "SQL-Server-Materialisierungsentwurf ansehen (Chinesisch; neue API noch nicht implementiert)",
     "capstone.text19": "Übungsanleitung lesen",
     "capstone.text20": "Auf deinen eigenen Bericht übertragen",
     "capstone.step1": "Erkläre, was eine Quell- und eine Ergebniszeile darstellen. Prüfe den vollständigen Quellschlüssel.",
