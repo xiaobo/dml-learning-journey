@@ -150,7 +150,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text16": "これらのコンパイルコマンドにデータベース接続は不要です。別の実習用に、サンプルデータと SQL Server のセットアップも含まれます。想定する結合警告は記録済みですが、想定内の警告でも厳密チェックの合格にはなりません。",
     "capstone.text17": "コンパイラーの実習へ",
     "capstone.text18": "言語リファレンスを見る",
-    "capstone.mazExtension": "SQL Server マテリアライズの設計を見る（中国語・新 API は未実装）",
+    "capstone.mazExtension": "SQL Server Maz：データ準備状態と runner の進捗（中国語）",
     "capstone.text19": "演習ガイドを読む",
     "capstone.text20": "自分のレポートに応用する",
     "capstone.step1": "元データと結果の 1 行が何を表すかを述べ、元データの完全なキーを確認する。",

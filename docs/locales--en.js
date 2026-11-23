@@ -146,7 +146,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text16": "These compile commands need no database connection. The project includes sample source data and setup SQL for a separate database exercise. Expected join warnings are recorded with the compiler snapshots; an expected warning is not a passed strict check.",
     "capstone.text17": "Run the compiler tutorial",
     "capstone.text18": "Explore the language reference",
-    "capstone.mazExtension": "Review the SQL Server materialization design (Chinese; new API pending)",
+    "capstone.mazExtension": "Use SQL Server Maz: readiness and runner progress (Chinese)",
     "capstone.text19": "Read the exercise guide",
     "capstone.text20": "Apply this to your own report",
     "capstone.text21": "Start with <a href=\"how-to--build-analysis.html\">Build a model from a business question</a>. Use <a href=\"how-to--design-measures.html\">Design a reusable measure</a> for new calculations.",

@@ -16,7 +16,8 @@ dmlc query.sql --model=model.dml --connection=default -o optimized.json --overwr
 <p>检查生成 SQL/执行计划是否读取预期汇总对象。逐键逐列比较未优化结果，独立检查重复行、缺失组、NULL 和未格式化比例。更换维度和筛选后再检查，不假定所有问题都命中同一个汇总。</p>
 <h2 id="4-更新与失效">4. 更新与失效 <a class="section-link" aria-label="Link to section" href="#4-更新与失效">#</a></h2>
 <p>在练习库增加已知记录，先计算应变化的结果，再运行查询。检查缓存是否刷新、输出是否变化。若诊断要求重新 setup，对同一模型与连接执行 setup 后重测。不要手改生成表掩盖问题。</p>
-<p>SQL Server 的新接口设计将查询准备与变化刷新分开：参阅<a href="maz-prepare-refresh.html">prepare 与 refresh 的使用约定</a>和<a href="maz-sqlserver.html">销售练习</a>。新签名待实施，先核对所用版本；不要把设计示例直接用于旧版。</p>
+<p>SQL Server 把查询准备与变化刷新分开，统一由同步单例 runner 构建。执行生成的 <code>prepare_sql</code>；它集中处理准备、等待和实际就绪检查，正常返回 <code>data_ready=1</code> 后再执行业务 <code>sql</code>。错误或等待超时后停止本次查询，排除原因后重试。</p>
+<p>通过 DML_MAZ_PROGRESS 查看待办、运行状态和预计清空时间，其他统计列按需查看。全局进展不能代替 Query 就绪检查。部署时执行生成的 <code>setup_sql</code>。参数、仅失效及恢复步骤见<a href="maz-prepare-refresh.html">prepare 与 refresh 的使用约定</a>，完整练习见<a href="maz-sqlserver.html">月汇总与季度汇总</a>。</p>
 <p>记录源变更、刷新动作、命中对象和新结果。未完成该步骤，就不能宣称“实时更新”。各连接的刷新机制和权限需求分别验证。</p>
 <h2 id="5-保留证据">5. 保留证据 <a class="section-link" aria-label="Link to section" href="#5-保留证据">#</a></h2>
 <table>
