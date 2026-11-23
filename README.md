@@ -1,11 +1,16 @@
-# A small journey through DML
+# DML Learning Journey
 
-DML overview, a twelve-chapter interactive journey, and core language documentation. The overview and journey support English, Chinese, Japanese and German.
+[Open the documentation](https://xiaobo.github.io/dml-learning-journey/) · [中文文档](https://xiaobo.github.io/dml-learning-journey/docs.zh.html) · [Task examples](https://xiaobo.github.io/dml-learning-journey/examples--index.html)
 
-Open `index.html` for the overview, `journey.html` for the tutorial, and `docs.html` for the reference through a static web server, or enable GitHub Pages from the main branch and repository root. All exercises run in the browser using invented data. No backend, database connection, build step or secrets are required. Learning progress stays in each visitor's browser.
+## Repository layout
 
-The linked documentation is included as HTML. The downloadable lesson project retains its DML, SQL, CSV and compiler evidence. Compiler executables and unrelated workspace files are excluded.
+- `docs/`: the complete published website, including pages, styles, scripts, images, and downloadable examples.
+- `README.md`: this repository guide.
 
-Source revision: `920dbc46b7a458690ef5f698ec6a68eb3ff553b8`.
+GitHub Pages serves `main` → `/docs`. Moving the site here does not change any public page or download URL. The nested `docs/docs/` directory preserves the existing `/docs/` compatibility route.
 
-Tutorial compiler SHA-256: `44f2fe9a38d2a5b74ce86672b294db894cc5e109220f3bc99629bc1a37c928fa`. The compiler record states which checks were performed.
+## Updating the website
+
+This repository contains generated public artifacts. Edit the maintained documentation sources and use the guarded release workflow with `repositoryPrefix: "docs"`. Keep the Pages source at `/docs`; do not publish website files into the repository root. The publisher preserves this README and checks the complete site tree before updating the branch without force.
+
+Private compiler binaries, credentials, connection configurations, release logs, and private skill archives do not belong in this repository.
