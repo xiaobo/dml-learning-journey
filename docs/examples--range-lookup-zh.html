@@ -65,7 +65,7 @@ F:
 
 <p>将标签替换为价格或等级时，仍要明确生效时间与事件时间的含义。本例证明相邻、有限区间的匹配，不代表开放终点、任意多对多关系或分摊规则已经验证。</p>
 <h2 id="验证重叠再修复">验证重叠，再修复 <a class="section-link" aria-label="Link to section" href="#验证重叠再修复">#</a></h2>
-<p>脚本将 Jan 的终点改为2月2日，使2月1日同时落入两个区间。<code>--validate-only</code> 检出 <code>DIMENSION_NOT_UNIQUE</code>。恢复2月1日终点后，验证和两行结果重新通过。</p>
+<p>脚本将 Jan 的终点改为2月2日，使2月1日同时落入两个区间。<code>--validate</code> 检出 <code>VALIDATION_ERROR</code>。恢复2月1日终点后，验证和两行结果重新通过。</p>
 <p>正确修复应来自业务有效期规则，不能任意保留其中一条匹配记录来掩盖冲突。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="Link to section" href="#运行与验证范围">#</a></h2>
 <p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>

@@ -8,7 +8,7 @@
 <li><strong>Choose FROM</strong> — aggregation: <code>FROM MODEL</code> (or <code>FROM &lt;name&gt;</code> when the file is <code>&lt;name&gt;.dml</code>); detail: <code>FROM MODEL.&lt;dataset&gt;</code> / <code>FROM &lt;name&gt;.&lt;dataset&gt;</code>, no <code>AGG</code>, no <code>GROUP BY</code>. Keep the name aligned with the <code>.dml</code> file (<code>model.dml</code> ↔ <code>FROM MODEL</code>).</li>
 <li><strong>Remove unsupported SQL</strong> — no subqueries, UNION, JOIN. Use fn-macros from <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>pot</code>, <code>grand</code>) for portable windows, <code>+d</code> measures for multi-level aggregation, and <code>.dml</code> definitions for complex logic (<a href="how-to--design-measures.html">Measure design</a>, <a href="reference--modifiers.html#25-modifier-stacking">Modifier stacking</a>). Dataset <strong>window placement</strong> for hand-authored <code>OVER</code>: <a href="explanation--window-placement.html">Window placement</a>. Raw <code>OVER()</code> in Model Query is allowed when no fn-macro covers the pattern.</li>
 <li><strong>Measure vs column</strong> — in queries use <code>AGG(measure)</code>; in <code>.dml</code> use <code>{column}</code> / <code>&#39;{measure: modifier}&#39;</code>; do not use <code>{...}</code> on bare columns in Model Query SQL except <code>AGG({measure: modifier})</code>.</li>
-<li><strong>Debug incrementally</strong> — validate <code>SELECT AGG(one_measure) FROM MODEL</code>, then add <code>GROUP BY</code> and filters. Use <code>dmlc --validate-only &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --output-format=json</code>.</li>
+<li><strong>Debug incrementally</strong> — validate <code>SELECT AGG(one_measure) FROM MODEL</code>, then add <code>GROUP BY</code> and filters. Use <code>dmlc --validate &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --json</code>.</li>
 </ol>
 <p><a id="reading-mcp-wrapped-errors"></a></p>
 <h3 id="reading-compiler-errors">Reading compiler errors <a class="section-link" aria-label="Link to section" href="#reading-compiler-errors">#</a></h3>
@@ -25,7 +25,7 @@
 <li>No subqueries, JOINs, or UNIONs</li>
 <li>Save readable Model Query SQL in a <code>.sql</code> file</li>
 <li>Query type matches intent (detail vs aggregation)</li>
-<li><code>--validate-only</code> passes on the intended database connection</li>
+<li><code>--validate</code> passes on the intended database connection</li>
 <li>No direct aggregation on <code>MODEL.DATASET_*</code> with <code>GROUP BY</code> — use <code>FROM MODEL</code> + <code>AGG()</code> or detail export</li>
 <li>Sparse / FOJ composites: activate fill default (<code>isnull</code>/<code>ifnull</code>/<code>coalesce(公式, 字面量)</code> outermost) on inputs you reference — P28b; embedding an activated dep still expands fill</li>
 <li>Measure-as-dimension: every measure-derived dimension has a complete explicit entity key (<code>+d</code> preferred); multiple labels have equal independent keys; every output measure safely rolls up from <code>Q ∪ K</code>; label filters apply after the label exists — P66–P68</li>

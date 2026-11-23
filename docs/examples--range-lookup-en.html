@@ -65,7 +65,7 @@ F:
 
 <p>When replacing the label with a price or tier, define what the effective date and event date mean. This example demonstrates adjacent finite intervals, not open-ended validity, arbitrary many-to-many relationships or allocation rules.</p>
 <h2 id="detect-an-overlap-and-repair-it">Detect an overlap and repair it <a class="section-link" aria-label="Link to section" href="#detect-an-overlap-and-repair-it">#</a></h2>
-<p>The verifier moves Jan&#39;s end to February 2, so February 1 matches both intervals. <code>--validate-only</code> reports <code>DIMENSION_NOT_UNIQUE</code>. Restoring the end to February 1 makes validation and the two-row result pass again.</p>
+<p>The verifier moves Jan&#39;s end to February 2, so February 1 matches both intervals. <code>--validate</code> reports <code>VALIDATION_ERROR</code>. Restoring the end to February 1 makes validation and the two-row result pass again.</p>
 <p>Repair the business validity rule. Arbitrarily retaining one matching record conceals the conflict.</p>
 <p><a href="examples--range-lookup-zh.html">中文</a> · <a href="examples--index-en.html">Task examples</a> · <a href="how-to--compile-and-validate.html">Compile and validate</a></p>
 <h2 id="run-and-interpret-the-checks">Run and interpret the checks <a class="section-link" aria-label="Link to section" href="#run-and-interpret-the-checks">#</a></h2>

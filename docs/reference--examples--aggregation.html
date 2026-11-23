@@ -121,7 +121,7 @@ report:
 <p>Also see <a href="how-to--design-measures.html">measure design</a>, and pitfalls <a href="reference--troubleshooting--grain-and-joins.html#p69">P69</a>.</p>
 <p><strong>Limitations of <code>+d</code></strong>:</p>
 <ul>
-<li>Full N×N co-occurrence matrix (same dimension as both rows and columns) not supported — requires dimension aliasing/self-join. Use multiple 1×N queries or export detail data.</li>
+<li><code>+d</code> alone does not introduce two independent aliases of the same dimension. A full N×N co-occurrence matrix can instead use dataset <code>sql:</code>: self-join a declared source by customer, select distinct <code>(customer, brand_from, brand_to)</code>, declare that complete key, then count customers grouped by the two brand fields. The checked two-brand fixture compiles, validates and returns A–A: 2, A–B: 1, B–A: 1, B–B: 1. This requires an explicit pair relation; it is not an automatic <code>+d</code> transformation.</li>
 </ul>
 <p>When <code>+d</code> appears on a <strong>query dimension binding</strong> (<code>columns.dimension: - name: &#39;{m: {+d: K}}&#39;</code>), that is <strong>measure-as-dimension</strong>, not the roll-up pattern above — see <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>
 <p><strong>Co-occurrence analysis (1×N pattern)</strong> — count customers who bought both a target brand and each other brand, using <code>+d</code> + <code>-d</code> + <code>+f</code>:</p>

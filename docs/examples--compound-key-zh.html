@@ -59,7 +59,7 @@ F:
 
 <p>业务标签查找定义在模型中。查询按标签分组时复用它，不必再次手写关联条件。换成自己的数据时，应确认实际复合键，而不是机械复制 <code>id, region</code>。</p>
 <h2 id="数据变更后检查键声明">数据变更后检查键声明 <a class="section-link" aria-label="Link to section" href="#数据变更后检查键声明">#</a></h2>
-<p>校验脚本按顺序执行：正常数据编译、验证、查询通过；插入重复 <code>(1,east)</code> 后，<code>--validate-only</code> 检出 <code>DIMENSION_NOT_UNIQUE</code>；删除重复数据并恢复唯一组合后，重新验证和结果比对通过。</p>
+<p>校验脚本按顺序执行：正常数据编译、验证、查询通过；插入重复 <code>(1,east)</code> 后，<code>--validate</code> 检出 <code>VALIDATION_ERROR</code>；删除重复数据并恢复唯一组合后，重新验证和结果比对通过。</p>
 <p>这说明验证能够发现键声明与当前数据的不一致，帮助在信任结果前避免关联放大。它不证明以后写入的数据仍唯一。实际业务应修正来源、完整键或数据，在最终结果加 DISTINCT 不能可靠修复已经放大的聚合。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="Link to section" href="#运行与验证范围">#</a></h2>
 <p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>

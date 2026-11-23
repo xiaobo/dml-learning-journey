@@ -11,22 +11,22 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 <p>Match the model filename with the SQL <code>FROM</code> name. For <code>model.dml</code>, use <code>FROM MODEL</code>. For <code>acme.dml</code>, use <code>FROM acme</code>. Pass <code>--model=model.dml</code> to select a file, or pass its containing directory for filename discovery. See <a href="reference--model-query-sql.html#2-query-types">query discovery</a>.</p>
 <h2 id="2-lint-and-strict-compile">2. Lint and strict-compile <a class="section-link" aria-label="Link to section" href="#2-lint-and-strict-compile">#</a></h2>
 <p>Lint the model, then strict-compile the consumer query.</p>
-<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --output-format=json
-&amp; $dmlc --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
+&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
 </code></pre>
 <p>Inspect the process exit code after each command. Read the JSON status, diagnostics, notes, emitted SQL, and output order. Check the generated grouping, joins, predicates, aliases, and projected columns against the query contract.</p>
 <p>If strict compilation returns findings, preserve the warning and emitted SQL. Resolve the intended population and NULL behavior before changing the query. Removing <code>--strict</code> does not make the strict check pass.</p>
-<p>Use <code>--output-dir</code> for compile artifacts. Use <code>--output</code> for commands whose help documents a named output file. These flags are not interchangeable.</p>
+<p>Use <code>--artifacts</code> for compile artifacts. Use <code>--output</code> for commands whose help documents a named output file. These flags are not interchangeable.</p>
 <h2 id="3-capture-json-without-changing-its-encoding">3. Capture JSON without changing its encoding <a class="section-link" aria-label="Link to section" href="#3-capture-json-without-changing-its-encoding">#</a></h2>
 <p>For query result files, use the product output flag.</p>
-<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql -o outputs/result.json --overwrite
+<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --output=outputs/result.json --replace
 </code></pre>
 <p>For lint or compile evidence, capture stdout separately from stderr. A Node.js argument array avoids shell quoting and gives explicit UTF-8 decoding. Save this script as <code>compile.cjs</code> beside the model and query.</p>
 <pre><code class="language-javascript">const fs = require(&#39;node:fs&#39;);
 const { spawnSync } = require(&#39;node:child_process&#39;);
 const result = spawnSync(process.argv[2], [
 	&#39;--compile&#39;, &#39;--strict&#39;, &#39;query.sql&#39;, &#39;--model=model.dml&#39;,
-	&#39;--output-format=json&#39;, &#39;--output-dir=gen&#39;
+	&#39;--json&#39;, &#39;--artifacts=gen&#39;
 ], { encoding: &#39;utf8&#39;, cwd: __dirname });
 if (result.error) throw result.error;
 fs.writeFileSync(&#39;compile.stdout.json&#39;, result.stdout);
@@ -42,15 +42,15 @@ process.exitCode = result.status ?? 1;
 <p>In Windows PowerShell 5.1, run commands separately because <code>&amp;&amp;</code> is unsupported. Avoid merging stderr into JSON stdout. If you need to suppress stderr interactively, use <code>2&gt;$null</code> in PowerShell.</p>
 <h2 id="4-validate-source-keys-and-database-acceptance">4. Validate source keys and database acceptance <a class="section-link" aria-label="Link to section" href="#4-validate-source-keys-and-database-acceptance">#</a></h2>
 <p>If the target connection is configured, run validate-only before trusted execution or when relevant validation evidence becomes stale.</p>
-<pre><code class="language-powershell">&amp; $dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
+<pre><code class="language-powershell">&amp; $dmlc --validate query.sql --model=model.dml --connection=default --json
 </code></pre>
-<p>Replace <code>default</code> with the intended connection. Inspect <code>status</code>, <code>summary</code>, <code>checks</code>, <code>generatedSql</code>, <code>diagnostics</code>, <code>next</code>, and <code>error</code>.</p>
+<p>Replace <code>default</code> with the intended connection. With <code>--json</code>, inspect the <code>dmlc.result/v1</code> report: <code>status</code>, <code>exitCode</code>, <code>diagnostics</code>, and <code>data</code>. Validation findings are under <code>data.issues</code>; <code>data.complete</code> records whether checks completed.</p>
 <p>Confirm that compilation, reached-dataset key checks, and the generated SQL&#39;s <code>EXPLAIN</code> probe pass. Validate-only does not execute the main result rows or establish business correctness.</p>
-<p>If <code>DIMENSION_NOT_UNIQUE</code> appears, fix the complete dataset key, source ranges, or source data. Do not patch generated SQL with <code>DISTINCT</code> to conceal duplicate keys. If a validation query fails to execute, handle <code>VALIDATION_QUERY_FAILED</code> separately.</p>
+<p>For a violated constraint, inspect <code>data.issues</code> (for example, <code>kind: duplicate_key</code>) rather than treating every validation error as a duplicate. Fix the complete dataset key, source ranges, or source data. Do not patch generated SQL with <code>DISTINCT</code> to conceal duplicate keys. If a validation query fails to execute, handle <code>EXECUTION_ERROR</code> separately.</p>
 <p>Re-run validation after a relevant model, query contract, connection, or source-state change. If a prerequisite is missing, record the check as <code>not run</code> and name the missing prerequisite.</p>
 <h2 id="5-execute-and-compare-results">5. Execute and compare results <a class="section-link" aria-label="Link to section" href="#5-execute-and-compare-results">#</a></h2>
 <p>Run the consumer query on the validated connection.</p>
-<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --connection=default -o outputs/result.json --overwrite
+<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --connection=default --output=outputs/result.json --replace
 </code></pre>
 <p>Check keys, row multiplicity, NULLs, and all measures. If an independent result exists, compare both queries on the same source snapshot and scope.</p>
 <p>If a DuckDB cache is locked, identify the process and connection that owns it. Use another configured connection only when it represents the intended source. Do not change source data merely to avoid a lock.</p>

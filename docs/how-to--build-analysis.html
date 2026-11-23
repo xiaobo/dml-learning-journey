@@ -58,9 +58,9 @@ GROUP BY dt_month, 渠道
 <li>Execute a representative slice and compare results with the report contract.</li>
 <li>If an independent SQL or report result exists, compare row multiplicities, keys, NULLs, and all measures on the same source snapshot.</li>
 </ol>
-<pre><code class="language-powershell">dmlc --lint model.dml --output-format=json
-dmlc --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
-dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
+<pre><code class="language-powershell">dmlc --lint model.dml --json
+dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+dmlc --validate query.sql --model=model.dml --connection=default --json
 </code></pre>
 <p>Run the final command only when <code>default</code> is the intended configured connection. <a href="how-to--compile-and-validate.html">Use the dmlc CLI</a> covers output capture and validation failures.</p>
 <p>Check each semantic rule against the actual formula. A same-store count cannot exceed a comparable total count when both use the same population. A subset amount can exceed the total when excluded rows contain negative values. Missing prior-year input can produce NULL, zero, or another declared fallback. Do not assume every YoY metric returns zero.</p>

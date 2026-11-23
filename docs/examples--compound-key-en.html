@@ -59,7 +59,7 @@ F:
 
 <p>The query reuses this modeled lookup when grouping by label. You do not repeat the join condition in every consumer. Identify your actual complete business key before adapting <code>id, region</code>.</p>
 <h2 id="check-the-key-after-a-source-change">Check the key after a source change <a class="section-link" aria-label="Link to section" href="#check-the-key-after-a-source-change">#</a></h2>
-<p>The verifier compiles, validates and executes the normal data. It then inserts a duplicate <code>(1,east)</code> and expects <code>--validate-only</code> to report <code>DIMENSION_NOT_UNIQUE</code>. After removing the duplicate, validation and complete result comparison pass again.</p>
+<p>The verifier compiles, validates and executes the normal data. It then inserts a duplicate <code>(1,east)</code> and expects <code>--validate</code> to report <code>VALIDATION_ERROR</code>. After removing the duplicate, validation and complete result comparison pass again.</p>
 <p>Validation detects a mismatch between the declared key and current data before you trust lookup results. It does not guarantee uniqueness of future writes. Repair the source, complete key or data; adding DISTINCT to the final output cannot reliably undo an inflated aggregate.</p>
 <p><a href="examples--compound-key-zh.html">中文</a> · <a href="examples--index-en.html">Task examples</a> · <a href="how-to--compile-and-validate.html">Compile and validate</a></p>
 <h2 id="run-and-interpret-the-checks">Run and interpret the checks <a class="section-link" aria-label="Link to section" href="#run-and-interpret-the-checks">#</a></h2>

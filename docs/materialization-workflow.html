@@ -10,8 +10,8 @@ dmlc --setup model.dml --connection=default
 </code></pre>
 <p>setup 会安装数据库物化过程，属于写操作。检查完整诊断。常规查询可能按需安装或刷新所需过程，实际行为以当前版本和连接为准。</p>
 <h2 id="3-确认命中并比较结果">3. 确认命中并比较结果 <a class="section-link" aria-label="Link to section" href="#3-确认命中并比较结果">#</a></h2>
-<pre><code class="language-powershell">dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
-dmlc query.sql --model=model.dml --connection=default -o optimized.json --overwrite
+<pre><code class="language-powershell">dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default -o optimized.json --replace
 </code></pre>
 <p>检查生成 SQL/执行计划是否读取预期汇总对象。逐键逐列比较未优化结果，独立检查重复行、缺失组、NULL 和未格式化比例。更换维度和筛选后再检查，不假定所有问题都命中同一个汇总。</p>
 <h2 id="4-更新与失效">4. 更新与失效 <a class="section-link" aria-label="Link to section" href="#4-更新与失效">#</a></h2>

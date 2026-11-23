@@ -124,6 +124,7 @@
 <li><strong>Example</strong>: <code>Failed to list connections: Connection refused</code></li>
 </ul>
 <h3 id="query-execution-errors">Query Execution Errors <a class="section-link" aria-label="Link to section" href="#query-execution-errors">#</a></h3>
+<p><a id="validation_query_failed"></a></p>
 <h4 id="execution_error">EXECUTION_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: EXECUTION</li>
@@ -171,9 +172,9 @@
 <ul>
 <li><strong>Category</strong>: VALIDATION</li>
 <li><strong>Code</strong>: VALIDATION_ERROR</li>
-<li><strong>Common Causes</strong>: Validation failed for parameters or configuration</li>
+<li><strong>Common Causes</strong>: Declared dimension constraints were violated; inspect <code>data.status</code> and <code>data.issues</code></li>
 <li><strong>Suggested Fixes</strong>: Fix invalid parameters or configuration</li>
-<li><strong>Example</strong>: <code>Validation failed — see details.validationErrors</code></li>
+<li><strong>Example</strong>: <code>Declared dimension constraints were violated; see data.issues.</code></li>
 </ul>
 <h3 id="generation-errors">Generation Errors <a class="section-link" aria-label="Link to section" href="#generation-errors">#</a></h3>
 <h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
@@ -193,18 +194,21 @@
 <li><strong>Example</strong>: <code>Filter validation failed: invalid field &#39;dt_invalid&#39;</code></li>
 </ul>
 <h3 id="dimension-validation-errors">Dimension Validation Errors <a class="section-link" aria-label="Link to section" href="#dimension-validation-errors">#</a></h3>
-<h4 id="dimension_not_unique">DIMENSION_NOT_UNIQUE</h4>
+<p><a id="dimension-not-unique"></a>
+<a id="dimension_not_unique"></a></p>
+<h4 id="duplicate-keys-and-overlapping-ranges">Duplicate keys and overlapping ranges</h4>
 <ul>
 <li><strong>Category</strong>: VALIDATION</li>
-<li><strong>Code</strong>: DIMENSION_NOT_UNIQUE</li>
+<li><strong>Code</strong>: VALIDATION_ERROR; inspect the issue kind in <code>data.issues</code></li>
 <li><strong>Common Causes</strong>: The complete dataset dimension value combination occurs more than once, or a range-based lookup can match overlapping source rows</li>
-<li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>--validate-only</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
+<li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>--validate</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
 <li><strong>Example</strong>: <code>Declared DML dataset dimension is not unique in dataset &#39;Order Line&#39; on this connection at validation time.</code></li>
 </ul>
-<h4 id="validation_query_failed">VALIDATION_QUERY_FAILED</h4>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error-1">EXECUTION_ERROR</h4>
 <ul>
 <li><strong>Category</strong>: EXECUTION</li>
-<li><strong>Code</strong>: VALIDATION_QUERY_FAILED</li>
+<li><strong>Code</strong>: EXECUTION_ERROR</li>
 <li><strong>Common Causes</strong>: Validation query failed to execute</li>
 <li><strong>Suggested Fixes</strong>: Check connection configuration and database accessibility</li>
 <li><strong>Example</strong>: <code>Validation query failed: Connection refused</code></li>

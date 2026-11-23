@@ -89,8 +89,8 @@ FROM MODEL
 WHERE dt_month = &#39;2025-02-01&#39;
 </code></pre>
 <p>Save the query as <code>query.sql</code>. With the practice database configured as <code>default</code>, run:</p>
-<pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --output-format=json
-dmlc --validate-only query.sql --model=model.dml --connection=default --output-format=json
+<pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --json
+dmlc --validate query.sql --model=model.dml --connection=default --json
 dmlc query.sql --model=model.dml --connection=default
 </code></pre>
 <p>The executed values were <strong>60, 20, 40</strong>. Strict compilation, validate-only and execution all passed on the checked DuckDB connection. The model declared <code>dialect: duckdb</code>, a unique source <code>id</code>, <code>dt_month</code>, and <code>sales: SUM({amount})</code>.</p>

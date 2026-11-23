@@ -21,5 +21,5 @@
 <p>Model Query can represent a measure predicate as <code>HAVING</code>. The semantic stage matters more than that keyword: compiled SQL commonly uses <code>WHERE</code> on the relation produced by classification. Moving the predicate before classification changes the population used to calculate the label.</p>
 <p><a id="build-evidence-and-limitations"></a></p>
 <h2 id="limitations">Limitations <a class="section-link" aria-label="Link to section" href="#limitations">#</a></h2>
-<p>This pattern describes query <code>columns.dimension</code>; it does not establish classifier support in <code>materialize.dimension_columns</code>. Inspect the generated classification and reaggregation stages, then validate keys and compare result values on your own data.</p>
+<p>This pattern describes query <code>columns.dimension</code>. In the checked materialization, an ordinary <code>{region}</code> attribute compiles, but <code>{sales: {+d: id}}</code> in <code>materialize.dimension_columns</code> is rejected as an unavailable measure reference. Do not move a query classifier into materialization attributes unchanged. Inspect the generated classification and reaggregation stages, then validate keys and compare result values on your own data.</p>
 </main></body></html>

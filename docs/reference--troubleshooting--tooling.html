@@ -3,8 +3,8 @@
 <p><a id="p34"></a></p>
 <h2 id="p34-not-running-validateonly-before-trusted-use">P34. Not running validateOnly before trusted use <a class="section-link" aria-label="Link to section" href="#p34-not-running-validateonly-before-trusted-use">#</a></h2>
 <p><strong>Wrong</strong>: Writing a query and immediately running it without validation when database validation is available.
-<strong>Fix</strong>: Run <code>--validate-only</code> on the intended connection before trusted use. It catches compile errors, checks complete dataset dimensions reached by the query against observed data, and probes the main query with EXPLAIN; it does not prove result correctness or future uniqueness.
-<strong>Prerequisite</strong>: Validation requires an executable with <code>--validate-only</code> and a configured connection. Check <code>--help</code> and <code>--advanced-help</code>. If either prerequisite is missing, record database validation as not run. See <a href="how-to--compile-and-validate.html#4-validate-source-keys-and-database-acceptance">live validation</a>.</p>
+<strong>Fix</strong>: Run <code>--validate</code> on the intended connection before trusted use. It catches compile errors, checks complete dataset dimensions reached by the query against observed data, and probes the main query with EXPLAIN; it does not prove result correctness or future uniqueness.
+<strong>Prerequisite</strong>: Validation requires an executable with <code>--validate</code> and a configured connection. Check <code>--help</code> and <code>--advanced-help</code>. If either prerequisite is missing, record database validation as not run. See <a href="how-to--compile-and-validate.html#4-validate-source-keys-and-database-acceptance">live validation</a>.</p>
 <p><a id="p35"></a></p>
 <h2 id="p35-ignoring-column-descriptions">P35. Ignoring column descriptions <a class="section-link" aria-label="Link to section" href="#p35-ignoring-column-descriptions">#</a></h2>
 <p><strong>Wrong</strong>: Using <code>customer_name</code> when description says &quot;internal use only, use customer instead&quot;.
@@ -29,5 +29,5 @@
 <p><a id="p54"></a></p>
 <h2 id="p54-cjk-json-via-powershell-pipe">P54. CJK JSON via PowerShell pipe <a class="section-link" aria-label="Link to section" href="#p54-cjk-json-via-powershell-pipe">#</a></h2>
 <p><strong>Wrong</strong>: <code>dmlc ... | Out-File result.json</code> or capturing stdout for Chinese field names.
-<strong>Fix</strong>: <code>dmlc ... -o result.json --overwrite</code> or Node <code>execSync(..., { encoding: &#39;utf8&#39; })</code>.</p>
+<strong>Fix</strong>: <code>dmlc ... -o result.json --replace</code> or Node <code>execSync(..., { encoding: &#39;utf8&#39; })</code>.</p>
 </main></body></html>
