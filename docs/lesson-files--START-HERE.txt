@@ -8,11 +8,11 @@ The browser preview uses local arithmetic. It does not execute dmlc or a databas
 1. Extract all files to one writable directory. Keep model.dml beside query.sql.
 2. Make dmlc.exe available using an absolute path or PATH.
 3. Run:
-   dmlc.exe --lint model.dml --output-format=json
-   dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
-4. Inspect the output JSON and gen SQL files. The recorded capstone query has
-   status findings and exit 1 because of a key-union join warning. That is not a
-   passed strict check. Inspect unmatched keys and query membership before use.
+   dmlc.exe --lint model.dml --json
+   dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen
+4. Inspect the JSON and generated SQL. On the checked build, strict compile
+   returns status ok and exit 0. The key-union diagnostic is informational.
+   Check for regions present only in the comparison month.
    The SQL combines current and previous month values and customer-level AVG.
 5. The stored compiler observations identify the checked executable and SQL.
    A different build can behave differently. Do not treat old observations as
@@ -23,8 +23,9 @@ Optional SQL Server practice exercise:
 - Run setup-mssql.sql in that database. It creates TABLE_SALES, TABLE_REGION, and
   a daily DML_CALENDAR for December 2024 through February 2025.
 - The amount column is decimal so ratios retain fractional values.
-- Inspect and execute the generated SQL in the same database and session.
-- Check source-key uniqueness and compare every result value with expected.csv.
+- Configure a dmlc connection to the practice database. Replace default with its ID.
+  dmlc.exe --query query.sql --model=model.dml --connection=default --with-validation --json
+- Compare the returned rows with expected.csv.
 - Browser calculations and compile observations do not establish live result
   parity. This database exercise has not been executed by the documentation build.
 

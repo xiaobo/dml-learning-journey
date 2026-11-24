@@ -1,3 +1,5 @@
+dialect: mssql
+
 FACT_PROFITABILITY:
   type: dataset
   table: TABLE_PROFITABILITY
@@ -22,11 +24,11 @@ gross_margin:
 
 gross_margin_ytd:
   type: measure
-  formula: '{gross_margin: ytd}'
+  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
 
 gross_margin_prior_ytd:
   type: measure
-  formula: '{gross_margin: {ytd, ya}}'
+  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
 
 margin_change_pp:
   type: measure

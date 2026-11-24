@@ -1,3 +1,5 @@
+dialect: mssql
+
 DIM_REGION:
   type: dataset
   table: TABLE_REGION

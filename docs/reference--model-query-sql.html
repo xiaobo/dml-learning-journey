@@ -391,4 +391,6 @@ SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
 <p>Materialization parameters and internal literal parameterization are separate mechanisms. Use caller-bound parameters for application input; do not concatenate untrusted values into SQL.</p>
 <h2 id="a-time-filter-also-scopes-sibling-measures">A time filter also scopes sibling measures <a class="section-link" aria-label="Link to section" href="#a-time-filter-also-scopes-sibling-measures">#</a></h2>
 <p>A query-level month filter can supply a YTD measure&#39;s time anchor, but it also scopes ordinary measures in the query. In the <a href="examples--time-context-en.html">single-KPI example</a>, February YTD margin uses January and February while ordinary revenue is February-only. An unanchored query fails, and grouped calendar queries can produce months with a cumulative value but no current-period revenue. These are separate output-membership and metric-scope questions; do not silently choose today&#39;s date or the latest fact date.</p>
+<h2 id="model-query-sql-速查">Model Query SQL 速查</h2>
+<p><code>FROM MODEL</code> 绑定 <code>model.dml</code>。用 <code>AGG(sales)</code> 引用指标，用 <code>GROUP BY region</code> 指定每个地区一行。用 <code>WHERE</code> 限定查询范围，用 <code>HAVING AGG(sales) &gt; 0</code> 筛选聚合后的组。输出列名用 <code>AS</code> 指定。</p>
 </main></body></html>

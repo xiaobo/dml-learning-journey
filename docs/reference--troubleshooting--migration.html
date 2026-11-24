@@ -22,4 +22,41 @@
 <strong>Fix</strong>: One atomic measure; reference it everywhere.</p>
 <hr>
 <h2 id="category-model-query-sql">Category: Model Query SQL <a class="section-link" aria-label="Link to section" href="#category-model-query-sql">#</a></h2>
+<h2 id="sql-accepted-by-draft-conversion">SQL accepted by draft conversion</h2>
+<p>In the November 2026 trial, <code>--to-dml</code> emitted drafts for standard <code>CAST(... AS type)</code>, <code>GROUP BY</code> with <code>CASE</code>, <code>ROW_NUMBER()</code> in a CTE, <code>LIMIT/OFFSET</code>, <code>EXTRACT</code>, <code>DATE_TRUNC</code>, <code>ILIKE</code>, <code>GENERATE_SERIES</code>, <code>NULLS LAST</code>, and <code>EXCEPT</code>. A draft still needs compilation and a result comparison.</p>
+<table>
+<thead>
+<tr>
+<th>Input that failed in the trial</th>
+<th>Rewrite before conversion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sale_date::date AS d</code>, <code>DATE &#39;2025-01-01&#39;</code></td>
+<td>Use <code>CAST(sale_date AS date) AS d</code> or <code>CAST(&#39;2025-01-01&#39; AS date)</code>.</td>
+</tr>
+<tr>
+<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
+<td>Use <code>SUM(CASE WHEN paid THEN amount END)</code>.</td>
+</tr>
+<tr>
+<td><code>QUALIFY ROW_NUMBER() ... = 1</code> or <code>DISTINCT ON</code></td>
+<td>Compute <code>ROW_NUMBER()</code> in a CTE with the same partition and ordering. Filter <code>rn = 1</code> in the outer query.</td>
+</tr>
+<tr>
+<td><code>$$hello$$</code></td>
+<td>Use a single-quoted string, doubling embedded single quotes.</td>
+</tr>
+<tr>
+<td><code>INTERVAL &#39;1 day&#39;</code>, <code>LATERAL</code>, <code>STRING_AGG(... ORDER BY ...)</code>, or JSON <code>-&gt;&gt;</code></td>
+<td>Normalize the expression for the intended parser and dialect or project it from a source view. Verify ordering, NULL behavior and row membership before converting.</td>
+</tr>
+</tbody></table>
+<p>After conversion:</p>
+<ol>
+<li>Add the entry <code>dialect:</code> for the target database if the draft omits it.</li>
+<li>Keep the filename stem and embedded query name the same. If two definitions use the same measure name, keep one definition or rename the query-local calculation and update its references.</li>
+<li>Place report period bounds on the query. Keep the source history required by <code>pp</code>, <code>pop</code> or <code>ytd</code> available to the measure.</li>
+</ol>
+<p>Lint and strict-compile the edited draft, then compare it with the original SQL on the same data.</p>
 </main></body></html>

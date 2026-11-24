@@ -340,4 +340,6 @@ measure/expression order, or TOP/LIMIT differs from the default. Don&#39;t re-ag
 <li><strong><code>dataset:</code> on composite measures</strong>: Wrong — omit <code>dataset:</code> when formula references other measures</li>
 <li><strong>Mismatched dimension field names across datasets</strong>: Align to one name (e.g. <code>tag_id</code>) and map in <code>columns:</code></li>
 </ul>
+<h2 id="yaml-查询速查">YAML 查询速查</h2>
+<p>用 <code>type: query</code> 定义查询。用 <code>dimension:</code> 指定结果分组，用 <code>columns:</code> 指定输出。筛选条件的放置决定它作用于源行、单个指标还是聚合后的结果。跨数据集组合时，先确认关联键、NULL 键和仅在一侧出现的分组。用 <code>after:</code> 处理最终排序等查询操作。</p>
 </main></body></html>

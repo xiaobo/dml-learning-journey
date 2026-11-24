@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "複数の売上が同じ地域に属することがあります。<code>region</code> はグループ化には使えますが、元データのキーには不十分です。",
     "identity.text6": "North の 2 件を見てください。地域は同じでも ID は異なります。元データのキーは各行を識別できなければなりません。",
     "identity.text7": "架空の売上 4 件 · TABLE_SALES",
-    "identity.text8": "レポートを region でグループ化しても、元のキーは [id] のままです。対象の接続で <code>dmlc --validate-only</code> を実行し、クエリが参照するキーの宣言と実データを照合します。不整合を修正してから実行し、ルックアップ結果の重複を防ぎましょう。",
+    "identity.text8": "レポートを region でグループ化しても、元のキーは [id] のままです。対象の接続で <code>dmlc --validate</code> を実行し、クエリが参照するキーの宣言と実データを照合します。不整合を修正してから実行し、ルックアップ結果の重複を防ぎましょう。",
     "identity.caption": "説明用のデータです。データベースには接続していません。",
     "model.text1": "02 / DML",
     "model.text2": "定義は一冊の<br>ノートにまとめよう。",
@@ -58,7 +58,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "compiler.text6": "<strong>結果の行</strong>答えを読み取る",
     "compiler.text7": "コンパイルで確認用の SQL が生成されます。自分のデータでレポートを確かめるには、次の順に進めます。",
     "compiler.step1": "コンパイルし、診断と生成された SQL を確認する。",
-    "compiler.step2": "接続先で <code>--validate-only</code> を実行し、参照先データセットのキーと、EXPLAIN による SQL の検査を行う。",
+    "compiler.step2": "接続先で <code>--validate</code> を実行し、参照先データセットのキーと、EXPLAIN による SQL の検査を行う。",
     "compiler.step3": "レポートを実行し、行と値を独立した結果と比較する。",
     "compiler.text8": "ブラウザーは計算例を表示します。実データの検証と結果比較にはデータベースが必要です。",
     "compiler.text9": "最初のクエリをコンパイル",
@@ -114,7 +114,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.label1": "無効な 2 件目の North を一覧に追加",
     "lookups.text4": "地域一覧",
     "lookups.text5": "参照後の 2 月の行",
-    "lookups.text6": "この切り替えは意図的に宣言したキーに違反します。通常のコンパイルでは元データを読みません。接続先で <code>dmlc --validate-only</code> を実行すると、参照先データセットの完全な次元を検証し、一意でなければ <code>DIMENSION_NOT_UNIQUE</code> を報告します。",
+    "lookups.text6": "この切り替えは意図的に宣言したキーに違反します。通常のコンパイルでは元データを読みません。接続先で <code>dmlc --validate</code> を実行すると、参照先データセットの完全な次元を検証し、一意でなければ <code>DIMENSION_NOT_UNIQUE</code> を報告します。",
     "lookups.text7": "dmlc で重複キーを検出",
     "lookups.text8": "データベースで試すときは、ダウンロードした <code>model.dml</code> と同じ場所に <code>lookup.sql</code> を保存します。manager を選ぶことで DIM_REGION データセットが参照されます。",
     "lookups.text9": "サンプルテーブルがある接続先で検証します。<code>default</code> をその接続 ID に置き換えてください。",
@@ -147,7 +147,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text13": "プレビューはこのページの架空データだけを計算し、任意の DML を実行するものではありません。コンパイラーの記録があるのは付属の検証済みクエリだけです。他の組み合わせは別途コンパイルが必要です。データベースには接続しません。",
     "capstone.text14": "確認済みプロジェクトをダウンロード",
     "capstone.text15": "ローカルのコンパイルコマンドを見る",
-    "capstone.text16": "これらのコンパイルコマンドにデータベース接続は不要です。別の実習用に、サンプルデータと SQL Server のセットアップも含まれます。想定する結合警告は記録済みですが、想定内の警告でも厳密チェックの合格にはなりません。",
+    "capstone.text16": "コンパイルにデータベース接続は不要です。検証付きで実行するには default を練習用の接続 ID に置き換えます。キーの和集合は情報レベルの診断です。比較月にしか存在しない地域を含めるか確認してください。",
     "capstone.text17": "コンパイラーの実習へ",
     "capstone.text18": "言語リファレンスを見る",
     "capstone.mazExtension": "SQL Server Maz：データ準備状態と runner の進捗（中国語）",
@@ -387,7 +387,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "確認・実行に使える SQL",
         "すべてのソースキーが一意である証明"
       ],
-      "why": "コンパイルは SQL を生成します。実際のキーの一意性を調べるには、接続先で --validate-only を実行します。結果の正しさは、SQL を実行して別途比較します。",
+      "why": "コンパイルは SQL を生成します。実際のキーの一意性を調べるには、接続先で --validate を実行します。結果の正しさは、SQL を実行して別途比較します。",
       "hint": "SQL の生成、元データの検証、レポートの実行を区別しましょう。"
     },
     "filters": {
@@ -437,7 +437,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "North の各売上が 2 行に結合され、売上合計が二重計上される",
         "dimension は説明用なので、結果は変わらない"
       ],
-      "why": "DIM_REGION は [region] をキーとして宣言しているため、North は最大 1 行である必要があります。2 行あると、この例では North の売上が二重計上されます。接続先で --validate-only を実行すると、キーの重複を DIMENSION_NOT_UNIQUE として報告します。",
+      "why": "DIM_REGION は [region] をキーとして宣言しているため、North は最大 1 行である必要があります。2 行あると、この例では North の売上が二重計上されます。接続先で --validate を実行すると、キーの重複を DIMENSION_NOT_UNIQUE として報告します。",
       "hint": "North の各販売がディレクトリの何行と一致するか数えましょう。"
     },
     "missing": {

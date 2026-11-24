@@ -30,4 +30,31 @@
 <h2 id="p54-cjk-json-via-powershell-pipe">P54. CJK JSON via PowerShell pipe <a class="section-link" aria-label="Link to section" href="#p54-cjk-json-via-powershell-pipe">#</a></h2>
 <p><strong>Wrong</strong>: <code>dmlc ... | Out-File result.json</code> or capturing stdout for Chinese field names.
 <strong>Fix</strong>: <code>dmlc ... -o result.json --replace</code> or Node <code>execSync(..., { encoding: &#39;utf8&#39; })</code>.</p>
+<h2 id="cli-options-by-build">CLI options by build</h2>
+<p>Use the executable&#39;s build timestamp and help to identify the command contract.</p>
+<table>
+<thead>
+<tr>
+<th>Earlier option</th>
+<th>Checked build</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--output-format=json</code></td>
+<td><code>--json</code> for a structured CLI report</td>
+</tr>
+<tr>
+<td><code>--output-dir=gen</code></td>
+<td><code>--artifacts=gen</code> for compiler artifacts</td>
+</tr>
+<tr>
+<td><code>--validate-only</code> on a model query</td>
+<td><code>--validate</code> for a standalone validation report</td>
+</tr>
+</tbody></table>
+<p>Explain-change still uses its own <code>--validate-only</code> preflight. Query execution uses <code>--with-validation</code> to stop before returning rows when validation fails.</p>
+<h2 id="sql-syntax-checks">SQL syntax checks</h2>
+<p>On the 2026-11-23 build, <code>--check --json</code> can report success on a parse failure, for example with <code>QUALIFY</code>. Use the exit status and diagnostics from the operation you need, such as strict compilation for a model query or <code>--to-dml</code> for conversion.</p>
+<h2 id="calendar-setup-fails-during-validation">Calendar setup fails during validation</h2>
+<p>If you see a permission error for <code>DML_CALENDAR</code>, check the selected schema and connection role. Use the <a href="reference--model-structure.html#system-calendar">system calendar setup</a> to initialize it with a role that can create tables and insert rows. Then rerun validation with the runtime role.</p>
 </main></body></html>

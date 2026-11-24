@@ -25,7 +25,7 @@
 <h2 id="7-choose-a-denominator">7. Choose a denominator <a class="section-link" aria-label="Link to section" href="#7-choose-a-denominator">#</a></h2>
 <p>Select <strong>North</strong> in chapter 7. With <code>-d: region</code>, the denominator is 30 and the share is 100%. Switch to <code>-df: region</code>. The denominator becomes 100 and the share becomes 30%.</p>
 <p>Remember <code>d</code> = dimension and <code>f</code> = filter. <code>-d</code> removes a field from this reference&#39;s evaluation grouping; <code>-df</code> also removes its related filters. The month filter, source key and report grouping stay unchanged. Without a related region filter, both modifiers produce the same denominator in this example.</p>
-<p>Inspect the recorded compiler query and its strict findings. Check the exercise about retaining an all-region denominator. The report still selects North; the denominator reference has a different filter context.</p>
+<p>Inspect the recorded compiler query and its notes about grouping and row membership. Check the exercise about retaining an all-region denominator. The report still selects North; the denominator reference has a different filter context.</p>
 <h2 id="8-calculate-at-customer-grain">8. Calculate at customer grain <a class="section-link" aria-label="Link to section" href="#8-calculate-at-customer-grain">#</a></h2>
 <p>Select <strong>AVG</strong> in chapter 8. Find South customer C&#39;s total of 70 in stage 1. Stage 2 averages that one customer total, giving 70. Average transaction amount is 35 because it averages two source transactions.</p>
 <p>Switch the outer aggregate to <strong>SUM</strong>, then <strong>MAX</strong>. Observe both stages and the formula. Return to <strong>AVG</strong> and check the exercise.</p>
@@ -33,12 +33,12 @@
 <h2 id="9-compare-adjacent-months">9. Compare adjacent months <a class="section-link" aria-label="Link to section" href="#9-compare-adjacent-months">#</a></h2>
 <p>Read the two model definitions shown in chapter 9. <code>previous_sales</code> uses <code>{sales: pp}</code> for the previous month&#39;s value; <code>sales_change</code> uses <code>{sales: pop}</code> for growth. Select <strong>February 2025</strong>. North has sales of 30, previous sales of 20, and growth of 50%. South has sales of 70, previous sales of 50, and growth of 40%.</p>
 <p>Read <code>{sales: pp}</code> as “sales, for the previous period.” The month context makes that the previous month. <code>pop</code> returns a decimal growth rate; the page displays 0.5 as 50%.</p>
-<p>Select <strong>January 2025</strong>. Previous sales and growth are NULL because the example has no December facts. Check which period <code>pp</code> requests. Inspect the recorded companion query before treating its expected strict findings as resolved.</p>
+<p>Select <strong>January 2025</strong>. Previous sales and growth are NULL because the example has no December facts. Check which period <code>pp</code> requests. Inspect the recorded companion query and check which periods its joins can include.</p>
 <h2 id="10-break-and-repair-a-lookup-key">10. Break and repair a lookup key <a class="section-link" aria-label="Link to section" href="#10-break-and-repair-a-lookup-key">#</a></h2>
 <p>In chapter 10, enable <strong>Add an invalid second North directory row</strong>. Four facts become six joined rows. North&#39;s amounts now sum to 60.</p>
 <p>Disable the duplicate. Four facts again produce four joined rows and North totals 30. Check the exercise about source uniqueness. The compiler snapshot does not inspect these physical records.</p>
 <p>To check the keys on a database connection, expand <strong>Catch the duplicate key with dmlc</strong> in chapter 10. Save its manager lookup query as <code>lookup.sql</code> beside the downloaded model. The query must reach <code>DIM_REGION</code> for its dimension to be checked. Replace <code>default</code> with the connection containing your sample tables, then run:</p>
-<pre><code class="language-powershell">dmlc.exe --validate-only lookup.sql --model=model.dml --connection=default --output-format=json
+<pre><code class="language-powershell">dmlc.exe --validate lookup.sql --model=model.dml --connection=default --json
 </code></pre>
 <p>If that connection&#39;s <code>TABLE_REGION</code> contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for <code>DIM_REGION</code>. Correct the dataset dimension declaration or source data, then rerun validation. The browser toggle changes only this page&#39;s invented data. Validation reads the connected data, checks reached dataset dimensions, and probes the main query with EXPLAIN without executing its result rows.</p>
 <h2 id="11-make-missing-value-behavior-explicit">11. Make missing-value behavior explicit <a class="section-link" aria-label="Link to section" href="#11-make-missing-value-behavior-explicit">#</a></h2>
@@ -81,12 +81,17 @@
 <p>To save a different report configuration, choose <strong>Download my query.sql</strong>. Only the recorded companion queries have the included compiler evidence. Other builder combinations still need compilation and SQL inspection.</p>
 <h2 id="compile-the-downloaded-project">Compile the downloaded project <a class="section-link" aria-label="Link to section" href="#compile-the-downloaded-project">#</a></h2>
 <p>With <code>dmlc.exe</code> available, open a terminal in the extracted directory and run these commands:</p>
-<pre><code class="language-powershell">dmlc.exe --lint model.dml --output-format=json
-dmlc.exe --compile --strict query.sql --model=model.dml --output-format=json --output-dir=gen
+<pre><code class="language-powershell">dmlc.exe --lint model.dml --json
+dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen
 </code></pre>
-<p>Inspect the diagnostics and generated SQL. The recorded capstone query has a key-union join warning, <code>status: findings</code>, and exit 1. The join can include regions present only in the comparison month. Check whether those regions belong in your report, then inspect customer-grain aggregation and the final projection. SQL generation does not establish database result correctness.</p>
-<p>For optional database practice, use a new empty SQL Server database and review <code>setup-mssql.sql</code>. It creates the source tables and the calendar required by the time-comparison SQL. Validate the keys, execute the generated SQL, and compare every result value with <code>expected.csv</code>. This live database exercise has not been run as part of the documentation checks.</p>
+<p>Inspect the diagnostics and generated SQL. On the checked build, the capstone returns <code>status: ok</code> and exit 0. The key-union diagnostic is informational. The join can include regions present only in the comparison month. Check whether those regions belong in your report, then inspect customer-grain aggregation and the final projection. SQL generation does not establish database result correctness.</p>
+<p>For optional database practice, use a new empty SQL Server database and review <code>setup-mssql.sql</code>. It creates the source tables and the calendar required by the time-comparison SQL. Run the Model Query with validation on that connection and compare every result value with <code>expected.csv</code>.</p>
+<pre><code class="language-powershell">dmlc.exe --query query.sql --model=model.dml --connection=default --with-validation --json
+</code></pre>
+<p>Replace <code>default</code> with your practice connection ID. This live database exercise has not been run as part of the documentation checks.</p>
 <p>For connection and validation commands, follow <a href="how-to--compile-and-validate.html">Compile and validate a query</a>. The <a href="reference--README.html">language reference</a> covers more advanced windows, classifiers, materializations, and model composition after this beginner project.</p>
+<p>For a self-contained DuckDB run on the same sample data, use the <a href="checked-exercise.html">checked exercise download</a>.</p>
+<p>For a self-contained DuckDB run on the same sample data, use the <a href="checked-exercise.html">checked exercise download</a>.</p>
 <h2 id="resume-or-restart">Resume or restart <a class="section-link" aria-label="Link to section" href="#resume-or-restart">#</a></h2>
 <p>Use the globe and language selector in the fixed header to switch between English, 中文, 日本語, and Deutsch. Each language keeps its own name, so you can find it without reading the current page language. The twelve lessons, questions, explanations, navigation, and feedback change together. Your answers, report settings, and completed chapters stay in place. The browser remembers your language separately from your progress. Code, field names, source values, and the downloadable project retain their original identifiers.</p>
 <p>The fixed header shows your current chapter. Use its arrows to move between lessons, or open the chapter title to see all twelve chapters and your completed count. A check mark identifies completed chapters. At the final chapter, the return arrow opens the introduction.</p>

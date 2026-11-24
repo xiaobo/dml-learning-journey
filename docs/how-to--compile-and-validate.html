@@ -16,10 +16,10 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 </code></pre>
 <p>Inspect the process exit code after each command. Read the JSON status, diagnostics, notes, emitted SQL, and output order. Check the generated grouping, joins, predicates, aliases, and projected columns against the query contract.</p>
 <p>If strict compilation returns findings, preserve the warning and emitted SQL. Resolve the intended population and NULL behavior before changing the query. Removing <code>--strict</code> does not make the strict check pass.</p>
-<p>Use <code>--artifacts</code> for compile artifacts. Use <code>--output</code> for commands whose help documents a named output file. These flags are not interchangeable.</p>
+<p>Use <code>--artifacts</code> to save compiled SQL and related files in a directory. Use <code>--output</code> to save a command&#39;s result to a file.</p>
 <h2 id="3-capture-json-without-changing-its-encoding">3. Capture JSON without changing its encoding <a class="section-link" aria-label="Link to section" href="#3-capture-json-without-changing-its-encoding">#</a></h2>
-<p>For query result files, use the product output flag.</p>
-<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --output=outputs/result.json --replace
+<p>Use <code>--output</code> to save query results. Add <code>--with-validation</code> to check the model&#39;s dataset keys on the target connection before running the query.</p>
+<pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --output=result.json --replace
 </code></pre>
 <p>For lint or compile evidence, capture stdout separately from stderr. A Node.js argument array avoids shell quoting and gives explicit UTF-8 decoding. Save this script as <code>compile.cjs</code> beside the model and query.</p>
 <pre><code class="language-javascript">const fs = require(&#39;node:fs&#39;);
@@ -39,22 +39,40 @@ process.exitCode = result.status ?? 1;
 <pre><code class="language-powershell">node compile.cjs $dmlc
 </code></pre>
 <p>If JSON parsing fails, retain the raw streams and process exit. Diagnose that failure before interpreting it as a language error.</p>
+<p>Windows PowerShell 5.1 can silently corrupt non-ASCII output when a native command is piped to <code>Out-File</code> or captured as text. Set the console decoding to UTF-8 before capturing stdout.</p>
+<pre><code class="language-powershell">[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+</code></pre>
+<p>To save stdout bytes directly, open Command Prompt (<code>cmd.exe</code>) in the model directory and run:</p>
+<pre><code class="language-bat">dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen &gt; compile.stdout.json 2&gt; compile.stderr.txt
+</code></pre>
 <p>In Windows PowerShell 5.1, run commands separately because <code>&amp;&amp;</code> is unsupported. Avoid merging stderr into JSON stdout. If you need to suppress stderr interactively, use <code>2&gt;$null</code> in PowerShell.</p>
 <h2 id="4-validate-source-keys-and-database-acceptance">4. Validate source keys and database acceptance <a class="section-link" aria-label="Link to section" href="#4-validate-source-keys-and-database-acceptance">#</a></h2>
-<p>If the target connection is configured, run validate-only before trusted execution or when relevant validation evidence becomes stale.</p>
+<p>Use <code>--validate</code> when you need a report. Use <a href="#5-execute-and-compare-results">query execution with validation</a> when you need results and current evidence is missing or stale.</p>
 <pre><code class="language-powershell">&amp; $dmlc --validate query.sql --model=model.dml --connection=default --json
 </code></pre>
-<p>Replace <code>default</code> with the intended connection. With <code>--json</code>, inspect the <code>dmlc.result/v1</code> report: <code>status</code>, <code>exitCode</code>, <code>diagnostics</code>, and <code>data</code>. Validation findings are under <code>data.issues</code>; <code>data.complete</code> records whether checks completed.</p>
-<p>Confirm that compilation, reached-dataset key checks, and the generated SQL&#39;s <code>EXPLAIN</code> probe pass. Validate-only does not execute the main result rows or establish business correctness.</p>
-<p>For a violated constraint, inspect <code>data.issues</code> (for example, <code>kind: duplicate_key</code>) rather than treating every validation error as a duplicate. Fix the complete dataset key, source ranges, or source data. Do not patch generated SQL with <code>DISTINCT</code> to conceal duplicate keys. If a validation query fails to execute, handle <code>EXECUTION_ERROR</code> separately.</p>
-<p>Re-run validation after a relevant model, query contract, connection, or source-state change. If a prerequisite is missing, record the check as <code>not run</code> and name the missing prerequisite.</p>
+<p>Replace <code>default</code> with the intended connection. Check the exit code, validation status, checked datasets, and any reported issues. The CLI JSON report puts validation details under <code>data</code>.</p>
+<p>Validation checks whether each declared dataset key used by the query identifies at most one source row. It also checks whether the database can plan the query with <code>EXPLAIN</code>. Use an independent SQL result to verify business totals.</p>
+<p>For example, two distinct ledger entries share the same <code>(account, invoice, party)</code> key and have amounts of 10 and 20. If that combination is declared as the dataset&#39;s <code>dimension:</code>, validation reports the key and its two matching rows. With <code>--with-validation</code>, the query stops before execution. Declare the ledger entry ID as the dataset key, then group the query by account, invoice, and party to get a total of 30. If the two rows represent an accidental duplicate, repair the source data or the join that produced it.</p>
+<p>Re-run validation when the model, query contract, connection, or relevant source data changes. If a prerequisite is missing, record the check as <code>not run</code> and name the missing prerequisite.</p>
 <h2 id="5-execute-and-compare-results">5. Execute and compare results <a class="section-link" aria-label="Link to section" href="#5-execute-and-compare-results">#</a></h2>
-<p>Run the consumer query on the validated connection.</p>
-<pre><code class="language-powershell">&amp; $dmlc --model=model.dml query.sql --connection=default --output=outputs/result.json --replace
+<p>Run the query with <code>--with-validation</code> on the target connection. Execution without this option skips live dataset-key and database planning checks.</p>
+<pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --json
 </code></pre>
+<p>The query and any requested export run only after validation passes. If validation fails or cannot finish, inspect the report and resolve the issue before rerunning. Checking and execution use separate database reads. Concurrent changes can occur between them.</p>
 <p>Check keys, row multiplicity, NULLs, and all measures. If an independent result exists, compare both queries on the same source snapshot and scope.</p>
 <p>If a DuckDB cache is locked, identify the process and connection that owns it. Use another configured connection only when it represents the intended source. Do not change source data merely to avoid a lock.</p>
 <p>For specific failures, use the <a href="reference--troubleshooting--README.html">troubleshooting index</a> and <a href="reference--error-codes.html">error codes</a>.</p>
+<h3 id="检查整个模型不先写查询">检查整个模型，不先写查询</h3>
+<p>运行 dmlc --validate path/to/model.dml --connection=default。
+需要结构化报告时加 --json，也可用 shell 重定向保存报告。</p>
+<p>这会加载所选文件及其 includes，检查模型编译，并在线检查各数据集声明的完整
+dimension 键或半开区间约束。冲突报告沿用原列名和少量示例。报告中的
+checkedDatasets 是实际检查范围；没有声明维度的数据集不会自动产生键约束。
+它不会构造或执行一条业务查询，不执行物化准备/安装脚本，也不能据此保证
+任意指标查询都能在数据库执行。要检查特定查询的数据库规划，另行提供该查询。</p>
+<h3 id="command-ownership">Command ownership</h3>
+<p>CLI --validate is an independent command, alongside --compile and --query.
+Use <code>--validate</code> by itself for a report. Add <code>--with-validation</code> to <code>--query</code> to check before execution. Explain-change uses its own <code>--validate-only</code> preflight.</p>
 <h2 id="practice-a-modeldata-contract-repair">Practice a model/data contract repair <a class="section-link" aria-label="Link to section" href="#practice-a-modeldata-contract-repair">#</a></h2>
 <p>Run the <a href="examples--compound-key-en.html">compound-key</a> and <a href="examples--range-lookup-en.html">effective-range</a> examples to observe normal validation, a deliberate duplicate or overlap failure, and repaired validation followed by result comparison. This catches inconsistencies between the declared key and observed data before trusting a lookup result. Validation and query execution are separate operations; a successful check is not a same-snapshot or future-uniqueness guarantee.</p>
 <h2 id="inspect-a-change-or-recover-an-existing-query">Inspect a change or recover an existing query <a class="section-link" aria-label="Link to section" href="#inspect-a-change-or-recover-an-existing-query">#</a></h2>
@@ -67,4 +85,6 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p>Use a new output path and keep the generated draft warning. These commands were checked with dmlc 0.3.16; the available options vary by operation, so do not copy compile-only flags onto recovery commands. Review inferred keys, formulas, populations and warnings, then compile, validate and compare the recovered query&#39;s results against the original on the same source snapshot. Draft generation does not certify a production semantic model.</p>
 <p>When integrating these tools, keep database and application responsibilities explicit. Database permissions and application authorization control access; a model filter alone is not an access-control guarantee. Generated SQL may have multiple statements, temporary relations and calendar dependencies. Verify execution on your target engine and measure representative workloads before making performance claims. The compiler does not supply dashboards or scheduling.</p>
+<h2 id="编译与校验步骤">编译与校验步骤</h2>
+<p>先在工作目录运行 <code>dmlc --lint model.dml --json</code>，再运行 <code>dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen</code>。查看退出码、诊断和生成的 SQL。只需要校验报告时用 <code>--validate</code>。需要查询结果时用 <code>--query</code> 和 <code>--with-validation</code>，并通过 <code>--connection=default</code> 指定目标连接。未加 <code>--with-validation</code> 的执行会跳过在线键检查。</p>
 </main></body></html>

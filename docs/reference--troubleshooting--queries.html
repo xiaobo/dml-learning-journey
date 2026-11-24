@@ -97,4 +97,6 @@
 <p><strong>Wrong</strong>: <code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code>
 <strong>Symptom</strong>: <code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code>
 <strong>Fix</strong>: Either (a) define measures in <code>model.dml</code> and use <code>FROM MODEL</code> with <code>AGG()</code>, or (b) use inline measures via <code>/** dml ... **/</code> comment blocks for ad-hoc queries without editing <code>.dml</code> (see <a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures (<code>/** dml ... **/</code>)</a>)</p>
+<h2 id="查询排错">查询排错</h2>
+<p>先用只含一个指标的查询确认模型和连接，再逐个加回维度、筛选和指标。行数偏多时检查数据集键重复、连接后的行数以及只在对比期间出现的键。数值不符时，用相同时间范围和数据快照运行独立 SQL，逐组比对键、NULL 和指标值。</p>
 </main></body></html>

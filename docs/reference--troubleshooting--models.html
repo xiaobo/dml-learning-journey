@@ -80,4 +80,6 @@ profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
 <h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. Bare name vs <code>{col}</code> inside <code>.dml</code> formulas <a class="section-link" aria-label="Link to section" href="#p42-bare-name-vs-col-inside-dml-formulas">#</a></h2>
 <p><strong>Wrong (meaning):</strong> Treating <code>formula: calc_amt * 2</code> as “forgot braces” / a compiler hole. Bare <code>calc_amt</code> binds as a <strong>physical</strong> table column (SQL pass-through).
 <strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: &#39;{calc_amt} * 2&#39;</code>. Leave physical columns bare: <code>net: amount - discount</code>. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
+<h2 id="模型排错">模型排错</h2>
+<p>先检查入口模型的 <code>dialect:</code>、<code>includes:</code> 路径和名称。确认数据集的 <code>dimension:</code> 能唯一标识源行，并按声明顺序给 <code>pk(...)</code> 传入完整的键。先修复首条明确的缺失引用或冲突，再重新 lint。</p>
 </main></body></html>

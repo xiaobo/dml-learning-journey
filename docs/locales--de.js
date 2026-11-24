@@ -14,7 +14,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "identity.text5": "Zwei Verkäufe können dieselbe Region haben. <code>region</code> eignet sich zum Gruppieren, reicht aber als Quellschlüssel nicht aus.",
     "identity.text6": "Finde die beiden North-Verkäufe: gleiche Region, verschiedene IDs. Ein Quellschlüssel muss jede Zeile identifizieren.",
     "identity.text7": "Vier erfundene Verkäufe · TABLE_SALES",
-    "identity.text8": "Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Prüfe mit <code>dmlc --validate-only</code> auf der Zielverbindung, ob die von der Abfrage verwendeten Schlüssel zu den tatsächlichen Daten passen. Behebe Abweichungen vor der Ausführung, um doppelte Lookup-Ergebnisse zu vermeiden.",
+    "identity.text8": "Auch bei einer Gruppierung nach region bleibt der Quellschlüssel [id]. Prüfe mit <code>dmlc --validate</code> auf der Zielverbindung, ob die von der Abfrage verwendeten Schlüssel zu den tatsächlichen Daten passen. Behebe Abweichungen vor der Ausführung, um doppelte Lookup-Ergebnisse zu vermeiden.",
     "identity.caption": "Nur Beispieldaten. Es ist keine Datenbank verbunden.",
     "model.text1": "02 / DML",
     "model.text2": "Bewahre die Definitionen<br>in einem Notizbuch auf.",
@@ -58,7 +58,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "compiler.text6": "<strong>Ergebniszeilen</strong>Die Antwort lesen",
     "compiler.text7": "Die Kompilierung erzeugt SQL zur Prüfung. Prüfe einen Bericht mit deinen eigenen Daten in diesen Schritten:",
     "compiler.step1": "Kompilieren, Diagnosen lesen und das generierte SQL prüfen.",
-    "compiler.step2": "Mit einer Verbindung <code>--validate-only</code> ausführen, um die Schlüssel der erreichten Datasets zu prüfen und SQL mit EXPLAIN zu testen.",
+    "compiler.step2": "Mit einer Verbindung <code>--validate</code> ausführen, um die Schlüssel der erreichten Datasets zu prüfen und SQL mit EXPLAIN zu testen.",
     "compiler.step3": "Den Bericht ausführen und Zeilen sowie Werte mit einem unabhängigen Ergebnis vergleichen.",
     "compiler.text8": "Der Browser zeigt berechnete Beispiele. Live-Validierung und Ergebnisvergleich benötigen eine Datenbank.",
     "compiler.text9": "Die erste Abfrage kompilieren",
@@ -114,7 +114,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.label1": "Ungültigen zweiten North-Eintrag hinzufügen",
     "lookups.text4": "Regionsverzeichnis",
     "lookups.text5": "Februarzeilen nach dem Lookup",
-    "lookups.text6": "Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate-only</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>DIMENSION_NOT_UNIQUE</code>.",
+    "lookups.text6": "Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>DIMENSION_NOT_UNIQUE</code>.",
     "lookups.text7": "Doppelte Schlüssel mit dmlc erkennen",
     "lookups.text8": "Speichere die Abfrage für die Datenbankübung als <code>lookup.sql</code> neben <code>model.dml</code> im heruntergeladenen Projekt. Die Auswahl von manager führt zum Dataset DIM_REGION.",
     "lookups.text9": "Führe die Validierung mit der Verbindung aus, die deine Beispieltabellen enthält. Ersetze <code>default</code> durch deren Verbindungs-ID.",
@@ -147,7 +147,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text13": "Die Vorschau berechnet unsere Beispieldaten, kein beliebiges DML. Compilerbelege liegen nur für die aufgezeichneten Begleitabfragen vor; andere Kombinationen benötigen eigene Prüfungen. Die Seite verbindet sich nicht mit einer Datenbank.",
     "capstone.text14": "Geprüftes Projekt herunterladen",
     "capstone.text15": "Lokale Compilerbefehle ansehen",
-    "capstone.text16": "Diese Compilerbefehle benötigen keine Datenbankverbindung. Beispieldaten und SQL-Server-Setup dienen einer getrennten Datenbankübung. Erwartete Join-Warnungen sind aufgezeichnet; eine erwartete Warnung bedeutet nicht, dass die strenge Prüfung bestanden wurde.",
+    "capstone.text16": "Zum Kompilieren ist keine Datenbankverbindung nötig. Für die Ausführung mit Validierung ersetzen Sie default durch die Übungsverbindung. Die Meldung zur Schlüsselvereinigung ist ein Hinweis. Prüfen Sie, ob Regionen, die nur im Vergleichsmonat vorkommen, in den Bericht gehören.",
     "capstone.text17": "Zum Compiler-Tutorial",
     "capstone.text18": "Sprachreferenz erkunden",
     "capstone.mazExtension": "SQL Server Maz: Datenbereitschaft und Runner-Fortschritt (Chinesisch)",
@@ -388,7 +388,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Generiertes SQL zur Prüfung",
         "Den Nachweis, dass die deklarierten Schlüssel in den Quelldaten eindeutig sind"
       ],
-      "why": "Der Compiler erzeugt SQL, ohne die Datenbankabfrage auszuführen. Die Schlüssel in den Quelldaten prüfst du mit --validate-only und einer Datenbankverbindung; die Ergebniswerte musst du anschließend gesondert vergleichen.",
+      "why": "Der Compiler erzeugt SQL, ohne die Datenbankabfrage auszuführen. Die Schlüssel in den Quelldaten prüfst du mit --validate und einer Datenbankverbindung; die Ergebniswerte musst du anschließend gesondert vergleichen.",
       "hint": "Unterscheide SQL-Erzeugung, Prüfung der Quelldaten und Ausführung des Berichts."
     },
     "filters": {
@@ -438,7 +438,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "North-Verkäufe können im verbundenen Ergebnis mehrfach erscheinen",
         "Nichts, denn die Deklaration dimension hat keine Auswirkung auf die Berechnung"
       ],
-      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate-only den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE.",
+      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE.",
       "hint": "Zähle, wie viele Verzeichniszeilen zu jedem Verkauf in North passen."
     },
     "missing": {

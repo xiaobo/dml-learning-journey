@@ -26,4 +26,12 @@
 <h2 id="p59-yoy-without-column-probe">P59. YoY without column probe <a class="section-link" aria-label="Link to section" href="#p59-yoy-without-column-probe">#</a></h2>
 <p><strong>Wrong</strong>: <code>AGG(销售额, &#39;yoy&#39;)</code> when <code>去年同期出厂价金额</code> sums to zero.
 <strong>Fix</strong>: Detail query <code>SUM(去年同期出厂价金额)</code> before promising YoY narrative.</p>
+<h2 id="extra-month-after-the-latest-source-data">Extra month after the latest source data</h2>
+<p>A prior-period comparison can introduce a month beyond the last month with facts. The prior-period branch uses <code>DML_CALENDAR</code> to align last month&#39;s data to the current month. A full outer join can retain that month even when the current month has no matching facts. The result can contain a row with NULL current and growth measures.</p>
+<p>For example, run the following query on 24 months of sales from January 2024 through December 2025 with facts for all five categories in every month. Use a model with <code>revenue: SUM({amount})</code>, a recognized month dimension <code>dt_month</code>, and <code>revenue_mom</code> defined as <code>{revenue: pop}</code>.</p>
+<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+FROM MODEL
+GROUP BY dt_month, category
+</code></pre>
+<p>In the trial, this returned 125 rows, including five for January 2026. The report expects 120 rows. To restrict the report window, add <code>WHERE dt_month &gt;= &#39;2024-01-01&#39; AND dt_month &lt; &#39;2026-01-01&#39;</code> before <code>GROUP BY</code>. To include only groups with current-period facts, define a current-period <code>sales_rows: COUNT(1)</code> on the fact dataset and add <code>HAVING AGG(sales_rows) &gt; 0</code> after <code>GROUP BY</code>. Compare row keys and counts after changing the query. A fill value changes a measure value and leaves the extra group in the result.</p>
 </main></body></html>
