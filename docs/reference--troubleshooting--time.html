@@ -27,11 +27,45 @@
 <p><strong>Wrong</strong>: <code>AGG(销售额, &#39;yoy&#39;)</code> when <code>去年同期出厂价金额</code> sums to zero.
 <strong>Fix</strong>: Detail query <code>SUM(去年同期出厂价金额)</code> before promising YoY narrative.</p>
 <h2 id="extra-month-after-the-latest-source-data">Extra month after the latest source data</h2>
-<p>A prior-period comparison can introduce a month beyond the last month with facts. The prior-period branch uses <code>DML_CALENDAR</code> to align last month&#39;s data to the current month. A full outer join can retain that month even when the current month has no matching facts. The result can contain a row with NULL current and growth measures.</p>
-<p>For example, run the following query on 24 months of sales from January 2024 through December 2025 with facts for all five categories in every month. Use a model with <code>revenue: SUM({amount})</code>, a recognized month dimension <code>dt_month</code>, and <code>revenue_mom</code> defined as <code>{revenue: pop}</code>.</p>
+<p>Set the report&#39;s month range explicitly when you compare periods. A full outer join can keep groups from either period. When December sales align to January as prior sales, an unbounded query can include January even if it is outside your report.</p>
+<p>This example uses data from January 2024 through December 2025, with sales in each of five categories every month. The model defines <code>revenue: SUM({amount})</code>, a month dimension named <code>dt_month</code>, and <code>revenue_mom: &#39;{revenue: pop}&#39;</code>.</p>
 <pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
 FROM MODEL
+WHERE dt_month &gt;= &#39;2024-01-01&#39; AND dt_month &lt; &#39;2026-01-01&#39;
 GROUP BY dt_month, category
 </code></pre>
-<p>In the trial, this returned 125 rows, including five for January 2026. The report expects 120 rows. To restrict the report window, add <code>WHERE dt_month &gt;= &#39;2024-01-01&#39; AND dt_month &lt; &#39;2026-01-01&#39;</code> before <code>GROUP BY</code>. To include only groups with current-period facts, define a current-period <code>sales_rows: COUNT(1)</code> on the fact dataset and add <code>HAVING AGG(sales_rows) &gt; 0</code> after <code>GROUP BY</code>. Compare row keys and counts after changing the query. A fill value changes a measure value and leaves the extra group in the result.</p>
+<p>On the example data, this returns 120 rows and matches the hand-written SQL. Without the date filter, the checked query returns 125 rows. The five extra January 2026 rows have NULL current revenue and growth because only December sales contribute to those groups.</p>
+<h3 id="reconcile-both-periods-by-category">Reconcile both periods by category</h3>
+<p>For a report that compares total revenue across periods, keep categories that have revenue in either period within the report&#39;s month range. To see both values, add <code>AGG({revenue: pp}) AS previous_revenue</code> to the select list.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th align="right">Current revenue</th>
+<th align="right">Previous revenue</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td align="right">120</td>
+<td align="right">100</td>
+</tr>
+<tr>
+<td>B</td>
+<td align="right">NULL</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>C</td>
+<td align="right">30</td>
+<td align="right">NULL</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td align="right"><strong>150</strong></td>
+<td align="right"><strong>140</strong></td>
+</tr>
+</tbody></table>
+<p>In this example, filtering to categories with current sales drops B and reduces the visible previous-revenue sum to 100. Use that filter for a report specifically about current active categories and apply the same category selection to its totals. To check a full comparison, sum each revenue column by report month and compare it with the corresponding month&#39;s source total. Calculate total growth from the two revenue totals.</p>
+<p>Show a missing value as zero only if the data is complete for that period and the business treats no sales as zero. A zero fill changes the displayed value.</p>
 </main></body></html>
