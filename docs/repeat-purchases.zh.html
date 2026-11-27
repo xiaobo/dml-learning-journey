@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN" data-course-locale="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>同一天进两次货，算复购吗？</title><link rel="stylesheet" href="official.css?v=daa36bfef7"><meta name="description" content="四家店，一周，六张进货单。A 店周一下了两单，B 店周一、周二各下一单。周报要统计复购门店，你会把 A 店算进去吗？"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="同一天进两次货，算复购吗？"><meta property="og:description" content="四家店，一周，六张进货单。A 店周一下了两单，B 店周一、周二各下一单。周报要统计复购门店，你会把 A 店算进去吗？"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">跳到正文</a><header><div class="bar"><a class="brand" href="index.zh.html">DML</a><nav><a data-text="docs" href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a></nav><div class="tools"><a href="search.zh.html">搜索文档</a><a lang="en" hreflang="en" href="repeat-purchases.en.html">English</a><a lang="de" hreflang="de" href="repeat-purchases.de.html">Deutsch</a><a lang="ja" hreflang="ja" href="repeat-purchases.ja.html">日本語</a></div></div></header><main id="main"><article class="wrap repurchase"><h1>同一天进两次货，算复购吗？</h1><p>四家店，一周，六张进货单。A 店周一下了两单，B 店周一、周二各下一单。周报要统计复购门店，你会把 A 店算进去吗？</p><h2>这一周的六张进货单</h2><table><thead><tr><th>单号</th><th>门店</th><th>采购日</th><th>件数</th></tr></thead><tbody><tr><td>1</td><td>A</td><td>周一</td><td>1</td></tr><tr><td>2</td><td>A</td><td>周一</td><td>1</td></tr><tr><td>3</td><td>B</td><td>周一</td><td>1</td></tr><tr><td>4</td><td>B</td><td>周二</td><td>1</td></tr><tr><td>5</td><td>C</td><td>周一</td><td>2</td></tr><tr><td>6</td><td>D</td><td>周二</td><td>2</td></tr></tbody></table><section data-voting hidden><h2>A 店算复购吗？</h2><button type="button" aria-pressed="false" data-vote="0">算，已经下了第二单</button> <button type="button" aria-pressed="false" data-vote="1">不算，还没有在另一天进货</button><div aria-live="polite"><p hidden data-feedback="0">在原始六单里，按订单数算，A 店和 B 店都算复购。</p><p hidden data-feedback="1">在原始六单里，按采购日算，只有 B 店算复购。</p></div></section><section data-comparison><h2>换一种情况，看看名单怎么变</h2><p>两个比例都以本周总进货量大于零的门店为分母。本例每行是一张订单，进货量都大于零。每次改动都从原始六单开始。</p><div data-picker hidden><button type="button" aria-pressed="false" data-scenario="0">原始六单</button> <button type="button" aria-pressed="false" data-scenario="1">把 A 店的第二单移到周二</button> <button type="button" aria-pressed="false" data-scenario="2">把 C、D 店的订单各拆成两单</button></div><section data-case="0"><h3>原始六单</h3><p>四家店都有进货。A 店的两单在同一天，所以两种算法给出了不同的名单。</p><div class="case-metrics"><div><h4>本周至少下过两单</h4><strong data-rate>50%</strong><p>2 / 4 · <span data-stores>A, B</span></p></div><div><h4>本周至少有两天进货</h4><strong data-rate>25%</strong><p>1 / 4 · <span data-stores>B</span></p></div></div><details><summary>查看每家店的订单数和采购天数</summary><table><thead><tr><th>门店</th><th>订单数</th><th>采购天数</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>1</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>1</td><td>1</td></tr><tr><td>D</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="1"><h3>把 A 店的第二单移到周二</h3><p>A 店的订单数没变，但现在分两天进货。两种算法都把 A 店和 B 店算进来。</p><div class="case-metrics"><div><h4>本周至少下过两单</h4><strong data-rate>50%</strong><p>2 / 4 · <span data-stores>A, B</span></p></div><div><h4>本周至少有两天进货</h4><strong data-rate>50%</strong><p>2 / 4 · <span data-stores>A, B</span></p></div></div><details><summary>查看每家店的订单数和采购天数</summary><table><thead><tr><th>门店</th><th>订单数</th><th>采购天数</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>2</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>1</td><td>1</td></tr><tr><td>D</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="2"><h3>把 C、D 店的订单各拆成两单</h3><p>C 店和 D 店各把原来的一单拆成同日两单。进货量仍是八件，进货日期也没变。</p><div class="case-metrics"><div><h4>本周至少下过两单</h4><strong data-rate>100%</strong><p>4 / 4 · <span data-stores>A, B, C, D</span></p></div><div><h4>本周至少有两天进货</h4><strong data-rate>25%</strong><p>1 / 4 · <span data-stores>B</span></p></div></div><details><summary>查看每家店的订单数和采购天数</summary><table><thead><tr><th>门店</th><th>订单数</th><th>采购天数</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>1</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>2</td><td>1</td></tr><tr><td>D</td><td>2</td><td>1</td></tr></tbody></table></details></section></section><section><h2>迁移前，用这份账本核对</h2><p>先约定周报要回答哪个问题，再让现有 SQL 和 DML 在同一份账本上各跑一次。先比入选的门店，再比比例。下载包包含六单数据、两种指标的 DML 定义、对照 SQL 和三种情况的核对脚本。</p><p><a href="repurchase.zip" download>下载账本、模型和查询 (.zip)</a></p><p>解压后，在装有 DuckDB Python 包的环境中运行。把 DMLC_PATH 换成 dmlc 可执行文件的路径。</p><pre><code>python verify.py --dmlc "DMLC_PATH"</code></pre><details><summary>查看两种复购率的 DML 定义</summary><pre><code>dialect: duckdb
+
+RECEIPTS:
+  type: dataset
+  table: receipts
+  dimension: [order_id]
+  columns:
+    order_id:
+    store_id:
+    purchase_day:
+    units:
+  measures:
+    order_count: DISTINCTCOUNT({order_id})
+    purchase_days: DISTINCTCOUNT({purchase_day})
+    purchased_units: SUM({units})
+
+active_stores:
+  type: measure
+  formula: 'DISTINCTCOUNTIF({store_id}, {purchased_units: {+d: store_id}} &gt; 0)'
+
+repeat_by_order:
+  type: measure
+  formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'
+
+repeat_by_day:
+  type: measure
+  formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'
+
+repeat_order_rate:
+  type: measure
+  formula: 'DIVIDE(1.0 * {repeat_by_order}, {active_stores})'
+
+repeat_day_rate:
+  type: measure
+  formula: 'DIVIDE(1.0 * {repeat_by_day}, {active_stores})'</code></pre></details></section></article><script defer src="repurchase.js?v=f0cde59c35"></script></main></body></html>

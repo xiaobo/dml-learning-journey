@@ -4,3 +4,5 @@ form{display:flex;gap:8px;margin:24px 0}input[type=search]{flex:1;min-width:0;pa
 .split>*{min-width:0}.language-links{max-width:100%;padding-inline:18px}@media(max-width:420px){.split{grid-template-columns:minmax(0,1fr)}th,td{padding:7px 5px;overflow-wrap:anywhere}.actions{flex-wrap:wrap}}
 
 .tools{flex-wrap:wrap}.bar{flex-wrap:wrap;row-gap:6px;padding-block:8px}@media(max-width:700px){.tools{margin-left:0;column-gap:12px}.bar nav{margin-left:auto}}
+
+.repurchase [hidden]{display:none!important}.repurchase button{font:inherit;color:inherit;background:white;border:1px solid #718282;border-radius:.4rem;padding:.45rem .8rem;margin:.25rem .25rem .25rem 0;cursor:pointer}.repurchase button[aria-pressed=true]{background:#244d46;color:white}.repurchase button:focus-visible{outline:3px solid #388578;outline-offset:2px}.case-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1rem;margin:1rem 0}.case-metrics>div{background:#eff5f2;padding:1rem}.case-metrics h4,.case-metrics p{margin:.2rem 0}.case-metrics strong{font-size:2rem}.repurchase section{margin-block:2rem}.repurchase pre{max-width:100%;overflow:auto}
