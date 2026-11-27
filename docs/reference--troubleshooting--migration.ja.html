@@ -11,10 +11,10 @@
 <p><strong>誤り</strong>：コンパイルが成功しただけで<code>-c</code>の出力は正しいと判断する。<strong>修正</strong>：元のSQLとコンパイルで生成されたSQLを両方実行し、結果セットを比較します。</p>
 <p><a id="p6"></a></p>
 <h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. フィルターやクエリ内のディメンションの組み合わせごとに専用の指標を作る <a class="section-link" aria-label="この節へのリンク" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
-<p><strong>誤り</strong>：<code>sales_north</code>、<code>sales_south</code>、<code>sales_east</code>を個別に作る。または、<code>WHERE region = 'North'</code>で十分な場合に<code>sales_north</code>を作る。<strong>修正</strong>：共通の指標<code>sales</code>を1つ定義し、クエリで<code>WHERE region = 'North'</code>を使用します。</p>
+<p><strong>誤り</strong>：<code>sales_north</code>、<code>sales_south</code>、<code>sales_east</code>を個別に作る。または、<code>WHERE 地域 = 'North'</code>で十分な場合に<code>sales_north</code>を作る。<strong>修正</strong>：共通の指標<code>売上高</code>を1つ定義し、クエリで<code>WHERE 地域 = 'North'</code>を使用します。</p>
 <p><a id="p7"></a></p>
 <h2 id="p7-duplicating-aggregation-formulas">P7. 同じ集計式を重複して定義する <a class="section-link" aria-label="この節へのリンク" href="#p7-duplicating-aggregation-formulas">#</a></h2>
-<p><strong>誤り</strong>：<code>revenue: SUM({amount})</code>と<code>total_revenue: SUM({amount})</code>を定義する。<strong>修正</strong>：最小単位の指標を1つだけ定義し、すべての箇所でその指標を参照します。</p>
+<p><strong>誤り</strong>：<code>収益: SUM({売上金額})</code>と<code>total_revenue: SUM({売上金額})</code>を定義する。<strong>修正</strong>：最小単位の指標を1つだけ定義し、すべての箇所でその指標を参照します。</p>
 <hr>
 <h2 id="category-model-query-sql">カテゴリ：Model Query のSQL <a class="section-link" aria-label="この節へのリンク" href="#category-model-query-sql">#</a></h2>
 <h2 id="sql-accepted-by-draft-conversion">変換で下書きを生成できたSQL <a class="section-link" aria-label="この節へのリンク" href="#sql-accepted-by-draft-conversion">#</a></h2>
@@ -31,8 +31,8 @@
 <td><code>CAST(sale_date AS date) AS d</code>または<code>CAST('2025-01-01' AS date)</code>を使用します。</td>
 </tr>
 <tr>
-<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
-<td><code>SUM(CASE WHEN paid THEN amount END)</code>を使用します。</td>
+<td><code>SUM(売上金額) FILTER (WHERE paid)</code></td>
+<td><code>SUM(CASE WHEN paid THEN 売上金額 END)</code>を使用します。</td>
 </tr>
 <tr>
 <td><code>QUALIFY ROW_NUMBER() ... = 1</code>または<code>DISTINCT ON</code></td>

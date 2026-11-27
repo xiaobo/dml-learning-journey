@@ -1,0 +1,203 @@
+{
+  "version": "dmlc version 0.3.16\nBuild:    2026-11-27 06:20:08 Z\nSystem:   windows/amd64\nLicenses:  dmlc --licenses",
+  "sha256": "311c9925e4183ce857dcfb1935c296fe2bcc070457ae7ca622fcbf6d21999f6c",
+  "modelSha256": "70681850900240f5cde75cda26d8a0730eaf47f3f7520ca34af172daa06996c8",
+  "scope": "SQL Server strict compilation; DuckDB examples executed separately.",
+  "cases": [
+    {
+      "name": "filters",
+      "query": "SELECT Region, AGG(Umsatz), AGG(UmsatzAbgeschlossenerBestellungen)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925 { pk(Region, dt_month) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925 as (\nselect\n    region as Region,\n    dt_month,\n    SUM(amount) as Umsatz,\n    SUM(case when status = 'completed' then amount end) as Umsatz_Bestellstatus_completed,\n    SUM(case when status = 'completed' then amount end) as UmsatzAbgeschlossenerBestellungen\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by region, dt_month\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    Umsatz,\n    UmsatzAbgeschlossenerBestellungen\nfrom DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925\norder by Region;\n"
+    },
+    {
+      "name": "filters_north",
+      "query": "SELECT Region, AGG(Umsatz), AGG(UmsatzAbgeschlossenerBestellungen)\nFROM MODEL\nWHERE dt_month = '2025-02-01' AND Region = 'North'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925 { pk(Region, dt_month) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925 as (\nselect\n    region as Region,\n    dt_month,\n    SUM(amount) as Umsatz,\n    SUM(case when status = 'completed' then amount end) as Umsatz_Bestellstatus_completed,\n    SUM(case when status = 'completed' then amount end) as UmsatzAbgeschlossenerBestellungen\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\n    and region = 'North'\ngroup by region, dt_month\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    Umsatz,\n    UmsatzAbgeschlossenerBestellungen\nfrom DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925\norder by Region;\n"
+    },
+    {
+      "name": "shares",
+      "query": "SELECT Region, AGG(Umsatz), AGG(UmsatzanteilDerAuswahl), AGG(UmsatzanteilAllerRegionen)\nFROM MODEL\nWHERE dt_month = '2025-02-01' AND Region = 'North'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925 { pk(Region, dt_month) } **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925;\nselect\n    region as Region,\n    dt_month,\n    SUM(amount) as Umsatz,\n    SUM(SUM(amount)) over (partition by dt_month) as Umsatz_minus_dim_Region,\n    (SUM(amount)) / nullif(SUM(SUM(amount)) over (partition by dt_month), 0) as UmsatzanteilDerAuswahl\ninto #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\n    and region = 'North'\ngroup by region, dt_month;\n\ncreate unique clustered index idx__R_dm\n\ton #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925\n\t   (Region, dt_month);\n\n/** DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925 { pk(Region, dt_month) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925 as (\nselect\n    region as Region,\n    dt_month,\n    SUM(amount) as Umsatz,\n    SUM(SUM(amount)) over (partition by dt_month) as Umsatz_minus_dim_Region\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by region, dt_month\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_R_DM_B2FE925 { pk(Region, dt_month) } **/\nDML_VERKAUFSPOSITIONEN_BY_R_DM_B2FE925 as (\nselect\n    t.Region,\n    t.dt_month,\n    tf210a.Umsatz / nullif(t.Umsatz_minus_dim_Region, 0) as UmsatzanteilAllerRegionen\nfrom DML_VERKAUFSPOSITIONEN_BY_R_DM_24FB925 t\nleft join #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925 tf210a \n\ton (tf210a.Region = t.Region or (tf210a.Region is null and t.Region is null))\n\tand (tf210a.dt_month = t.dt_month or (tf210a.dt_month is null and t.dt_month is null))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    coalesce(t1.Region, t2.Region) as Region,\n    t1.Umsatz,\n    t1.UmsatzanteilDerAuswahl,\n    t2.UmsatzanteilAllerRegionen\nfrom #DML_VERKAUFSPOSITIONEN_BY_R_DM_A2B4925 t1\nfull outer join DML_VERKAUFSPOSITIONEN_BY_R_DM_B2FE925 t2\n    on (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\n    and (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\nwhere coalesce(t1.Region, t2.Region) = 'North'\norder by Region;\n"
+    },
+    {
+      "name": "grain_avg",
+      "query": "SELECT Region, AGG(DurchschnittsumsatzJeVerkauf), AGG(DurchschnittsumsatzJeKunde)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925 { pk(dt_month, Region) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925 as (\nselect\n    dt_month,\n    region as Region,\n    SUM(amount) as Umsatz,\n    COUNT(1) as Verkaufsanzahl,\n    (SUM(amount)) / nullif(COUNT(1), 0) as DurchschnittsumsatzJeVerkauf\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by dt_month, region\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA { pk(dt_month, Region, customer) } **/\nDML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA as (\nselect\n    dt_month,\n    region as Region,\n    customer,\n    SUM(amount) as Umsatz\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by dt_month, region, customer\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 { pk(dt_month, Region) } **/\nDML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 as (\nselect\n    dt_month,\n    Region,\n    AVG(Umsatz) as DurchschnittsumsatzJeKunde\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA\ngroup by dt_month, Region\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    t.Region,\n    t.DurchschnittsumsatzJeVerkauf,\n    td8798.DurchschnittsumsatzJeKunde\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925 t\nleft join DML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 td8798 \n\ton (td8798.dt_month = t.dt_month or (td8798.dt_month is null and t.dt_month is null))\n\tand (td8798.Region = t.Region or (td8798.Region is null and t.Region is null))\norder by t.Region;\n"
+    },
+    {
+      "name": "grain_sum",
+      "query": "SELECT Region, AGG(SummeDerKundenumsätze)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** DML_VERKAUFSPOSITIONEN_BY_R_DM_03D8925 { pk(Region, dt_month) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_R_DM_03D8925 as (\nselect\n    region as Region,\n    dt_month,\n    SUM(amount) as Umsatz,\n    SUM(amount) as [SummeDerKundenumsätze]\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by region, dt_month\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    [SummeDerKundenumsätze]\nfrom DML_VERKAUFSPOSITIONEN_BY_R_DM_03D8925\norder by Region;\n"
+    },
+    {
+      "name": "grain_max",
+      "query": "SELECT Region, AGG(HöchsterKundenumsatz)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_C_03D84CA { pk(dt_month, Region, customer) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_C_03D84CA as (\nselect\n    dt_month,\n    region as Region,\n    customer,\n    SUM(amount) as Umsatz\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by dt_month, region, customer\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_03D8D02 { pk(dt_month, Region) } **/\nDML_VERKAUFSPOSITIONEN_BY_DM_R_03D8D02 as (\nselect\n    dt_month,\n    Region,\n    MAX(Umsatz) as [HöchsterKundenumsatz]\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_C_03D84CA\ngroup by dt_month, Region\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    [HöchsterKundenumsatz]\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_03D8D02\norder by Region;\n"
+    },
+    {
+      "name": "time",
+      "query": "SELECT Region, dt_month, AGG(Umsatz), AGG(Vormonatsumsatz), AGG(UmsatzwachstumZumVormonat)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-02-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4;\nselect distinct\n    t2.dt_month\ninto #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between dateadd(month, -1, cast(t1.dt_month as date)) and t1.dt_month;\n\ncreate unique clustered index idx__dm\n\ton #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E { pk(dt_month, Region) } **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E;\nselect\n    dt_month,\n    region as Region,\n    SUM(amount) as Umsatz\ninto #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\nfrom TABLE_SALES\nwhere dt_month in (select dt_month from #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4)\ngroup by dt_month, region;\n\ncreate unique clustered index idx__dm_R\n\ton #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\n\t   (dt_month, Region);\n\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 { pk(dt_month, Region) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 as (\nselect\n    coalesce(t1.dt_month, t2.dt_month) as dt_month,\n    coalesce(t1.Region, t2.Region) as Region,\n    (t1.Umsatz*1.0) / nullif(t2.Umsatz, 0) - 1 as UmsatzwachstumZumVormonat\nfrom (select * from #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E where dt_month in (select dt_month from #DML_OPTION_DTMONTH)) t1\nfull outer join (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    t2.Umsatz as Vormonatsumsatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n) t2\n    on (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\n    and (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    t.Region,\n    t.dt_month,\n    t2df36.Umsatz,\n    DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Vormonatsumsatz,\n    t.UmsatzwachstumZumVormonat\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 t\nleft join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2df36 \n\ton (t2df36.dt_month = t.dt_month or (t2df36.dt_month is null and t.dt_month is null))\n\tand (t2df36.Region = t.Region or (t2df36.Region is null and t.Region is null))\nleft join (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    t2.Umsatz as Vormonatsumsatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n) DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t \n\ton (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.dt_month = t.dt_month or (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.dt_month is null and t.dt_month is null))\n\tand (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Region = t.Region or (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Region is null and t.Region is null))\norder by t.Region, t.dt_month;\n"
+    },
+    {
+      "name": "time_january",
+      "query": "SELECT Region, dt_month, AGG(Umsatz), AGG(Vormonatsumsatz), AGG(UmsatzwachstumZumVormonat)\nFROM MODEL\nWHERE dt_month = '2025-01-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-01-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4;\nselect distinct\n    t2.dt_month\ninto #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between dateadd(month, -1, cast(t1.dt_month as date)) and t1.dt_month;\n\ncreate unique clustered index idx__dm\n\ton #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E { pk(dt_month, Region) } **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E;\nselect\n    dt_month,\n    region as Region,\n    SUM(amount) as Umsatz\ninto #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\nfrom TABLE_SALES\nwhere dt_month in (select dt_month from #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4)\ngroup by dt_month, region;\n\ncreate unique clustered index idx__dm_R\n\ton #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\n\t   (dt_month, Region);\n\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 { pk(dt_month, Region) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 as (\nselect\n    coalesce(t1.dt_month, t2.dt_month) as dt_month,\n    coalesce(t1.Region, t2.Region) as Region,\n    (t1.Umsatz*1.0) / nullif(t2.Umsatz, 0) - 1 as UmsatzwachstumZumVormonat\nfrom (select * from #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E where dt_month in (select dt_month from #DML_OPTION_DTMONTH)) t1\nfull outer join (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    t2.Umsatz as Vormonatsumsatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n) t2\n    on (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\n    and (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    t.Region,\n    t.dt_month,\n    t2df36.Umsatz,\n    DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Vormonatsumsatz,\n    t.UmsatzwachstumZumVormonat\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_A9C9925 t\nleft join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2df36 \n\ton (t2df36.dt_month = t.dt_month or (t2df36.dt_month is null and t.dt_month is null))\n\tand (t2df36.Region = t.Region or (t2df36.Region is null and t.Region is null))\nleft join (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    t2.Umsatz as Vormonatsumsatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n) DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t \n\ton (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.dt_month = t.dt_month or (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.dt_month is null and t.dt_month is null))\n\tand (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Region = t.Region or (DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP__t.Region is null and t.Region is null))\norder by t.Region, t.dt_month;\n"
+    },
+    {
+      "name": "lookup",
+      "query": "SELECT Regionalleitung, AGG(Umsatz)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Regionalleitung",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n\n/** TABLE_REGION { pk(region) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/** MAIN_QUERY { pk(regionalleitung) } **/\nselect\n\t/** auto-generated by datoml: q7d70e1f6a2 **/\n\tt0e092.manager as Regionalleitung,\n\tSUM(t.amount) as Umsatz\nfrom TABLE_SALES t\nleft join TABLE_REGION t0e092 on t0e092.region = t.region\nwhere t.dt_month = '2025-02-01'\ngroup by t0e092.manager,\n\tt.dt_month\norder by Regionalleitung asc;\n"
+    },
+    {
+      "name": "missing",
+      "query": "SELECT Region, dt_month, AGG(Umsatz), AGG(VormonatsumsatzMitNullersatz)\nFROM MODEL\nWHERE dt_month = '2025-01-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-01-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4;\nselect distinct\n    t2.dt_month\ninto #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between dateadd(month, -1, cast(t1.dt_month as date)) and t1.dt_month;\n\ncreate unique clustered index idx__dm\n\ton #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E { pk(dt_month, Region) } **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E;\nselect\n    dt_month,\n    region as Region,\n    SUM(amount) as Umsatz\ninto #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\nfrom TABLE_SALES\nwhere dt_month in (select dt_month from #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4)\ngroup by dt_month, region;\n\ncreate unique clustered index idx__dm_R\n\ton #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\n\t   (dt_month, Region);\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP { pk(dt_month, Region) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP as (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    ISNULL(t2.Umsatz, 0) as VormonatsumsatzMitNullersatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    coalesce(t1.Region, t2.Region) as Region,\n    coalesce(t1.dt_month, t2.dt_month) as dt_month,\n    t1.Umsatz,\n    ISNULL(t2.VormonatsumsatzMitNullersatz, 0) as VormonatsumsatzMitNullersatz\nfrom (select * from #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E where dt_month in (select dt_month from #DML_OPTION_DTMONTH)) t1\nfull outer join DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP t2\n    on (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\n    and (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\norder by Region, dt_month;\n"
+    },
+    {
+      "name": "capstone",
+      "query": "SELECT Region, AGG(Umsatz), AGG(UmsatzAbgeschlossenerBestellungen), AGG(Vormonatsumsatz), AGG(DurchschnittsumsatzJeKunde), AGG(UmsatzanteilAllerRegionen)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_SALES { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-02-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4;\nselect distinct\n    t2.dt_month\ninto #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between dateadd(month, -1, cast(t1.dt_month as date)) and t1.dt_month;\n\ncreate unique clustered index idx__dm\n\ton #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E { pk(dt_month, Region) } **/\nif object_id(N'tempdb..#DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E', N'U') is not null drop table #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E;\nselect\n    dt_month,\n    region as Region,\n    SUM(amount) as Umsatz,\n    SUM(case when status = 'completed' then amount end) as Umsatz_Bestellstatus_completed,\n    SUM(case when status = 'completed' then amount end) as UmsatzAbgeschlossenerBestellungen,\n    SUM(SUM(amount)) over (partition by dt_month) as Umsatz_minus_dim_Region,\n    (SUM(amount)) / nullif(SUM(SUM(amount)) over (partition by dt_month), 0) as UmsatzanteilAllerRegionen\ninto #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\nfrom TABLE_SALES\nwhere dt_month in (select dt_month from #DML_VERKAUFSPOSITIONEN_OPTION_DTMONTH_DAF4)\ngroup by dt_month, region;\n\ncreate unique clustered index idx__dm_R\n\ton #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E\n\t   (dt_month, Region);\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA { pk(dt_month, Region, customer) } **/\nwith DML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA as (\nselect\n    dt_month,\n    region as Region,\n    customer,\n    SUM(amount) as Umsatz\nfrom TABLE_SALES\nwhere dt_month = '2025-02-01'\ngroup by dt_month, region, customer\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 { pk(dt_month, Region) } **/\nDML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 as (\nselect\n    dt_month,\n    Region,\n    AVG(Umsatz) as DurchschnittsumsatzJeKunde\nfrom DML_VERKAUFSPOSITIONEN_BY_DM_R_C_24FB4CA\ngroup by dt_month, Region\n),\n\n/** DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP { pk(dt_month, Region) } **/\nDML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP as (\nselect\n    t1.dt_month,\n    t2.Region,\n    t2.Umsatz,\n    t2.Umsatz as Vormonatsumsatz\nfrom #DML_OPTION_DTMONTH t1\ninner join #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E t2\n    on t2.dt_month = dateadd(month, -1, cast(t1.dt_month as date))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    coalesce(t1.Region, t2.Region) as Region,\n    t1.Umsatz,\n    t1.UmsatzAbgeschlossenerBestellungen,\n    t2.Vormonatsumsatz,\n    t3d770.DurchschnittsumsatzJeKunde,\n    t1.UmsatzanteilAllerRegionen\nfrom (select * from #DML_VERKAUFSPOSITIONEN_BY_DM_R_24FB925E where dt_month in (select dt_month from #DML_OPTION_DTMONTH)) t1\nfull outer join DML_VERKAUFSPOSITIONEN_BY_DM_R_1391925_PP t2\n    on (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\n    and (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\nleft join DML_VERKAUFSPOSITIONEN_BY_DM_R_24FBE49 t3d770 \n\ton (t3d770.dt_month = t1.dt_month or (t3d770.dt_month is null and t1.dt_month is null))\n\tand (t3d770.Region = t1.Region or (t3d770.Region is null and t1.Region is null))\norder by Region;\n"
+    }
+  ]
+}

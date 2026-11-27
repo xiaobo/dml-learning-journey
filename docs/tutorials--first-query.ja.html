@@ -5,7 +5,7 @@
 <pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
 </code></pre>
-<p>出力にはバージョン、ビルドのタイムスタンプ、プラットフォームが含まれます。<a href="compiler-observations.json">チュートリアルのコンパイラ記録</a>で、このチュートリアルの検証に使用したビルドを確認できます。</p>
+<p>表示されたバージョンとビルド日時を控えておくと、どのコンパイラで得た結果か後から確認できます。</p>
 <p>次に、ファイルを保存するためのディレクトリを新規作成します。</p>
 <pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
 Set-Location first-query
@@ -15,23 +15,26 @@ Set-Location first-query
 <p>次の内容を<code>model.dml</code>として保存します。</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_SALES:
+売上明細:
   type: dataset
   table: TABLE_SALES
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
-    region:
-    amount:
+    売上明細番号:
+      abbr: id
+    地域:
+      abbr: region
+    売上金額:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-    cnt: COUNT(1)
+    売上高: SUM({売上金額})
+    売上件数: COUNT(1)
 
-average_sale:
+一件当たり売上高:
   type: measure
-  formula: 'DIVIDE({sales}, {cnt})'
+  formula: 'DIVIDE({売上高}, {売上件数})'
 </code></pre>
-<p><code>FACT_SALES</code>は、<code>id</code>ごとにソース行が1行あると宣言します。<code>sales</code>と<code>cnt</code>はこれらの行を集計します。<code>average_sale</code>は前者の集計結果を後者の集計結果で割ります。</p>
+<p><code>売上明細</code>は、<code>売上明細番号</code>ごとにソース行が1行あると宣言します。<code>売上高</code>と<code>売上件数</code>はこれらの行を集計します。<code>一件当たり売上高</code>は前者の集計結果を後者の集計結果で割ります。</p>
 <p>次に、モデルを lint でチェックします。</p>
 <pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
 $LASTEXITCODE
@@ -39,9 +42,9 @@ $LASTEXITCODE
 <p>プロセスは終了コード<code>0</code>で終了します。lint で指摘が報告された場合は、先に進む前に、保存したファイルを上記のモデルと見比べてください。</p>
 <h2 id="write-the-query">クエリを記述する <a class="section-link" aria-label="この節へのリンク" href="#write-the-query">#</a></h2>
 <p>次の内容を<code>query.sql</code>として、<code>model.dml</code>と同じディレクトリに保存します。</p>
-<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+<pre><code class="language-sql">SELECT 地域, AGG(売上高), AGG(一件当たり売上高)
 FROM MODEL
-GROUP BY region
+GROUP BY 地域
 </code></pre>
 <p><code>FROM MODEL</code>で<code>model.dml</code>を選択します。結果の各行は1つの地域を表します。</p>
 <h2 id="compile-the-query">クエリをコンパイルする <a class="section-link" aria-label="この節へのリンク" href="#compile-the-query">#</a></h2>
@@ -49,9 +52,9 @@ GROUP BY region
 <pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
 $LASTEXITCODE
 </code></pre>
-<p>JSON出力には<code>status: ok</code>と<code>exitCode: 0</code>が示され、<code>diagnostics</code>にはエラーも警告もありません。<code>data.sql</code>には<code>SUM(amount)</code>、<code>COUNT(1)</code>、<code>GROUP BY region</code>が含まれます。最終的な射影には<code>region</code>、<code>sales</code>、<code>average_sale</code>が含まれます。</p>
+<p>JSON に <code>status: ok</code> と <code>exitCode: 0</code> が表示され、<code>diagnostics</code> にはエラーや警告がありません。<code>data.sql</code> を見ると、地域別に売上を集計し、平均を求める処理を確認できます。結果の列は <code>地域</code>、<code>売上高</code>、<code>一件当たり売上高</code> です。</p>
 <p>コンパイラは、情報レベルの診断メッセージ<code>DATASET_GRAIN_UNVERIFIED</code>を出力する場合があります。ここでは、物理テーブル<code>TABLE_SALES</code>を確認せずに、宣言されたモデルをコンパイルしました。</p>
 <h2 id="inspect-the-result">結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-result">#</a></h2>
-<p>SQLの生成ファイルを<code>gen</code>ディレクトリ内で開きます。集計式と<code>region</code>によるグループ化を確認します。これで、モデルとそれを利用するクエリが完成し、生成されたSQLを確認できます。</p>
+<p>SQLの生成ファイルを<code>gen</code>ディレクトリ内で開きます。集計式と<code>地域</code>によるグループ化を確認します。これで、モデルとそれを利用するクエリが完成し、生成されたSQLを確認できます。</p>
 <p>クエリを実行するには、宣言されたソーステーブルにアクセスできる接続を使用します。接続先でキーを検証してクエリを実行する手順は、<a href="how-to--compile-and-validate.ja.html">dmlc CLIを使う</a>を参照してください。<a href="explanation--core-concepts.ja.html">基本概念</a>では、モデル層とクエリ層の関係を説明します。</p>
 </main></body></html>

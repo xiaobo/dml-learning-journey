@@ -30,25 +30,32 @@ D:
   dimension: [id, region]
   columns:
     id:
+      abbr: id
     region:
+      abbr: region
     label:
+      abbr: label
 F:
   type: dataset
   table: FACT
   dimension: [fid]
   columns:
     fid:
+      abbr: fid
     id:
+      abbr: id
     region:
+      abbr: region
     amount:
-    label: &#39;pk({id}, {region}).{D}.label&#39;
+      abbr: amount
+    label: 'pk({id}, {region}).{D}.label'
   measures:
     sales: SUM({amount})
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: compound/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, region VARCHAR, label VARCHAR); INSERT INTO DIM VALUES (1,&#39;east&#39;,&#39;East&#39;),(1,&#39;west&#39;,&#39;West&#39;); CREATE TABLE FACT(fid INTEGER,id INTEGER,region VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,1,&#39;east&#39;,10),(2,1,&#39;west&#39;,20);
+<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, region VARCHAR, label VARCHAR); INSERT INTO DIM VALUES (1,'east','East'),(1,'west','West'); CREATE TABLE FACT(fid INTEGER,id INTEGER,region VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,1,'east',10),(2,1,'west',20);
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: compound/normal.sql</summary>

@@ -1,7 +1,7 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指標の修飾子 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、修飾子に指定する値、フィルターの効果、修飾子の組み合わせを説明します。参照と組み込み関数については、式と関数を参照してください。細かい粒度での集計例では、一連の処理段階を示します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="指標の修飾子 · DML"><meta property="og:description" content="このページでは、修飾子に指定する値、フィルターの効果、修飾子の組み合わせを説明します。参照と組み込み関数については、式と関数を参照してください。細かい粒度での集計例では、一連の処理段階を示します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--modifiers.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--modifiers.html">English</a> <a lang="zh" hreflang="zh" href="reference--modifiers.zh.html">中文</a></header><main><h1 id="measure-modifiers">指標の修飾子</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#payload-structure">修飾子に指定する値の構造</a></li><li><a href="#time-modifiers">時間修飾子</a></li><li><a href="#function-modifiers">関数修飾子</a></li><li><a href="#dimension-modifiers">ディメンション修飾子</a></li><li><a href="#quick-glossary-avoid-ambiguity">用語集（曖昧さを避けるために）</a></li><li><a href="#same-dimension-modifier-conflicts">同じディメンションフィールドに対する修飾子の競合</a></li><li><a href="#-df--combined--d-and--f"><code>-df</code>：<code>-d</code>と<code>-f</code>の組み合わせ</a></li><li><a href="#-d-on-composite-measures-with-full-outer-join">FULL OUTER JOINを使う複合指標での<code>{-d:}</code></a></li><li><a href="#combining-modifiers">修飾子の組み合わせ</a></li><li><a href="#modifier-stacking">修飾子の連続適用</a></li><li><a href="#修饰符速查">修飾子クイックリファレンス</a></li><li><a href="#time-modifiers-on-composite-ratios">複合比率への時間修飾子の適用</a></li><li><a href="#fixed-axis-totals-and-output-membership">固定軸の合計と出力対象の行</a></li></ul></details>
 <p>このページでは、修飾子に指定する値、フィルターの効果、修飾子の組み合わせを説明します。参照と組み込み関数については、<a href="reference--expressions.ja.html">式と関数</a>を参照してください。<a href="reference--examples--aggregation.ja.html">細かい粒度での集計例</a>では、一連の処理段階を示します。</p>
 <h2 id="payload-structure">修飾子に指定する値の構造 <a class="section-link" aria-label="この節へのリンク" href="#payload-structure">#</a></h2>
-<p><code>{measure: {modifier_a: value, modifier_b: value}}</code>では、外側のオブジェクトに対象指標を示すキーがちょうど 1 つあります。内側の修飾子マップには、<a href="reference--semantics.ja.html#44-modifier-schema-constraints">修飾子の制約</a>を満たす範囲で複数のキーを指定できます。</p>
+<p><code>{measure: {modifier_a: 値, modifier_b: 値}}</code>では、外側のオブジェクトに対象指標を示すキーがちょうど 1 つあります。内側の修飾子マップには、<a href="reference--semantics.ja.html#44-modifier-schema-constraints">修飾子の制約</a>を満たす範囲で複数のキーを指定できます。</p>
 <table>
 <thead>
 <tr>
@@ -11,7 +11,7 @@
 </thead>
 <tbody><tr>
 <td><code>dim_dt</code></td>
-<td>数式を表す文字列、または <code>value</code> と <code>range</code> のフィールドを持つオブジェクト</td>
+<td>数式を表す文字列、または <code>値</code> と <code>range</code> のフィールドを持つオブジェクト</td>
 </tr>
 <tr>
 <td><code>dim_dt as date</code>, <code>dim_dt as week</code>, <code>dim_dt as month</code>, <code>dim_dt as quarter</code>, <code>dim_dt as year</code>, <code>dim_dt as hour</code></td>
@@ -19,7 +19,7 @@
 </tr>
 <tr>
 <td><code>+f</code></td>
-<td>フィルター名を表す文字列、フィルター名のリスト、または <code>{column: value}</code> のようなインラインオブジェクト</td>
+<td>フィルター名を表す文字列、フィルター名のリスト、または <code>{column: 値}</code> のようなインラインオブジェクト</td>
 </tr>
 <tr>
 <td><code>-f</code></td>
@@ -53,11 +53,11 @@
 <td><code>pop</code>, <code>yoy</code>, <code>mom</code></td>
 </tr>
 </tbody></table>
-<p><strong>重ねがけ</strong>。修飾子は重ねて適用できます。<code>AGG(sales, 'ytd', 'ya')</code> は、前年の年初から前年の同じ基準日までの値を返します。適用時の詳しいルールは、<a href="reference--modifiers.ja.html#25-modifier-stacking">修飾子の重ねがけ</a>を参照してください。</p>
+<p><strong>重ねがけ</strong>。修飾子は重ねて適用できます。<code>AGG(売上高, 'ytd', 'ya')</code> は、前年の年初から前年の同じ基準日までの値を返します。適用時の詳しいルールは、<a href="reference--modifiers.ja.html#25-modifier-stacking">修飾子の重ねがけ</a>を参照してください。</p>
 <p><strong>時間コンテキスト</strong>。時間修飾子を使用するには、<code>dim_dt</code> を解決でき、対応するマクロの前提条件を満たしている必要があります。時間フィールドでグループ化すると、コンテキストが最も明確になります。時間フィルターでもコンテキストを指定できます。<a href="reference--model-query-sql.ja.html#35-group-by-rules">Model Query の時間ルール</a>を参照してください。</p>
 <p><code>dim_dt</code> を使った<strong>期間変換</strong></p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({売上高: {dim_dt as quarter: pp}}) as 前四半期売上高
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p><code>dim_dt as quarter</code> を指定すると、クエリが年と四半期でグループ化されていても、<code>pp</code> は四半期単位で処理されます。</p>
@@ -95,30 +95,30 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 <tr>
 <td>アトミック指標 + ソース列に対する述語</td>
-<td>サポートされています。たとえば、<code>{sales: {+f: "status = 1"}}</code> は条件付きの SUM を生成します。</td>
+<td>サポートされています。たとえば、<code>{売上高: {+f: "注文状態 = 1"}}</code> は条件付きの SUM を生成します。</td>
 </tr>
 <tr>
 <td>単純な複合指標 + ソース列に対する述語</td>
-<td>フィルターは依存先のアトミック指標に伝播します。この動作は <code>divide({sales}, {cnt})</code> で確認済みです。依存先のすべてにフィルターを適用する場合にのみ使用してください。</td>
+<td>フィルターは依存先のアトミック指標に伝播します。この動作は <code>divide({売上高}, {売上件数})</code> で確認済みです。依存先のすべてにフィルターを適用する場合にのみ使用してください。</td>
 </tr>
 <tr>
 <td><code>+d</code> とソース列に対する <code>+f</code> を指定したアトミック指標</td>
 <td>確認した AVG によるロールアップではサポートされています。細かい粒度での集計より先にフィルターが適用されることを確認してください。</td>
 </tr>
 <tr>
-<td>集計指標を参照する述語。例は <code>"{cnt} &gt; 3"</code></td>
+<td>集計指標を参照する述語。例は <code>"{売上件数} &gt; 3"</code></td>
 <td><code>cannot use +f modifier with measure(s)</code> というエラーで拒否されます。<a href="reference--examples--aggregation.ja.html#26a-fine-grain-filter-then-d-roll-up">細かい粒度でのフィルターの例</a>に従ってください。</td>
 </tr>
 </tbody></table>
 <p>フィルターを指定したアトミック指標への参照は、単独では現在のクエリの粒度で評価されます。エンティティごとの値を求める場合は、<code>+d</code> と明示的な外側の集計を維持してください。特に AVG、MIN、MAX、COUNT を使う場合に重要です。条件付きの SUM は、条件を満たす入力がなければ NULL を返します。<code>ELSE 0</code> を明示した場合は意味が異なります。入力行を選別しても、条件を満たさない行だけを含むグループが残ることがあります。</p>
 <p><strong>ウィンドウ関数の fn マクロ</strong>は、コンパイル済みの SQL に <code>rank() over (...)</code> を生成します。Model Query の SQL では、<code>AGG(measure, 'rank')</code> または <code>AGG({measure: rank})</code> の形式で使用します。完全な一覧と数式については、<a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a>を参照してください。</p>
 <p><code>.dml</code> での<strong>フィルター修飾子</strong>（列が対象）</p>
-<pre><code class="language-yaml">completed_sales:
+<pre><code class="language-yaml">完了注文の売上高:
     type: measure
-    formula: "{amount: {+f: {status: 'completed'}}}"
+    formula: "{売上金額: {+f: {注文状態: 'completed'}}}"
 </code></pre>
 <p>Model Query の SQL での<strong>フィルター修飾子</strong></p>
-<pre><code class="language-sql">SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+<pre><code class="language-sql">SELECT AGG(売上高, '+f', 地域 = 'North') FROM MODEL
 </code></pre>
 <p><a id="23-dimension-modifiers"></a></p>
 <h2 id="dimension-modifiers">ディメンション修飾子 <a class="section-link" aria-label="この節へのリンク" href="#dimension-modifiers">#</a></h2>
@@ -224,12 +224,12 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 </tbody></table>
 <p><strong>例：店舗ごとのブランドの売上シェア</strong>。分子では選択したブランドを対象とし、分母には全ブランドを含めます。</p>
-<pre><code class="language-yaml">brand_share:
+<pre><code class="language-yaml">ブランド売上構成比:
     type: measure
-    formula: 'divide({sales} * 100.0, {sales: {-df: brand_id}})'
+    formula: 'divide({売上高} * 100.0, {売上高: {-df: brand_id}})'
 </code></pre>
-<p>クエリ粒度が<code>[store_id, brand_id]</code>の場合、<code>brand_id</code>に対するクエリフィルターは分子に適用されます。分母ではそのフィールドとフィルターを除外し、店舗のコンテキストを維持します。</p>
-<p><strong>依存関係の追跡</strong>。コンパイラは<code>pk()</code>チェーンの依存関係をたどります。<code>客户标准名称</code>（<code>pk({store_id}).MDM_STORE(store_id).store_name</code>）は<code>store_id</code>に依存するため、<code>store_id</code>に<code>-df</code>を適用すると、この列に対するフィルターがブロックされます。</p>
+<p>クエリ粒度が<code>[店舗番号, brand_id]</code>の場合、<code>brand_id</code>に対するクエリフィルターは分子に適用されます。分母ではそのフィールドとフィルターを除外し、店舗のコンテキストを維持します。</p>
+<p><strong>依存関係の追跡</strong>。コンパイラは<code>pk()</code>チェーンの依存関係をたどります。<code>客户标准名称</code>（<code>pk({店舗番号}).MDM_STORE(店舗番号).店舗名</code>）は<code>店舗番号</code>に依存するため、<code>店舗番号</code>に<code>-df</code>を適用すると、この列に対するフィルターがブロックされます。</p>
 <p><strong>他のシステムでの対応</strong></p>
 <table>
 <thead>
@@ -260,16 +260,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <td>フィルター付きの指標を使います（指標に<code>filters:</code>を指定）。</td>
 </tr>
 </tbody></table>
-<pre><code class="language-sql">-- Product share within category
-SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
-FROM MODEL GROUP BY category, product
+<pre><code class="language-sql">-- Product 構成比 within 分類
+SELECT 分類, 商品,
+       AGG(売上高) as 商品別売上高,
+       AGG({売上高: {dimension: [分類]}}) as 分類別売上合計
+FROM MODEL GROUP BY 分類, 商品
 </code></pre>
 <pre><code class="language-sql">-- Remove time grouping while retaining the selected time filter
-SELECT region, AGG({sales: {-d: dim_dt}}) as selected_period_sales
+SELECT 地域, AGG({売上高: {-d: dim_dt}}) as 選択期間売上高
 FROM MODEL WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region
+GROUP BY 地域
 </code></pre>
 <p><a id="23b--d-on-composite-measures-with-full-outer-join"></a></p>
 <h2 id="-d-on-composite-measures-with-full-outer-join">FULL OUTER JOINを使う複合指標での<code>{-d:}</code> <a class="section-link" aria-label="この節へのリンク" href="#-d-on-composite-measures-with-full-outer-join">#</a></h2>
@@ -279,33 +279,33 @@ GROUP BY region
 <h2 id="combining-modifiers">修飾子の組み合わせ <a class="section-link" aria-label="この節へのリンク" href="#combining-modifiers">#</a></h2>
 <p>1 つの参照に複数の修飾子を指定できます。その際は、<a href="reference--modifiers.ja.html#same-dimension-d-with--d--df--illegal">同じディメンション内での競合</a>に関するルールと、<a href="reference--semantics.ja.html#44-modifier-schema-constraints">修飾子の制約</a>が適用されます。</p>
 <pre><code class="language-yaml"># Filter + dimension (outer SUM rolls +d back to query grain)
-formula: 'SUM({sales: {+d: customer, +f: {region: "North"}}})'
+formula: 'SUM({売上高: {+d: 顧客, +f: {地域: "North"}}})'
 
 # Legal: +d and -d on DIFFERENT fields
-formula: 'SUM({sales: {+d: customer, -d: brand}})'
+formula: 'SUM({売上高: {+d: 顧客, -d: ブランド}})'
 
 # Rejected: the same field cannot appear in +d and -d or -df in one modifier object:
 # formula: 'SUM({sales: {+d: store_id, -d: store_id}})'
 # formula: '{sales: {+d: store_id, -df: store_id}}'
 
 # Time + dimension
-formula: '{sales: {+d: customer}, yoy}'
+formula: '{売上高: {+d: 顧客}, yoy}'
 
 # Dimension + rank
-formula: '{sales: {-d: dim_dt, rank}}'
+formula: '{売上高: {-d: dim_dt, rank}}'
 
 # Dimension + filter removal (ratio with deferred filters)
-formula: 'divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})'
+formula: 'divide({売上高: {-df: brand_id}} * 100.0, {売上高: {-df: [店舗番号, brand_id]}})'
 
 # Filter + absolute grain (e.g., ratio numerator/denominator at different grains)
-formula: 'DIVIDE({sales: {+f: "status = 1", dimension: [prod_id]}}, {sales: {+f: "status = 1", dimension: [prod_id, store_id]}})'
+formula: 'DIVIDE({売上高: {+f: "注文状態 = 1", dimension: [商品番号]}}, {売上高: {+f: "注文状態 = 1", dimension: [商品番号, 店舗番号]}})'
 </code></pre>
 <p>Model Query SQL では次のように記述します。</p>
-<pre><code class="language-sql">SELECT product,
-       AGG({sales: {-d: dt_date, rank}}) as all_time_rank
+<pre><code class="language-sql">SELECT 商品,
+       AGG({売上高: {-d: dt_date, rank}}) as 全期間順位
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
 <p><a id="25-modifier-stacking"></a></p>
 <h2 id="modifier-stacking">修飾子の連続適用 <a class="section-link" aria-label="この節へのリンク" href="#modifier-stacking">#</a></h2>
@@ -318,17 +318,17 @@ GROUP BY product
 #     type: measure
 #     formula: '{sales: yoy}'
 #   ...then: {sales_yoy: rank}
-q_col: '{sales: {yoy, rank}}'
+q_col: '{売上高: {yoy, rank}}'
 </code></pre>
-<p><strong>時間修飾子と複数の計算経路を持つ関数：</strong> 検証済みのビルドでは、<code>ytd</code> が <code>yoy</code> の当期側と比較期間側の両方の分岐に適用されます。記録された月単位の検証では、<code>{sales: {yoy, ytd}}</code> と <code>{sales: {ytd, yoy}}</code> が同一の SQL を生成しました。計算では、YTD の売上を前年の YTD の売上で割り、その結果から 1 を引きます。月ごとの成長率の合計ではありません。修飾子を種類別に並べ替えたり、自動生成された中間指標の名前だけを根拠に別の意味を推測したりしないでください。</p>
-<p><code>firstday</code> など、行や合計を定義する粒度を変えるマクロには、複数の計算経路に関する追加の制約があります。使用する組み合わせをそのままコンパイルし、結果を確認してから使用してください。<code>{sales: {+f: "amount &gt; 5", yoy}}</code> のように、YAML の指示文字を含む <code>+f</code> 式を記述する場合は、式を引用符で囲んでください。</p>
+<p><strong>時間修飾子と複数の計算経路を持つ関数：</strong> 検証済みのビルドでは、<code>ytd</code> が <code>yoy</code> の当期側と比較期間側の両方の分岐に適用されます。記録された月単位の検証では、<code>{売上高: {yoy, ytd}}</code> と <code>{売上高: {ytd, yoy}}</code> が同一の SQL を生成しました。計算では、YTD の売上を前年の YTD の売上で割り、その結果から 1 を引きます。月ごとの成長率の合計ではありません。修飾子を種類別に並べ替えたり、自動生成された中間指標の名前だけを根拠に別の意味を推測したりしないでください。</p>
+<p><code>firstday</code> など、行や合計を定義する粒度を変えるマクロには、複数の計算経路に関する追加の制約があります。使用する組み合わせをそのままコンパイルし、結果を確認してから使用してください。<code>{売上高: {+f: "売上金額 &gt; 5", yoy}}</code> のように、YAML の指示文字を含む <code>+f</code> 式を記述する場合は、式を引用符で囲んでください。</p>
 <p><strong>中間指標の再利用</strong>。コンパイラは新しい中間指標を作成する前に、同じ式を持つ指標がすでにないかを調べます。照合には、展開した式、略記形式、マップ形式を使用します。ユーザー定義の指標や以前に生成された指標が一致すれば、それを再利用します。これにより、重複する中間指標の作成を避け、ユーザーが中間指標の名前を指定できます。</p>
-<p><strong>名前の競合への対処</strong>。自動生成された中間指標の名前（例：<code>sales_yoy</code>）が、<em>異なる</em>式を持つ既存の指標の名前と重複する場合、コンパイラは数値の接尾辞を付けます。結果は <code>sales_yoy__2</code>、<code>sales_yoy__3</code> のようになります。</p>
+<p><strong>名前の競合への対処</strong>。自動生成された中間指標の名前（例：<code>売上高前年同期比</code>）が、<em>異なる</em>式を持つ既存の指標の名前と重複する場合、コンパイラは数値の接尾辞を付けます。結果は <code>sales_yoy__2</code>、<code>sales_yoy__3</code> のようになります。</p>
 <p><strong>互換性：</strong> 組み合わせが有効かどうかは、マクロの前提条件、時間コンテキスト、使用できるディメンション、キーの重複、再集計によって決まります。使用する組み合わせをそのまま対象のビルドでコンパイルしてください。範囲マクロを 2 つ使う方法や同じマクロキーを繰り返す方法は、汎用的な組み合わせ方ではありません。各段階を明示してもエラーが残る場合は、診断メッセージと再現例を保存してください。中間指標に手動で名前を付けただけでは、処理が同等であることは確認できません。</p>
 <h2 id="修饰符速查">修飾子クイックリファレンス <a class="section-link" aria-label="この節へのリンク" href="#修饰符速查">#</a></h2>
-<p>修飾子は、指定した指標参照にだけ作用します。<code>{sales: {+f: {status: completed}}}</code> で指標の入力データを絞り込みます。<code>+d</code> で計算時のグループ化を追加し、外側の集計でレポートのグループ化に戻します。<code>-d</code> でグループ化ディメンションを除外し、<code>-df</code> ではそのディメンションに対する関連フィルターも除外します。期間修飾子の <code>pp</code> は前の期間の値を取得し、<code>pop</code> は前の期間からの変化率を計算し、<code>ytd</code> は年初から対象時点までの累計を計算します。複数の修飾子は、宣言した順に適用されます。</p>
+<p>修飾子は、指定した指標参照にだけ作用します。<code>{売上高: {+f: {注文状態: completed}}}</code> で指標の入力データを絞り込みます。<code>+d</code> で計算時のグループ化を追加し、外側の集計でレポートのグループ化に戻します。<code>-d</code> でグループ化ディメンションを除外し、<code>-df</code> ではそのディメンションに対する関連フィルターも除外します。期間修飾子の <code>pp</code> は前の期間の値を取得し、<code>pop</code> は前の期間からの変化率を計算し、<code>ytd</code> は年初から対象時点までの累計を計算します。複数の修飾子は、宣言した順に適用されます。</p>
 <h2 id="time-modifiers-on-composite-ratios">複合比率への時間修飾子の適用 <a class="section-link" aria-label="この節へのリンク" href="#time-modifiers-on-composite-ratios">#</a></h2>
-<p>時間修飾子は、名前付きの複合指標に直接適用できます。たとえば、<code>gross_margin_ytd</code> を <code>formula: '{gross_margin: ytd}'</code> で定義します。ここで、<code>gross_margin</code> は売上総利益を売上高で割った値です。累計期間を対象とする場合は、まず計算に使う指標を再計算し、その結果から比率を求めます。月ごとのパーセンテージは足し合わせません。<a href="reference--examples--composable-metrics.ja.html">収益性の完全な例</a>を参照してください。この比率の例は検証済みですが、任意の非加算式を、その意味を確認せずに上位の粒度へ集計できることを保証するものではありません。</p>
+<p>時間修飾子は、名前付きの複合指標に直接適用できます。たとえば、<code>年初来粗利率</code> を <code>formula: '{粗利率: ytd}'</code> で定義します。ここで、<code>粗利率</code> は売上総利益を売上高で割った値です。累計期間を対象とする場合は、まず計算に使う指標を再計算し、その結果から比率を求めます。月ごとのパーセンテージは足し合わせません。<a href="reference--examples--composable-metrics.ja.html">収益性の完全な例</a>を参照してください。この比率の例は検証済みですが、任意の非加算式を、その意味を確認せずに上位の粒度へ集計できることを保証するものではありません。</p>
 <h2 id="fixed-axis-totals-and-output-membership">固定軸の合計と出力対象の行 <a class="section-link" aria-label="この節へのリンク" href="#fixed-axis-totals-and-output-membership">#</a></h2>
-<p><a href="examples--fixed-total.ja.html">固定合計の例</a>では、通常の <code>month</code> フィールドを使い、地域と月でグループ化したクエリを実行します。1 月を選択すると、<code>-d: month</code> では分母の計算対象が 1 月のままで、<code>-df: month</code> ではテストデータに含まれる両方の月が分母の計算対象になります。どちらのクエリも、出力するのは引き続き 1 月の行だけです。このテストデータでは、動的なピボット軸、小計レベルの述語、任意の条件での <code>dim_dt</code> の除外動作までは確認できません。</p>
+<p><a href="examples--fixed-total.ja.html">固定合計の例</a>では、日付フィールド <code>dt_month</code>を使い、地域と月でグループ化したクエリを実行します。1 月を選択すると、<code>-d: dt_month</code> では分母の計算対象が 1 月のままで、<code>-df: dt_month</code> ではテストデータに含まれる両方の月が分母の計算対象になります。どちらのクエリも、出力するのは引き続き 1 月の行だけです。このテストデータでは、動的なピボット軸、小計レベルの述語、任意の条件での <code>dim_dt</code> の除外動作までは確認できません。</p>
 </main></body></html>

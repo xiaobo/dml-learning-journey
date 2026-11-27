@@ -95,7 +95,7 @@
 		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
 	</style>
-	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course.css?v=10eaab4b0a">
 	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
 <style>.course-site-nav{display:flex;justify-content:flex-end;gap:1.25em;padding:6px 4vw;font:14px/1.5 system-ui}</style><meta name="description" content="12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 入門：業務指標を学ぶインタラクティブチュートリアル"><meta property="og:description" content="12 章で 2 月の売上レポートを作ります。4 件の売上から始め、メジャーを再利用し、最後にプロジェクトをダウンロードします。結果を予想し、操作して、答えを確かめましょう。架空のデータでオフラインでも学べます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
 <body>
@@ -176,7 +176,7 @@
     amount:
   measures:
     sales: SUM({amount})
-    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> はモデル列 <code>amount</code> を参照します。空の列定義は同名の物理列に対応します。</p></div>
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> はモデルの「売上金額」を参照します。<code>abbr</code> には元テーブルの列名を指定します。</p></div>
 		</section>
 		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
 			<div>
@@ -304,11 +304,11 @@ GROUP BY manager</code></pre><p data-i18n="lookups.text9">サンプルテーブ�
 			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North：売上 30、完了済み 10、前月 20、顧客平均 15、割合 30%。South：売上 70、完了済み 70、前月 50、顧客平均 70、割合 70%。</p><p data-i18n="capstone.text12">ブラウザー外で実行するには START-HERE.txt を開きます。空の練習用データベースにサンプルテーブルを作り、モデルを lint し、クエリを厳密にコンパイルして SQL を確認します。指摘事項を記録してから、実データの検証と結果比較に進みましょう。</p></div>
 			</form>
 			<div class="explorer-grid final-preview">
-				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">モデルのノート · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">選択したメジャーと参照するメジャーの抜粋です。選択に合わせて更新されます。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">モデルのノートをすべて表示</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">model.dml をダウンロード</a></details></div>
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">モデルのノート · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">選択したメジャーと参照するメジャーの抜粋です。選択に合わせて更新されます。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">モデルのノートをすべて表示</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.ja.dml" download="model.dml" download="" data-i18n="capstone.notebookDownload">model.dml をダウンロード</a></details></div>
 				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">レポートの問い · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">クエリはこれらの定義を再利用します。グループ化とフィルターはレポートの設定で決まります。</p><pre><code id="final-query"></code></pre></div>
 			</div>
 			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">結果の例</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">プレビューはこのページの架空データだけを計算し、任意の DML を実行するものではありません。コンパイラーの記録があるのは付属の検証済みクエリだけです。他の組み合わせは別途コンパイルが必要です。データベースには接続しません。</p>
-			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">確認済みプロジェクトをダウンロード</a></div>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.ja.zip" download="" data-i18n="capstone.text14">確認済みプロジェクトをダウンロード</a></div>
 			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">ローカルのコンパイルコマンドを見る</summary><pre><code>dmlc.exe --lint model.dml --json
 dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</code></pre><p class="small" data-i18n="capstone.text16">これらのコンパイルコマンドにデータベース接続は不要です。別の実習用に、サンプルデータと SQL Server のセットアップも含まれます。想定する結合警告は記録済みですが、想定内の警告でも厳密チェックの合格にはなりません。</p></details>
 			<div class="next-links"><a href="tutorials--first-query.ja.html" data-i18n="capstone.text17">コンパイラーの実習へ</a><a href="reference--README.ja.html" data-i18n="capstone.text18">言語リファレンスを見る</a><a href="tutorials--interactive-journey.ja.html" data-i18n="capstone.text19">演習ガイドを読む</a><a href="maz-sqlserver.html" hreflang="zh-CN" data-i18n="capstone.mazExtension">SQL Server Maz：データ準備状態と runner の進捗（中国語）</a></div>
@@ -318,11 +318,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">手元に置きたい記号 · 早見表</summary><p data-i18n="recall.intro">参照は「どのメジャーか」、次に「今回はどう計算するか」と読みます。記憶の手がかりであり、追加構文や算術演算ではありません。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">記号</th><th data-i18n="recall.meaning">意味を振り返る</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">ソース次元 <code>dimension: [id]</code> は元の行を識別。クエリ次元 <code>GROUP BY region</code> は結果をグループ化。<code>+d: customer</code> は評価次元を調整し、中間の顧客別合計を計算します。</p><p class="small" data-i18n="syntax.reference">他の形式は<a href="reference--modifiers.ja.html">修飾子の規則と例</a>を参照してください。</p></details>
 		<footer><p data-i18n="common.text7">DML で定義し、DMX で式を書き、Model Query で選択とグループ化を行います。</p><p data-i18n="common.text8"><a href="compiler-observations.json">コンパイラーの記録</a> · <a href="explanation--visual-introduction.ja.html">元のテキスト版</a> · オフライン対応</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=a92c71e426"></script>
-	<script src="locales--zh.js?v=7346580e6d"></script>
-	<script src="locales--ja.js?v=55e01a5807"></script>
-	<script src="locales--de.js?v=e38dcdfc17"></script>
-	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script src="locales--en.js?v=db09ce2b9b"></script>
+	<script src="locales--zh.js?v=bc1a5123de"></script>
+	<script src="locales--ja.js?v=b1e43c3c6a"></script>
+	<script src="locales--de.js?v=5f49627531"></script>
+	<script src="journey-samples.js?v=7f6a183b8b"></script><script src="course-i18n.js?v=01b5f8c7a5"></script>
 	<script>
 		(() => {
 			const i18n = window.SmallJourneyI18n, t = i18n.t;
@@ -374,10 +374,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		})();
 	</script>
 	<script src="course-data.js?v=fa1f4bdbb5"></script>
-	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="course-definitions.js?v=91c429158b"></script>
 	<script src="compiler-observations.js?v=1ccf083713"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=7ded72104c"></script>
+	<script src="course.js?v=b1d732cb03"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

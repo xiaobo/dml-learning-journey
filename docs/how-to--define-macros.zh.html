@@ -17,7 +17,7 @@
 <tbody><tr>
 <td><code>dt-macro</code></td>
 <td>偏移或扩大时间窗口</td>
-<td><code>value:</code>（单点偏移）或 <code>range:</code> <code>[start, end]</code></td>
+<td><code>数值:</code>（单点偏移）或 <code>range:</code> <code>[start, end]</code></td>
 <td>否。宏作用于时间上下文。</td>
 </tr>
 <tr>
@@ -27,7 +27,7 @@
 <td>是。占位符会替换为调用方提供的指标。</td>
 </tr>
 </tbody></table>
-<p>使用 <code>value:</code> 偏移时间点，使用 <code>range: [start, end]</code> 指定时间窗口。<code>fn-macro</code> 使用 <code>{measure}</code> 引用调用方提供的指标，<code>dt-macro</code> 使用 <code>{dim_dt}</code> 引用解析得到的时间字段。可通过可选的 <code>prerequisite:</code> 限制求值时允许在哪些层级定义行或汇总值。</p>
+<p>使用 <code>数值:</code> 偏移时间点，使用 <code>range: [start, end]</code> 指定时间窗口。<code>fn-macro</code> 使用 <code>{measure}</code> 引用调用方提供的指标，<code>dt-macro</code> 使用 <code>{dim_dt}</code> 引用解析得到的时间字段。可通过可选的 <code>prerequisite:</code> 限制求值时允许在哪些层级定义行或汇总值。</p>
 <h2 id="choose-the-extension-point">选择扩展方式 <a class="section-link" aria-label="本节链接" href="#choose-the-extension-point">#</a></h2>
 <table>
 <thead>
@@ -67,24 +67,27 @@ INSERT INTO sales VALUES
 S:
   type: dataset
   table: sales
-  dimension: [id]
+  dimension: [销售明细编号]
   columns:
-    id:
+    销售明细编号:
+      abbr: id
     dt_month:
-    amount:
+      abbr: dt_month
+    销售金额:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-double_value:
+    销售额: SUM({销售金额})
+两倍金额:
   type: fn-macro
   formula: '{measure} * 2'
-prior_month:
+上月:
   type: dt-macro
-  value: date({dim_dt}, '-1 month')
+  数值: date({dim_dt}, '-1 month')
 </code></pre>
 <p>当 1 月销售额为 20、2 月销售额为 30 时：</p>
-<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
-       AGG({sales: prior_month}) AS previous,
-       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+<pre><code class="language-sql">SELECT AGG({销售额: 两倍金额}) AS 两倍值,
+       AGG({销售额: 上月}) AS previous,
+       AGG({销售额: {两倍金额, 上月}}) AS 上期两倍值
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
@@ -93,23 +96,23 @@ WHERE dt_month = '2025-02-01'
 dmlc --validate query.sql --model=model.dml --connection=default --json
 dmlc query.sql --model=model.dml --connection=default
 </code></pre>
-<p>执行得到的值为 <strong>60、20、40</strong>。在所检查的 DuckDB 连接上，严格编译、validate-only 和执行均成功。模型声明了 <code>dialect: duckdb</code>、源数据中唯一的 <code>id</code>、<code>dt_month</code> 和 <code>sales: SUM({amount})</code>。</p>
+<p>执行得到的值为 <strong>60、20、40</strong>。在所检查的 DuckDB 连接上，严格编译、validate-only 和执行均成功。模型声明了 <code>dialect: duckdb</code>、源数据中唯一的 <code>销售明细编号</code>、<code>dt_month</code> 和 <code>销售额: SUM({销售金额})</code>。</p>
 <p>这是语言层面可复用的组合方式。宏接收调用方提供的指标及其求值上下文。这并不是可任意扩展编译器的插件 API。粒度规则、时间前提条件和修饰符顺序仍然适用。自定义名称无法绕过这些规则。</p>
 <h2 id="calling-a-function-defined-in-your-database">调用数据库中定义的函数 <a class="section-link" aria-label="本节链接" href="#calling-a-function-defined-in-your-database">#</a></h2>
 <p><strong>DML 可以在生成的 SQL 中保留标量函数调用，函数由数据库实现。</strong>例如，在运行 DML 之前，先在 DuckDB 练习数据库中安装以下函数：</p>
 <pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
 </code></pre>
 <p>DuckDB 将这种形式实现为持久化的 SQL 标量宏。此示例验证的是数据库中定义的标量函数调用，不涉及 Python UDF 注册、聚合 UDF 或表值函数。</p>
-<p>在 <code>S.measures</code> 下添加以下条目，使其与 <code>sales</code> 并列，以便在聚合前对源数据值调用该函数：</p>
+<p>在 <code>S.measures</code> 下添加以下条目，使其与 <code>销售额</code> 并列，以便在聚合前对源数据值调用该函数：</p>
 <pre><code class="language-yaml"># Under the sales dataset's measures:
-net_sales: SUM(business_net({amount}))
+净销售额: SUM(business_net({销售金额}))
 </code></pre>
 <p>然后，将该指标与对聚合结果调用函数所得到的值进行比较：</p>
-<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+<pre><code class="language-sql">SELECT AGG(净销售额), business_net(AGG(销售额)) AS 净额合计
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
-<p>2 月销售额为 30 时，两种方式均返回 <strong>24</strong>。生成的 SQL 保留了 <code>SUM(business_net(amount))</code> 和 <code>business_net(SUM(amount))</code>。两种方式在不同阶段求值。此处结果相同，是因为函数是线性的。舍入、阈值判断或其他非线性函数可能产生不同的结果，因此请根据所需结果选择求值阶段。</p>
+<p>2 月销售额为 30 时，两种方式均返回 <strong>24</strong>。生成的 SQL 保留了 <code>SUM(business_net(销售金额))</code> 和 <code>business_net(SUM(销售金额))</code>。两种方式在不同阶段求值。此处结果相同，是因为函数是线性的。舍入、阈值判断或其他非线性函数可能产生不同的结果，因此请根据所需结果选择求值阶段。</p>
 <h3 id="validate-the-function-on-the-intended-connection">在计划使用的连接上验证函数 <a class="section-link" aria-label="本节链接" href="#validate-the-function-on-the-intended-connection">#</a></h3>
 <p>DML 不会安装函数，也不会在不同数据库之间转换其实现。执行查询的连接必须能够访问该函数，函数必须接受生成的参数类型，且该数据库用户必须有权调用函数。函数命名、架构限定、部署和可移植性仍取决于具体数据库。</p>
 <p>对一个故意未提供的函数的调用<strong>通过了严格编译</strong>，但随后在 validate-only 的 EXPLAIN 阶段失败（退出码 65）；直接执行也失败了（退出码 70）。因此，仅凭编译成功无法确认 UDF 是否存在或能否调用。请先<a href="how-to--compile-and-validate-zh.html">编译和验证</a>，再比较实际结果。</p>

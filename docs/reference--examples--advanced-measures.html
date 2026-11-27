@@ -5,28 +5,28 @@
 <pre><code class="language-yaml"># Store-level sales (restricted to store + category grain)
 store_cat_sales:
   type: measure
-  formula: &#39;IIF({sales} &gt; 0, {sales}, 0)&#39;
+  formula: 'IIF({sales} &gt; 0, {sales}, 0)'
   dimensions:
     - [dim_dt, store_id, category]
 
 # Category-level sales (drop store)
 cat_sales:
   type: measure
-  formula: &#39;SUM({store_cat_sales: {+d: store_id}})&#39;
+  formula: 'SUM({store_cat_sales: {+d: store_id}})'
   dimensions:
     - [dim_dt, category]
 
 # Store weight = store sales / category sales (store + category grain)
 store_weight:
   type: measure
-  formula: &#39;DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})&#39;
+  formula: 'DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})'
   dimensions:
     - [dim_dt, store_id, category]
 
 # Brand distribution flag (store + category + brand grain)
 brand_dist_flag:
   type: measure
-  formula: &#39;IIF({sales} &gt; 0, 1, 0)&#39;
+  formula: 'IIF({sales} &gt; 0, 1, 0)'
   dimensions:
     - [dim_dt, store_id, category, brand]
 
@@ -45,26 +45,26 @@ weighted_distribution:
 <pre><code class="language-yaml"># First sale date per product (restricted to product grain)
 first_sale_raw:
   type: measure
-  formula: &#39;MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)&#39;
+  formula: 'MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)'
 
 # First sale date, looking back up to 6 years
 first_sale:
   type: measure
-  formula: &#39;{first_sale_raw: p6y}&#39;
+  formula: '{first_sale_raw: p6y}'
   dimensions:
     - [dt_week, product]
 
 # Weeks since launch
 weeks_since_launch:
   type: measure
-  formula: &#39;datediff(week, {first_sale}, {Dim Calendar}.dt_week)&#39;
+  formula: 'datediff(week, {first_sale}, {Dim Calendar}.dt_week)'
   dimensions:
     - [dt_week, product]
 
 # Flag: product has 2+ years of sales data
 has_2yr_data:
   type: measure
-  formula: &#39;IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)&#39;
+  formula: 'IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)'
   dimensions:
     - [product]
 
@@ -100,40 +100,40 @@ weekly_avg_4w:
 <pre><code class="language-yaml"># Monetary: MAT sales (moving annual total)
 monetary:
   type: measure
-  formula: &#39;{sales: mat}&#39;
+  formula: '{sales: mat}'
   dimensions:
     - [dim_dt, customer_id]
 
 # Recency: last purchase date
 recency:
   type: measure
-  formula: &#39;MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)&#39;
+  formula: 'MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
   dimensions:
     - [dim_dt, customer_id]
 
 # Frequency: number of active sales days
 frequency:
   type: measure
-  formula: &#39;DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)&#39;
+  formula: 'DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
   dimensions:
     - [dim_dt, customer_id]
 
 # Percentile ranks
 recency_pct:
   type: measure
-  formula: &#39;percent_rank() over (order by {recency} desc)&#39;
+  formula: 'percent_rank() over (order by {recency} desc)'
   dimensions:
     - [dim_dt, customer_id]
 
 frequency_pct:
   type: measure
-  formula: &#39;percent_rank() over (order by {frequency} asc)&#39;
+  formula: 'percent_rank() over (order by {frequency} asc)'
   dimensions:
     - [dim_dt, customer_id]
 
 monetary_pct:
   type: measure
-  formula: &#39;percent_rank() over (order by {monetary} asc)&#39;
+  formula: 'percent_rank() over (order by {monetary} asc)'
   dimensions:
     - [dim_dt, customer_id]
 
@@ -158,17 +158,17 @@ rfm_segment:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN &#39;Hibernating&#39;
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN &#39;At Risk&#39;
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN &#39;Cannot Lose Them&#39;
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN &#39;About to Sleep&#39;
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN &#39;Need Attention&#39;
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN &#39;Promising&#39;
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN &#39;Potential Loyalists&#39;
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN &#39;Loyal Customers&#39;
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN &#39;New Customers&#39;
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN &#39;Potential Loyalists&#39;
-      ELSE &#39;Champions&#39;
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN 'Hibernating'
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN 'At Risk'
+      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN 'Cannot Lose Them'
+      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN 'About to Sleep'
+      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN 'Need Attention'
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN 'Promising'
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN 'Loyal Customers'
+      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN 'New Customers'
+      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
+      ELSE 'Champions'
     END
   dimensions:
     - [dim_dt, customer_id]
@@ -185,7 +185,7 @@ rfm_segment:
 <pre><code class="language-yaml"># Product rank by total first-2-year sales
 product_power_rank:
   type: measure
-  formula: &#39;rank() over (order by {first_2yr_sales} desc)&#39;
+  formula: 'rank() over (order by {first_2yr_sales} desc)'
   dimensions:
     - [product]
 
@@ -195,12 +195,12 @@ product_tier:
   formula: |-
     CASE
       WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN &#39;Top 50%&#39;
+           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN 'Top 50%'
       WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN &#39;Top 80%&#39;
+           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN 'Top 80%'
       WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN &#39;Top 95%&#39;
-      ELSE &#39;Others&#39;
+           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN 'Top 95%'
+      ELSE 'Others'
     END
   dimensions:
     - [product]

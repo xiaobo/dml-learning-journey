@@ -3,60 +3,60 @@
 <p><a id="business-metrics-examples"></a></p>
 <h2 id="business-metric-examples">Beispiele für Geschäftskennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#business-metric-examples">#</a></h2>
 <h3 id="financial-metrics">Finanzkennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#financial-metrics">#</a></h3>
-<pre><code class="language-yaml">account_receivable:
+<pre><code class="language-yaml">Forderungen:
     type: measure
     formula: |-
-        {amount: {+f: {account: 'Accounts Receivable (A/R)'}}}
+        {Verkaufsbetrag: {+f: {Konto: 'Accounts Receivable (A/R)'}}}
 
-outstanding:
+OffenerBetrag:
     type: measure
     description: All unpaid amounts (including not yet due)
     formula: |-
-        {open_balance}
+        {OffenerSaldo}
 
-balance_due:
+FälligerSaldo:
     type: measure
     description: Amounts due today or earlier
     formula: |-
-        {open_balance: {+f: 'due_date &lt;= date(current_date)'}}
+        {OffenerSaldo: {+f: 'Fälligkeitsdatum &lt;= date(current_date)'}}
 </code></pre>
 <h3 id="transaction-counts">Anzahl der Transaktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#transaction-counts">#</a></h3>
-<pre><code class="language-yaml">number_of_invoices:
+<pre><code class="language-yaml">Rechnungsanzahl:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : 'invoice'}}}
+        {Transaktionsanzahl: {+f: {Transaktionsart : 'invoice'}}}
 
-number_of_checks:
+Scheckanzahl:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : 'check'}}}
+        {Transaktionsanzahl: {+f: {Transaktionsart : 'check'}}}
 
-number_of_received_checks:
+ErhalteneSchecks:
     type: measure
     formula: |-
-        {number_of_checks: {+f: 'customer is not null'}}
+        {Scheckanzahl: {+f: 'Kunde is not null'}}
 </code></pre>
 <hr>
 <p>Regeln für Namen, <code>description:</code> und <code>abbr</code> finden Sie unter <a href="how-to--review-model.de.html">Modell prüfen</a>. Bei Fehlern helfen die Abschnitte P1 und P25 in der <a href="reference--troubleshooting--README.de.html">Fehlerübersicht</a>.</p>
 <hr>
 <h2 id="common-patterns">Häufig verwendete Formeln <a class="section-link" aria-label="Link zum Abschnitt" href="#common-patterns">#</a></h2>
 <h3 id="average-calculations">Durchschnittswerte <a class="section-link" aria-label="Link zum Abschnitt" href="#average-calculations">#</a></h3>
-<pre><code class="language-yaml">avg_invoice_value:
+<pre><code class="language-yaml">DurchschnittlicherRechnungsbetrag:
     type: measure
     formula: |-
-        divide({amount: {+f: {transaction_type: 'invoice'}}}, {number_of_invoices})
+        divide({Verkaufsbetrag: {+f: {Transaktionsart: 'invoice'}}}, {Rechnungsanzahl})
 </code></pre>
 <h3 id="frequency-calculations">Häufigkeiten <a class="section-link" aria-label="Link zum Abschnitt" href="#frequency-calculations">#</a></h3>
-<pre><code class="language-yaml">avg_bill_frequency:
+<pre><code class="language-yaml">RechnungenProTag:
     type: measure
     formula: |-
-        divide(sum({number_of_invoices: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
+        divide(sum({Rechnungsanzahl: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
 </code></pre>
 <p><a id="year-over-year-metrics"></a></p>
 <h3 id="average-annual-revenue">Durchschnittlicher Jahresumsatz <a class="section-link" aria-label="Link zum Abschnitt" href="#average-annual-revenue">#</a></h3>
-<pre><code class="language-yaml">annual_avg_revenue:
+<pre><code class="language-yaml">DurchschnittlicherJahreserlös:
     type: measure
     formula: |-
-        divide(sum({revenue: {+d: dt_year}}), distinctcount({dt_year}))
+        divide(sum({Erlös: {+d: dt_year}}), distinctcount({dt_year}))
 </code></pre>
 </main></body></html>

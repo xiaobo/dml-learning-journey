@@ -6,7 +6,7 @@
 <p>每个文件都可以使用自己的定义，以及它自己引入的定义。如果某个数据集只在上层文件中定义，被引入的文件就无法使用它。引入失败会使上层模型也失效。编译器会先按引入方所在的目录解析相对路径。环境中配置的模型路径指定搜索位置，文件依赖仍需在模型里声明。</p>
 <p>同一会话中先前用过的名称，不会因此出现在当前模块里。可以把共用的数据集和指标定义在一个基础模型中，再让各个报表引入这个模型。</p>
 <h2 id="logical-versus-physical-sql">SQL 中的模型名称和数据库名称 <a class="section-link" aria-label="本节链接" href="#logical-versus-physical-sql">#</a></h2>
-<p>在数据集的 <code>sql:</code> 中，<code>FROM {Customers}</code> 引用模型定义的数据集，<code>FROM Customers</code> 引用数据库里的表或视图。在列公式中，<code>{net_amount}</code> 会展开成模型中该列的定义；直接写 <code>net_amount</code> 时，它是数据库 SQL 中的列名。反向生成的 SQL 可能会保留对数据库对象的引用。</p>
+<p>在数据集的 <code>sql:</code> 中，<code>FROM {Customers}</code> 引用模型定义的数据集，<code>FROM Customers</code> 引用数据库里的表或视图。在列公式中，<code>{净额}</code> 会展开成模型中该列的定义；直接写 <code>净额</code> 时，它是数据库 SQL 中的列名。反向生成的 SQL 可能会保留对数据库对象的引用。</p>
 <h2 id="direct-query-files">直接编译查询文件 <a class="section-link" aria-label="本节链接" href="#direct-query-files">#</a></h2>
 <p>直接编译 DML 文件时，查询名必须与去掉扩展名的文件名一致。例如，<code>report.dml</code> 中的查询写作 <code>report: {type: query, ...}</code>。可以使用 Model Query SQL 读取不含查询的可复用模型。FROM 后的名称由模型文件名决定，详见<a href="reference--model-query-sql.zh.html#2-query-types">查找查询</a>。</p>
 <p>运行报表前，用实际安装的编译器检查引入的文件、引用的名称和生成的 SQL。</p>

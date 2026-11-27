@@ -177,3 +177,5 @@ html:lang(ja) h1,html:lang(ja) h2,html:lang(ja) h3,html:lang(ja) .story { font-f
 @media(max-width:480px) { .reward-feedback { grid-template-columns:44px minmax(0,1fr); column-gap:10px; } .reward-header > .reward-planet { width:44px; height:44px; grid-row:1/3; } .reward-title { font-size:18px; } .reward-feedback p { grid-column:1/-1; margin-top:4px; } }
 @media print { .learning-progress,.chapter-check,.lab-controls,.download-row,button,.journey-finale { display:none; } .stage-board,.explorer-grid { display:block; } }
 @media(prefers-reduced-motion:reduce) { .reward-journey > span { transition:none; } }
+.explorer-grid > * { min-width: 0; }
+.explorer-grid .result-panel { overflow-x: auto; }

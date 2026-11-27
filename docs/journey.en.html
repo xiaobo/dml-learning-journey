@@ -95,7 +95,7 @@
 		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
 	</style>
-	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course.css?v=10eaab4b0a">
 	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
 <style>.course-site-nav{display:flex;justify-content:flex-end;gap:1.25em;padding:6px 4vw;font:14px/1.5 system-ui}</style><meta name="description" content="Build a February sales report in twelve chapters. Start with four sales, reuse the measures, then download your project. Predict the result, change a control, then check your answer. The examples run offline with invented data."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="Learn DML: interactive business metrics tutorial"><meta property="og:description" content="Build a February sales report in twelve chapters. Start with four sales, reuse the measures, then download your project. Predict the result, change a control, then check your answer. The examples run offline with invented data."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
 <body>
@@ -176,7 +176,7 @@
     amount:
   measures:
     sales: SUM({amount})
-    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> references the model column <code>amount</code>. An empty column entry maps to the physical column with the same name.</p></div>
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> refers to the sale amount in the model. Its <code>abbr</code> gives the column name in the source table.</p></div>
 		</section>
 		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
 			<div>
@@ -304,11 +304,11 @@ GROUP BY manager</code></pre><p data-i18n="lookups.text9">Run validation on the 
 			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North: sales 30, completed sales 10, previous-month sales 20, average sales per customer 15, share 30%. South: sales 70, completed sales 70, previous-month sales 50, average sales per customer 70, share 70%.</p><p data-i18n="capstone.text12">To run it outside the browser, open the project's START-HERE.txt. Create the sample tables in an empty practice database, lint the model, strict-compile the query, and inspect the generated SQL. Record strict findings before moving on to live validation and result comparison.</p></div>
 			</form>
 			<div class="explorer-grid final-preview">
-				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">Model notebook · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">Excerpt of selected measures and any measures they reference. Updates with your choices.</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">Read the complete model notebook</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">Download model.dml</a></details></div>
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">Model notebook · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">Excerpt of selected measures and any measures they reference. Updates with your choices.</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">Read the complete model notebook</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.en.dml" download="model.dml" download="" data-i18n="capstone.notebookDownload">Download model.dml</a></details></div>
 				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">Your question · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">The query reuses these definitions. Report controls set its grouping and filters.</p><pre><code id="final-query"></code></pre></div>
 			</div>
 			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">Illustrative result</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">The preview calculates our invented rows, not arbitrary DML. Only recorded companion queries have compiler evidence; other builder combinations need their own compile check. This page makes no database connection.</p>
-			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">Download the checked project</a></div>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.en.zip" download="" data-i18n="capstone.text14">Download the checked project</a></div>
 			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">See the local compiler commands</summary><pre><code>dmlc.exe --lint model.dml --json
 dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</code></pre><p class="small" data-i18n="capstone.text16">These compile commands need no database connection. The project includes sample source data and setup SQL for a separate database exercise. Expected join warnings are recorded with the compiler snapshots; an expected warning is not a passed strict check.</p></details>
 			<div class="next-links"><a href="tutorials--first-query.html" data-i18n="capstone.text17">Run the compiler tutorial</a><a href="reference--README.html" data-i18n="capstone.text18">Explore the language reference</a><a href="tutorials--interactive-journey.html" data-i18n="capstone.text19">Read the exercise guide</a><a href="maz-sqlserver.html" hreflang="zh-CN" data-i18n="capstone.mazExtension">Use SQL Server Maz: readiness and runner progress (Chinese)</a></div>
@@ -318,11 +318,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">Keep these symbols close · quick reference</summary><p data-i18n="recall.intro">Read a reference as: measure, then how to calculate it this time. These are memory cues, not extra syntax or arithmetic.</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">Symbol</th><th data-i18n="recall.meaning">Recall its meaning</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">Source dimension <code>dimension: [id]</code>: identify source rows. Query dimension <code>GROUP BY region</code>: group result rows. Evaluation dimension with <code>+d: customer</code>: calculate intermediate customer totals.</p><p class="small" data-i18n="syntax.reference">See <a href="reference--modifiers.html">modifier rules and examples</a> when you need more forms.</p></details>
 		<footer><p data-i18n="common.text7">DML defines. DMX expresses. Model Query selects and groups.</p><p data-i18n="common.text8"><a href="compiler-observations.json">Compiler observations</a> · <a href="explanation--visual-introduction.html">Original text introduction</a> · Works offline</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=a92c71e426"></script>
-	<script src="locales--zh.js?v=7346580e6d"></script>
-	<script src="locales--ja.js?v=55e01a5807"></script>
-	<script src="locales--de.js?v=e38dcdfc17"></script>
-	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script src="locales--en.js?v=db09ce2b9b"></script>
+	<script src="locales--zh.js?v=bc1a5123de"></script>
+	<script src="locales--ja.js?v=b1e43c3c6a"></script>
+	<script src="locales--de.js?v=5f49627531"></script>
+	<script src="journey-samples.js?v=7f6a183b8b"></script><script src="course-i18n.js?v=01b5f8c7a5"></script>
 	<script>
 		(() => {
 			const i18n = window.SmallJourneyI18n, t = i18n.t;
@@ -374,10 +374,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		})();
 	</script>
 	<script src="course-data.js?v=fa1f4bdbb5"></script>
-	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="course-definitions.js?v=91c429158b"></script>
 	<script src="compiler-observations.js?v=1ccf083713"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=7ded72104c"></script>
+	<script src="course.js?v=b1d732cb03"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

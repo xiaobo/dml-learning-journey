@@ -5,9 +5,9 @@
 </blockquote>
 <p>最初に「<a href="maz-prepare-refresh.ja.html">prepare と refresh の選び方：パラメーターと復旧ルール</a>」を読んでください。</p>
 <h2 id="a-quarterly-report-from-the-tutorial39s-sales-data">チュートリアルの売上データを使った四半期レポート <a class="section-link" aria-label="この節へのリンク" href="#a-quarterly-report-from-the-tutorial39s-sales-data">#</a></h2>
-<p>インタラクティブチュートリアルの第 12 章では、データセット <code>FACT_SALES</code> が <code>TABLE_SALES</code> を読み取り、<code>id</code> で個々の売上を識別し、<code>dt_month</code> に月を記録し、<code>SUM({amount})</code> で売上を集計します。このモデルとその 8 行のソースデータを引き続き使います。1 月の合計は 70、2 月の合計は 100 です。</p>
+<p>インタラクティブチュートリアルの第 12 章では、データセット <code>売上明細</code> が <code>TABLE_SALES</code> を読み取り、<code>売上明細番号</code> で個々の売上を識別し、<code>dt_month</code> に月を記録し、<code>SUM({売上金額})</code> で売上を集計します。このモデルとその 8 行のソースデータを引き続き使います。1 月の合計は 70、2 月の合計は 100 です。</p>
 <p>この拡張で、マテリアライズ済みの結果を 2 つ、四半期レポートを 1 つ追加します。</p>
-<p><code>TABLE_SALES</code>（売上明細）→ <code>SALES_MONTHLY</code>（月次売上）→ <code>SALES_QUARTERLY</code>（四半期売上）→ <code>quarterly_sales</code>（レポート）</p>
+<p><code>TABLE_SALES</code>（売上明細）→ <code>SALES_MONTHLY</code>（月次売上）→ <code>SALES_QUARTERLY</code>（四半期売上）→ <code>四半期売上高</code>（レポート）</p>
 <p>クエリの準備では、まず上流で必要な月を確認し、次に下流の四半期パーティションを作成します。再構築が必要なパーティションは、それぞれ個別にコミットされます。</p>
 <h2 id="prepare-the-first-quarter">第 1 四半期を準備する <a class="section-link" aria-label="この節へのリンク" href="#prepare-the-first-quarter">#</a></h2>
 <ol>
@@ -45,16 +45,16 @@ OPTION (MAXRECURSION 0);
   type: materialize
   parameters: {dt_month: range}
   dimension: [dt_month]
-  measures: [sales]
+  measures: [売上高]
 
 SALES_QUARTERLY:
   type: materialize
   allows: [SALES_MONTHLY]
   parameters: {dt_quarter: range}
   dimension: [dt_quarter]
-  measures: [sales]
+  measures: [売上高]
 
-quarterly_sales:
+四半期売上高:
   type: query
   allows: [SALES_QUARTERLY]
   filters:
@@ -62,7 +62,7 @@ quarterly_sales:
       range: ['2025-01-01', '2025-01-01']
   columns:
     dimension: [dt_quarter]
-    sales:
+    売上高:
 </code></pre>
 </details>
 
@@ -71,7 +71,7 @@ $compiled.data.setupSql    # setup_sql
 $compiled.data.prepareSql  # prepare_sql
 $compiled.data.sql         # sql
 </code></pre>
-<p>拡張したモデルをコンパイルし、生成された <code>setup_sql</code> でマテリアライズと依存関係をインストールします。次に、自動コミット接続で <code>quarterly_sales</code> の <code>prepare_sql</code> を実行します。準備と実際にデータが利用可能かどうかの確認が完了し、<code>data_ready=1</code> が返ったら、同じリクエストの業務クエリ <code>sql</code> を実行します。待機中は、別の接続から <code>prepare_status_sql</code> で状況を確認できます。エラーが発生した場合や待機がタイムアウトした場合は、まだクエリを実行しないでください。原因を解消してから通常の準備をやり直します。SQL Server のセッションには <code>IMPLICIT_TRANSACTIONS OFF</code> と <code>@@TRANCOUNT = 0</code> が必要です。業務クエリは引き続き SELECT または CTE です。</p>
+<p>拡張したモデルをコンパイルし、生成された <code>setup_sql</code> でマテリアライズと依存関係をインストールします。次に、自動コミット接続で <code>四半期売上高</code> の <code>prepare_sql</code> を実行します。準備と実際にデータが利用可能かどうかの確認が完了し、<code>data_ready=1</code> が返ったら、同じリクエストの業務クエリ <code>sql</code> を実行します。待機中は、別の接続から <code>prepare_status_sql</code> で状況を確認できます。エラーが発生した場合や待機がタイムアウトした場合は、まだクエリを実行しないでください。原因を解消してから通常の準備をやり直します。SQL Server のセッションには <code>IMPLICIT_TRANSACTIONS OFF</code> と <code>@@TRANCOUNT = 0</code> が必要です。業務クエリは引き続き SELECT または CTE です。</p>
 <p>第 1 四半期の結果は <strong>170</strong> です。月 1、2、3 にはそれぞれ月次パーティションの状態が記録されています。この時点で 3 月のパーティションは空でした。SQL Server では、大文字と小文字が混在する入れ子の名前の登録に現時点で制約があるため、この例ではマテリアライズ名をすべて大文字にしています。</p>
 <h2 id="how-new-months-and-historical-corrections-are-handled">新しい月と過去データの訂正の扱い <a class="section-link" aria-label="この節へのリンク" href="#how-new-months-and-historical-corrections-are-handled">#</a></h2>
 <p>以下の 3 つのデータ変更を、練習用データベースで順番に実行します。ソースのトランザクションをコミットしてから refresh を実行します。2 件の挿入には、チュートリアルと同じ地域と顧客を使います。</p>
@@ -94,7 +94,7 @@ $compiled.data.sql         # sql
 <td>Q2 の結果として初めて <strong>40</strong> が返る。</td>
 </tr>
 <tr>
-<td>2 月の <code>id = 2</code> の売上を 20 から 25 に訂正する。</td>
+<td>2 月の <code>売上明細番号 = 2</code> の売上を 20 から 25 に訂正する。</td>
 <td><code>SALES_MONTHLY</code> に対して 2 月の refresh を実行する。デフォルトでは、その月と影響を受ける Q1 が更新される。</td>
 <td>Q1 は <strong>200 → 205</strong>、Q2 は <strong>40</strong> のまま。</td>
 </tr>

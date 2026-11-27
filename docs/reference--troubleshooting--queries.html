@@ -25,7 +25,7 @@
 <pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY dt_month
 </code></pre>
 <p><strong>Correct (YTD at day grain)</strong>:</p>
-<pre><code class="language-sql">SELECT dt_date, AGG(sales, &#39;ytd&#39;) FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
+<pre><code class="language-sql">SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
 </code></pre>
 <p><a id="p13"></a></p>
 <h2 id="p13-mixing-time-granularities">P13. Mixing time granularities <a class="section-link" aria-label="Link to section" href="#p13-mixing-time-granularities">#</a></h2>
@@ -36,7 +36,7 @@
 <strong>Fix</strong>: Only exclude nulls when the question specifically asks for it.</p>
 <p><a id="p15"></a></p>
 <h2 id="p15-using-between-for-single-periods">P15. Using BETWEEN for single periods <a class="section-link" aria-label="Link to section" href="#p15-using-between-for-single-periods">#</a></h2>
-<p><strong>Guidance</strong>: <code>dt_month = &#39;2024-01-01&#39;</code> clearly selects January. A date interval is valid when that interval is intended; use explicit bounds and check timestamp/end-day semantics.</p>
+<p><strong>Guidance</strong>: <code>dt_month = '2024-01-01'</code> clearly selects January. A date interval is valid when that interval is intended; use explicit bounds and check timestamp/end-day semantics.</p>
 <p><a id="p16"></a></p>
 <h2 id="p16-time-filter-order-is-a-style-convention">P16. Time-filter order is a style convention <a class="section-link" aria-label="Link to section" href="#p16-time-filter-order-is-a-style-convention">#</a></h2>
 <p>Both predicate orders compile. Predicate order is a readability choice, not an engine requirement.</p>
@@ -46,8 +46,8 @@
 <strong>Fix</strong>: Only use ORDER BY for Top N or when the question explicitly asks for ranking.</p>
 <p><a id="p18"></a></p>
 <h2 id="p18-manual-growth-rate-calculation">P18. Manual growth rate calculation <a class="section-link" aria-label="Link to section" href="#p18-manual-growth-rate-calculation">#</a></h2>
-<p><strong>Wrong</strong>: <code>DIVIDE(AGG(sales), AGG(sales, &#39;ya&#39;)) - 1</code>
-<strong>Fix</strong>: <code>AGG(sales, &#39;yoy&#39;)</code> — built-in modifier.</p>
+<p><strong>Wrong</strong>: <code>DIVIDE(AGG(sales), AGG(sales, 'ya')) - 1</code>
+<strong>Fix</strong>: <code>AGG(sales, 'yoy')</code> — built-in modifier.</p>
 <p><a id="p20"></a></p>
 <h2 id="p20-using-distinct-alone-for-existence-checks">P20. Using DISTINCT alone for existence checks <a class="section-link" aria-label="Link to section" href="#p20-using-distinct-alone-for-existence-checks">#</a></h2>
 <p><strong>Wrong</strong>: <code>SELECT DISTINCT customer FROM MODEL.transactions</code> for &quot;do we have any customers?&quot;
@@ -61,7 +61,7 @@
 <p><a id="p46"></a></p>
 <h2 id="p46-bare-column-name-in-aggregate-query">P46. Bare column name in aggregate query <a class="section-link" aria-label="Link to section" href="#p46-bare-column-name-in-aggregate-query">#</a></h2>
 <p><strong>Wrong</strong>: <code>prod_id:</code> with no <code>dataset:</code> when the column lives on <code>DATASET_PRODUCTS</code>.
-<strong>Fix</strong>: <code>prod_id: &quot;{DATASET_PRODUCTS}.prod_id&quot;</code>.</p>
+<strong>Fix</strong>: <code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code>.</p>
 <p><a id="p47"></a></p>
 <h2 id="p47-mismatched-dimension-field-names-across-datasets">P47. Mismatched dimension field names across datasets <a class="section-link" aria-label="Link to section" href="#p47-mismatched-dimension-field-names-across-datasets">#</a></h2>
 <p><strong>Wrong</strong>: <code>DATASET_PT</code> uses dimension <code>id</code>; <code>DATASET_MC</code> uses <code>tag_id</code>.
@@ -94,7 +94,7 @@
 <strong>Fix</strong>: Hardcode probe month or <code>SELECT MAX(dt_month) FROM MODEL.&lt;dataset&gt;</code> detail query.</p>
 <p><a id="p61"></a></p>
 <h2 id="p61-aggregating-directly-on-dataset-with-group-by">P61. Aggregating directly on dataset with GROUP BY <a class="section-link" aria-label="Link to section" href="#p61-aggregating-directly-on-dataset-with-group-by">#</a></h2>
-<p><strong>Wrong</strong>: <code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code>
+<p><strong>Wrong</strong>: <code>SELECT buyer_id, 品牌, SUM(ex_factory_amount) FROM MODEL.DATASET_X GROUP BY buyer_id, 品牌</code>
 <strong>Symptom</strong>: <code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code>
 <strong>Fix</strong>: Either (a) define measures in <code>model.dml</code> and use <code>FROM MODEL</code> with <code>AGG()</code>, or (b) use inline measures via <code>/** dml ... **/</code> comment blocks for ad-hoc queries without editing <code>.dml</code> (see <a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures (<code>/** dml ... **/</code>)</a>)</p>
 <h2 id="查询排错">查询排错 <a class="section-link" aria-label="Link to section" href="#查询排错">#</a></h2>

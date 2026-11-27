@@ -8,10 +8,10 @@
 [order_id, line_id]
 [product_id, dt_month]
 </code></pre>
-<p>Jede Zeile oben definiert eine Dimension. <code>[product_id, dt_month]</code> ist eine Dimension mit zwei Feldern.</p>
+<p>Jede Zeile oben definiert eine Dimension. <code>[Produktnummer, dt_month]</code> ist eine Dimension mit zwei Feldern.</p>
 <p>Die Kennzahloption <code>dimensions:</code> hat eine zusätzliche Listenebene, weil sie mehrere zulässige Dimensionen zur Auswahl enthalten kann:</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id]
+  - [Kundennummer]
   - [account_id, dt_month]
 </code></pre>
 <p>Die äußere Liste enthält zwei zulässige Dimensionen. Jede innere Liste bildet eine Dimension.</p>
@@ -52,7 +52,7 @@
 <td>Beschränkt die Auswahl an Dimensionen, mit denen die Kennzahl ausgewertet werden darf. Legt weder die Identität der Quellzeilen noch die Gruppierung der Abfrage fest.</td>
 </tr>
 </tbody></table>
-<p>Diese Rollen sind nicht austauschbar. Wenn Sie etwa <code>[region]</code> unter <code>dimensions:</code> einer Kennzahl hinzufügen, erscheint <code>region</code> dadurch nicht im Abfrageergebnis. Die Abfrage benötigt weiterhin <code>GROUP BY region</code> oder <code>columns.dimension: [region]</code>.</p>
+<p>Diese Rollen sind nicht austauschbar. Wenn Sie etwa <code>[Region]</code> unter <code>dimensions:</code> einer Kennzahl hinzufügen, erscheint <code>Region</code> dadurch nicht im Abfrageergebnis. Die Abfrage benötigt weiterhin <code>GROUP BY Region</code> oder <code>columns.dimension: [Region]</code>.</p>
 <h2 id="3-grain-is-derived-from-a-dimension">3. Die Granularität ergibt sich aus der Dimension <a class="section-link" aria-label="Link zum Abschnitt" href="#3-grain-is-derived-from-a-dimension">#</a></h2>
 <p>Die <strong>Granularität</strong> beschreibt, wofür eine einzelne Zeile steht, nachdem eine Dimension in einem bestimmten Kontext angewendet wurde.</p>
 <table>
@@ -65,17 +65,17 @@
 </thead>
 <tbody><tr>
 <td>Datensatz mit Bestellpositionen</td>
-<td><code>[order_id, line_id]</code></td>
+<td><code>[Bestellnummer, Positionsnummer]</code></td>
 <td>Eine Quellzeile pro Bestellposition</td>
 </tr>
 <tr>
 <td>Monatliche Abfrage nach Produkt</td>
-<td><code>[product_id, dt_month]</code></td>
+<td><code>[Produktnummer, dt_month]</code></td>
 <td>Eine Ergebniszeile pro Produkt und Monat</td>
 </tr>
 <tr>
 <td>Auswertung nach Kunde</td>
-<td><code>[customer_id]</code></td>
+<td><code>[Kundennummer]</code></td>
 <td>Ein Zwischenwert pro Kunde</td>
 </tr>
 <tr>
@@ -88,17 +88,21 @@
 <p>Wenn Sie ein Dimensionsfeld hinzufügen, wird die Granularität in der Regel feiner. Wenn Sie eines entfernen, wird sie in der Regel gröber. Diese Faustregel reicht nicht aus, um Kompatibilität nachzuweisen. Auch die Herleitung der Felder, zeitliche Beziehungen, Kennzahlbeschränkungen und Datensatzgrenzen spielen eine Rolle. Lassen Sie den Compiler die deklarierte Beziehung prüfen.</p>
 <h2 id="4-dataset-dimension-source-row-identity">4. Datensatzdimension und Identität der Quellzeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#4-dataset-dimension-source-row-identity">#</a></h2>
 <p>Die Datensatzdimension enthält die Felder, die eine einzelne physische Quellzeile identifizieren:</p>
-<pre><code class="language-yaml">Order Line:
+<pre><code class="language-yaml">Bestellposition:
     type: dataset
     table: tabOrderLine
-    dimension: [order_id, line_id]
+    dimension: [Bestellnummer, Positionsnummer]
     columns:
-        order_id:
-        line_id:
-        product_id:
-        net_amount:
+        Bestellnummer:
+            abbr: order_id
+        Positionsnummer:
+            abbr: line_id
+        Produktnummer:
+            abbr: product_id
+        Nettobetrag:
+            abbr: net_amount
 </code></pre>
-<p>Die vollständige Wertekombination von <code>[order_id, line_id]</code> muss eindeutig sein. <code>order_id</code> kann sich über mehrere Bestellpositionen hinweg wiederholen und <code>line_id</code> über mehrere Bestellungen hinweg. Die vollständige Datensatzdimension bleibt dabei eindeutig.</p>
+<p>Die vollständige Wertekombination von <code>[Bestellnummer, Positionsnummer]</code> muss eindeutig sein. <code>Bestellnummer</code> kann sich über mehrere Bestellpositionen hinweg wiederholen und <code>Positionsnummer</code> über mehrere Bestellungen hinweg. Die vollständige Datensatzdimension bleibt dabei eindeutig.</p>
 <p>Ersetzen Sie die physische Zeilenidentität nicht durch eine fachliche Gruppierung, deren Werte sich wiederholen können. Enthält die Quelle mehrere Buchungseinträge mit derselben Wertekombination für <code>[account_id, invoice_id]</code>, ist diese Liste keine gültige Datensatzdimension, auch wenn Berichte häufig danach gruppieren. Verwenden Sie den physischen Schlüssel des Buchungseintrags als Datensatzdimension und <code>[account_id, invoice_id]</code> als Abfrage- oder Materialisierungsdimension.</p>
 <p><code>pk(...)</code> stützt sich auf die Datensatzdimension des Zieldatensatzes:</p>
 <ul>
@@ -109,24 +113,24 @@
 <p>Der Compiler setzt voraus, dass diese Anforderungen erfüllt sind, und kann einen Nachschlagevorgang in einen <code>LEFT JOIN</code> übersetzen. Doppelte Zielschlüssel können daher Zeilen vervielfachen und Kennzahlwerte mehrfach in die Berechnung einfließen lassen. Wenn Sie dem kompilierten SQL ein <code>DISTINCT</code> oder <code>GROUP BY</code> hinzufügen, behebt das den Verstoß gegen die Modellanforderungen nicht.</p>
 <h2 id="5-query-dimension-result-grouping">5. Abfragedimension und Gruppierung der Ergebnisse <a class="section-link" aria-label="Link zum Abschnitt" href="#5-query-dimension-result-grouping">#</a></h2>
 <p>In Model Query SQL:</p>
-<pre><code class="language-sql">SELECT dt_month, product_id, AGG(net_sales)
+<pre><code class="language-sql">SELECT dt_month, Produktnummer, AGG(Nettoumsatz)
 FROM MODEL
-GROUP BY dt_month, product_id
+GROUP BY dt_month, Produktnummer
 </code></pre>
-<p>Die Abfragedimension ist <code>[dt_month, product_id]</code>. Jede Ergebniszeile steht für eine Kombination aus Monats- und Produktwert.</p>
+<p>Die Abfragedimension ist <code>[dt_month, Produktnummer]</code>. Jede Ergebniszeile steht für eine Kombination aus Monats- und Produktwert.</p>
 <p>Bei einer Abfrage im DML-Format ist diese Rolle explizit angegeben:</p>
-<pre><code class="language-yaml">Monthly Product Sales:
+<pre><code class="language-yaml">MonatlicherProduktumsatz:
     type: query
     columns:
-        dimension: [dt_month, product_id]
-        net_sales: "{net_sales}"
+        dimension: [dt_month, Produktnummer]
+        Nettoumsatz: "{Nettoumsatz}"
 </code></pre>
 <p>Eine Abfrage ohne Gruppierung hat keine Abfragedimension. Wenn ihre Kennzahlen es zulassen, liefert sie ein Ergebnis im Gesamtsummenkontext.</p>
 <p>Wenn kompatible Kennzahlen aus unterschiedlichen Datensätzen stammen, aggregiert der Compiler jede Kennzahl separat auf die Granularität der Abfrage und führt die Ergebnisse anschließend anhand gemeinsamer Dimensionsfelder zusammen. So vermeidet er die typische Vervielfachung von Beiträgen zu Aggregaten, die entsteht, wenn Detailzeilen zuerst verknüpft werden. Gültige Datensatzdimensionen und eindeutige Nachschlagevorgänge mit <code>pk(...)</code> sind weiterhin erforderlich.</p>
 <p>Ein Feld der Abfragedimension kann auch eine <strong>Kennzahl als Dimension</strong> sein. Dabei dient das Ergebnis einer Kennzahl als Feld der Abfragedimension und wird häufig mit <code>{name: {+d: dim}}</code> gebunden. Das Feld behält die Rolle einer Abfragedimension und legt die Identität der Quellzeilen über <code>dimension:</code> nicht fest. Die Regeln für die Definition finden Sie unter <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>.</p>
 <h2 id="6-evaluation-dimension-one-measure-reference">6. Auswertungsdimension einer einzelnen Kennzahlreferenz <a class="section-link" aria-label="Link zum Abschnitt" href="#6-evaluation-dimension-one-measure-reference">#</a></h2>
 <p>Die Abfragedimension liefert den Ausgangskontext für eine Kennzahlreferenz. Die Formelstruktur, die zulässigen Dimensionen und die Modifikatoren bestimmen ihre effektive Auswertungsdimension.</p>
-<p>Für die Abfragedimension <code>[dt_month, region, brand]</code> gilt:</p>
+<p>Für die Abfragedimension <code>[dt_month, Region, Marke]</code> gilt:</p>
 <table>
 <thead>
 <tr>
@@ -136,27 +140,27 @@ GROUP BY dt_month, product_id
 </tr>
 </thead>
 <tbody><tr>
-<td><code>{sales}</code></td>
+<td><code>{Umsatz}</code></td>
 <td>Kein Dimensionsmodifikator</td>
 <td>Ermittelte Zieldimension</td>
 </tr>
 <tr>
-<td><code>{sales: {+d: customer_id}}</code></td>
-<td>Dimensionsfeld <code>customer_id</code> hinzufügen</td>
-<td><code>[dt_month, region, brand, customer_id]</code></td>
+<td><code>{Umsatz: {+d: Kundennummer}}</code></td>
+<td>Dimensionsfeld <code>Kundennummer</code> hinzufügen</td>
+<td><code>[dt_month, Region, Marke, Kundennummer]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {-d: brand}}</code></td>
-<td>Dimensionsfeld <code>brand</code> entfernen</td>
-<td><code>[dt_month, region]</code></td>
+<td><code>{Umsatz: {-d: Marke}}</code></td>
+<td>Dimensionsfeld <code>Marke</code> entfernen</td>
+<td><code>[dt_month, Region]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: [region]}}</code></td>
+<td><code>{Umsatz: {dimension: [Region]}}</code></td>
 <td>Die gesamte Dimension ersetzen</td>
-<td><code>[region]</code></td>
+<td><code>[Region]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: []}}</code></td>
+<td><code>{Umsatz: {dimension: []}}</code></td>
 <td>Die Dimension aufheben</td>
 <td>Gesamtsummenkontext</td>
 </tr>
@@ -165,22 +169,22 @@ GROUP BY dt_month, product_id
 <p><code>-d</code> entfernt ein Dimensionsfeld, behält aber einen Abfragefilter auf diesem Feld bei, wenn der Compiler die Filter an den Datensatz weitergibt. <code>-df</code> entfernt das Feld und unterbindet für diese Referenz die Weitergabe des zugehörigen Filters. Verwenden Sie den zweiten Modifikator, wenn ein Nenner auch Werte berücksichtigen muss, die der Abfragefilter ausschließt. Syntax und Filterverhalten sind unter <a href="reference--modifiers.de.html">Kennzahlmodifikatoren</a> beschrieben.</p>
 <h2 id="7-allowed-dimensions-measure-validity">7. Zulässige Dimensionen für die Auswertung von Kennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#7-allowed-dimensions-measure-validity">#</a></h2>
 <p>Mit <code>dimensions:</code> in der Kennzahldeklaration lassen sich die zulässigen Auswertungsdimensionen einschränken, wenn die fachliche Definition dies erfordert:</p>
-<pre><code class="language-yaml">Revenue per Customer:
+<pre><code class="language-yaml">ErlösJeKunde:
     type: measure
-    formula: DIVIDE({net_sales}, {active_customers})
+    formula: DIVIDE({Nettoumsatz}, {AktiveKunden})
     dimensions:
-      - [customer_id]
+      - [Kundennummer]
 </code></pre>
-<p><code>[customer_id]</code> ist eine zulässige Dimension mit einer abgeschlossenen Feldliste. Sie schränkt die Auswertung ein, identifiziert aber weder Datensatzzeilen noch gruppiert sie das Abfrageergebnis.</p>
+<p><code>[Kundennummer]</code> ist eine zulässige Dimension mit einer abgeschlossenen Feldliste. Sie schränkt die Auswertung ein, identifiziert aber weder Datensatzzeilen noch gruppiert sie das Abfrageergebnis.</p>
 <p>Auslassungspunkte lassen zusätzliche Dimensionsfelder zu, während die aufgeführten Felder Pflicht bleiben:</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id, ...]
+  - [Kundennummer, ...]
 </code></pre>
-<p>Damit sind kompatible Auswertungsdimensionen zulässig, die <code>customer_id</code> enthalten. Fehlt <code>dimensions:</code> in der Kennzahldeklaration, ist jede Dimension zulässig, die mit der Kennzahl und ihren Datensatzabhängigkeiten kompatibel ist.</p>
+<p>Damit sind kompatible Auswertungsdimensionen zulässig, die <code>Kundennummer</code> enthalten. Fehlt <code>dimensions:</code> in der Kennzahldeklaration, ist jede Dimension zulässig, die mit der Kennzahl und ihren Datensatzabhängigkeiten kompatibel ist.</p>
 <p>Benötigt eine Formel ein Pflichtfeld der Dimension, das die Abfrage nicht bereitstellt, ergänzen Sie es mit <code>+d</code> in der betreffenden Kennzahlreferenz und führen Sie die erforderliche äußere Aggregation durch. Fügen Sie der Abfrage keine Gruppierung hinzu, nur um eine Zwischenberechnung zu ermöglichen.</p>
 <h2 id="8-materialization-dimension-stored-output-identity">8. Materialisierungsdimension und Identität gespeicherter Ergebniszeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#8-materialization-dimension-stored-output-identity">#</a></h2>
 <p>Eine Materialisierungsdimension legt die Gruppierung und den Schlüssel der gespeicherten Ergebnisse fest:</p>
-<pre><code class="language-yaml">Monthly Account Balance:
+<pre><code class="language-yaml">MonatlicherKontostand:
     type: materialize
     dimension: [account_id, dt_month]
     measures: [closing_balance]

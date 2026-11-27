@@ -1,0 +1,74 @@
+dialect: mssql
+
+Regionsverzeichnis:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [Region]
+  columns:
+    Region:
+      abbr: region
+    Regionalleitung:
+      abbr: manager
+
+Verkaufspositionen:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [VerkaufspositionID]
+  columns:
+    VerkaufspositionID:
+      abbr: id
+    Quellregion:
+      abbr: region
+    Region: '{Quellregion}'
+    Kunde:
+      abbr: customer
+    dt_month:
+      abbr: dt_month
+    Bestellstatus:
+      abbr: status
+    Verkaufsbetrag:
+      abbr: amount
+    Regionalleitung: 'pk(region).{Regionsverzeichnis}.Regionalleitung'
+  measures:
+    Umsatz: SUM({Verkaufsbetrag})
+    Verkaufsanzahl: COUNT(1)
+
+DurchschnittsumsatzJeVerkauf:
+  type: measure
+  formula: 'DIVIDE({Umsatz}, {Verkaufsanzahl})'
+
+UmsatzAbgeschlossenerBestellungen:
+  type: measure
+  formula: '{Umsatz: {+f: {Bestellstatus: completed}}}'
+
+UmsatzanteilDerAuswahl:
+  type: measure
+  formula: 'DIVIDE({Umsatz}, {Umsatz: {-d: Region}})'
+
+UmsatzanteilAllerRegionen:
+  type: measure
+  formula: 'DIVIDE({Umsatz}, {Umsatz: {-df: Region}})'
+
+DurchschnittsumsatzJeKunde:
+  type: measure
+  formula: 'AVG({Umsatz: {+d: Kunde}})'
+
+SummeDerKundenumsätze:
+  type: measure
+  formula: 'SUM({Umsatz: {+d: Kunde}})'
+
+HöchsterKundenumsatz:
+  type: measure
+  formula: 'MAX({Umsatz: {+d: Kunde}})'
+
+Vormonatsumsatz:
+  type: measure
+  formula: '{Umsatz: pp}'
+
+UmsatzwachstumZumVormonat:
+  type: measure
+  formula: '{Umsatz: pop}'
+
+VormonatsumsatzMitNullersatz:
+  type: measure
+  formula: 'ISNULL({Umsatz: pp}, 0)'

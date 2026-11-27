@@ -7,8 +7,8 @@
     dataset: dataset_name
     formula: aggregation_expression
     dimensions:                # optional allowed evaluation dimensions
-        - [customer_id]
-        - [customer_id, ...]   # listed fields remain required
+        - [客户编号]
+        - [客户编号, ...]   # listed fields remain required
     prerequisite: validity_expression
 </code></pre>
 <p><code>formula:</code> 为必填项。<code>dataset:</code> 将顶层原子指标绑定到其数据源。在数据集的 <code>measures:</code> 块中声明的指标会继承该数据集。复合指标引用其他指标，并省略 <code>dataset:</code>。</p>
@@ -19,144 +19,144 @@
 <li>在<strong>模型查询</strong>中设置查询专用的筛选和分组（使用 SQL 的 <code>WHERE</code>/<code>GROUP BY</code>，或使用 DML 格式的 <code>filters:</code> / <code>columns: dimension:</code>），不要为此定义一次性指标。模型查询的规则见<a href="reference--model-query-sql.zh.html">模型查询（SQL）</a>。</li>
 <li><code>dataset:</code> 仅用于<strong>原子</strong>指标。原子指标的公式直接聚合该数据集的行或列表达式，不引用其他指标。<strong>复合</strong>指标引用其他指标，不得声明 <code>dataset:</code>。即使引用的指标都使用同一个数据集，也适用此规则。请参见<a href="reference--measures.zh.html#measure-references">指标引用</a>和常见问题 <a href="reference--troubleshooting--models.zh.html#p39"><code>P39</code></a>。</li>
 <li>指标可以返回数值、日期值或分类值。显示格式由使用方设置，聚合方式和数据类型应与业务定义一致。</li>
-<li>对于存储金额或对精度敏感的原始字段，建议在原子指标中进行一次类型转换（例如 <code>SUM(CAST({amount} AS DECIMAL(38, 2)))</code>），并在后续处理中复用该指标。</li>
+<li>对于存储金额或对精度敏感的原始字段，建议在原子指标中进行一次类型转换（例如 <code>SUM(CAST({销售金额} AS DECIMAL(38, 2)))</code>），并在后续处理中复用该指标。</li>
 <li>如果业务规则依赖 <code>&gt; 0</code> / <code>&lt; 0</code> 比较，请先确保基础指标已具有预期的数据类型（例如 DECIMAL），再将其用于 <code>MINIF</code>/<code>MAXIF</code>/<code>DISTINCTCOUNTIF</code> 的条件。</li>
 </ul>
 <hr>
 <h2 id="simple-aggregations">简单聚合 <a class="section-link" aria-label="本节链接" href="#simple-aggregations">#</a></h2>
 <h3 id="count">COUNT <a class="section-link" aria-label="本节链接" href="#count">#</a></h3>
-<pre><code class="language-yaml">number_of_transactions:
+<pre><code class="language-yaml">交易笔数:
     type: measure
-    dataset: transactions
-    formula: count(distinct transaction_id)
+    dataset: 交易明细
+    formula: count(distinct 交易编号)
 
-number_of_products:
+商品数:
     type: measure
-    dataset: transactions
-    formula: count(distinct product)
+    dataset: 交易明细
+    formula: count(distinct 商品)
 </code></pre>
 <h3 id="sum">SUM <a class="section-link" aria-label="本节链接" href="#sum">#</a></h3>
-<pre><code class="language-yaml">amount:
+<pre><code class="language-yaml">销售金额:
     type: measure
-    dataset: transactions
-    formula: SUM(CAST({raw_amount} AS DECIMAL(38, 2)))
+    dataset: 交易明细
+    formula: SUM(CAST({原始金额} AS DECIMAL(38, 2)))
 
-transaction_quantity:
+交易数量:
     type: measure
-    dataset: transactions
-    formula: SUM(quantity)
+    dataset: 交易明细
+    formula: SUM(数量)
 </code></pre>
 <h3 id="maxmin">MAX/MIN <a class="section-link" aria-label="本节链接" href="#maxmin">#</a></h3>
-<pre><code class="language-yaml">last_order_date:
+<pre><code class="language-yaml">最近下单日期:
     type: measure
-    dataset: transactions
+    dataset: 交易明细
     formula: MAX(dt_date)
 </code></pre>
 <h3 id="avg">AVG <a class="section-link" aria-label="本节链接" href="#avg">#</a></h3>
-<pre><code class="language-yaml">avg_invoice_quantity:
+<pre><code class="language-yaml">每张发票平均数量:
     type: measure
-    formula: 'AVG({invoice_quantity: {+d: transaction_id}})'
+    formula: 'AVG({开票数量: {+d: 交易编号}})'
 </code></pre>
 <hr>
 <h2 id="filtered-measures">带筛选条件的指标 <a class="section-link" aria-label="本节链接" href="#filtered-measures">#</a></h2>
 <p>使用 <code>{+f: condition}</code> 指定内联筛选条件。修饰符的语法见<a href="reference--modifiers.zh.html#22-function-modifiers">函数修饰符</a>。</p>
-<pre><code class="language-yaml">expense:
+<pre><code class="language-yaml">费用:
     type: measure
-    dataset: transactions
+    dataset: 交易明细
     formula: |-
-        {debit: {+f: {account_type: ['Expense', 'Other Expense']}}}
+        {借方金额: {+f: {账户类型: ['Expense', 'Other Expense']}}}
 
-sales:
+销售额:
     type: measure
     description: Sales revenue from income accounts
     formula: |-
-        {credit: {+f: {account_type: ['Income', 'Other Income']}}}
+        {贷方金额: {+f: {账户类型: ['Income', 'Other Income']}}}
 
-food_and_drink_expense:
+餐饮费用:
     type: measure
     formula: |-
-        {expense: {+f: "instr(account, 'Food &amp; drink') &gt; 0"}}
+        {费用: {+f: "instr(账户, 'Food &amp; drink') &gt; 0"}}
 
-number_of_credit_card_transactions:
+信用卡交易笔数:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {credit_card : 'yes'}}}
+        {交易笔数: {+f: {credit_card : 'yes'}}}
 
-number_of_unpaid_invoices:
+未付发票数:
     type: measure
     formula: |-
-        {number_of_invoices: {+f: 'open_balance &gt; 0'}}
+        {发票数: {+f: '未结余额 &gt; 0'}}
 </code></pre>
 <hr>
 <h2 id="measure-references">指标引用 <a class="section-link" aria-label="本节链接" href="#measure-references">#</a></h2>
 <p>在公式中引用其他指标的写法如下。</p>
 <blockquote>
-<p><strong>复合指标不得声明 <code>dataset:</code>。</strong> 如果 <code>formula:</code> 引用了其他指标，请省略 <code>dataset:</code>。原子指标使用 <code>dataset:</code> 绑定要聚合的源数据行或列表达式，且不引用其他指标。下方的原子指标示例（<code>credit</code> / <code>debit</code>）保留 <code>dataset:</code>，复合指标 <code>profit</code> 则省略该属性。请参见常见问题 <a href="reference--troubleshooting--models.zh.html#p39"><code>P39</code></a>。</p>
+<p><strong>复合指标不得声明 <code>dataset:</code>。</strong> 如果 <code>formula:</code> 引用了其他指标，请省略 <code>dataset:</code>。原子指标使用 <code>dataset:</code> 绑定要聚合的源数据行或列表达式，且不引用其他指标。下方的原子指标示例（<code>贷方金额</code> / <code>借方金额</code>）保留 <code>dataset:</code>，复合指标 <code>利润</code> 则省略该属性。请参见常见问题 <a href="reference--troubleshooting--models.zh.html#p39"><code>P39</code></a>。</p>
 </blockquote>
 <pre><code class="language-yaml"># Base measures
-credit:
+贷方金额:
     type: measure
-    dataset: transactions
-    formula: SUM(credit)
+    dataset: 交易明细
+    formula: SUM(贷方金额)
 
-debit:
+借方金额:
     type: measure
-    dataset: transactions
-    formula: SUM(debit)
+    dataset: 交易明细
+    formula: SUM(借方金额)
 
 # Derived measure (composite — no dataset:)
-profit:
+利润:
     type: measure
     formula: |-
-        {credit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}} -
-        {debit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}}
+        {贷方金额: {+f: {交易类型: ['Income','Other Income','Expense','Other Expense']}}} -
+        {借方金额: {+f: {交易类型: ['Income','Other Income','Expense','Other Expense']}}}
 </code></pre>
 <hr>
 <h2 id="measure-aliases">指标别名 <a class="section-link" aria-label="本节链接" href="#measure-aliases">#</a></h2>
 <p>为现有指标创建别名的写法如下。</p>
-<pre><code class="language-yaml">revenue: |-
-    {sales}
+<pre><code class="language-yaml">收入: |-
+    {销售额}
 
-income: |-
-    {sales}
+收益: |-
+    {销售额}
 
-outgoing: |-
-    {expense}
+支出: |-
+    {费用}
 </code></pre>
 <hr>
 <h2 id="complex-formulas">复杂公式 <a class="section-link" aria-label="本节链接" href="#complex-formulas">#</a></h2>
 <h3 id="conditional-aggregations">条件聚合 <a class="section-link" aria-label="本节链接" href="#conditional-aggregations">#</a></h3>
 <p>使用 <code>SUMIF</code> / <code>DISTINCTCOUNTIF</code> / <code>MINIF</code> / <code>MAXIF</code> 且引用其他指标的指标是复合指标，不得声明 <code>dataset:</code>，即使公式中的某一列“属于”某个已知数据集也是如此。如果需要在列的范围内进行聚合，只在单独的原子指标上使用 <code>dataset:</code>。请参见<a href="reference--measures.zh.html#measure-references">指标引用</a>和常见问题 <a href="reference--troubleshooting--models.zh.html#p39"><code>P39</code></a>。</p>
-<pre><code class="language-yaml">incoming_payment:
+<pre><code class="language-yaml">收款:
     type: measure
     formula: |-
-        SUMIF({payment: {+d: customer}}, {customer} is not null)
+        SUMIF({payment: {+d: 客户}}, {客户} is not null)
 
-outgoing_payment:
+付款:
     type: measure
     formula: |-
-        SUMIF({payment: {+d: vendor}}, {vendor} is not null)
+        SUMIF({payment: {+d: 供应商}}, {供应商} is not null)
 </code></pre>
 <h3 id="nested-aggregations">嵌套聚合 <a class="section-link" aria-label="本节链接" href="#nested-aggregations">#</a></h3>
-<pre><code class="language-yaml">max_amount_per_invoice:
+<pre><code class="language-yaml">发票最高金额:
     type: measure
     formula: |-
-        MAX({sales: {+d: transaction_id}})
+        MAX({销售额: {+d: 交易编号}})
 
-daily_avg_sales:
+日均销售额:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: dt_date}}), distinctcount({dt_date}))
+        divide(sum({销售额: {+d: dt_date}}), distinctcount({dt_date}))
 
-weekly_avg_sales:
+周均销售额:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: dt_week}}), distinctcount({dt_week}))
+        divide(sum({销售额: {+d: dt_week}}), distinctcount({dt_week}))
 
-avg_sales_per_trx:
+每笔平均销售额:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: transaction_id}}), distinctcount({transaction_id}))
+        divide(sum({销售额: {+d: 交易编号}}), distinctcount({交易编号}))
 </code></pre>
 <h3 id="window-functions">窗口函数 <a class="section-link" aria-label="本节链接" href="#window-functions">#</a></h3>
 <p><strong>窗口函数的放置位置</strong>。完整规则见<a href="explanation--window-placement.zh.html">窗口函数的放置位置</a>。以下为概要。</p>
@@ -178,47 +178,50 @@ avg_sales_per_trx:
 </tbody></table>
 <p>原子指标不接受 <code>OVER</code>（<code>window functions are not allowed in atomic measures</code>）。常见问题见 <a href="reference--troubleshooting--grain-and-joins.zh.html#p70"><code>P70</code></a> 和 <a href="reference--troubleshooting--grain-and-joins.zh.html#p71"><code>P71</code></a>。</p>
 <p><strong>明细层级</strong>（在 <code>columns:</code> 下直接引用分区列）</p>
-<pre><code class="language-yaml">fact:
+<pre><code class="language-yaml">交易记录:
     type: dataset
     table: FACT_SALES
     columns:
-        store_id:
-        prod_id:
-        qty:
-        net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+        门店编号:
+            abbr: store_id
+        商品编号:
+            abbr: prod_id
+        数量:
+            abbr: qty
+        净数量: 'SUM({数量}) over (partition by {门店编号}, {商品编号})'
     measures:
-        sum_net_qty: 'SUM({net_qty})'
+        净数量合计: 'SUM({净数量})'
 </code></pre>
 <p><strong>聚合后</strong>（在复合指标上引用汇总值的定义粒度）</p>
-<pre><code class="language-yaml">total_sales:
+<pre><code class="language-yaml">销售总额:
     type: measure
-    dataset: fact
-    formula: SUM({qty})
+    dataset: 交易记录
+    formula: SUM({数量})
 
-region_rank:
+地区排名:
     type: measure
-    formula: 'rank() over (partition by {-d: product} order by {total_sales} desc)'
+    formula: 'rank() over (partition by {-d: 商品} order by {销售总额} desc)'
 </code></pre>
 <p><strong>在模型查询（SQL）中</strong>，如果 <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> 中的函数宏（<code>rank</code>、<code>rank_asc</code>、<code>pot</code>、<code>grand</code>）适用于当前场景，请优先使用。</p>
-<pre><code class="language-sql">SELECT product, AGG(sales, 'rank') AS sales_rank
-FROM MODEL GROUP BY product
+<pre><code class="language-sql">SELECT 商品, AGG(销售额, 'rank') AS 销售排名
+FROM MODEL GROUP BY 商品
 
-SELECT product, AGG({sales: pot}) AS share
-FROM MODEL GROUP BY product
+SELECT 商品, AGG({销售额: pot}) AS 占比
+FROM MODEL GROUP BY 商品
 </code></pre>
 <p>宏的类别及其行为见<a href="reference--modifiers.zh.html#22-function-modifiers">函数修饰符</a>。</p>
 <h3 id="isnull-and-iif">ISNULL 和 IIF <a class="section-link" aria-label="本节链接" href="#isnull-and-iif">#</a></h3>
-<pre><code class="language-yaml">all_product_sales:
+<pre><code class="language-yaml">所有商品销售额:
     type: measure
     description: Product sales including products with zero sales
     formula: |-
-        SUM(isnull({sales: {+d: product}}, 0) * iif({DATASET_PRODUCT_SERVICE}.product is not null, 1, 0))
+        SUM(isnull({销售额: {+d: 商品}}, 0) * iif({DATASET_PRODUCT_SERVICE}.商品 is not null, 1, 0))
 
-all_customer_sales:
+所有客户销售额:
     type: measure
     description: Customer sales including customers with zero sales
     formula: |-
-        SUM(isnull({sales: {+d: customer}}, 0) * iif({DATASET_CUSTOMER}.customer is not null, 1, 0))
+        SUM(isnull({销售额: {+d: 客户}}, 0) * iif({DATASET_CUSTOMER}.客户 is not null, 1, 0))
 </code></pre>
 <h3 id="fill-default-when-row-missing">缺少行时填充默认值 <a class="section-link" aria-label="本节链接" href="#fill-default-when-row-missing">#</a></h3>
 <p><strong>功能</strong>。当连接、FOJ 或物化操作中缺少行时，填充默认值，防止空值传播到后续计算。</p>
@@ -231,19 +234,19 @@ all_customer_sales:
 </ol>
 <pre><code class="language-yaml">上期:
     type: measure
-    formula: 'isnull({销售额: pp}, 0)'   # activate
+    formula: 'isnull({销售额: pp}, 0)' # activate
 
 上上期:
     type: measure
-    formula: '{上期: pp}'                # use site → 0
+    formula: '{上期: pp}' # use site → 0
 
 本期减上期:
     type: measure
-    formula: '{销售额} - {上期}'         # 上期 use site → 0 (no contagion)
+    formula: '{销售额} - {上期}' # 上期 use site → 0 (no contagion)
 
 本期减上期_fill:
     type: measure
-    formula: 'isnull({销售额} - {上期}, 0)'  # activate on result
+    formula: 'isnull({销售额} - {上期}, 0)' # activate on result
 
 # Nested embed (activation on q2f; deep expands fill of q2f at FOJ)
 q2f:   { dataset: secondary, formula: 'isnull(SUM({q2}), 0)' }
@@ -277,5 +280,5 @@ deep:  { formula: '{q2fp1} * 3' }
 </tbody></table>
 <p>原理与 MetricFlow 的 <code>fill_nulls_with</code> 或 Looker 在聚合后使用的 <code>COALESCE</code> 相同：在指标上声明填充值，使用<strong>该</strong>指标时应用填充值。DML 不会创建缺失的日历行，只会在联接后的列值为 null 时填补。请单独补齐缺失的日期，可使用日历表或按 FOJ 定义的粒度补齐。常见问题见<a href="reference--troubleshooting--README.zh.html">故障排查索引</a>中的 P28b。编译器说明（dmlc）见 <code>docs/fill-default-when-row-missing.md</code>。</p>
 <h2 id="reusable-chronological-running-measures">可复用的按时间顺序累计的指标 <a class="section-link" aria-label="本节链接" href="#reusable-chronological-running-measures">#</a></h2>
-<p>命名的复合指标可以包含在聚合后求值的窗口函数。<a href="examples--running-total-zh.html">累计销售额示例</a>按声明的 <code>[month]</code> 粒度定义 <code>SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code>。计算不按区域分区，筛选到 2 月会改变累计的起点。可加总金额的累计和既不是累计去重计数，也不是累计比率。示例包含完整的模型、查询和预期结果行。<code>dimension: []</code> 会在计算总计时清除求值分组。它既不指定排序，也不要求进行累计计算。若要取最后一次观测时的余额，请明确日期是按实体分别确定还是在全局统一确定，并定义如何处理缺失的观测以及日期并列的情况。按指定顺序求和或采用某一种取最后日期的方法，无法涵盖所有半可加性计算。</p>
+<p>命名的复合指标可以包含在聚合后求值的窗口函数。<a href="examples--running-total-zh.html">累计销售额示例</a>按声明的 <code>[month]</code> 粒度定义 <code>SUM({销售额}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code>。计算不按区域分区，筛选到 2 月会改变累计的起点。可加总金额的累计和既不是累计去重计数，也不是累计比率。示例包含完整的模型、查询和预期结果行。<code>dimension: []</code> 会在计算总计时清除求值分组。它既不指定排序，也不要求进行累计计算。若要取最后一次观测时的余额，请明确日期是按实体分别确定还是在全局统一确定，并定义如何处理缺失的观测以及日期并列的情况。按指定顺序求和或采用某一种取最后日期的方法，无法涵盖所有半可加性计算。</p>
 </main></body></html>

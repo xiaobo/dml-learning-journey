@@ -12,10 +12,10 @@
     columns:
         dimension:
             - dt_month
-            - product
-        sales:               # measure reference (no AGG needed)
-        sales_yoy:
-            formula: '{sales: yoy}'
+            - Produkt
+        Umsatz:               # measure reference (no AGG needed)
+        UmsatzZumVorjahr:
+            formula: '{Umsatz: yoy}'
 </code></pre>
 <p><code>columns:</code> ist erforderlich. Die Schlüssel, die keine Dimension angeben, benennen die Ausgabespalten. Ihre Werte sind Formeln oder direkte Kennzahlreferenzen. Der optionale Schlüssel <code>dataset:</code> wählt die Dataset-Abfrageform und kann nicht mit <code>columns.dimension</code> kombiniert werden.</p>
 <p>Abfragefilter haben die folgenden Formen. Jeder Schlüssel benennt einen Filter, den Modifikatoren in Kennzahlreferenzen ansprechen können.</p>
@@ -27,7 +27,7 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td><code>&lt;column&gt;: &lt;Wert&gt;</code></td>
 <td>Gleichheitsprüfung für die gleichnamige Spalte</td>
 </tr>
 <tr>
@@ -35,7 +35,7 @@
 <td>Prüfung, ob der Wert in der Liste enthalten ist</td>
 </tr>
 <tr>
-<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, Wert: &lt;Wert&gt;}</code></td>
 <td>Benannter Gleichheitsfilter für eine explizit angegebene Spalte</td>
 </tr>
 <tr>
@@ -70,12 +70,12 @@
 </tr>
 </tbody></table>
 <pre><code class="language-yaml"># Detail query
-product_list:
+Produktliste:
     type: query
     dataset: DATASET_PRODUCTS
     columns:
         dimension:
-            - product
+            - Produkt
 </code></pre>
 <p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
 <h2 id="auto-join-of-multi-dataset-measures">Automatische Joins für Kennzahlen aus mehreren Datasets <a class="section-link" aria-label="Link zum Abschnitt" href="#auto-join-of-multi-dataset-measures">#</a></h2>
@@ -95,22 +95,22 @@ product_list:
 <tbody><tr>
 <td>Dimensionsfeld aus demselben Dataset</td>
 <td>Nur der Name</td>
-<td><code>product:</code></td>
+<td><code>Produkt:</code></td>
 </tr>
 <tr>
 <td>Dimensionsfeld aus einem anderen Dataset</td>
 <td><code>"{DATASET}.column"</code></td>
-<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+<td><code>Artikelnummer: "{DATASET_PRODUCTS}.Artikelnummer"</code></td>
 </tr>
 <tr>
 <td>Kennzahl</td>
 <td>Nur der Name</td>
-<td><code>sales:</code></td>
+<td><code>Umsatz:</code></td>
 </tr>
 <tr>
 <td>Kennzahl mit Modifikator</td>
 <td><code>formula:</code></td>
-<td><code>sales_yoy: {sales: yoy}</code></td>
+<td><code>UmsatzZumVorjahr: {Umsatz: yoy}</code></td>
 </tr>
 </tbody></table>
 <p><strong>Achtung</strong>: In einer Aggregatabfrage ohne <code>dataset:</code> führt ein unqualifizierter Spaltenname zu einem Fehler, wenn die Spalte zu einem bestimmten Dataset gehört. Verwenden Sie die Form <code>"{DATASET}.column"</code>.</p>
@@ -135,13 +135,13 @@ product_list:
 <tr>
 <td><strong>Abfragespalte → Kennzahl (automatische Aliaszuordnung)</strong></td>
 <td>Abfragespalte ohne Formel. Der Spaltenname entspricht dem Namen der Kennzahl.</td>
-<td><code>revenue:</code> (die Kennzahl <code>revenue</code> ist vorhanden)</td>
+<td><code>Erlös:</code> (die Kennzahl <code>Erlös</code> ist vorhanden)</td>
 <td>Der Compiler setzt den Ausdruck aus <code>formula:</code> der Kennzahl ein.</td>
 </tr>
 <tr>
 <td><strong>Abfragespalte → Dataset-Spalte (automatische Aliaszuordnung)</strong></td>
 <td>Abfragespalte ohne Formel. Der Spaltenname entspricht dem Namen der Dataset-Spalte. Die Dataset-Spalte muss <strong>aus der Abfragedimension ableitbar</strong> sein.</td>
-<td><code>prod_name:</code> (Dataset-Spalte über die Kette <code>pk({prod_id})</code>)</td>
+<td><code>prod_name:</code> (Dataset-Spalte über die Kette <code>pk({Artikelnummer})</code>)</td>
 <td>Der Compiler löst die Spalte anhand der Dataset-Definition auf.</td>
 </tr>
 </tbody></table>
@@ -150,8 +150,8 @@ product_list:
 <li><code>dmlc -c</code> prüft nicht anhand des Tabellenschemas, ob Dataset-Spalten vorhanden sind. Die Kompilierung gelingt auch bei einem abweichenden Namen, bei der Ausführung treten jedoch SQL-Fehler auf. Verwenden Sie <code>validateOnly</code>, um abweichende Namen zu erkennen. Dazu ist eine Datenbankverbindung erforderlich.</li>
 <li>Wenn der Name einer Abfragespalte weder mit einer Kennzahl noch mit einer ableitbaren Dataset-Spalte übereinstimmt, wird der Fehler <code>not defined, add formula?</code> ausgegeben.</li>
 <li>Wenn sich der Name der Abfragespalte vom Namen der Kennzahl unterscheidet, geben Sie eine explizite Formel an (<code>display_name: '{measure_name}'</code>) oder benennen Sie die Kennzahl mit <code>abbr:</code> um.</li>
-<li>Eine Dataset-Spalte, die sich <strong>nicht aus der Abfragedimension ableiten lässt</strong>, führt zum Fehler <code>cannot be derived from dimension [store_id]</code>. Dies betrifft beispielsweise eine unverarbeitete Faktenspalte ohne Abhängigkeit von einem Dimensionsfeld.</li>
-<li>Eine unverändert übernommene Spalte (ohne <code>formula:</code>) kann in Objektform die Metadateneigenschaften <code>description:</code> und <code>visibility:</code> enthalten, ohne dass <code>formula:</code> erforderlich ist. Beispiel: <code>revenue: { description: 'Total revenue' }</code> ordnet die Spalte automatisch der Kennzahl <code>revenue</code> zu und fügt die Beschreibung hinzu.</li>
+<li>Eine Dataset-Spalte, die sich <strong>nicht aus der Abfragedimension ableiten lässt</strong>, führt zum Fehler <code>cannot be derived from dimension [Filialnummer]</code>. Dies betrifft beispielsweise eine unverarbeitete Faktenspalte ohne Abhängigkeit von einem Dimensionsfeld.</li>
+<li>Eine unverändert übernommene Spalte (ohne <code>formula:</code>) kann in Objektform die Metadateneigenschaften <code>description:</code> und <code>visibility:</code> enthalten, ohne dass <code>formula:</code> erforderlich ist. Beispiel: <code>Erlös: { description: 'Total revenue' }</code> ordnet die Spalte automatisch der Kennzahl <code>Erlös</code> zu und fügt die Beschreibung hinzu.</li>
 </ul>
 <p><a id="46-visibility-hidden"></a></p>
 <h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#visibility-hidden">#</a></h2>
@@ -191,26 +191,26 @@ product_list:
 <pre><code class="language-yaml">columns:
     dimension:
         - dt_month
-        - product
+        - Produkt
         # Correct: list dimension field names only
 </code></pre>
 <p><strong>Falsch</strong>: Nehmen Sie datensatzübergreifende <strong>Spaltenzuordnungen</strong> nicht in die Dimensionsfelder der Abfrage auf. Definieren Sie diese Formeln als separate Abfragespalten:</p>
 <pre><code class="language-yaml"># Wrong
 columns:
     dimension:
-        - f_tag_id: {DATASET_PT}.id
+        - f_tag_id: {DATASET_PT}.VerkaufspositionID
 
 # Correct
 columns:
     dimension:
         - f_tag_id
-    f_tag_id: "{DATASET_PT}.id"
+    f_tag_id: "{DATASET_PT}.VerkaufspositionID"
 </code></pre>
 <p><strong>Ausnahme – Kennzahl als Dimension:</strong> Ein Eintrag für eine Abfragedimension kann eine <strong>Kennzahl</strong> binden (in der Regel mit <code>+d</code>). Die Abfrage gruppiert die Zeilen dann nach dem Wert dieser Kennzahl:</p>
 <pre><code class="language-yaml">columns:
     dimension:
-        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-    sales:
+        - MonatDesErstkaufs: '{MonatDesErstkaufs: {+d: Filialnummer}}'
+    Umsatz:
 </code></pre>
 <p>Deklarieren Sie den Schlüssel der Klassifizierungsentität explizit mit <code>+d</code> (bevorzugt) oder <code>dimension:</code>. Mehrere unabhängige Felder sind zulässig, wenn ihre vollständigen Schlüssel übereinstimmen. Reguläre Ausgabekennzahlen müssen sich ausgehend von <code>Q ∪ K</code> korrekt auf einer gröberen Ebene aggregieren lassen. Filter auf dem Label (<code>filters:</code> in der Formel oder <code>HAVING</code> in einer Model Query) greifen <strong>erst dann</strong>, wenn das Label vorliegt. Siehe <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>. Verwenden Sie diese Ausnahme nicht für physische Zuordnungen oder <code>{DATASET}.col</code>-Zuordnungen.</p>
 <p><a id="48-filter-placement-hierarchy"></a></p>
@@ -266,7 +266,7 @@ filters:
 </tr>
 <tr>
 <td><code>referred column {DATASET}.col is undefined</code> im Abfragefilter</td>
-<td>Zeichenfolgenform verwenden: <code>"{DATASET}.col = value":</code></td>
+<td>Zeichenfolgenform verwenden: <code>"{DATASET}.col = Wert":</code></td>
 </tr>
 <tr>
 <td>Eine Liste mit zwei Elementen für eine Datumsdimension liefert nur Daten für 2 Tage</td>
@@ -280,7 +280,7 @@ filters:
 <p><a id="49-pk-chaining"></a></p>
 <h2 id="pk-chaining">Verkettung mit <code>pk</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#pk-chaining">#</a></h2>
 <pre><code class="language-yaml"># Single PK lookup
-formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+formula: 'pk(Kundennummer).{DATASET_CUSTOMERS}.tier'
 
 # Composite PK — all columns required
 formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
@@ -289,14 +289,14 @@ formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
 <p><strong>Verschachtelte Ketten</strong>: Eine aus einer <code>pk()</code>-Kette abgeleitete Spalte kann als Schlüssel in einer anderen <code>pk()</code>-Kette dienen. Der Compiler verfolgt die Ableitungskette und erzeugt die entsprechenden verschachtelten <code>LEFT JOIN</code>-Verknüpfungen. So können Sie direkt modellieren, dass ein Attribut nachgeschlagen und anschließend zum Nachschlagen eines weiteren Attributs verwendet wird, ohne <code>sql:</code> oder <code>after:</code> zu verwenden.</p>
 <pre><code class="language-yaml"># fact dataset
 columns:
-    store_id:
+    Filialnummer:
     # First hop: store_id → Dim Customer → hq_id
-    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    ZentralenID: pk({Filialnummer}).{Kundenverzeichnis}.ZentralenID
     # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
-    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    Zentralencode: pk({ZentralenID}).{Kundenverzeichnis}.store_code
     # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
-    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+    ZentralenOrganisation: pk({ZentralenID}).{Kundenverzeichnis}.Organisationsnummer
+    KontaktnameZentrale: pk({ZentralenOrganisation}).{Organisationsverzeichnis}.Mitarbeitername
 </code></pre>
 <p>Im geprüften Build werden Vorwärtsreferenzen innerhalb derselben Datei unterstützt, auch für Spaltenabhängigkeiten und <code>pk()</code>-Ziele. Führen Sie Abhängigkeiten zur besseren Lesbarkeit zuerst auf. Für eingebundene Dateien gelten eigene Sichtbarkeitsgrenzen. Siehe <a href="reference--model-composition.de.html">Modellkomposition</a>.</p>
 <p><a id="410-after-clause"></a></p>
@@ -306,9 +306,9 @@ columns:
 <pre><code class="language-yaml">my_report:
     type: query
     columns:
-        dimension: [product]
-        sales:
-    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+        dimension: [Produkt]
+        Umsatz:
+    after: 'select * from {QUERY} ORDER BY Umsatz DESC LIMIT 10'
 </code></pre>
 <p>Wenn <code>after:</code> vorhanden ist, ist <code>{QUERY}</code> erforderlich. Damit wird das Ergebnis der kompilierten Abfrage bezeichnet, das die nachgelagerte Anweisung verwendet. „Nur Sortierung“ bedeutet, dass der Block außer dieser Klammerung und ORDER BY/TOP/LIMIT keine fachliche Logik enthält. Der vorgelagerte Compiler gibt die Warnung <code>redundant ORDER BY</code> aus, wenn die angegebene Sortierung der Standardreihenfolge der Abfrageausgabe entspricht. Beachten Sie den Hinweis zur jeweiligen Stelle. Entfernen Sie nur die redundante <code>ORDER BY</code>-Klausel, wenn unter <code>after:</code> noch andere wichtige Verarbeitungsschritte stehen. Entfernen Sie den gesamten Block nur, wenn keine weiteren Verarbeitungsschritte übrig bleiben.</p>
 <p><strong>Falsch</strong>: Bei einer Standardabfrage für Kennzahlen unter <code>after:</code> mit <code>group by</code> erneut aggregieren. Lassen Sie die Kennzahlen im Abfrageblock aggregieren.</p>
@@ -321,7 +321,7 @@ columns:
     columns:
         dimension:
             - dt_date
-        sales:
+        Umsatz:
 </code></pre>
 <p><code>allows:</code> legt fest, welche Materialisierungen infrage kommen. <code>ALL</code> lässt Kandidaten zu, <code>NONE</code> deaktiviert die Verwendung von Materialisierungen. Explizit angegebene Namen schränken die Auswahl ein. Ob eine Materialisierung infrage kommt, hängt weiterhin davon ab, ob die Ebene, auf der Zeilen oder Summen definiert sind, und die Filter kompatibel sind. Die Einstellung lockert weder die Vorgaben unter <code>dimensions:</code> für Kennzahlen noch erlaubt sie eine beliebige Granularität der Abfrage. Siehe <a href="reference--materialization.de.html">Materialisierungsdeklarationen</a>.</p>
 <p><a id="412-yaml-syntax-pitfalls"></a></p>

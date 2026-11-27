@@ -1,0 +1,7 @@
+Extract the project. Run these commands from the project folder to check the report in DuckDB. Compare both rows with expected.csv.
+
+dmlc -q setup.sql
+dmlc -q --with-validation --model=duckdb/model.dml query.sql
+
+SQL Server:
+dmlc -c --strict --model=model.dml query.sql

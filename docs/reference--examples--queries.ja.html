@@ -1,61 +1,61 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>クエリの例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="入門例では共通の売上モデルを使用します。このモデルはsalesと一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="クエリの例 · DML"><meta property="og:description" content="入門例では共通の売上モデルを使用します。このモデルはsalesと一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--examples--queries.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--examples--queries.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--queries.zh.html">中文</a></header><main><h1 id="query-examples">クエリの例</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#basic-queries">基本クエリ</a></li><li><a href="#total-sales">売上合計</a></li><li><a href="#sales-by-region">地域別の売上</a></li><li><a href="#sales-this-month">今月の売上</a></li><li><a href="#sales-this-month-by-region">地域別の今月の売上</a></li><li><a href="#detail-query--paid-transactions">明細クエリ：支払い済みの取引</a></li><li><a href="#time-modifiers">時間修飾子</a></li><li><a href="#this-month-vs-last-month">今月と先月の比較</a></li><li><a href="#this-month-vs-same-month-last-year">今月と前年同月の比較</a></li><li><a href="#year-to-date-growth">年初来の成長率</a></li><li><a href="#rolling-12-month-total">直近12か月の移動合計</a></li><li><a href="#specific-monthsquarters">特定の月または四半期</a></li><li><a href="#nested-modifiers-in-dml"><code>.dml</code> での修飾子のネスト</a></li><li><a href="#rank-and-filters">順位とフィルター</a></li><li><a href="#top-10-products-by-sales">売上上位10商品</a></li><li><a href="#using-rank-modifier">順位修飾子の使用</a></li><li><a href="#rank-within-the-selected-period">選択した期間内の順位</a></li><li><a href="#filtering-by-rank">順位による絞り込み</a></li><li><a href="#having-clause--customers-with-outstanding-balance">HAVING 句：未払い残高のある顧客</a></li><li><a href="#share-of-total-pot">総計に占める割合（<code>pot</code>）</a></li><li><a href="#rfm-amp-co-occurrence-patterns">RFM と共起パターン</a></li><li><a href="#dimension-without-dt">dt を含まないディメンション</a></li><li><a href="#sales-by-region-all-time">地域別の売上（全期間）</a></li><li><a href="#product-share-by-region-no-time-grouping">地域別の商品構成比（時間によるグループ化なし）</a></li><li><a href="#selected-period-versus-all-history">選択した期間と全履歴の比較</a></li><li><a href="#period-conversion">期間単位の変換</a></li><li><a href="#comparison-patterns">比較パターン</a></li><li><a href="#period-over-period">前の期間との比較</a></li><li><a href="#growth-rate-by-account">アカウント別の成長率</a></li><li><a href="#year-to-date-vs-last-year">年初来と前年の比較</a></li><li><a href="#conditional-counts">条件付きカウント</a></li></ul></details>
-<p>入門例では<a href="reference--examples--shared-model.ja.html">共通の売上モデル</a>を使用します。このモデルは<code>sales</code>と一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。</p>
-<p><strong>例を実行するための前提条件:</strong> 基本クエリ、売上の期間比較、順位、構成比、商品数の集計には、このモデルを使用します。経費の例には追加で指標 <code>expense</code> が必要です。未払い残高の例には <code>customer</code> と <code>outstanding</code>、アカウント別の成長率の例には <code>account</code> と <code>revenue</code> が必要です。これらは環境に合わせて調整するための断片で、共通モデルに追加してそのまま実行できるものではありません。固定の日付と期待される結果が揃った実行可能なデータセットには、<a href="checked-exercise-ja.html">検証済みの売上演習</a>を使用してください。</p>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>クエリの例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="入門例では共通の売上モデルを使用します。このモデルは売上高と一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="クエリの例 · DML"><meta property="og:description" content="入門例では共通の売上モデルを使用します。このモデルは売上高と一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--examples--queries.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--examples--queries.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--queries.zh.html">中文</a></header><main><h1 id="query-examples">クエリの例</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#basic-queries">基本クエリ</a></li><li><a href="#total-sales">売上合計</a></li><li><a href="#sales-by-region">地域別の売上</a></li><li><a href="#sales-this-month">今月の売上</a></li><li><a href="#sales-this-month-by-region">地域別の今月の売上</a></li><li><a href="#detail-query--paid-transactions">明細クエリ：支払い済みの取引</a></li><li><a href="#time-modifiers">時間修飾子</a></li><li><a href="#this-month-vs-last-month">今月と先月の比較</a></li><li><a href="#this-month-vs-same-month-last-year">今月と前年同月の比較</a></li><li><a href="#year-to-date-growth">年初来の成長率</a></li><li><a href="#rolling-12-month-total">直近12か月の移動合計</a></li><li><a href="#specific-monthsquarters">特定の月または四半期</a></li><li><a href="#nested-modifiers-in-dml"><code>.dml</code> での修飾子のネスト</a></li><li><a href="#rank-and-filters">順位とフィルター</a></li><li><a href="#top-10-products-by-sales">売上上位10商品</a></li><li><a href="#using-rank-modifier">順位修飾子の使用</a></li><li><a href="#rank-within-the-selected-period">選択した期間内の順位</a></li><li><a href="#filtering-by-rank">順位による絞り込み</a></li><li><a href="#having-clause--customers-with-outstanding-balance">HAVING 句：未払い残高のある顧客</a></li><li><a href="#share-of-total-pot">総計に占める割合（<code>pot</code>）</a></li><li><a href="#rfm-amp-co-occurrence-patterns">RFM と共起パターン</a></li><li><a href="#dimension-without-dt">dt を含まないディメンション</a></li><li><a href="#sales-by-region-all-time">地域別の売上（全期間）</a></li><li><a href="#product-share-by-region-no-time-grouping">地域別の商品構成比（時間によるグループ化なし）</a></li><li><a href="#selected-period-versus-all-history">選択した期間と全履歴の比較</a></li><li><a href="#period-conversion">期間単位の変換</a></li><li><a href="#comparison-patterns">比較パターン</a></li><li><a href="#period-over-period">前の期間との比較</a></li><li><a href="#growth-rate-by-account">アカウント別の成長率</a></li><li><a href="#year-to-date-vs-last-year">年初来と前年の比較</a></li><li><a href="#conditional-counts">条件付きカウント</a></li></ul></details>
+<p>入門例では<a href="reference--examples--shared-model.ja.html">共通の売上モデル</a>を使用します。このモデルは<code>売上高</code>と一覧に示した取引列を提供しますが、ソースデータは作成しません。日付を使う例では現在の日付を基準とするため、過去のテストデータでは行が返らない場合があります。</p>
+<p><strong>例を実行するための前提条件:</strong> 基本クエリ、売上の期間比較、順位、構成比、商品数の集計には、このモデルを使用します。経費の例には追加で指標 <code>費用</code> が必要です。未払い残高の例には <code>顧客</code> と <code>未払額</code>、アカウント別の成長率の例には <code>勘定科目</code> と <code>収益</code> が必要です。これらは環境に合わせて調整するための断片で、共通モデルに追加してそのまま実行できるものではありません。固定の日付と期待される結果が揃った実行可能なデータセットには、<a href="checked-exercise-ja.html">検証済みの売上演習</a>を使用してください。</p>
 <h2 id="basic-queries">基本クエリ <a class="section-link" aria-label="この節へのリンク" href="#basic-queries">#</a></h2>
 <h3 id="total-sales">売上合計 <a class="section-link" aria-label="この節へのリンク" href="#total-sales">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL
+<pre><code class="language-sql">SELECT AGG(売上高) FROM MODEL
 </code></pre>
 <h3 id="sales-by-region">地域別の売上 <a class="section-link" aria-label="この節へのリンク" href="#sales-by-region">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+<pre><code class="language-sql">SELECT 地域, AGG(売上高) FROM MODEL GROUP BY 地域
 </code></pre>
 <h3 id="sales-this-month">今月の売上 <a class="section-link" aria-label="この節へのリンク" href="#sales-this-month">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL WHERE dt_month = date(current_date, 'start of month')
+<pre><code class="language-sql">SELECT AGG(売上高) FROM MODEL WHERE dt_month = date(current_date, 'start of month')
 </code></pre>
 <h3 id="sales-this-month-by-region">地域別の今月の売上 <a class="section-link" aria-label="この節へのリンク" href="#sales-this-month-by-region">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales)
+<pre><code class="language-sql">SELECT 地域, AGG(売上高)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region
+GROUP BY 地域
 </code></pre>
 <p><a id="detail-query--customer-payment-history"></a></p>
 <h3 id="detail-query--paid-transactions">明細クエリ：支払い済みの取引 <a class="section-link" aria-label="この節へのリンク" href="#detail-query--paid-transactions">#</a></h3>
-<pre><code class="language-sql">SELECT dt_date, transaction_id, amount, is_paid
-FROM MODEL.transactions
-WHERE is_paid = 1
+<pre><code class="language-sql">SELECT dt_date, 取引番号, 売上金額, 支払済
+FROM MODEL.取引明細
+WHERE 支払済 = 1
 ORDER BY dt_date DESC
 </code></pre>
 <hr>
 <h2 id="time-modifiers">時間修飾子 <a class="section-link" aria-label="この節へのリンク" href="#time-modifiers">#</a></h2>
 <h3 id="this-month-vs-last-month">今月と先月の比較 <a class="section-link" aria-label="この節へのリンク" href="#this-month-vs-last-month">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
-       AGG(sales) as this_month,
-       AGG(sales, 'pp') as last_month,
-       AGG(sales, 'pop') as mom_rate
+       AGG(売上高) as 当月売上高,
+       AGG(売上高, 'pp') as 前月売上高,
+       AGG(売上高, 'pop') as 前月比増減率
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 GROUP BY dt_month
 </code></pre>
 <h3 id="this-month-vs-same-month-last-year">今月と前年同月の比較 <a class="section-link" aria-label="この節へのリンク" href="#this-month-vs-same-month-last-year">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
-       AGG(sales) as this_month,
-       AGG(sales, 'ya') as last_year_month,
-       AGG(sales, 'yoy') as yoy_rate
+       AGG(売上高) as 当月売上高,
+       AGG(売上高, 'ya') as 前年同月売上高,
+       AGG(売上高, 'yoy') as 前年同期比増減率
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 GROUP BY dt_month
 </code></pre>
 <h3 id="year-to-date-growth">年初来の成長率 <a class="section-link" aria-label="この節へのリンク" href="#year-to-date-growth">#</a></h3>
 <pre><code class="language-sql">SELECT dt_date,
-       AGG(sales, 'ytd') as ytd_sales,
-       AGG(sales, 'ytd', 'ya') as ytd_last_year,
-       AGG(sales, 'ytd', 'yoy') as ytd_growth
+       AGG(売上高, 'ytd') as 当年累計売上高,
+       AGG(売上高, 'ytd', 'ya') as 前年同期累計売上高,
+       AGG(売上高, 'ytd', 'yoy') as 累計売上高前年同期比
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <p><strong>修飾子の重ねがけ</strong>に注目してください。<code>'ytd', 'ya'</code> は、前年の年初から前年の同日までの期間を指します。</p>
 <h3 id="rolling-12-month-total">直近12か月の移動合計 <a class="section-link" aria-label="この節へのリンク" href="#rolling-12-month-total">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat}) AS rolling_sales
+<pre><code class="language-sql">SELECT dt_month, AGG(売上高), AGG({売上高: mat}) AS 移動売上高
 FROM MODEL
 GROUP BY dt_month
 ORDER BY dt_month DESC
@@ -63,23 +63,23 @@ LIMIT 12
 </code></pre>
 <h3 id="specific-monthsquarters">特定の月または四半期 <a class="section-link" aria-label="この節へのリンク" href="#specific-monthsquarters">#</a></h3>
 <pre><code class="language-sql">-- August this year
-SELECT AGG(expense) FROM MODEL WHERE dt_month = date(current_date, 'start of year', '+7 months')
+SELECT AGG(費用) FROM MODEL WHERE dt_month = date(current_date, 'start of year', '+7 months')
 
 -- Q2 this year
-SELECT AGG(expense) FROM MODEL WHERE dt_quarter = date(current_date, 'start of year', '+1 quarter')
+SELECT AGG(費用) FROM MODEL WHERE dt_quarter = date(current_date, 'start of year', '+1 quarter')
 </code></pre>
 <h3 id="nested-modifiers-in-dml"><code>.dml</code> での修飾子のネスト <a class="section-link" aria-label="この節へのリンク" href="#nested-modifiers-in-dml">#</a></h3>
 <pre><code class="language-yaml"># In model.dml
-sales_ytd:
+年初来売上高:
     type: measure
-    formula: '{sales: ytd}'
+    formula: '{売上高: ytd}'
 
-sales_ytd_last_year:
+前年同期累計売上高:
     type: measure
-    formula: '{sales: {ytd: ya}}'
+    formula: '{売上高: {ytd: ya}}'
 </code></pre>
 <pre><code class="language-sql">-- In query
-SELECT dt_date, AGG(sales_ytd), AGG(sales_ytd_last_year)
+SELECT dt_date, AGG(年初来売上高), AGG(前年同期累計売上高)
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
@@ -88,52 +88,52 @@ GROUP BY dt_date
 <hr>
 <h2 id="rank-and-filters">順位とフィルター <a class="section-link" aria-label="この節へのリンク" href="#rank-and-filters">#</a></h2>
 <h3 id="top-10-products-by-sales">売上上位10商品 <a class="section-link" aria-label="この節へのリンク" href="#top-10-products-by-sales">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales)
+<pre><code class="language-sql">SELECT 商品, AGG(売上高)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-ORDER BY AGG(sales) DESC
+GROUP BY 商品
+ORDER BY AGG(売上高) DESC
 LIMIT 10
 </code></pre>
 <h3 id="using-rank-modifier">順位修飾子の使用 <a class="section-link" aria-label="この節へのリンク" href="#using-rank-modifier">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales), AGG({sales: rank}) AS sales_rank
+<pre><code class="language-sql">SELECT 商品, AGG(売上高), AGG({売上高: rank}) AS 売上順位
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
-<p><code>{sales: rank}</code> は、クエリ結果内で各商品の売上が何位かを返します。順位は売上の降順で決まります。</p>
+<p><code>{売上高: rank}</code> は、クエリ結果内で各商品の売上が何位かを返します。順位は売上の降順で決まります。</p>
 <h3 id="rank-within-the-selected-period">選択した期間内の順位 <a class="section-link" aria-label="この節へのリンク" href="#rank-within-the-selected-period">#</a></h3>
-<pre><code class="language-sql">SELECT product,
-       AGG(sales) as period_sales,
-       AGG({sales: rank}) as selected_period_rank
+<pre><code class="language-sql">SELECT 商品,
+       AGG(売上高) as 期間売上高,
+       AGG({売上高: rank}) as 選択期間順位
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
-<p>このクエリはすでに商品だけでグループ化しています。月のフィルターを維持したまま、<code>sales</code> を直接順位付けしてください。時間の集計レベルを取り除く必要はありません。グループ化フィールドを取り除くことと、時間フィルターを取り除くことは別の操作です。</p>
+<p>このクエリはすでに商品だけでグループ化しています。月のフィルターを維持したまま、<code>売上高</code> を直接順位付けしてください。時間の集計レベルを取り除く必要はありません。グループ化フィールドを取り除くことと、時間フィルターを取り除くことは別の操作です。</p>
 <h3 id="filtering-by-rank">順位による絞り込み <a class="section-link" aria-label="この節へのリンク" href="#filtering-by-rank">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales)
+<pre><code class="language-sql">SELECT 商品, AGG(売上高)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-HAVING AGG({sales: rank}) &lt;= 10
+GROUP BY 商品
+HAVING AGG({売上高: rank}) &lt;= 10
 </code></pre>
 <p><code>HAVING</code> は集計後に絞り込むため、この句で <code>rank</code> を使用できます。</p>
 <h3 id="having-clause--customers-with-outstanding-balance">HAVING 句：未払い残高のある顧客 <a class="section-link" aria-label="この節へのリンク" href="#having-clause--customers-with-outstanding-balance">#</a></h3>
-<pre><code class="language-sql">SELECT customer, AGG(outstanding)
+<pre><code class="language-sql">SELECT 顧客, AGG(未払額)
 FROM MODEL
-GROUP BY customer
-HAVING AGG(outstanding) &gt; 0
+GROUP BY 顧客
+HAVING AGG(未払額) &gt; 0
 </code></pre>
 <p><strong>要点</strong>：<code>rank</code> は <code>RANK() OVER (ORDER BY measure DESC)</code> を返します。<code>rank_asc</code> は値の昇順で順位を返します。順位付けの前に時間ディメンションや他のディメンションを取り除くには、<code>-d</code> を使用します。順位が N 位以内の結果を動的に絞り込むには、順位修飾子を <code>HAVING</code> と組み合わせます。</p>
 <h3 id="share-of-total-pot">総計に占める割合（<code>pot</code>） <a class="section-link" aria-label="この節へのリンク" href="#share-of-total-pot">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales) AS sales,
-       AGG(sales, 'rank') AS sales_rank,
-       AGG({sales: pot}) AS share_of_total
+<pre><code class="language-sql">SELECT 商品, AGG(売上高) AS 売上高,
+       AGG(売上高, 'rank') AS 売上順位,
+       AGG({売上高: pot}) AS 合計構成比
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-ORDER BY AGG(sales, 'rank')
+GROUP BY 商品
+ORDER BY AGG(売上高, 'rank')
 </code></pre>
 <p><code>pot</code> は <code>measure / grand</code> です。パレート分析で使う累積構成比はシステムの fn マクロではありません。累計が必要な場合は、Model Query SQL で <code>OVER()</code> を使用します。</p>
 <h3 id="rfm-amp-co-occurrence-patterns">RFM と共起パターン <a class="section-link" aria-label="この節へのリンク" href="#rfm-amp-co-occurrence-patterns">#</a></h3>
@@ -141,64 +141,64 @@ ORDER BY AGG(sales, 'rank')
 <hr>
 <h2 id="dimension-without-dt">dt を含まないディメンション <a class="section-link" aria-label="この節へのリンク" href="#dimension-without-dt">#</a></h2>
 <h3 id="sales-by-region-all-time">地域別の売上（全期間） <a class="section-link" aria-label="この節へのリンク" href="#sales-by-region-all-time">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+<pre><code class="language-sql">SELECT 地域, AGG(売上高) FROM MODEL GROUP BY 地域
 </code></pre>
 <h3 id="product-share-by-region-no-time-grouping">地域別の商品構成比（時間によるグループ化なし） <a class="section-link" aria-label="この節へのリンク" href="#product-share-by-region-no-time-grouping">#</a></h3>
-<pre><code class="language-sql">SELECT region, product, AGG(sales)
+<pre><code class="language-sql">SELECT 地域, 商品, AGG(売上高)
 FROM MODEL
-GROUP BY region, product
+GROUP BY 地域, 商品
 </code></pre>
 <p><a id="using--d-to-drop-time"></a></p>
 <h3 id="selected-period-versus-all-history">選択した期間と全履歴の比較 <a class="section-link" aria-label="この節へのリンク" href="#selected-period-versus-all-history">#</a></h3>
 <pre><code class="language-sql">-- Selected month: retain the month filter.
-SELECT region, product, AGG(sales) AS selected_period_sales
+SELECT 地域, 商品, AGG(売上高) AS 選択期間売上高
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region, product
+GROUP BY 地域, 商品
 
 -- All history: remove the month filter, retain the same grouping.
-SELECT region, product, AGG(sales) AS all_time_sales
+SELECT 地域, 商品, AGG(売上高) AS 全期間売上高
 FROM MODEL
-GROUP BY region, product
+GROUP BY 地域, 商品
 </code></pre>
 <p>これらは別々のクエリとして実行してください。<code>-d</code> はグループ化を取り除きますが、時間フィルターは維持します。これらのクエリは時間でグループ化しないため、<code>-d: dim_dt</code> は不要です。ここで個々の指標から時間の集計レベルを取り除こうとすると、検証に使用したコンパイラーによって拒否されます。分母に限ってグループ化とフィルターを取り除く方法については、<a href="reference--modifiers.ja.html">ディメンション修飾子とフィルター修飾子</a>を参照してください。</p>
 <h3 id="period-conversion">期間単位の変換 <a class="section-link" aria-label="この節へのリンク" href="#period-conversion">#</a></h3>
 <pre><code class="language-sql">SELECT dt_year,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter_at_quarter_grain
+       AGG({売上高: {dim_dt as quarter: pp}}) as 前四半期の四半期売上高
 FROM MODEL
 WHERE dt_year = '2024-01-01'
 GROUP BY dt_year
 </code></pre>
 <p><code>dim_dt as quarter</code> を指定すると、クエリが年単位でグループ化されていても、修飾子 <code>pp</code> は四半期単位で処理します。指標を変更後の集計レベル（四半期）で評価してから、その結果をクエリの集計レベル（年）のデータに結合します。</p>
 <blockquote>
-<p><strong>注記:</strong> <code>dim_dt as &lt;grain&gt;</code> が役に立つのは、変更後の時間の集計レベルがクエリの時間の集計レベルと異なる場合に限ります。クエリがすでに <code>dt_quarter</code> でグループ化されている場合、<code>dim_dt as quarter: pp</code> は不要な指定として拒否されます。この場合は <code>AGG({sales: pp})</code> を直接使用してください。</p>
+<p><strong>注記:</strong> <code>dim_dt as &lt;grain&gt;</code> が役に立つのは、変更後の時間の集計レベルがクエリの時間の集計レベルと異なる場合に限ります。クエリがすでに <code>dt_quarter</code> でグループ化されている場合、<code>dim_dt as quarter: pp</code> は不要な指定として拒否されます。この場合は <code>AGG({売上高: pp})</code> を直接使用してください。</p>
 </blockquote>
 <p><strong>要点</strong>：時間フィルターのないクエリは、すべての履歴データを対象にします。<code>-d: dim_dt</code> は、指標の評価に使うディメンションから現在有効な時間フィールドを取り除きます。有効な時間フィールドを指定するには、<code>dt_date</code> のような個別のフィールド名ではなく <code>dim_dt</code> を使います。<code>-d</code> で取り除けるのは、現在のクエリのグループ化に含まれるディメンションフィールドだけです。<code>dim_dt as &lt;grain&gt;</code> は、1 つの指標参照の時間の集計レベルを変更します。組み合わせる際は、同じ行にあっても、時間ディメンションのない指標と時間ディメンションのある指標を比較できない場合があります。</p>
 <hr>
 <h2 id="comparison-patterns">比較パターン <a class="section-link" aria-label="この節へのリンク" href="#comparison-patterns">#</a></h2>
 <h3 id="period-over-period">前の期間との比較 <a class="section-link" aria-label="この節へのリンク" href="#period-over-period">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) as this_month, AGG(sales, 'pp') as last_month
+<pre><code class="language-sql">SELECT AGG(売上高) as 当月売上高, AGG(売上高, 'pp') as 前月売上高
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 </code></pre>
 <h3 id="growth-rate-by-account">アカウント別の成長率 <a class="section-link" aria-label="この節へのリンク" href="#growth-rate-by-account">#</a></h3>
-<pre><code class="language-sql">SELECT account, AGG(revenue) as current, AGG(revenue, 'pp') as previous
+<pre><code class="language-sql">SELECT 勘定科目, AGG(収益) as current, AGG(収益, 'pp') as previous
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY account
-HAVING AGG(revenue, 'pop') &gt; 0.10  -- 10% growth
+GROUP BY 勘定科目
+HAVING AGG(収益, 'pop') &gt; 0.10  -- 10% growth
 </code></pre>
 <h3 id="year-to-date-vs-last-year">年初来と前年の比較 <a class="section-link" aria-label="この節へのリンク" href="#year-to-date-vs-last-year">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales, 'ytd') as this_ytd, AGG(sales, 'ytd', 'ya') as last_ytd
+<pre><code class="language-sql">SELECT AGG(売上高, 'ytd') as 当年累計, AGG(売上高, 'ytd', 'ya') as 前年同期累計
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <hr>
 <h2 id="conditional-counts">条件付きカウント <a class="section-link" aria-label="この節へのリンク" href="#conditional-counts">#</a></h2>
-<p>修飾子は列ではなく<strong>指標</strong>に適用します。条件式の中で、指標に <code>{+d: product}</code> を適用します。</p>
-<pre><code class="language-sql">-- Count of products with per-product sales above threshold
-SELECT DISTINCTCOUNTIF(product, AGG({sales: {+d: product}}) &gt; 1000) as prod_cnt FROM MODEL
+<p>修飾子は列ではなく<strong>指標</strong>に適用します。条件式の中で、指標に <code>{+d: 商品}</code> を適用します。</p>
+<pre><code class="language-sql">-- Count of products with per-商品 売上高 above threshold
+SELECT DISTINCTCOUNTIF(商品, AGG({売上高: {+d: 商品}}) &gt; 1000) as 商品数 FROM MODEL
 </code></pre>
-<p>または、<code>.dml</code> で <code>formula: 'DISTINCTCOUNTIF({product}, {sales: {+d: product}} &gt; 1000)'</code> を使って一度定義してから、<code>SELECT AGG(high_sales_product_count) FROM MODEL</code> でクエリを実行します。</p>
+<p>または、<code>.dml</code> で <code>formula: 'DISTINCTCOUNTIF({商品}, {売上高: {+d: 商品}} &gt; 1000)'</code> を使って一度定義してから、<code>SELECT AGG(high_sales_product_count) FROM MODEL</code> でクエリを実行します。</p>
 </main></body></html>

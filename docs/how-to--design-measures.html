@@ -5,7 +5,7 @@
 <pre><code class="language-yaml">columns:
     valid_amount:
         description: Row-level amount gated by validity checks
-        formula: &#39;iif(state = 1 and delete_time is null, prod_amount, null)&#39;
+        formula: 'iif(state = 1 and delete_time is null, prod_amount, null)'
 measures:
     total: SUM({valid_amount})
 </code></pre>
@@ -16,11 +16,11 @@ measures:
 <p>Apply report-specific modifiers at the consumption site. Define a derivative measure in <code>.dml</code> only when the modified value must be reused everywhere (e.g. listed in a <code>type: materialize</code> object) or encoded as a named business metric. Use DMX references — <strong>never <code>AGG()</code></strong> in measure formulas:</p>
 <pre><code class="language-yaml">sales_last_month:
     type: measure
-    formula: &#39;{sales: pp}&#39;
+    formula: '{sales: pp}'
 
 sales_yoy_growth:
     type: measure
-    formula: &#39;{sales: yoy}&#39;
+    formula: '{sales: yoy}'
 
 sales_by_product:
     type: measure
@@ -38,18 +38,18 @@ sales_by_product:
 <p><strong>Example</strong>: SQL with CTE that filters to &quot;completed orders&quot;</p>
 <pre><code class="language-sql">-- Original SQL
 WITH completed AS (
-    SELECT * FROM orders WHERE status = &#39;completed&#39;
+    SELECT * FROM orders WHERE status = 'completed'
 )
 SELECT product, SUM(amount) FROM completed GROUP BY product
 </code></pre>
 <pre><code class="language-yaml"># DML approach
 completed_sales:
     type: measure
-    formula: SUM({amount: {+f: {status: &#39;completed&#39;}}})
+    formula: SUM({amount: {+f: {status: 'completed'}}})
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: retain the row-removing population restriction
 SELECT product, AGG(completed_sales) FROM MODEL
-WHERE status = &#39;completed&#39;
+WHERE status = 'completed'
 GROUP BY product
 </code></pre>
 <h2 id="dimension-constrained-measures">Dimension-constrained measures <a class="section-link" aria-label="Link to section" href="#dimension-constrained-measures">#</a></h2>
@@ -57,7 +57,7 @@ GROUP BY product
 <p>⚠️ <strong>Measure <code>dimensions:</code> contains allowed dimensions.</strong> Each inner list is one allowed dimension; the outer list contains alternatives. It does not define dataset row identity or query grouping; those belong to dataset <code>dimension:</code> and query <code>GROUP BY</code> / <code>columns.dimension:</code> respectively. See <a href="explanation--dimensions.html">dimension roles</a>.</p>
 </blockquote>
 <p>Add this constraint only when the metric <strong>must</strong> be evaluated with a specific dimension:</p>
-<pre><code class="language-yaml"># &quot;Average order value per customer&quot; — customer_id is required during evaluation
+<pre><code class="language-yaml"># "Average order value per customer" — customer_id is required during evaluation
 aov_per_customer:
     type: measure
     formula: DIVIDE({sales}, {number_of_transactions})
@@ -82,20 +82,20 @@ aov_per_customer:
 <pre><code class="language-yaml">first_month:
     type: measure
     description: first month with sales &gt; 0 (customer grain only)
-    formula: &#39;MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)&#39;
+    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
     dimensions:
         - [customer_id]
 
 first_month_sales_by_customer:
     type: measure
-    description: sales in customer&#39;s first month (customer grain only)
-    formula: &#39;SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})&#39;
+    description: sales in customer's first month (customer grain only)
+    formula: 'SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})'
     dimensions:
         - [customer_id]
 
 first_month_sales_total:
     type: measure
-    formula: &#39;SUM({first_month_sales_by_customer: {+d: customer_id}})&#39;
+    formula: 'SUM({first_month_sales_by_customer: {+d: customer_id}})'
 </code></pre>
 <p>Inside a customer-restricted measure, <code>{sales: {+d: dt_month}}</code> is that customer&#39;s sales in that month.</p>
 <p>To <strong>group a report by</strong> <code>first_month</code> (query dimension = measure result) while aligning sibling measures with <code>+d: customer_id</code>, see measure-as-dimension: <a href="explanation--measure-as-dimension.html">Measure-as-dimension</a>.</p>

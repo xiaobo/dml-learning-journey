@@ -3,28 +3,28 @@
 <h2 id="metric-eligibility-predicates-in-intermediate-columns">在中间列中定义指标的纳入条件 <a class="section-link" aria-label="本节链接" href="#metric-eligibility-predicates-in-intermediate-columns">#</a></h2>
 <p>如果某个条件只决定哪些行计入一项指标，而数据集的整体行范围仍具有业务意义，请使用中间列。不要根据 <code>state</code> 或 <code>delete_time</code> 等名称判断条件的用途。看起来相同的条件也可能用于长期界定数据源包含哪些行。</p>
 <pre><code class="language-yaml">columns:
-    valid_amount:
+    有效金额:
         description: Row-level amount gated by validity checks
         formula: 'iif(state = 1 and delete_time is null, prod_amount, null)'
 measures:
-    total: SUM({valid_amount})
+    合计: SUM({有效金额})
 </code></pre>
-<p><code>SUM</code> 会忽略 NULL，因此，只要组内至少有一行满足条件，聚合值就与筛选后的求和结果相同。中间列中的条件<strong>通常不等价</strong>于在数据源上使用 <code>WHERE</code>。如果组内没有任何行满足条件，该组在 <code>WHERE</code> 下会消失，但使用中间列中的条件时，该组仍可能保留为一行（<code>total = NULL</code>）。同一查询中的其他计数、连接、窗口计算和下游筛选也可能发生变化。</p>
+<p><code>SUM</code> 会忽略 NULL，因此，只要组内至少有一行满足条件，聚合值就与筛选后的求和结果相同。中间列中的条件<strong>通常不等价</strong>于在数据源上使用 <code>WHERE</code>。如果组内没有任何行满足条件，该组在 <code>WHERE</code> 下会消失，但使用中间列中的条件时，该组仍可能保留为一行（<code>合计 = NULL</code>）。同一查询中的其他计数、连接、窗口计算和下游筛选也可能发生变化。</p>
 <p>只有在验证以下各项后，才能使用这种改写：组内没有满足条件的行时的行为、同一查询中其他指标的纳入条件、去重、连接和窗口计算各自涉及的行范围，以及行缺失与存在一行且值为 NULL 是否等价。否则，请保留查询或关系层级上会移除行的条件。如果是数据源必须始终满足的条件，也可以在数据集中使用最少量的 <code>sql:</code> 作为例外，并记录其用途。</p>
 <p><strong>分步计算示例：</strong> <code>tax_rate_effective</code>（确定适用税率）→ <code>amount_excl_tax</code>（换算为不含税金额）→ <code>eligible_amount</code>（判断哪些行计入指标）→ <code>SUM({eligible_amount})</code>（度量）。编译器会内联这些中间表达式。检查生成的 SQL，验证表达式的转换方式及其对纳入行范围的影响。</p>
 <h2 id="derivative-measures">派生度量 <a class="section-link" aria-label="本节链接" href="#derivative-measures">#</a></h2>
 <p>报表专用的修饰符应在使用度量的地方应用。只有当修改后的值必须在所有使用处复用（例如列在 <code>type: materialize</code> 对象中），或者必须定义为具名业务指标时，才在 <code>.dml</code> 中定义派生度量。度量公式应使用 DMX 引用，<strong>绝不能使用 <code>AGG()</code></strong>：</p>
-<pre><code class="language-yaml">sales_last_month:
+<pre><code class="language-yaml">上月销售额:
     type: measure
-    formula: '{sales: pp}'
+    formula: '{销售额: pp}'
 
-sales_yoy_growth:
+销售额同比增长率:
     type: measure
-    formula: '{sales: yoy}'
+    formula: '{销售额: yoy}'
 
-sales_by_product:
+商品销售额:
     type: measure
-    formula: SUM({sales: {+d: product}})
+    formula: SUM({销售额: {+d: 商品}})
 </code></pre>
 <p>这些度量会保留各自名称所对应的转换。求值仍取决于查询上下文以及修饰符和筛选规则。</p>
 <hr>
@@ -43,14 +43,14 @@ WITH completed AS (
 SELECT product, SUM(amount) FROM completed GROUP BY product
 </code></pre>
 <pre><code class="language-yaml"># DML approach
-completed_sales:
+已完成订单销售额:
     type: measure
-    formula: SUM({amount: {+f: {status: 'completed'}}})
+    formula: SUM({销售金额: {+f: {订单状态: 'completed'}}})
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: retain the row-removing population restriction
-SELECT product, AGG(completed_sales) FROM MODEL
-WHERE status = 'completed'
-GROUP BY product
+SELECT 商品, AGG(已完成订单销售额) FROM MODEL
+WHERE 订单状态 = 'completed'
+GROUP BY 商品
 </code></pre>
 <h2 id="dimension-constrained-measures">带维度约束的度量 <a class="section-link" aria-label="本节链接" href="#dimension-constrained-measures">#</a></h2>
 <blockquote>
@@ -58,51 +58,51 @@ GROUP BY product
 </blockquote>
 <p>只有当指标<strong>必须</strong>按特定维度求值时，才添加此约束：</p>
 <pre><code class="language-yaml"># "Average order value per customer" — customer_id is required during evaluation
-aov_per_customer:
+客户平均订单金额:
     type: measure
-    formula: DIVIDE({sales}, {number_of_transactions})
+    formula: DIVIDE({销售额}, {交易笔数})
     dimensions:
-        - [customer_id]    # ← the only allowed dimension
+        - [客户编号]    # ← the only allowed dimension
 </code></pre>
-<p>其他公式使用此度量时，必须显式写出 <code>{aov_per_customer: {+d: customer_id}}</code>，先按 <code>customer_id</code> 求值，再向上汇总。请明确记录此约束。它可以控制求值层级，但也可能产生意外结果。</p>
+<p>其他公式使用此度量时，必须显式写出 <code>{客户平均订单金额: {+d: 客户编号}}</code>，先按 <code>客户编号</code> 求值，再向上汇总。请明确记录此约束。它可以控制求值层级，但也可能产生意外结果。</p>
 <h2 id="translate-sql-into-measures">将 SQL 转换为度量 <a class="section-link" aria-label="本节链接" href="#translate-sql-into-measures">#</a></h2>
 <p>使用此清单，将指标规格或现有 SQL（CTE、JOIN）转换为 DML 度量和简单的 Model Query SQL（<code>FROM MODEL</code> + <code>AGG(...)</code>）。</p>
 <p><strong>从维度入手，而不是从 SQL 文本入手：</strong></p>
 <ul>
-<li><strong>最终查询使用什么维度？</strong>（例如 <code>[customer]</code> 或 <code>[customer, dt_month]</code>）</li>
-<li><strong>中间求值使用什么维度？</strong>（例如，计算首次购买时使用 <code>[customer]</code>）</li>
+<li><strong>最终查询使用什么维度？</strong>（例如 <code>[客户]</code> 或 <code>[客户, dt_month]</code>）</li>
+<li><strong>中间求值使用什么维度？</strong>（例如，计算首次购买时使用 <code>[客户]</code>）</li>
 <li>按求值维度选择实现方式：直接在数据集维度上求值 → 原子度量；修改求值维度 → <code>+d</code> / <code>dimension</code>；限制允许使用的维度 → <strong>带维度约束的度量</strong>。确认中间值与最终结果的计算层级相容。如果逻辑确实需要 JOIN 或子查询，且无法用 DML 表达，请暂停并重新评估。不要绕过 Model Query SQL 的规则。</li>
 </ul>
 <p><strong>带维度约束的度量（表示类似 CTE 的中间行）：</strong></p>
 <ul>
-<li>定义仅允许一个维度的度量：<code>dimensions: [[customer_id]]</code></li>
-<li>使用 <code>SUM({that_measure: {+d: customer_id}})</code>（或 <code>AVG</code> 等）向上汇总。</li>
+<li>定义仅允许一个维度的度量：<code>dimensions: [[客户编号]]</code></li>
+<li>使用 <code>SUM({that_measure: {+d: 客户编号}})</code>（或 <code>AVG</code> 等）向上汇总。</li>
 <li><strong><code>dimensions:</code></strong> 限制度量在哪些维度下有效。在另一个公式中对该度量使用 <strong><code>+d</code></strong>，会把所需的维度字段加入该度量的求值维度。</li>
 </ul>
-<pre><code class="language-yaml">first_month:
+<pre><code class="language-yaml">首次购买月份:
     type: measure
     description: first month with sales &gt; 0 (customer grain only)
-    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MINIF({dt_month}, {销售额: {+d: dt_month}} &gt; 0)'
     dimensions:
-        - [customer_id]
+        - [客户编号]
 
-first_month_sales_by_customer:
+各客户首月销售额:
     type: measure
     description: sales in customer's first month (customer grain only)
-    formula: 'SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})'
+    formula: 'SUMIF({销售额: {+d: dt_month}}, {dt_month} = {首次购买月份})'
     dimensions:
-        - [customer_id]
+        - [客户编号]
 
-first_month_sales_total:
+首月销售额合计:
     type: measure
-    formula: 'SUM({first_month_sales_by_customer: {+d: customer_id}})'
+    formula: 'SUM({各客户首月销售额: {+d: 客户编号}})'
 </code></pre>
-<p>在受客户维度约束的度量中，<code>{sales: {+d: dt_month}}</code> 表示该客户在该月的销售额。</p>
-<p>要<strong>对报表分组</strong>，请使用 <code>first_month</code> 作为分组依据（查询维度 = 度量结果）。有关如何这样分组并用 <code>+d: customer_id</code> 对齐同一查询中的其他度量，请参见<a href="explanation--measure-as-dimension.zh.html">将度量用作维度</a>。</p>
+<p>在受客户维度约束的度量中，<code>{销售额: {+d: dt_month}}</code> 表示该客户在该月的销售额。</p>
+<p>要<strong>对报表分组</strong>，请使用 <code>首次购买月份</code> 作为分组依据（查询维度 = 度量结果）。有关如何这样分组并用 <code>+d: 客户编号</code> 对齐同一查询中的其他度量，请参见<a href="explanation--measure-as-dimension.zh.html">将度量用作维度</a>。</p>
 <p><strong>判断是否至少满足过一次条件的逻辑（留存、重复行为）：</strong></p>
 <ul>
-<li>客户级标记：使用 <code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code>，并设置 <code>dimensions: [[customer_id]]</code></li>
-<li>标记为 1 的客户总数：<code>SUM({flag: {+d: customer_id}})</code></li>
+<li>客户级标记：使用 <code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code>，并设置 <code>dimensions: [[客户编号]]</code></li>
+<li>标记为 1 的客户总数：<code>SUM({flag: {+d: 客户编号}})</code></li>
 <li>比例：<code>DIVIDE(total_flag, total_customers)</code></li>
 </ul>
 <p><strong>将 CTE 转换为一个或多个度量：</strong></p>
@@ -115,7 +115,7 @@ first_month_sales_total:
 </thead>
 <tbody><tr>
 <td>按客户和月份组合聚合</td>
-<td><code>{sales: {+d: [customer, dt_month]}}</code></td>
+<td><code>{销售额: {+d: [客户, dt_month]}}</code></td>
 </tr>
 <tr>
 <td>首次购买月份</td>
@@ -127,7 +127,7 @@ first_month_sales_total:
 </tr>
 <tr>
 <td>最终 KPI</td>
-<td><code>SUM({customer_measure: {+d: customer_id}})</code> 和比率</td>
+<td><code>SUM({customer_measure: {+d: 客户编号}})</code> 和比率</td>
 </tr>
 </tbody></table>
 <p>目标查询形式为 <code>SELECT AGG(kpi_1), AGG(kpi_2), ... FROM MODEL</code>。</p>
@@ -135,12 +135,12 @@ first_month_sales_total:
 <p>如果在一个层级统计实体、在另一个层级筛选，请将 <code>{+d: dimension_field}</code> 应用于条件中的<strong>度量</strong>，不要应用于列。</p>
 <ul>
 <li>错误：<code>DISTINCTCOUNTIF({entity: {+d: entity}}, …)</code> 无效。修饰符只能用于指标。</li>
-<li>正确：<code>DISTINCTCOUNTIF({entity}, {sales: {+d: entity}} &gt; 0 AND …)</code></li>
+<li>正确：<code>DISTINCTCOUNTIF({entity}, {销售额: {+d: entity}} &gt; 0 AND …)</code></li>
 </ul>
 <p><strong>队列范围：</strong> 明确首次购买按哪一级实体定义，并指定所用历史数据的范围或截至时点，然后将首次购买与观察期进行比较。只有在验证了允许使用的维度和应用该分类器的粒度后，才能复用命名分类器。将失败的表达式直接内联，既不能证明其语义正确，也不能绕过粒度不兼容的问题。有关已验证的表达式形式和发布版本中的缺陷，请参阅<a href="explanation--measure-as-dimension.zh.html">将指标用作维度</a>。</p>
 <h2 id="backward-looking-repurchase-metrics">回溯性复购指标 <a class="section-link" aria-label="本节链接" href="#backward-looking-repurchase-metrics">#</a></h2>
-<p>先用一句话写清业务定义（统计对象、观察月份、时间窗口）。按客户设置标志，再用 <code>SUM({flag: {+d: customer_id}})</code> 或 <code>DISTINCTCOUNTIF(...)</code> 聚合。更改语义前，请与业务负责人共同审查。</p>
+<p>先用一句话写清业务定义（统计对象、观察月份、时间窗口）。按客户设置标志，再用 <code>SUM({flag: {+d: 客户编号}})</code> 或 <code>DISTINCTCOUNTIF(...)</code> 聚合。更改语义前，请与业务负责人共同审查。</p>
 <h2 id="recompute-distinct-counts-at-the-report-grain">按报表粒度重新计算去重计数 <a class="section-link" aria-label="本节链接" href="#recompute-distinct-counts-at-the-report-grain">#</a></h2>
-<p>在两个月都出现的买家，在这两个月中各计一次，在整个季度也只计一次。在事实数据集上定义 <code>buyers: DISTINCTCOUNT({customer_id})</code>。要统计季度内的去重买家数，请对整个季度使用 <code>AGG(buyers)</code>，且不按月分组。要分别报告多个季度的结果，请按季度分组。</p>
-<p><code>SUM({buyers: {+d: dt_month}})</code> 将各月的去重买家数相加。试验中，这得到了 3,066 个买家与月份的组合，而整个季度有 1,248 位不同的买家。试验中检查的构建版本接受了这一求和操作，未给出严格的诊断提示。请与直接对同一时段应用 <code>COUNT(DISTINCT customer_id)</code> 得到的结果进行比较。</p>
+<p>在两个月都出现的买家，在这两个月中各计一次，在整个季度也只计一次。在事实数据集上定义 <code>buyers: DISTINCTCOUNT({客户编号})</code>。要统计季度内的去重买家数，请对整个季度使用 <code>AGG(buyers)</code>，且不按月分组。要分别报告多个季度的结果，请按季度分组。</p>
+<p><code>SUM({buyers: {+d: dt_month}})</code> 将各月的去重买家数相加。试验中，这得到了 3,066 个买家与月份的组合，而整个季度有 1,248 位不同的买家。试验中检查的构建版本接受了这一求和操作，未给出严格的诊断提示。请与直接对同一时段应用 <code>COUNT(DISTINCT 客户编号)</code> 得到的结果进行比较。</p>
 </main></body></html>

@@ -41,8 +41,11 @@
   dimension: [transaction_id]
   columns:
     transaction_id:
+      abbr: transaction_id
     amount:
+      abbr: amount
     discount:
+      abbr: discount
     net_amount: amount - discount
   measures:
     sales: SUM({net_amount})
@@ -50,7 +53,7 @@
 
 avg_transaction_value:
   type: measure
-  formula: &#39;DIVIDE({sales}, {number_of_transactions})&#39;
+  formula: 'DIVIDE({sales}, {number_of_transactions})'
 </code></pre>
 <p><code>sales</code> and <code>number_of_transactions</code> are atomic measures. They inherit the enclosing dataset and directly aggregate its rows or column expressions without referencing other measures. <code>avg_transaction_value</code> is composite because its formula references other measures, even though both use <code>transactions</code>. A composite measure has no <code>dataset:</code> property.</p>
 <p>In a model formula, bare <code>amount</code> names a physical SQL column. <code>{net_amount}</code> expands the model&#39;s calculated column. Braces retain that distinction even when logical and physical names happen to match.</p>
@@ -74,7 +77,7 @@ avg_transaction_value:
 </tr>
 <tr>
 <td>Find the attribute valid at an event date</td>
-<td><code>pk(id, event_date)</code> against <code>[id, &#39;range(valid_from, valid_to)&#39;]</code></td>
+<td><code>pk(id, event_date)</code> against <code>[id, 'range(valid_from, valid_to)']</code></td>
 <td>The checked finite intervals match <code>[start,end)</code>. Intervals for the same id must not overlap.</td>
 </tr>
 <tr>

@@ -7,8 +7,8 @@
     dataset: dataset_name
     formula: aggregation_expression
     dimensions:                # optional allowed evaluation dimensions
-        - [customer_id]
-        - [customer_id, ...]   # listed fields remain required
+        - [顧客番号]
+        - [顧客番号, ...]   # listed fields remain required
     prerequisite: validity_expression
 </code></pre>
 <p><code>formula:</code> は必須です。<code>dataset:</code> は、最上位で宣言するアトミック指標をデータソースに紐付けます。データセットの <code>measures:</code> ブロック内にある指標は、そのデータセットを継承します。複合指標は他の指標を参照し、<code>dataset:</code> を省略します。</p>
@@ -19,144 +19,144 @@
 <li>クエリ固有のフィルタリングやグループ化は、そのクエリ専用の指標ではなく、<strong>モデルクエリ</strong>で指定します（SQL の <code>WHERE</code>/<code>GROUP BY</code>、または DML 形式の <code>filters:</code> / <code>columns: dimension:</code>）。モデルクエリの規則については、<a href="reference--model-query-sql.ja.html">モデルクエリ（SQL）</a>を参照してください。</li>
 <li><code>dataset:</code> は<strong>アトミック</strong>指標専用です。その数式は、他の指標を参照せず、データセットの行や列の式を直接集計します。<strong>複合</strong>指標は他の指標を参照し、<code>dataset:</code> を宣言してはいけません。参照先の指標がすべて同じデータセットを使用している場合も同様です。<a href="reference--measures.ja.html#measure-references">指標の参照</a>と、よくある落とし穴 <a href="reference--troubleshooting--models.ja.html#p39"><code>P39</code></a> を参照してください。</li>
 <li>指標は数値、日付、または分類値を返すことができます。表示形式は利用側で設定し、集計方法と型は業務上の定義に合わせて選択します。</li>
-<li>金額や精度が重要な元データのフィールドは、アトミック指標で一度だけ型変換し（例 <code>SUM(CAST({amount} AS DECIMAL(38, 2)))</code>）、後続の処理ではその指標を再利用することを推奨します。</li>
+<li>金額や精度が重要な元データのフィールドは、アトミック指標で一度だけ型変換し（例 <code>SUM(CAST({売上金額} AS DECIMAL(38, 2)))</code>）、後続の処理ではその指標を再利用することを推奨します。</li>
 <li>業務ルールが <code>&gt; 0</code> / <code>&lt; 0</code> の比較に依存する場合は、<code>MINIF</code>/<code>MAXIF</code>/<code>DISTINCTCOUNTIF</code> の条件で再利用する前に、ベースとなる指標が意図した型（例 DECIMAL）になっていることを確認してください。</li>
 </ul>
 <hr>
 <h2 id="simple-aggregations">単純な集計 <a class="section-link" aria-label="この節へのリンク" href="#simple-aggregations">#</a></h2>
 <h3 id="count">COUNT <a class="section-link" aria-label="この節へのリンク" href="#count">#</a></h3>
-<pre><code class="language-yaml">number_of_transactions:
+<pre><code class="language-yaml">取引件数:
     type: measure
-    dataset: transactions
-    formula: count(distinct transaction_id)
+    dataset: 取引明細
+    formula: count(distinct 取引番号)
 
-number_of_products:
+商品数:
     type: measure
-    dataset: transactions
-    formula: count(distinct product)
+    dataset: 取引明細
+    formula: count(distinct 商品)
 </code></pre>
 <h3 id="sum">SUM <a class="section-link" aria-label="この節へのリンク" href="#sum">#</a></h3>
-<pre><code class="language-yaml">amount:
+<pre><code class="language-yaml">売上金額:
     type: measure
-    dataset: transactions
-    formula: SUM(CAST({raw_amount} AS DECIMAL(38, 2)))
+    dataset: 取引明細
+    formula: SUM(CAST({元金額} AS DECIMAL(38, 2)))
 
-transaction_quantity:
+取引数量:
     type: measure
-    dataset: transactions
-    formula: SUM(quantity)
+    dataset: 取引明細
+    formula: SUM(数量)
 </code></pre>
 <h3 id="maxmin">MAX/MIN <a class="section-link" aria-label="この節へのリンク" href="#maxmin">#</a></h3>
-<pre><code class="language-yaml">last_order_date:
+<pre><code class="language-yaml">最終注文日:
     type: measure
-    dataset: transactions
+    dataset: 取引明細
     formula: MAX(dt_date)
 </code></pre>
 <h3 id="avg">AVG <a class="section-link" aria-label="この節へのリンク" href="#avg">#</a></h3>
-<pre><code class="language-yaml">avg_invoice_quantity:
+<pre><code class="language-yaml">請求書当たり平均数量:
     type: measure
-    formula: 'AVG({invoice_quantity: {+d: transaction_id}})'
+    formula: 'AVG({請求数量: {+d: 取引番号}})'
 </code></pre>
 <hr>
 <h2 id="filtered-measures">フィルター付き指標 <a class="section-link" aria-label="この節へのリンク" href="#filtered-measures">#</a></h2>
 <p>インラインフィルターには <code>{+f: condition}</code> を使用します。修飾子の構文については、<a href="reference--modifiers.ja.html#22-function-modifiers">関数修飾子</a>を参照してください。</p>
-<pre><code class="language-yaml">expense:
+<pre><code class="language-yaml">費用:
     type: measure
-    dataset: transactions
+    dataset: 取引明細
     formula: |-
-        {debit: {+f: {account_type: ['Expense', 'Other Expense']}}}
+        {借方金額: {+f: {勘定区分: ['Expense', 'Other Expense']}}}
 
-sales:
+売上高:
     type: measure
     description: Sales revenue from income accounts
     formula: |-
-        {credit: {+f: {account_type: ['Income', 'Other Income']}}}
+        {貸方金額: {+f: {勘定区分: ['Income', 'Other Income']}}}
 
-food_and_drink_expense:
+飲食費:
     type: measure
     formula: |-
-        {expense: {+f: "instr(account, 'Food &amp; drink') &gt; 0"}}
+        {費用: {+f: "instr(勘定科目, 'Food &amp; drink') &gt; 0"}}
 
-number_of_credit_card_transactions:
+カード取引件数:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {credit_card : 'yes'}}}
+        {取引件数: {+f: {credit_card : 'yes'}}}
 
-number_of_unpaid_invoices:
+未払い請求書数:
     type: measure
     formula: |-
-        {number_of_invoices: {+f: 'open_balance &gt; 0'}}
+        {請求書数: {+f: '未決済残高 &gt; 0'}}
 </code></pre>
 <hr>
 <h2 id="measure-references">指標の参照 <a class="section-link" aria-label="この節へのリンク" href="#measure-references">#</a></h2>
 <p>数式内で他の指標を参照するには、次のように記述します。</p>
 <blockquote>
-<p><strong>複合指標では <code>dataset:</code> を宣言してはいけません。</strong> <code>formula:</code> が他の指標を参照する場合は、<code>dataset:</code> を省略します。アトミック指標は <code>dataset:</code> を使って、他の指標を参照せずに集計する元の行や列の式を紐付けます。以下のアトミック指標の例（<code>credit</code> / <code>debit</code>）では <code>dataset:</code> を指定し、複合指標 <code>profit</code> では省略しています。よくある落とし穴 <a href="reference--troubleshooting--models.ja.html#p39"><code>P39</code></a> を参照してください。</p>
+<p><strong>複合指標では <code>dataset:</code> を宣言してはいけません。</strong> <code>formula:</code> が他の指標を参照する場合は、<code>dataset:</code> を省略します。アトミック指標は <code>dataset:</code> を使って、他の指標を参照せずに集計する元の行や列の式を紐付けます。以下のアトミック指標の例（<code>貸方金額</code> / <code>借方金額</code>）では <code>dataset:</code> を指定し、複合指標 <code>利益</code> では省略しています。よくある落とし穴 <a href="reference--troubleshooting--models.ja.html#p39"><code>P39</code></a> を参照してください。</p>
 </blockquote>
 <pre><code class="language-yaml"># Base measures
-credit:
+貸方金額:
     type: measure
-    dataset: transactions
-    formula: SUM(credit)
+    dataset: 取引明細
+    formula: SUM(貸方金額)
 
-debit:
+借方金額:
     type: measure
-    dataset: transactions
-    formula: SUM(debit)
+    dataset: 取引明細
+    formula: SUM(借方金額)
 
 # Derived measure (composite — no dataset:)
-profit:
+利益:
     type: measure
     formula: |-
-        {credit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}} -
-        {debit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}}
+        {貸方金額: {+f: {取引区分: ['Income','Other Income','Expense','Other Expense']}}} -
+        {借方金額: {+f: {取引区分: ['Income','Other Income','Expense','Other Expense']}}}
 </code></pre>
 <hr>
 <h2 id="measure-aliases">指標の別名 <a class="section-link" aria-label="この節へのリンク" href="#measure-aliases">#</a></h2>
 <p>既存の指標に別名を付けるには、次のように記述します。</p>
-<pre><code class="language-yaml">revenue: |-
-    {sales}
+<pre><code class="language-yaml">収益: |-
+    {売上高}
 
-income: |-
-    {sales}
+収入: |-
+    {売上高}
 
-outgoing: |-
-    {expense}
+支出: |-
+    {費用}
 </code></pre>
 <hr>
 <h2 id="complex-formulas">複雑な数式 <a class="section-link" aria-label="この節へのリンク" href="#complex-formulas">#</a></h2>
 <h3 id="conditional-aggregations">条件付き集計 <a class="section-link" aria-label="この節へのリンク" href="#conditional-aggregations">#</a></h3>
 <p><code>SUMIF</code> / <code>DISTINCTCOUNTIF</code> / <code>MINIF</code> / <code>MAXIF</code> を使って他の指標を参照する指標は複合指標です。数式内の列が既知のデータセットに「属する」場合でも、<code>dataset:</code> を宣言してはいけません。列を対象とした集計が必要な場合は、別のアトミック指標でのみ <code>dataset:</code> を使用します。<a href="reference--measures.ja.html#measure-references">指標の参照</a>と、よくある落とし穴 <a href="reference--troubleshooting--models.ja.html#p39"><code>P39</code></a> を参照してください。</p>
-<pre><code class="language-yaml">incoming_payment:
+<pre><code class="language-yaml">入金額:
     type: measure
     formula: |-
-        SUMIF({payment: {+d: customer}}, {customer} is not null)
+        SUMIF({payment: {+d: 顧客}}, {顧客} is not null)
 
-outgoing_payment:
+支払額:
     type: measure
     formula: |-
-        SUMIF({payment: {+d: vendor}}, {vendor} is not null)
+        SUMIF({payment: {+d: 仕入先}}, {仕入先} is not null)
 </code></pre>
 <h3 id="nested-aggregations">入れ子の集計 <a class="section-link" aria-label="この節へのリンク" href="#nested-aggregations">#</a></h3>
-<pre><code class="language-yaml">max_amount_per_invoice:
+<pre><code class="language-yaml">請求書別最大額:
     type: measure
     formula: |-
-        MAX({sales: {+d: transaction_id}})
+        MAX({売上高: {+d: 取引番号}})
 
-daily_avg_sales:
+日平均売上高:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: dt_date}}), distinctcount({dt_date}))
+        divide(sum({売上高: {+d: dt_date}}), distinctcount({dt_date}))
 
-weekly_avg_sales:
+週平均売上高:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: dt_week}}), distinctcount({dt_week}))
+        divide(sum({売上高: {+d: dt_week}}), distinctcount({dt_week}))
 
-avg_sales_per_trx:
+取引当たり平均売上高:
     type: measure
     formula: |-
-        divide(sum({sales: {+d: transaction_id}}), distinctcount({transaction_id}))
+        divide(sum({売上高: {+d: 取引番号}}), distinctcount({取引番号}))
 </code></pre>
 <h3 id="window-functions">ウィンドウ関数 <a class="section-link" aria-label="この節へのリンク" href="#window-functions">#</a></h3>
 <p><strong>ウィンドウ関数の配置</strong>。ルールの詳細は<a href="explanation--window-placement.ja.html">ウィンドウ関数の配置</a>を参照してください。概要は以下のとおりです。</p>
@@ -178,47 +178,50 @@ avg_sales_per_trx:
 </tbody></table>
 <p>アトミック指標では <code>OVER</code> を使用できません（<code>window functions are not allowed in atomic measures</code>）。よくある落とし穴については、<a href="reference--troubleshooting--grain-and-joins.ja.html#p70"><code>P70</code></a>、<a href="reference--troubleshooting--grain-and-joins.ja.html#p71"><code>P71</code></a> を参照してください。</p>
 <p><strong>明細レベル</strong>（<code>columns:</code> 内でパーティション分けに使う列を直接参照する場合）</p>
-<pre><code class="language-yaml">fact:
+<pre><code class="language-yaml">取引記録:
     type: dataset
     table: FACT_SALES
     columns:
-        store_id:
-        prod_id:
-        qty:
-        net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+        店舗番号:
+            abbr: store_id
+        商品番号:
+            abbr: prod_id
+        数量:
+            abbr: qty
+        純数量: 'SUM({数量}) over (partition by {店舗番号}, {商品番号})'
     measures:
-        sum_net_qty: 'SUM({net_qty})'
+        純数量合計: 'SUM({純数量})'
 </code></pre>
 <p><strong>集計後</strong>（複合指標で集計値を定義する粒度を参照する場合）</p>
-<pre><code class="language-yaml">total_sales:
+<pre><code class="language-yaml">総売上高:
     type: measure
-    dataset: fact
-    formula: SUM({qty})
+    dataset: 取引記録
+    formula: SUM({数量})
 
-region_rank:
+地域順位:
     type: measure
-    formula: 'rank() over (partition by {-d: product} order by {total_sales} desc)'
+    formula: 'rank() over (partition by {-d: 商品} order by {総売上高} desc)'
 </code></pre>
 <p><strong>モデルクエリ（SQL）では</strong>、目的に合うものがあれば、<a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> の関数マクロ（<code>rank</code>、<code>rank_asc</code>、<code>pot</code>、<code>grand</code>）を優先して使用します。</p>
-<pre><code class="language-sql">SELECT product, AGG(sales, 'rank') AS sales_rank
-FROM MODEL GROUP BY product
+<pre><code class="language-sql">SELECT 商品, AGG(売上高, 'rank') AS 売上順位
+FROM MODEL GROUP BY 商品
 
-SELECT product, AGG({sales: pot}) AS share
-FROM MODEL GROUP BY product
+SELECT 商品, AGG({売上高: pot}) AS 構成比
+FROM MODEL GROUP BY 商品
 </code></pre>
 <p>マクロの分類と動作については、<a href="reference--modifiers.ja.html#22-function-modifiers">関数修飾子</a>を参照してください。</p>
 <h3 id="isnull-and-iif">ISNULL と IIF <a class="section-link" aria-label="この節へのリンク" href="#isnull-and-iif">#</a></h3>
-<pre><code class="language-yaml">all_product_sales:
+<pre><code class="language-yaml">全商品売上高:
     type: measure
     description: Product sales including products with zero sales
     formula: |-
-        SUM(isnull({sales: {+d: product}}, 0) * iif({DATASET_PRODUCT_SERVICE}.product is not null, 1, 0))
+        SUM(isnull({売上高: {+d: 商品}}, 0) * iif({DATASET_PRODUCT_SERVICE}.商品 is not null, 1, 0))
 
-all_customer_sales:
+全顧客売上高:
     type: measure
     description: Customer sales including customers with zero sales
     formula: |-
-        SUM(isnull({sales: {+d: customer}}, 0) * iif({DATASET_CUSTOMER}.customer is not null, 1, 0))
+        SUM(isnull({売上高: {+d: 顧客}}, 0) * iif({DATASET_CUSTOMER}.顧客 is not null, 1, 0))
 </code></pre>
 <h3 id="fill-default-when-row-missing">行が欠けている場合に既定値を補う <a class="section-link" aria-label="この節へのリンク" href="#fill-default-when-row-missing">#</a></h3>
 <p><strong>機能</strong> 結合、FOJ、またはマテリアライズで行が欠けている場合に既定値を補い、後続の計算への NULL の伝播を防ぎます。</p>
@@ -229,21 +232,21 @@ all_customer_sales:
 <li><strong>外側のラップは自動で追加されません。</strong> 複合指標の中で既定値補完を有効にした指標を参照するだけでは、その複合指標の結果列は<strong>ラップされません</strong>。行が欠けている場合も<em>その複合指標自身の</em>結果列が NULL 以外の値を返す必要があるなら、結果に対して補完を有効にします。</li>
 <li><strong>埋め込み時も既定値補完は展開されます。</strong> 複合指標が、補完を有効にした依存先の指標を直接または数式参照の連鎖を通じて<strong>埋め込む</strong>場合、行が欠ける可能性のある FOJ の使用箇所では、埋め込みを呼び出す側で補完処理が展開されます。たとえば、<code>deep = {q2fp1} * 3</code> が <code>q2fp1 = {q2f} + 1</code> と <code>q2f = isnull(SUM(...), 0)</code> に依存する場合、結合相手の行が欠けているときの結果は NULL ではなく <code>(coalesce(dep, 0) + 1) * 3</code> になります。この補完は有効化済みの依存先に対するもので、<code>isnull(deep, …)</code> が自動で適用されるわけではありません。</li>
 </ol>
-<pre><code class="language-yaml">上期:
+<pre><code class="language-yaml">前期:
     type: measure
-    formula: 'isnull({销售额: pp}, 0)'   # activate
+    formula: 'isnull({売上高: pp}, 0)' # activate
 
-上上期:
+前々期:
     type: measure
-    formula: '{上期: pp}'                # use site → 0
+    formula: '{前期: pp}' # use site → 0
 
-本期减上期:
+前期差:
     type: measure
-    formula: '{销售额} - {上期}'         # 上期 use site → 0 (no contagion)
+    formula: '{売上高} - {前期}' # 上期 use site → 0 (no contagion)
 
-本期减上期_fill:
+欠損補完済前期差:
     type: measure
-    formula: 'isnull({销售额} - {上期}, 0)'  # activate on result
+    formula: 'isnull({売上高} - {前期}, 0)' # activate on result
 
 # Nested embed (activation on q2f; deep expands fill of q2f at FOJ)
 q2f:   { dataset: secondary, formula: 'isnull(SUM({q2}), 0)' }
@@ -259,7 +262,7 @@ deep:  { formula: '{q2fp1} * 3' }
 </tr>
 </thead>
 <tbody><tr>
-<td><code>{销售额: pp}</code> 単独</td>
+<td><code>{売上高: pp}</code> 単独</td>
 <td>有効化されない</td>
 </tr>
 <tr>
@@ -277,5 +280,5 @@ deep:  { formula: '{q2fp1} * 3' }
 </tbody></table>
 <p>MetricFlow の <code>fill_nulls_with</code> や Looker の集計後の <code>COALESCE</code> と同じ考え方です。補完値を指標に定義し、<strong>その</strong>指標が使われるときに適用します。DML は欠けているカレンダー行を作成せず、結合後の列の値が null の場合にだけ補完します。欠けている日付は、カレンダーを使うか、FOJ で定義される粒度で別途補ってください。注意点は<a href="reference--troubleshooting--README.ja.html">トラブルシューティング索引</a>の P28b を参照してください。コンパイラに関する補足（dmlc）は <code>docs/fill-default-when-row-missing.md</code> を参照してください。</p>
 <h2 id="reusable-chronological-running-measures">時系列順に累積する再利用可能な指標 <a class="section-link" aria-label="この節へのリンク" href="#reusable-chronological-running-measures">#</a></h2>
-<p>名前付きの複合指標には、集計後に評価するウィンドウ関数を含めることができます。<a href="examples--running-total.ja.html">累計売上の例</a>では、<code>SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code> を宣言済みの <code>[month]</code> の粒度で定義します。計算は地域別にパーティション分割されません。2 月に絞り込むと、計算の開始点が変わります。加算可能な金額の累計は、重複を除いた件数の累計でも、累積比率でもありません。この例には、モデル全体、クエリ、期待される結果行が含まれます。<code>dimension: []</code> は、総計を評価する際にグループ化を解除します。並び順の指定や累積計算の要求は行いません。最終観測時点の残高を求める場合は、日付をエンティティごとに決めるか全体で決めるかを定義し、観測値がない場合や同じ日付に複数の観測値がある場合の扱いも定義してください。順序を指定した合計や、最終日付を使う単一の計算方法で、すべての半加算計算を定義できるわけではありません。</p>
+<p>名前付きの複合指標には、集計後に評価するウィンドウ関数を含めることができます。<a href="examples--running-total.ja.html">累計売上の例</a>では、<code>SUM({売上高}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code> を宣言済みの <code>[month]</code> の粒度で定義します。計算は地域別にパーティション分割されません。2 月に絞り込むと、計算の開始点が変わります。加算可能な金額の累計は、重複を除いた件数の累計でも、累積比率でもありません。この例には、モデル全体、クエリ、期待される結果行が含まれます。<code>dimension: []</code> は、総計を評価する際にグループ化を解除します。並び順の指定や累積計算の要求は行いません。最終観測時点の残高を求める場合は、日付をエンティティごとに決めるか全体で決めるかを定義し、観測値がない場合や同じ日付に複数の観測値がある場合の扱いも定義してください。順序を指定した合計や、最終日付を使う単一の計算方法で、すべての半加算計算を定義できるわけではありません。</p>
 </main></body></html>

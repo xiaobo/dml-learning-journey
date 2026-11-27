@@ -2,33 +2,33 @@
 <p>ここでは、SQL クエリと YAML クエリを扱います。サポートされている構文は、<a href="reference--model-query-sql.ja.html">モデルクエリ（SQL）</a>と<a href="reference--query-yaml.ja.html">YAML クエリ</a>に記載されています。</p>
 <p><a id="p8"></a></p>
 <h2 id="p8-forgetting-agg-in-aggregation-queries">P8. 集計クエリでの AGG() の指定漏れ <a class="section-link" aria-label="この節へのリンク" href="#p8-forgetting-agg-in-aggregation-queries">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT product, sales FROM MODEL GROUP BY product</code> <strong>修正</strong>：<code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></p>
+<p><strong>誤り</strong>：<code>SELECT 商品, 売上高 FROM MODEL GROUP BY 商品</code> <strong>修正</strong>：<code>SELECT 商品, AGG(売上高) FROM MODEL GROUP BY 商品</code></p>
 <p><a id="p9"></a></p>
 <h2 id="p9-adding-redundant-alias-on-agg">P9. AGG() に不要なエイリアスを付ける <a class="section-link" aria-label="この節へのリンク" href="#p9-adding-redundant-alias-on-agg">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT AGG(sales) as sales</code> <strong>修正</strong>：<code>SELECT AGG(sales)</code> には自動的に <code>sales</code> というエイリアスが付きます。</p>
+<p><strong>誤り</strong>：<code>SELECT AGG(売上高) as 売上高</code> <strong>修正</strong>：<code>SELECT AGG(売上高)</code> には自動的に <code>売上高</code> というエイリアスが付きます。</p>
 <p><a id="p10"></a></p>
 <h2 id="p10-using-subqueries">P10. サブクエリを使用する <a class="section-link" aria-label="この節へのリンク" href="#p10-using-subqueries">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT * FROM MODEL WHERE sales &gt; (SELECT AVG(sales) FROM MODEL)</code> <strong>修正</strong>：<code>HAVING</code> を指標と組み合わせて使用します。例：<code>HAVING AGG(sales) &gt; AGG(avg_sales)</code></p>
+<p><strong>誤り</strong>：<code>SELECT * FROM MODEL WHERE 売上高 &gt; (SELECT AVG(売上高) FROM MODEL)</code> <strong>修正</strong>：<code>HAVING</code> を指標と組み合わせて使用します。例：<code>HAVING AGG(売上高) &gt; AGG(avg_sales)</code></p>
 <p><a id="p11"></a></p>
 <h2 id="p11-using-joins">P11. JOIN を使用する <a class="section-link" aria-label="この節へのリンク" href="#p11-using-joins">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.id = b.id</code> <strong>修正</strong>：<code>.dml</code> ファイルで、データセットをまたぐ列マクロまたは <code>pk(...)</code> による参照を使用します。</p>
+<p><strong>誤り</strong>：<code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.売上明細番号 = b.売上明細番号</code> <strong>修正</strong>：<code>.dml</code> ファイルで、データセットをまたぐ列マクロまたは <code>pk(...)</code> による参照を使用します。</p>
 <p><a id="p12"></a></p>
 <h2 id="p12-missing-time-context-for-time-modifiers">P12. 時間修飾子に必要な時間コンテキストがない <a class="section-link" aria-label="この節へのリンク" href="#p12-missing-time-context-for-time-modifiers">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT product, AGG({sales: yoy}) FROM MODEL GROUP BY product</code>（グループ化に使う時間フィールドも時間フィルターもありません）</p>
+<p><strong>誤り</strong>：<code>SELECT 商品, AGG({売上高: yoy}) FROM MODEL GROUP BY 商品</code>（グループ化に使う時間フィールドも時間フィルターもありません）</p>
 <p><strong>ルール</strong>：時間コンテキストを確定し、マクロの前提条件を満たしてください。グループ化に使う時間フィールドを明示する方法が最も明確です。時間フィルターでコンテキストを指定することもできます。読みやすさのため、行や集計値を定義する時間粒度はできるだけ 1 つにそろえてください。</p>
 <p><strong>時間コンテキストの参照先</strong>：<a href="reference--modifiers.ja.html#21-time-modifiers">時間修飾子</a>。</p>
 <p><strong>正しい例（月単位の前年比）</strong>：</p>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY dt_month
+<pre><code class="language-sql">SELECT dt_month, AGG(売上高), AGG({売上高: yoy}) FROM MODEL GROUP BY dt_month
 </code></pre>
 <p><strong>正しい例（日単位の YTD）</strong>：</p>
-<pre><code class="language-sql">SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
+<pre><code class="language-sql">SELECT dt_date, AGG(売上高, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
 </code></pre>
 <p><a id="p13"></a></p>
 <h2 id="p13-mixing-time-granularities">P13. 異なる時間粒度を混在させる <a class="section-link" aria-label="この節へのリンク" href="#p13-mixing-time-granularities">#</a></h2>
 <p><strong>推奨</strong>：時間粒度はできるだけ 1 つにそろえてください。検証したビルドでは <code>dt_year, dt_month</code> を同時に指定できます。複数のフィールドを指定できても、すべてのマクロの組み合わせで意図した時間コンテキストが得られるとは限りません。確定した時間粒度を確認してください。</p>
 <p><a id="p14"></a></p>
 <h2 id="p14-adding-unnecessary-null-filters">P14. 不要な NULL 除外フィルターを追加する <a class="section-link" aria-label="この節へのリンク" href="#p14-adding-unnecessary-null-filters">#</a></h2>
-<p><strong>誤り</strong>：明示的な指定がないのに <code>WHERE customer is not null</code> を追加する。<strong>修正</strong>：質問で明示的に求められた場合にのみ、NULL 値を除外します。</p>
+<p><strong>誤り</strong>：明示的な指定がないのに <code>WHERE 顧客 is not null</code> を追加する。<strong>修正</strong>：質問で明示的に求められた場合にのみ、NULL 値を除外します。</p>
 <p><a id="p15"></a></p>
 <h2 id="p15-using-between-for-single-periods">P15. 単一の期間に BETWEEN を使用する <a class="section-link" aria-label="この節へのリンク" href="#p15-using-between-for-single-periods">#</a></h2>
 <p><strong>推奨</strong>：<code>dt_month = '2024-01-01'</code> を使うと、1 月を選択することが明確になります。日付範囲は、その範囲を選択する意図がある場合に有効です。範囲の境界を明示し、タイムスタンプと終了日の扱いを確認してください。</p>
@@ -40,10 +40,10 @@
 <p><strong>誤り</strong>：すべてのクエリに <code>ORDER BY</code> を追加する。<strong>修正</strong>：ORDER BY は、上位 N 件を取得する場合、または質問で順位付けが明示的に求められた場合にのみ使用します。</p>
 <p><a id="p18"></a></p>
 <h2 id="p18-manual-growth-rate-calculation">P18. 増加率を手動で計算する <a class="section-link" aria-label="この節へのリンク" href="#p18-manual-growth-rate-calculation">#</a></h2>
-<p><strong>誤り</strong>：<code>DIVIDE(AGG(sales), AGG(sales, 'ya')) - 1</code> <strong>修正</strong>：組み込みの修飾子を使った <code>AGG(sales, 'yoy')</code> を使用します。</p>
+<p><strong>誤り</strong>：<code>DIVIDE(AGG(売上高), AGG(売上高, 'ya')) - 1</code> <strong>修正</strong>：組み込みの修飾子を使った <code>AGG(売上高, 'yoy')</code> を使用します。</p>
 <p><a id="p20"></a></p>
 <h2 id="p20-using-distinct-alone-for-existence-checks">P20. 存在確認に DISTINCT だけを使用する <a class="section-link" aria-label="この節へのリンク" href="#p20-using-distinct-alone-for-existence-checks">#</a></h2>
-<p><strong>誤り</strong>：「顧客はいますか？」という質問に <code>SELECT DISTINCT customer FROM MODEL.transactions</code> を使用する。<strong>修正</strong>：<code>SELECT customer, dt_date, transaction_id FROM MODEL.transactions LIMIT 1</code> を使って具体的なレコードを返します。</p>
+<p><strong>誤り</strong>：「顧客はいますか？」という質問に <code>SELECT DISTINCT 顧客 FROM MODEL.取引明細</code> を使用する。<strong>修正</strong>：<code>SELECT 顧客, dt_date, 取引番号 FROM MODEL.取引明細 LIMIT 1</code> を使って具体的なレコードを返します。</p>
 <hr>
 <h2 id="category-dml-model-design">カテゴリ：DML モデル設計 <a class="section-link" aria-label="この節へのリンク" href="#category-dml-model-design">#</a></h2>
 <p><a id="p45"></a></p>
@@ -51,13 +51,13 @@
 <p><strong>誤り</strong>：指標 <code>total_cost:</code> を選択するクエリに <code>dataset: DATASET_PRODUCTS</code> を指定する。<strong>修正</strong>：集計モードにするには <code>dataset:</code> を削除します。詳細クエリのままにする場合は、クエリから指標を削除します。</p>
 <p><a id="p46"></a></p>
 <h2 id="p46-bare-column-name-in-aggregate-query">P46. 集計クエリでデータセットを指定せずに列名を使う <a class="section-link" aria-label="この節へのリンク" href="#p46-bare-column-name-in-aggregate-query">#</a></h2>
-<p><strong>誤り</strong>：列が <code>DATASET_PRODUCTS</code> にあるときに、<code>dataset:</code> を指定せずに <code>prod_id:</code> を記述する。<strong>修正</strong>：<code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code>。</p>
+<p><strong>誤り</strong>：列が <code>DATASET_PRODUCTS</code> にあるときに、<code>dataset:</code> を指定せずに <code>商品番号:</code> を記述する。<strong>修正</strong>：<code>商品番号: "{DATASET_PRODUCTS}.商品番号"</code>。</p>
 <p><a id="p47"></a></p>
 <h2 id="p47-mismatched-dimension-field-names-across-datasets">P47. データセット間でディメンションフィールド名が一致しない <a class="section-link" aria-label="この節へのリンク" href="#p47-mismatched-dimension-field-names-across-datasets">#</a></h2>
-<p><strong>誤り</strong>：<code>DATASET_PT</code> ではディメンション <code>id</code> を使用し、<code>DATASET_MC</code> では <code>tag_id</code> を使用している。<strong>修正</strong>：名前を 1 つに統一し（例：<code>tag_id</code>）、<code>columns:</code> でデータウェアハウスの列を対応付けます（<code>tag_id: id</code>）。</p>
+<p><strong>誤り</strong>：<code>DATASET_PT</code> ではディメンション <code>売上明細番号</code> を使用し、<code>DATASET_MC</code> では <code>tag_id</code> を使用している。<strong>修正</strong>：名前を 1 つに統一し（例：<code>tag_id</code>）、<code>columns:</code> でデータウェアハウスの列を対応付けます（<code>tag_id: 売上明細番号</code>）。</p>
 <p><a id="p48"></a></p>
 <h2 id="p48-mapping-used-as-a-dimension-field-in-dimension">P48. <code>dimension:</code> のディメンションフィールドにマッピングを記述する <a class="section-link" aria-label="この節へのリンク" href="#p48-mapping-used-as-a-dimension-field-in-dimension">#</a></h2>
-<p><strong>誤り</strong>：<code>columns: dimension:</code> の下に <code>- f_tag_id: {DATASET_PT}.id</code> を記述する。<strong>修正</strong>：<code>- f_tag_id</code> のみを列挙し、式 <code>f_tag_id: |- …</code> は別に定義します。</p>
+<p><strong>誤り</strong>：<code>columns: dimension:</code> の下に <code>- f_tag_id: {DATASET_PT}.売上明細番号</code> を記述する。<strong>修正</strong>：<code>- f_tag_id</code> のみを列挙し、式 <code>f_tag_id: |- …</code> は別に定義します。</p>
 <p><a id="p49"></a></p>
 <h2 id="p49-dimension-field-under-measures">P49. <code>measures:</code> の下にディメンションフィールドを定義する <a class="section-link" aria-label="この節へのリンク" href="#p49-dimension-field-under-measures">#</a></h2>
 <p><strong>誤り</strong>：データセットの <code>measures:</code> の下で <code>tag_id:</code> に式を指定する。<strong>修正</strong>：データセットの <code>dimension:</code> の下で、行を定義する粒度を宣言します。指標は集計にのみ使用します。</p>
@@ -77,7 +77,7 @@
 <p><strong>誤り</strong>：<code>WHERE dt_month = (SELECT MAX(dt_month) FROM MODEL ...)</code> <strong>修正方法</strong>：確認に使う月を固定値で指定するか、明細クエリ <code>SELECT MAX(dt_month) FROM MODEL.&lt;dataset&gt;</code> を使用します。</p>
 <p><a id="p61"></a></p>
 <h2 id="p61-aggregating-directly-on-dataset-with-group-by">P61. GROUP BY でデータセットを直接集計する <a class="section-link" aria-label="この節へのリンク" href="#p61-aggregating-directly-on-dataset-with-group-by">#</a></h2>
-<p><strong>誤り</strong>：<code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code> <strong>症状</strong>：<code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code> <strong>修正方法</strong>：次のいずれかの方法を使います。(a) <code>model.dml</code> で指標を定義し、<code>FROM MODEL</code> と <code>AGG()</code> を組み合わせて使う。(b) アドホッククエリでは <code>/** dml ... **/</code> 形式のコメントブロックでインライン指標を定義し、<code>.dml</code> を編集せずに使う（<a href="reference--model-query-sql.ja.html#312-inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>）</a>を参照）。</p>
+<p><strong>誤り</strong>：<code>SELECT 購入者コード, 品牌, SUM(出荷金額) FROM MODEL.DATASET_X GROUP BY 購入者コード, 品牌</code> <strong>症状</strong>：<code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code> <strong>修正方法</strong>：次のいずれかの方法を使います。(a) <code>model.dml</code> で指標を定義し、<code>FROM MODEL</code> と <code>AGG()</code> を組み合わせて使う。(b) アドホッククエリでは <code>/** dml ... **/</code> 形式のコメントブロックでインライン指標を定義し、<code>.dml</code> を編集せずに使う（<a href="reference--model-query-sql.ja.html#312-inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>）</a>を参照）。</p>
 <h2 id="查询排错">クエリのトラブルシューティング <a class="section-link" aria-label="この節へのリンク" href="#查询排错">#</a></h2>
 <p>まず、指標を 1 つだけ含むクエリでモデルと結合を確認します。次に、ディメンション、フィルター、指標を 1 つずつ戻します。行数が多すぎる場合は、データセット内のキーの重複、結合後の行数、比較期間にのみ現れるキーを確認します。値が一致しない場合は、同じ期間とデータスナップショットを使って別の SQL クエリを実行し、グループごとにキー、NULL、指標の値を照合します。</p>
 </main></body></html>

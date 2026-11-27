@@ -1,66 +1,93 @@
-<!doctype html><html lang="zh-CN" data-course-locale="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>同一天向供应商下两单，算复购吗？</title><link rel="stylesheet" href="official.css?v=6a3ff6e4bb"><meta name="description" content="本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="同一天向供应商下两单，算复购吗？"><meta property="og:description" content="本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">跳到正文</a><header><div class="bar"><a class="brand" href="index.zh.html">DML</a><nav><a data-text="docs" href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a></nav><div class="tools"><a href="search.zh.html">搜索文档</a><a lang="en" hreflang="en" href="repeat-purchases.en.html">English</a><a lang="de" hreflang="de" href="repeat-purchases.de.html">Deutsch</a><a lang="ja" hreflang="ja" href="repeat-purchases.ja.html">日本語</a></div></div></header><main id="main"><article class="wrap repurchase"><h1>同一天向供应商下两单，算复购吗？</h1><p>本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？</p><h2>本周的六张进货单</h2><table><thead><tr><th>单号</th><th>门店</th><th>下单日期</th><th>件数</th></tr></thead><tbody><tr><td>1</td><td>A 店</td><td>周一</td><td>1</td></tr><tr><td>2</td><td>A 店</td><td>周一</td><td>1</td></tr><tr><td>3</td><td>B 店</td><td>周一</td><td>1</td></tr><tr><td>4</td><td>B 店</td><td>周二</td><td>1</td></tr><tr><td>5</td><td>C 店</td><td>周一</td><td>2</td></tr><tr><td>6</td><td>D 店</td><td>周二</td><td>2</td></tr></tbody></table><p>每行是一张订单。这六张单的件数都大于零。</p><section data-voting hidden><h2>你的周报想看什么？</h2><button type="button" aria-pressed="false" data-vote="0">看本周下过第二单的门店</button> <button type="button" aria-pressed="false" data-vote="1">看本周至少有两天下过单的门店</button><div aria-live="polite"><p hidden data-feedback="0">按这个口径看最初的六张单，A 店和 B 店都算复购。</p><p hidden data-feedback="1">按这个口径看最初的六张单，只有 B 店算复购。</p></div></section><section data-comparison><h2>两种算法，分别有哪些门店算复购？</h2><p>只看本周下的单。即使一家店上周买过，本周只下一单，这周也不算复购。</p><div data-picker hidden><p>试试改动订单，看看哪家店的结果会变。每次都从最初的六张单开始。</p><button type="button" aria-pressed="false" data-scenario="0">最初的六张订单</button> <button type="button" aria-pressed="false" data-scenario="1">把 A 店第二单改到周二</button> <button type="button" aria-pressed="false" data-scenario="2">把 C 店和 D 店的订单各拆成两单</button></div><section data-case="0"><h3>最初的六张订单</h3><p>A 店和 B 店各有两单。A 店的两单在同一天，B 店的两单在不同日期。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>A 店有两个不同的单号，算复购。 <code>order_count = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_orders:
+<!doctype html><html lang="zh-CN" data-course-locale="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>同一天向供应商下两单，算复购吗？</title><link rel="stylesheet" href="official.css?v=6a3ff6e4bb"><meta name="description" content="本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="同一天向供应商下两单，算复购吗？"><meta property="og:description" content="本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">跳到正文</a><header><div class="bar"><a class="brand" href="index.zh.html">DML</a><nav><a data-text="docs" href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a></nav><div class="tools"><a href="search.zh.html">搜索文档</a><a lang="en" hreflang="en" href="repeat-purchases.en.html">English</a><a lang="de" hreflang="de" href="repeat-purchases.de.html">Deutsch</a><a lang="ja" hreflang="ja" href="repeat-purchases.ja.html">日本語</a></div></div></header><main id="main"><article class="wrap repurchase"><h1>同一天向供应商下两单，算复购吗？</h1><p>本周有四家门店向你进货。A 店周一下了两单，B 店周一和周二各下一单。做销售周报时，你会把哪几家算作复购？</p><h2>本周的六张进货单</h2><table><thead><tr><th>单号</th><th>门店</th><th>下单日期</th><th>件数</th></tr></thead><tbody><tr><td>1</td><td>A 店</td><td>周一</td><td>1</td></tr><tr><td>2</td><td>A 店</td><td>周一</td><td>1</td></tr><tr><td>3</td><td>B 店</td><td>周一</td><td>1</td></tr><tr><td>4</td><td>B 店</td><td>周二</td><td>1</td></tr><tr><td>5</td><td>C 店</td><td>周一</td><td>2</td></tr><tr><td>6</td><td>D 店</td><td>周二</td><td>2</td></tr></tbody></table><p>每行是一张订单。这六张单的件数都大于零。</p><section data-voting hidden><h2>你的周报想看什么？</h2><button type="button" aria-pressed="false" data-vote="0">看本周下过第二单的门店</button> <button type="button" aria-pressed="false" data-vote="1">看本周至少有两天下过单的门店</button><div aria-live="polite"><p hidden data-feedback="0">按这个口径看最初的六张单，A 店和 B 店都算复购。</p><p hidden data-feedback="1">按这个口径看最初的六张单，只有 B 店算复购。</p></div></section><section data-comparison><h2>两种算法，分别有哪些门店算复购？</h2><p>只看本周下的单。即使一家店上周买过，本周只下一单，这周也不算复购。</p><div data-picker hidden><p>试试改动订单，看看哪家店的结果会变。每次都从最初的六张单开始。</p><button type="button" aria-pressed="false" data-scenario="0">最初的六张订单</button> <button type="button" aria-pressed="false" data-scenario="1">把 A 店第二单改到周二</button> <button type="button" aria-pressed="false" data-scenario="2">把 C 店和 D 店的订单各拆成两单</button></div><section data-case="0"><h3>最初的六张订单</h3><p>A 店和 B 店各有两单。A 店的两单在同一天，B 店的两单在不同日期。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>订单数: DISTINCTCOUNT({订单号})</code></pre><p data-trace>A 店有两个不同的单号，算复购。 <code>订单数 = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按订单数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>repeat_purchase_rate_by_orders:
+  abbr: repeat_purchase_by_orders
+  formula: 'DISTINCTCOUNTIF({门店编号}, {订单数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>按订单数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>25%</strong><p>本周下过单的 4 家店中，有 1 家算复购（<span data-stores>B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>A 店只在一天里下过单，不算复购。 <code>purchase_days = 1</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {按订单数算的复购门店数}, {下单门店数})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>25%</strong><p>本周下过单的 4 家店中，有 1 家算复购（<span data-stores>B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>下单天数: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>A 店只在一天里下过单，不算复购。 <code>下单天数 = 1</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按下单天数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 1 家符合条件。除以本周下过单的 4 家店，复购率就是 25%。</p><pre><code>repeat_purchase_rate_by_days:
+  abbr: repeat_purchase_by_days
+  formula: 'DISTINCTCOUNTIF({门店编号}, {下单天数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 1 家符合条件。除以本周下过单的 4 家店，复购率就是 25%。</p><pre><code>按下单天数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>1</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>1</td><td>1</td></tr><tr><td>D 店</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="1"><h3>把 A 店第二单改到周二</h3><p>A 店的订单数没变，下单日期变了。现在 A 店和 B 店都在两天里下过单。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>A 店有两个不同的单号，算复购。 <code>order_count = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_orders:
+  abbr: repeat_purchase_rate_by_days
+  formula: 'DIVIDE(1.0 * {按下单天数算的复购门店数}, {下单门店数})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>1</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>1</td><td>1</td></tr><tr><td>D 店</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="1"><h3>把 A 店第二单改到周二</h3><p>A 店的订单数没变，下单日期变了。现在 A 店和 B 店都在两天里下过单。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>订单数: DISTINCTCOUNT({订单号})</code></pre><p data-trace>A 店有两个不同的单号，算复购。 <code>订单数 = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按订单数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>repeat_purchase_rate_by_orders:
+  abbr: repeat_purchase_by_orders
+  formula: 'DISTINCTCOUNTIF({门店编号}, {订单数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>按订单数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>A 店在周一和周二都下过单，算复购。 <code>purchase_days = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {按订单数算的复购门店数}, {下单门店数})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>50%</strong><p>本周下过单的 4 家店中，有 2 家算复购（<span data-stores>A 店、B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>下单天数: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>A 店在周一和周二都下过单，算复购。 <code>下单天数 = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按下单天数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>repeat_purchase_rate_by_days:
+  abbr: repeat_purchase_by_days
+  formula: 'DISTINCTCOUNTIF({门店编号}, {下单天数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 2 家符合条件。除以本周下过单的 4 家店，复购率就是 50%。</p><pre><code>按下单天数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>2</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>1</td><td>1</td></tr><tr><td>D 店</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="2"><h3>把 C 店和 D 店的订单各拆成两单</h3><p>C 店和 D 店原来各下一单，现在各分成同一天的两单。四家店总共还是买了 8 件货。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>100%</strong><p>本周下过单的 4 家店中，有 4 家算复购（<span data-stores>A 店、B 店、C 店、D 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>C 店和 D 店各有两个不同的单号，算复购。 <code>order_count = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_orders:
+  abbr: repeat_purchase_rate_by_days
+  formula: 'DIVIDE(1.0 * {按下单天数算的复购门店数}, {下单门店数})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>2</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>1</td><td>1</td></tr><tr><td>D 店</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="2"><h3>把 C 店和 D 店的订单各拆成两单</h3><p>C 店和 D 店原来各下一单，现在各分成同一天的两单。四家店总共还是买了 8 件货。</p><div class="case-metrics"><div><h4>按订单数算</h4><strong data-rate>100%</strong><p>本周下过单的 4 家店中，有 4 家算复购（<span data-stores>A 店、B 店、C 店、D 店</span>）。</p><p>本周至少下过两单，就算复购。DML 按订单号计数。</p><pre><code>订单数: DISTINCTCOUNT({订单号})</code></pre><p data-trace>C 店和 D 店各有两个不同的单号，算复购。 <code>订单数 = 2</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按订单数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 4 家符合条件。除以本周下过单的 4 家店，复购率就是 100%。</p><pre><code>repeat_purchase_rate_by_orders:
+  abbr: repeat_purchase_by_orders
+  formula: 'DISTINCTCOUNTIF({门店编号}, {订单数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 4 家符合条件。除以本周下过单的 4 家店，复购率就是 100%。</p><pre><code>按订单数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>25%</strong><p>本周下过单的 4 家店中，有 1 家算复购（<span data-stores>B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>C 店和 D 店都只在一天里下过单，不算复购。 <code>purchase_days = 1</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: store_id}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {按订单数算的复购门店数}, {下单门店数})'</code></pre></details></div><div><h4>按下单天数算</h4><strong data-rate>25%</strong><p>本周下过单的 4 家店中，有 1 家算复购（<span data-stores>B 店</span>）。</p><p>本周至少有两天下过单，就算复购。同一天下几单，都只算一天。</p><pre><code>下单天数: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>C 店和 D 店都只在一天里下过单，不算复购。 <code>下单天数 = 1</code></p><details><summary>查看门店数和复购率的 DML 公式</summary><p><code>{+d: 门店编号}</code> 表示先按门店分别计算。符合条件的门店，每家只算一次。 公式里用中文指标名，abbr 保留这个指标的英文名。</p><pre><code>按下单天数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>这里有 1 家符合条件。除以本周下过单的 4 家店，复购率就是 25%。</p><pre><code>repeat_purchase_rate_by_days:
+  abbr: repeat_purchase_by_days
+  formula: 'DISTINCTCOUNTIF({门店编号}, {下单天数: {+d: 门店编号}} &gt; 1)'</code></pre><p>这里有 1 家符合条件。除以本周下过单的 4 家店，复购率就是 25%。</p><pre><code>按下单天数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>1</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>2</td><td>1</td></tr><tr><td>D 店</td><td>2</td><td>1</td></tr></tbody></table></details></section></section><section><h2>用自己的周报核对</h2><p>先选定周报要用哪种复购口径，再让现有的 SQL 和 DML 查询同一周的订单。先对照门店名单，再核对复购率。即使比例相同，两份名单也可能不同。</p><h3>用这六张订单试算</h3><p>上面的数字来自 DML 查询。示例中的核对脚本会用同一份订单再跑一遍 SQL，逐店核对订单数和下单天数，再检查两种复购率。</p><p><a href="repurchase.zip" download>下载六张订单、DML 模型和核对脚本（ZIP）</a></p><details><summary>运行示例</summary><p>解压后，在示例文件夹中运行以下命令。先把订单读进 DuckDB，再查每家店下了几单、分几天下单，以及两种复购率。</p><pre><code>dmlc -q setup.sql
+  abbr: repeat_purchase_rate_by_days
+  formula: 'DIVIDE(1.0 * {按下单天数算的复购门店数}, {下单门店数})'</code></pre></details></div></div><details><summary>查看每家店下了几单、分几天下单</summary><table><thead><tr><th>门店</th><th>订单数</th><th>下单天数</th></tr></thead><tbody><tr><td>A 店</td><td>2</td><td>1</td></tr><tr><td>B 店</td><td>2</td><td>2</td></tr><tr><td>C 店</td><td>2</td><td>1</td></tr><tr><td>D 店</td><td>2</td><td>1</td></tr></tbody></table></details></section></section><section><h2>用自己的周报核对</h2><p>先选定周报要用哪种复购口径，再让现有的 SQL 和 DML 查询同一周的订单。先对照门店名单，再核对复购率。即使比例相同，两份名单也可能不同。</p><h3>用这六张订单试算</h3><p>上面的数字来自 DML 查询。示例中的核对脚本会用同一份订单再跑一遍 SQL，逐店核对订单数和下单天数，再检查两种复购率。</p><p><a href="repurchase.zh.zip" download>下载六张订单、DML 模型和核对脚本（ZIP）</a></p><details><summary>运行示例</summary><p>解压后，在示例文件夹中运行以下命令。先把订单读进 DuckDB，再查每家店下了几单、分几天下单，以及两种复购率。</p><pre><code>dmlc -q setup.sql
 dmlc -q --with-validation --model=repurchase.dml stores.sql
-dmlc -q --with-validation --model=repurchase.dml rates.sql</code></pre><p>可选：用 PowerShell 自动核对结果。</p><pre><code>./verify.ps1</code></pre><p>脚本会依次核对原始订单、A 店改期和 C、D 两店拆单这三种情况。</p></details><details><summary>查看周报用到的两条查询</summary><p>先看每家店下了几单、分几天下单。</p><pre><code>SELECT store_id, AGG(order_count), AGG(purchase_days)
+dmlc -q --with-validation --model=repurchase.dml rates.sql</code></pre><p>可选：用 PowerShell 自动核对结果。</p><pre><code>./verify.ps1</code></pre><p>脚本会依次核对原始订单、A 店改期和 C、D 两店拆单这三种情况。</p></details><details><summary>查看周报用到的两条查询</summary><p>先看每家店下了几单、分几天下单。</p><pre><code>SELECT 门店编号, AGG(订单数), AGG(下单天数)
 FROM repurchase
-GROUP BY store_id
-ORDER BY store_id</code></pre><p>再看复购门店数和复购率。</p><pre><code>SELECT AGG(active_stores), AGG(repeat_purchase_by_orders), AGG(repeat_purchase_by_days),
-       AGG(repeat_purchase_rate_by_orders), AGG(repeat_purchase_rate_by_days)
-FROM repurchase</code></pre></details><details><summary>查看完整的 DML 模型</summary><pre><code>dialect: duckdb
+GROUP BY 门店编号
+ORDER BY 门店编号</code></pre><p>再看复购门店数和复购率。</p><pre><code>SELECT AGG(下单门店数), AGG(按订单数算的复购门店数), AGG(按下单天数算的复购门店数),
+       AGG(按订单数算的复购率), AGG(按下单天数算的复购率)
+FROM repurchase</code></pre></details><details><summary>比较周二和周一的订单数</summary><p>按 dt_date 查周二，pp 取前一天的订单数。用最初的六张订单运行，周二有 2 单，周一有 4 单。</p><pre><code>SELECT AGG(订单数), AGG(前一日订单数)
+FROM repurchase
+WHERE dt_date = '2025-02-04'</code></pre><pre><code>dmlc -q --model=repurchase.dml previous-day.sql</code></pre></details><details><summary>查看完整的 DML 模型</summary><p>模型直接读取 receipts 表。门店编号的 abbr 是 store_id，对应表里的同名列。</p><pre><code>dialect: duckdb
 
-RECEIPTS:
+进货订单:
   type: dataset
   table: receipts
-  dimension: [order_id]
+  dimension: [订单号]
   columns:
-    order_id:
-    store_id:
-    purchase_day:
-    units:
+    订单号:
+      abbr: order_id
+    门店编号:
+      abbr: store_id
+    dt_date:
+      abbr: purchase_day
+    件数:
+      abbr: units
   measures:
-    order_count: DISTINCTCOUNT({order_id})
-    purchase_days: DISTINCTCOUNT({purchase_day})
-    purchased_units: SUM({units})
+    订单数: DISTINCTCOUNT({订单号})
+    下单天数: DISTINCTCOUNT({dt_date})
+    订货件数: SUM({件数})
 
-active_stores:
+下单门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {purchased_units: {+d: store_id}} &gt; 0)'
+  abbr: active_stores
+  formula: 'DISTINCTCOUNTIF({门店编号}, {订货件数: {+d: 门店编号}} &gt; 0)'
 
-repeat_purchase_by_orders:
+按订单数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'
+  abbr: repeat_purchase_by_orders
+  formula: 'DISTINCTCOUNTIF({门店编号}, {订单数: {+d: 门店编号}} &gt; 1)'
 
-repeat_purchase_by_days:
+按下单天数算的复购门店数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'
+  abbr: repeat_purchase_by_days
+  formula: 'DISTINCTCOUNTIF({门店编号}, {下单天数: {+d: 门店编号}} &gt; 1)'
 
-repeat_purchase_rate_by_orders:
+按订单数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {按订单数算的复购门店数}, {下单门店数})'
 
-repeat_purchase_rate_by_days:
+按下单天数算的复购率:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></section></article><script defer src="repurchase.js?v=9b823b09ee"></script></main></body></html>
+  abbr: repeat_purchase_rate_by_days
+  formula: 'DIVIDE(1.0 * {按下单天数算的复购门店数}, {下单门店数})'
+
+前一日订单数:
+  type: measure
+  formula: '{订单数: pp}'</code></pre></details></section></article><script defer src="repurchase.js?v=9b823b09ee"></script></main></body></html>

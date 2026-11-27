@@ -28,10 +28,10 @@
 </tbody></table>
 <p>元の売上データは変わっていません。結合結果の行数が増えています。その後に集計すると、増えた行が見えなくなっても、過大になった金額は残ることがあります。</p>
 <h2 id="inspect-the-rows">行を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-rows">#</a></h2>
-<p><a href="journey.ja.html#lookups">ルックアップの演習を開き</a>、無効な North の重複項目を有効にします。ディレクトリ、一致した行、North の合計を比較します。論理データセット DIM_REGION では dimension: [region] が宣言されています。物理データソースは TABLE_REGION です。North が複数回現れると、このソースキーの宣言に違反します。</p>
+<p><a href="journey.ja.html#lookups">ルックアップの演習を開き</a>、無効な North の重複項目を有効にします。ディレクトリ、一致した行、North の合計を比較します。論理データセット 地域一覧 では dimension: [地域] が宣言されています。物理データソースは TABLE_REGION です。North が複数回現れると、このソースキーの宣言に違反します。</p>
 <h2 id="validate-the-real-connection">実際に使用する接続で検証する <a class="section-link" aria-label="この節へのリンク" href="#validate-the-real-connection">#</a></h2>
-<p>レポートを実行する前に、使用予定の接続で <code>dmlc --validate</code> を実行します。このコマンドは、クエリが参照する各データセットについて、宣言された全ディメンションを一つの複合キーとして扱い、その値が実データで一意かどうかを確認します。この例では、North の項目が 2 件あるため、<code>DIM_REGION</code> の検証で <code>VALIDATION_ERROR</code> が報告されます。<a href="journey.ja.html#lookups">演習のコマンドとクエリをそのまま使用し</a>、宣言またはソースデータを修正して、実行前に再検証してください。これにより、ルックアップ結果の重複を防げます。</p>
+<p>レポートを実行する前に、使用予定の接続で <code>dmlc --validate</code> を実行します。このコマンドは、クエリが参照する各データセットについて、宣言された全ディメンションを一つの複合キーとして扱い、その値が実データで一意かどうかを確認します。この例では、North の項目が 2 件あるため、<code>地域一覧</code> の検証で <code>VALIDATION_ERROR</code> が報告されます。<a href="journey.ja.html#lookups">演習のコマンドとクエリをそのまま使用し</a>、宣言またはソースデータを修正して、実行前に再検証してください。これにより、ルックアップ結果の重複を防げます。</p>
 <p>モデル、クエリ、接続、ソースデータのいずれかに検証に関わる変更を加えた場合は、再検証してください。正当な 1 対多の関係がある場合は、その関係を明示的に考慮して計算を設計する必要があります。</p>
 <p>ブラウザーの切り替え設定が影響するのは、ブラウザー内の架空データだけです。検証ではソースキーとクエリの実行計画を確認します。レポートを実行した結果の比較は行いません。詳しくは、<a href="reference--troubleshooting--grain-and-joins.ja.html">行や合計を定義する粒度と結合</a>を参照してください。</p>
-<p><a hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.zip">レッスンのプロジェクトをダウンロード</a></p>
+<p><a hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.ja.zip">レッスンのプロジェクトをダウンロード</a></p>
 </main></body></html>

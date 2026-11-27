@@ -1,0 +1,118 @@
+{
+  "version": "dmlc version 0.3.16\nBuild:    2026-11-27 06:20:08 Z\nSystem:   windows/amd64\nLicenses:  dmlc --licenses",
+  "sha256": "311c9925e4183ce857dcfb1935c296fe2bcc070457ae7ca622fcbf6d21999f6c",
+  "modelSha256": "68ba064a736e62e3720e409a260d5f90fee73a980430a403c5ef2cc6d6e81076",
+  "scope": "SQL Server strict compilation; DuckDB examples executed separately.",
+  "cases": [
+    {
+      "name": "monthly",
+      "query": "SELECT Region, dt_month, AGG(Nettoerlös), AGG(Umsatzkosten), AGG(Rohertrag), AGG(Bruttomarge)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_PROFITABILITY { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** [DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925] { pk(dt_month, Region) } **/\nwith [DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925] as (\nselect\n    dt_month,\n    region as Region,\n    SUM(revenue_amount) as [Nettoerlös],\n    SUM(cost_amount) as Umsatzkosten,\n    SUM(revenue_amount) - SUM(cost_amount) as Rohertrag,\n    (SUM(revenue_amount) - SUM(cost_amount)) / nullif(SUM(revenue_amount), 0) as Bruttomarge\nfrom TABLE_PROFITABILITY\nwhere dt_month = '2025-02-01'\ngroup by dt_month, region\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    dt_month,\n    [Nettoerlös],\n    Umsatzkosten,\n    Rohertrag,\n    Bruttomarge\nfrom [DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925]\norder by Region, dt_month;\n"
+    },
+    {
+      "name": "cumulative",
+      "query": "SELECT Region, dt_month, AGG(BruttomargeSeitJahresbeginn)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_PROFITABILITY { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-02-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4', N'U') is not null drop table #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4;\nselect distinct\n    t2.dt_month\ninto #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between datefromparts(year(cast(t1.dt_month as date)), 1, 1) and t1.dt_month;\n\ncreate unique clustered index idx__dm\n\ton #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** [DML_ERLÖSEUNDKOSTEN_BY_DM_R_35A6925E] { pk(dt_month, Region) } **/\nwith [DML_ERLÖSEUNDKOSTEN_BY_DM_R_35A6925E] as (\nselect\n    dt_month,\n    region as Region,\n    SUM(revenue_amount) as [Nettoerlös],\n    SUM(cost_amount) as Umsatzkosten\nfrom TABLE_PROFITABILITY\nwhere dt_month in (select dt_month from [#DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_DAF4])\ngroup by dt_month, region\n),\n\n/** [DML_ERLÖSEUNDKOSTEN_BY_DM_R_4B3A925_YTD] { pk(dt_month, Region) } **/\n[DML_ERLÖSEUNDKOSTEN_BY_DM_R_4B3A925_YTD] as (\nselect\n    t1.dt_month,\n    t2.Region,\n    SUM(t2.[Nettoerlös]) as [Nettoerlös],\n    SUM(t2.Umsatzkosten) as Umsatzkosten,\n    (SUM(t2.[Nettoerlös]) - SUM(t2.Umsatzkosten)) / nullif(SUM(t2.[Nettoerlös]), 0) as BruttomargeSeitJahresbeginn\nfrom #DML_OPTION_DTMONTH t1\ninner join [DML_ERLÖSEUNDKOSTEN_BY_DM_R_35A6925E] t2\n    on t2.dt_month between datefromparts(year(cast(t1.dt_month as date)), 1, 1) and t1.dt_month\ngroup by t1.dt_month, t2.Region\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    Region,\n    dt_month,\n    BruttomargeSeitJahresbeginn\nfrom [DML_ERLÖSEUNDKOSTEN_BY_DM_R_4B3A925_YTD]\norder by Region, dt_month;\n"
+    },
+    {
+      "name": "comparison",
+      "query": "SELECT Region, dt_month, AGG(BruttomargeSeitJahresbeginn), AGG(BruttomargeImVorjahreszeitraum), AGG(MargenänderungInProzentpunkten)\nFROM MODEL\nWHERE dt_month = '2025-02-01'\nGROUP BY Region, dt_month",
+      "exit": 0,
+      "status": "ok",
+      "diagnostics": [
+        {
+          "code": "DATASET_GRAIN_UNVERIFIED",
+          "severity": "info",
+          "message": "DATASET_GRAIN_UNVERIFIED"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        },
+        {
+          "code": "COMPILE_OBSERVATION",
+          "severity": "info",
+          "message": "COMPILE_OBSERVATION"
+        }
+      ],
+      "notes": [],
+      "sql": "-- dialect: mssql\n\n/** DML_CALENDAR { pk(dt_date) } **/\n/** TABLE_PROFITABILITY { pk(id) } **/\n\n/*------------------------------------------------------*/\n/**                      dt_option                     **/\n/*------------------------------------------------------*/\n\n/** #DML_OPTION_DTMONTH { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_OPTION_DTMONTH', N'U') is not null drop table #DML_OPTION_DTMONTH;\nselect distinct dt_month\ninto #DML_OPTION_DTMONTH\nfrom DML_CALENDAR\nwhere dt_month = '2025-02-01';\n\ncreate unique clustered index idx__dm\n\ton #DML_OPTION_DTMONTH\n\t   (dt_month);\n\n/** #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511 { pk(dt_month) }  **/\nif object_id(N'tempdb..#DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511', N'U') is not null drop table #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511;\nselect * \ninto #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511\nfrom (\nselect distinct\n    t2.dt_month\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between datefromparts(year(cast(t1.dt_month as date)), 1, 1) and t1.dt_month\nunion\nselect distinct\n    t2.dt_month\nfrom #DML_OPTION_DTMONTH t1\nleft join DML_CALENDAR t2\n    on t2.dt_month between dateadd(year, -1, cast(datefromparts(year(cast(t1.dt_month as date)), 1, 1) as date)) and dateadd(year, -1, cast(t1.dt_month as date))\n) t;\n\ncreate unique clustered index idx__dm\n\ton #DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511\n\t   (dt_month);\n\n/*------------------------------------------------------*/\n/**                       measure                      **/\n/*------------------------------------------------------*/\n\n/** [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E] { pk(dt_month, Region) } **/\nif object_id(N'tempdb..[#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E]', N'U') is not null drop table [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E];\nselect\n    dt_month,\n    region as Region,\n    SUM(revenue_amount) as [Nettoerlös],\n    SUM(cost_amount) as Umsatzkosten\ninto [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E]\nfrom TABLE_PROFITABILITY\nwhere dt_month in (select dt_month from [#DML_ERLÖSEUNDKOSTEN_OPTION_DTMONTH_C511])\ngroup by dt_month, region;\n\ncreate unique clustered index idx__dm_R\n\ton [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E]\n\t   (dt_month, Region);\n\n/** [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD] { pk(dt_month, Region) } **/\nif object_id(N'tempdb..[#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD]', N'U') is not null drop table [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD];\nselect\n    t1.dt_month,\n    t2.Region,\n    SUM(t2.[Nettoerlös]) as [Nettoerlös],\n    SUM(t2.Umsatzkosten) as Umsatzkosten,\n    (SUM(t2.[Nettoerlös]) - SUM(t2.Umsatzkosten)) / nullif(SUM(t2.[Nettoerlös]), 0) as BruttomargeSeitJahresbeginn\ninto [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD]\nfrom #DML_OPTION_DTMONTH t1\ninner join [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E] t2\n    on t2.dt_month between datefromparts(year(cast(t1.dt_month as date)), 1, 1) and t1.dt_month\ngroup by t1.dt_month, t2.Region;\n\ncreate unique clustered index idx__dm_R\n\ton [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD]\n\t   (dt_month, Region);\n\n/** [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA] { pk(dt_month, Region) } **/\nif object_id(N'tempdb..[#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA]', N'U') is not null drop table [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA];\nselect\n    t1.dt_month,\n    t2.Region,\n    SUM(t2.[Nettoerlös]) as [Nettoerlös],\n    SUM(t2.Umsatzkosten) as Umsatzkosten,\n    (SUM(t2.[Nettoerlös]) - SUM(t2.Umsatzkosten)) / nullif(SUM(t2.[Nettoerlös]), 0) as BruttomargeImVorjahreszeitraum\ninto [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA]\nfrom #DML_OPTION_DTMONTH t1\ninner join [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_1483925E] t2\n    on t2.dt_month between dateadd(year, -1, cast(datefromparts(year(cast(t1.dt_month as date)), 1, 1) as date)) and dateadd(year, -1, cast(t1.dt_month as date))\ngroup by t1.dt_month, t2.Region;\n\ncreate unique clustered index idx__dm_R\n\ton [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA]\n\t   (dt_month, Region);\n\n/** [DML_ERLÖSEUNDKOSTEN_BY_DM_R_9A2B925] { pk(dt_month, Region) } **/\nwith [DML_ERLÖSEUNDKOSTEN_BY_DM_R_9A2B925] as (\nselect\n    coalesce(t1.dt_month, t2.dt_month) as dt_month,\n    coalesce(t1.Region, t2.Region) as Region,\n    100 * (t2.BruttomargeSeitJahresbeginn - t1.BruttomargeImVorjahreszeitraum) as [MargenänderungInProzentpunkten]\nfrom [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA] t1\nfull outer join [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD] t2\n    on (t2.dt_month = t1.dt_month or (t2.dt_month is null and t1.dt_month is null))\n    and (t2.Region = t1.Region or (t2.Region is null and t1.Region is null))\n)\n\n\n/*-----------------------------------------------------*/\n/**                       query                       **/\n/*-----------------------------------------------------*/\n\nselect\n    t.Region,\n    t.dt_month,\n    tff0ab.BruttomargeSeitJahresbeginn,\n    t79904.BruttomargeImVorjahreszeitraum,\n    t.[MargenänderungInProzentpunkten]\nfrom [DML_ERLÖSEUNDKOSTEN_BY_DM_R_9A2B925] t\nleft join [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_E658925_YTD] tff0ab \n\ton (tff0ab.dt_month = t.dt_month or (tff0ab.dt_month is null and t.dt_month is null))\n\tand (tff0ab.Region = t.Region or (tff0ab.Region is null and t.Region is null))\nleft join [#DML_ERLÖSEUNDKOSTEN_BY_DM_R_040D925_YTD_YA] t79904 \n\ton (t79904.dt_month = t.dt_month or (t79904.dt_month is null and t.dt_month is null))\n\tand (t79904.Region = t.Region or (t79904.Region is null and t.Region is null))\norder by t.Region, t.dt_month;\n"
+    }
+  ]
+}

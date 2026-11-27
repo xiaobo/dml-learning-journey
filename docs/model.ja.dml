@@ -1,0 +1,74 @@
+dialect: mssql
+
+地域一覧:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [地域]
+  columns:
+    地域:
+      abbr: region
+    地域担当者:
+      abbr: manager
+
+売上明細:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [売上明細番号]
+  columns:
+    売上明細番号:
+      abbr: id
+    元データの地域:
+      abbr: region
+    地域: '{元データの地域}'
+    顧客:
+      abbr: customer
+    dt_month:
+      abbr: dt_month
+    注文状態:
+      abbr: status
+    売上金額:
+      abbr: amount
+    地域担当者: 'pk(region).{地域一覧}.地域担当者'
+  measures:
+    売上高: SUM({売上金額})
+    売上件数: COUNT(1)
+
+一件当たり売上高:
+  type: measure
+  formula: 'DIVIDE({売上高}, {売上件数})'
+
+完了注文の売上高:
+  type: measure
+  formula: '{売上高: {+f: {注文状態: completed}}}'
+
+選択地域内の売上構成比:
+  type: measure
+  formula: 'DIVIDE({売上高}, {売上高: {-d: 地域}})'
+
+全地域の売上に占める割合:
+  type: measure
+  formula: 'DIVIDE({売上高}, {売上高: {-df: 地域}})'
+
+顧客当たり平均売上高:
+  type: measure
+  formula: 'AVG({売上高: {+d: 顧客}})'
+
+顧客別売上高の合計:
+  type: measure
+  formula: 'SUM({売上高: {+d: 顧客}})'
+
+顧客別売上高の最大値:
+  type: measure
+  formula: 'MAX({売上高: {+d: 顧客}})'
+
+前月売上高:
+  type: measure
+  formula: '{売上高: pp}'
+
+売上高の前月比増減率:
+  type: measure
+  formula: '{売上高: pop}'
+
+前月売上高の欠損をゼロに補完:
+  type: measure
+  formula: 'ISNULL({売上高: pp}, 0)'

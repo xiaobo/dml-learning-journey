@@ -59,8 +59,8 @@
 <p>Start in an isolated DuckDB practice database with two sales:</p>
 <pre><code class="language-sql">CREATE TABLE sales(id INTEGER, dt_month DATE, amount DECIMAL(12,2));
 INSERT INTO sales VALUES
-  (1, DATE &#39;2025-01-01&#39;, 20),
-  (2, DATE &#39;2025-02-01&#39;, 30);
+  (1, DATE '2025-01-01', 20),
+  (2, DATE '2025-02-01', 30);
 </code></pre>
 <p>Save this complete model as <code>model.dml</code>:</p>
 <pre><code class="language-yaml">dialect: duckdb
@@ -70,23 +70,26 @@ S:
   dimension: [id]
   columns:
     id:
+      abbr: id
     dt_month:
+      abbr: dt_month
     amount:
+      abbr: amount
   measures:
     sales: SUM({amount})
 double_value:
   type: fn-macro
-  formula: &#39;{measure} * 2&#39;
+  formula: '{measure} * 2'
 prior_month:
   type: dt-macro
-  value: date({dim_dt}, &#39;-1 month&#39;)
+  value: date({dim_dt}, '-1 month')
 </code></pre>
 <p>With January sales of 20 and February sales of 30:</p>
 <pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
        AGG({sales: prior_month}) AS previous,
        AGG({sales: {double_value, prior_month}}) AS previous_doubled
 FROM MODEL
-WHERE dt_month = &#39;2025-02-01&#39;
+WHERE dt_month = '2025-02-01'
 </code></pre>
 <p>Save the query as <code>query.sql</code>. With the practice database configured as <code>default</code>, run:</p>
 <pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --json
@@ -101,13 +104,13 @@ dmlc query.sql --model=model.dml --connection=default
 </code></pre>
 <p>DuckDB implements this form as a persistent SQL scalar macro. It verifies database-defined scalar-function invocation, not Python UDF registration, aggregate UDFs or table-valued functions.</p>
 <p>Add the following entry beside <code>sales</code> under <code>S.measures</code> to call the function on source values before aggregation:</p>
-<pre><code class="language-yaml"># Under the sales dataset&#39;s measures:
+<pre><code class="language-yaml"># Under the sales dataset's measures:
 net_sales: SUM(business_net({amount}))
 </code></pre>
 <p>Then compare that measure with a call on the aggregated result:</p>
 <pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
 FROM MODEL
-WHERE dt_month = &#39;2025-02-01&#39;
+WHERE dt_month = '2025-02-01'
 </code></pre>
 <p>Both returned <strong>24</strong> for February sales of 30. Generated SQL retained <code>SUM(business_net(amount))</code> and <code>business_net(SUM(amount))</code>. These are different evaluation stages: their equality here follows from the linear function. Rounding, thresholds or other nonlinear functions can give different results; choose the stage deliberately.</p>
 <h3 id="validate-the-function-on-the-intended-connection">Validate the function on the intended connection <a class="section-link" aria-label="Link to section" href="#validate-the-function-on-the-intended-connection">#</a></h3>

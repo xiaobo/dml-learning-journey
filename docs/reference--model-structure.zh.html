@@ -33,11 +33,11 @@
 </tbody></table>
 <p><strong>对象名称规则</strong>：可使用除保留关键字以外的任意字符串。保留关键字包括 <code>includes</code>、<code>column-macros</code>、<code>datasets</code>、<code>measures</code>、<code>columns</code>、<code>dimensions[dt]</code>、<code>dt-macros</code>、<code>fn-macros</code>、<code>materializes</code>、<code>queries</code>、<code>dialects</code> 及其单数形式。</p>
 <p><strong>指标定义的简写</strong>：如果顶层映射项的值只是一个字符串，则将该值视为指标公式的简写：</p>
-<pre><code class="language-yaml">sales: SUM({amount})
+<pre><code class="language-yaml">销售额: SUM({销售金额})
 # equivalent to:
-sales:
+销售额:
     type: measure
-    formula: SUM({amount})
+    formula: SUM({销售金额})
 </code></pre>
 <h3 id="sql-dialect">SQL 方言 <a class="section-link" aria-label="本节链接" href="#sql-dialect">#</a></h3>
 <p>经检查的编译器可识别 <code>adb_mysql</code>、<code>duckdb</code>、<code>mssql</code>、<code>mysql</code>、<code>postgres</code> 和 <code>sqlite</code>。如果被检查的模型未声明方言，当前编译器会拒绝该模型。请显式声明目标方言。配置 DuckDB 连接不会改变模型的目标方言。以 DuckDB 为目标时，请声明 <code>dialect: duckdb</code>。</p>
@@ -60,7 +60,7 @@ sales:
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;short&gt;        # abbreviation for display
+            abbr: &lt;source_column&gt; # column name in the source table
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -97,22 +97,22 @@ sales:
 </thead>
 <tbody><tr>
 <td>直接引用</td>
-<td><code>amount:</code>（null）</td>
+<td><code>销售金额:</code>（null）</td>
 <td>直接使用底层表中的列</td>
 </tr>
 <tr>
 <td>计算（行内）</td>
-<td><code>net: amount - discount</code>（字符串）</td>
+<td><code>net: 销售金额 - 折扣金额</code>（字符串）</td>
 <td>通过表达式派生的列</td>
 </tr>
 <tr>
 <td>计算（块）</td>
-<td><code>net: { formula: amount - discount }</code></td>
+<td><code>net: { formula: 销售金额 - 折扣金额 }</code></td>
 <td>带元数据的派生列</td>
 </tr>
 <tr>
 <td>带验证公式</td>
-<td><code>net: { source: amount - discount }</code></td>
+<td><code>net: { source: 销售金额 - 折扣金额 }</code></td>
 <td>声明用于验证数据源的公式。仅凭编译无法确认源数据值相等。</td>
 </tr>
 </tbody></table>
@@ -126,14 +126,14 @@ sales:
 </tr>
 </thead>
 <tbody><tr>
-<td>仅 <code>amount</code></td>
+<td>仅 <code>销售金额</code></td>
 <td><strong>物理</strong>（原生）表列。编译器将名称原样传入 SQL。</td>
-<td>两列均为直接引用时的 <code>net: amount - discount</code></td>
+<td>两列均为直接引用时的 <code>net: 销售金额 - 折扣金额</code></td>
 </tr>
 <tr>
 <td><code>{calc_amt}</code></td>
 <td><strong>计算</strong>列（或指标、列宏）。DMX 会展开其定义。</td>
-<td><code>doubled: '{calc_amt} * 2'</code></td>
+<td><code>两倍值: '{calc_amt} * 2'</code></td>
 </tr>
 </tbody></table>
 <p>在计算列的公式中，不加花括号的名称会被视为原生 SQL 列。SELECT 中别名的顺序可能让这种写法看起来有效，但它<strong>不会</strong>展开计算列的定义。要在公式中复用该定义，请用花括号括住名称。</p>
@@ -144,7 +144,7 @@ sales:
 <pre><code class="language-yaml">column-macros:
     datasets: [tx, orders]       # scoped datasets
     columns:                     # shared column definitions
-        region: '{stores}.region'  # cross-dataset lookup
+        地区: '{门店数}.地区' # cross-dataset lookup
     dimensions[dt]:
         dt_month: month
 
@@ -166,7 +166,7 @@ sales:
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>可在 SQL 中安全使用的简称，仅供内部使用，用于临时表、联接和 <code>materialize</code> 的输出。该简称绝不会用作最终查询结果的列别名。列别名使用业务名称键或通过 <code>AS</code> 显式指定的别名。</td>
+<td>数据集中的列用它来对应源表列名。指标也可以用它指定内部简称。查询结果使用业务名称，或你通过 <code>AS</code> 指定的别名。</td>
 </tr>
 <tr>
 <td><code>description</code></td>

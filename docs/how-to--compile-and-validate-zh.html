@@ -22,15 +22,15 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 <pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --output=result.json --replace
 </code></pre>
 <p>采集 lint / compile 证据时，stdout 与 stderr 分开捕获。用 Node.js 参数数组可避免 shell 引号问题并获得明确的 UTF-8 解码。把脚本存为模型与查询旁边的 <code>compile.cjs</code>。</p>
-<pre><code class="language-javascript">const fs = require(&#39;node:fs&#39;);
-const { spawnSync } = require(&#39;node:child_process&#39;);
+<pre><code class="language-javascript">const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
 const result = spawnSync(process.argv[2], [
-	&#39;--compile&#39;, &#39;--strict&#39;, &#39;query.sql&#39;, &#39;--model=model.dml&#39;,
-	&#39;--json&#39;, &#39;--artifacts=gen&#39;
-], { encoding: &#39;utf8&#39;, cwd: __dirname });
+	'--compile', '--strict', 'query.sql', '--model=model.dml',
+	'--json', '--artifacts=gen'
+], { encoding: 'utf8', cwd: __dirname });
 if (result.error) throw result.error;
-fs.writeFileSync(&#39;compile.stdout.json&#39;, result.stdout);
-fs.writeFileSync(&#39;compile.stderr.txt&#39;, result.stderr);
+fs.writeFileSync('compile.stdout.json', result.stdout);
+fs.writeFileSync('compile.stderr.txt', result.stderr);
 const report = JSON.parse(result.stdout);
 console.log(JSON.stringify({ processExit: result.status, report }, null, 2));
 process.exitCode = result.status ?? 1;
@@ -47,7 +47,7 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p>把 <code>default</code> 换成目标连接。检查退出码、校验结论、被检查的数据集与报告的问题；CLI JSON 报告把校验细节放在 <code>data</code> 下。</p>
 <p>校验检查查询用到的每个数据集声明键是否最多标识一行源数据，并用 <code>EXPLAIN</code> 检查数据库能否规划该查询。业务合计要用独立 SQL 结果核对。</p>
-<p>例如两笔不同的台账记录共享 <code>(account, invoice, party)</code> 键，金额分别为 10 和 20。若把该组合声明为数据集 <code>dimension:</code>，校验会报告该键及匹配的两行；用 <code>--with-validation</code> 时查询在执行前停止。应把台账记录 ID 声明为数据集键，再按 account、invoice、party 分组得到合计 30。若两行属于意外重复，修复源数据或产生它的关联。</p>
+<p>例如两笔不同的台账记录共享 <code>(账户, 发票, party)</code> 键，金额分别为 10 和 20。若把该组合声明为数据集 <code>dimension:</code>，校验会报告该键及匹配的两行；用 <code>--with-validation</code> 时查询在执行前停止。应把台账记录 ID 声明为数据集键，再按 account、invoice、party 分组得到合计 30。若两行属于意外重复，修复源数据或产生它的关联。</p>
 <p>模型、查询契约、连接或相关源数据变化后要重新校验。前置条件缺失时，把该项记录为 <code>not run</code> 并写明缺什么。</p>
 <h2 id="5-执行并比较结果">5. 执行并比较结果 <a class="section-link" aria-label="本节链接" href="#5-执行并比较结果">#</a></h2>
 <p>当前校验证据缺失或过期时，在目标连接上带 <code>--with-validation</code> 运行查询。</p>
@@ -64,8 +64,34 @@ process.exitCode = result.status ?? 1;
 <p>运行<a href="examples--compound-key-zh.html">复合键</a>和<a href="examples--range-lookup-zh.html">有效期查找</a>案例，依次观察正常通过、重复键或区间重叠报错、修复后重新通过。再执行查询并核对结果。</p>
 <p><a id="inspect-a-change-or-recover-an-existing-query"></a></p>
 <h2 id="分析指标变化或从现有-sql-生成模型草稿">分析指标变化，或从现有 SQL 生成模型草稿 <a class="section-link" aria-label="本节链接" href="#分析指标变化或从现有-sql-生成模型草稿">#</a></h2>
-<p>要看不同地区对指标变化的贡献，可以用 <code>--explain-change</code> 指定指标、当前期间和比较期间。用 <code>dmlc --advanced-help</code> 查看所需参数。模型中有 <code>net_revenue</code>、<code>dt_month</code> 和 <code>region</code> 时，下面的命令按地区比较二月与上月的净收入。</p>
-<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+<p>要看不同地区对指标变化的贡献，可以用 <code>--explain-change</code> 指定指标、当前期间和比较期间。用 <code>dmlc --advanced-help</code> 查看所需参数。模型中有 <code>净销售额</code>、<code>dt_month</code> 和 <code>地区</code> 时，下面的命令按地区比较二月与上月的净收入。</p>
+<p>在一个空的 DuckDB 数据库中准备下面四笔销售。每笔金额都已扣除退款。把语句保存为 <code>monthly-sales.sql</code>，用 DuckDB 连接运行 <code>dmlc -q monthly-sales.sql</code>。</p>
+<pre><code class="language-sql">CREATE TABLE monthly_sales (id INTEGER, dt_month DATE, region VARCHAR, net_amount INTEGER);
+INSERT INTO monthly_sales VALUES
+  (1, DATE '2025-01-01', 'North', 100),
+  (2, DATE '2025-01-01', 'South', 200),
+  (3, DATE '2025-02-01', 'North', 300),
+  (4, DATE '2025-02-01', 'South', 100);
+</code></pre>
+<p>在示例目录中把下面的模型保存为 <code>model.dml</code>，然后比较二月与一月。</p>
+<pre><code class="language-yaml">dialect: duckdb
+交易明细:
+    type: dataset
+    table: monthly_sales
+    dimension: [销售明细编号]
+    columns:
+        销售明细编号:
+            abbr: id
+        dt_month:
+            abbr: dt_month
+        地区:
+            abbr: region
+        净额:
+            abbr: net_amount
+    measures:
+        净销售额: SUM({净额})
+</code></pre>
+<pre><code class="language-powershell">dmlc --explain-change --measure=净销售额 --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=地区 --model=model.dml
 </code></pre>
 <p>在这组样例数据中，上月为 300，本月为 400，两个地区对变化的贡献分别为 +200 和 −100。先核对两个期间的值，再看地区排名。贡献值和异常程度评分能帮你决定先查哪里；要解释变化的原因，还需要核实其他影响因素。</p>
 <p>如果手头已有查询，可以从 SQL 生成模型和查询草稿。</p>

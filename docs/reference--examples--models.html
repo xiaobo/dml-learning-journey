@@ -30,23 +30,29 @@ GROUP BY category, product
 <p>Sometimes a dataset has dimensions that should not be exposed to end users but are needed for internal calculations.</p>
 <pre><code class="language-yaml">transactions:
     type: dataset
+    table: fact_transactions
     dimension:
         - dt_date
         - product
         - region
     columns:
         dt_date:
+            abbr: dt_date
         product:
+            abbr: product
         region:
+            abbr: region
         transaction_id:          # internal dimension, not for analysis
+            abbr: transaction_id
         amount:
+            abbr: amount
 </code></pre>
 <p><code>transaction_id</code> can still be used in <code>+d</code> modifiers but won&#39;t clutter the MODEL table.</p>
 <h3 id="moving-annual-total-mat">Moving annual total (MAT) <a class="section-link" aria-label="Link to section" href="#moving-annual-total-mat">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
 FROM MODEL
-WHERE dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;)
-                   AND date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)
+WHERE dt_month BETWEEN date(current_date, 'start of month', '-12 months')
+                   AND date(current_date, 'start of month', '-1 month')
 GROUP BY dt_month
 </code></pre>
 <p><code>mat</code> computes a rolling 12-month total ending at each <code>dt_month</code>.</p>
@@ -73,13 +79,14 @@ GROUP BY product
         - dt_date
     columns:
         dt_date:
+            abbr: dt_date
         has_data:
-            source: &#39;1&#39;
+            source: '1'
 </code></pre>
 <p><strong>Fill default when row missing</strong> (block null contagion after join / FOJ): activate with outermost <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>. Applies at <strong>use sites</strong> of that measure only — see <a href="reference--measures.html#fill-default-when-row-missing">missing-row fill</a>.</p>
 <pre><code class="language-yaml">daily_sales:
     type: measure
-    formula: &#39;isnull(SUM({sales: {+d: dt_date}}), 0)&#39;   # activate
+    formula: 'isnull(SUM({sales: {+d: dt_date}}), 0)' # activate
 </code></pre>
 <p>Do not rely on <code>SUM(isnull({sales: {+d: dt_date}}, 0))</code> alone to fix <strong>missing join rows</strong> for later composites — activate the measure you will reference, or activate the composite result.</p>
 <p><strong>Key points</strong>: <code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> for conditional single-value aggregations. Sparse <strong>dates</strong> → densify; sparse <strong>measure rows after join</strong> → fill default at use sites (P28b).</p>
@@ -97,11 +104,11 @@ GROUP BY product
 
 sales_yoy:
     type: measure
-    formula: &#39;{sales: yoy}&#39;
+    formula: '{sales: yoy}'
 
 sales_mat:
     type: measure
-    formula: &#39;{sales: mat}&#39;
+    formula: '{sales: mat}'
 
 DWS_SALES_DATE_PRODUCT:
     type: materialize
@@ -117,7 +124,7 @@ DWS_SALES_DATE_PRODUCT:
 </code></pre>
 <p>A dataset can also declare its own materialization inline (<code>materialize: &lt;name&gt;</code> on the dataset) — see <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>; the standalone object form is documented in <a href="reference--materialization.html">materialization declarations</a>.</p>
 <blockquote>
-<p>⚠️ There is <strong>no</strong> measure-level <code>materialize: true</code> flag. The compiler rejects it with <code>undefined modifier &#39;materialize&#39;</code> (verified with <code>dmlc -c</code>). Materialization is declared via <code>type: materialize</code> or dataset-level <code>materialize: &lt;name&gt;</code> — never on a measure.</p>
+<p>⚠️ There is <strong>no</strong> measure-level <code>materialize: true</code> flag. The compiler rejects it with <code>undefined modifier 'materialize'</code> (verified with <code>dmlc -c</code>). Materialization is declared via <code>type: materialize</code> or dataset-level <code>materialize: &lt;name&gt;</code> — never on a measure.</p>
 </blockquote>
 <h3 id="how-it-works">How it works <a class="section-link" aria-label="Link to section" href="#how-it-works">#</a></h3>
 <ol>
@@ -128,7 +135,7 @@ DWS_SALES_DATE_PRODUCT:
 <h3 id="query-with-non-materialized-filter">Query with non-materialized filter <a class="section-link" aria-label="Link to section" href="#query-with-non-materialized-filter">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
 FROM MODEL
-WHERE region = &#39;North&#39;
+WHERE region = 'North'
 GROUP BY dt_month, product, region
 </code></pre>
 <p>If the materialization grain is <code>dt_date + product</code> (no <code>region</code>), this query cannot be served from it. Consider materializing at multiple grains if needed.</p>
@@ -166,15 +173,18 @@ GROUP BY dt_month, product, region
 <p><strong>Business question</strong>: A stored procedure builds a fact table (<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>) and a report then consumes <code>RPT_X</code>. Can the stored procedure be replaced by DML?</p>
 <h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">Solution: Model the ETL pipeline as a materialize object <a class="section-link" aria-label="Link to section" href="#solution-model-the-etl-pipeline-as-a-materialize-object">#</a></h3>
 <p>Instead of treating <code>RPT_X</code> as an externally built <code>table:</code> dataset, model the <strong>entire pipeline</strong>: raw source as a <code>table:</code> dataset, enrichment via <code>pk()</code> chains, and <code>RPT_X</code> as a <code>type: materialize</code> that pre-aggregates from the enriched source.</p>
-<pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure&#39;s #temp tables)
+<pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure's #temp tables)
 Dim Customer:
     type: dataset
     table: MDM_STORE
     dimension: [store_id]
     columns:
         store_id:
+            abbr: store_id
         store_name:
+            abbr: store_name
         hq_id:
+            abbr: hq_id
 
 Dim Org:
     type: dataset
@@ -182,19 +192,25 @@ Dim Org:
     dimension: [org_id]
     columns:
         org_id:
+            abbr: org_id
         emp_name:
+            abbr: emp_name
 
 # 2. Source fact dataset with pk() chain enrichment
-#    (replaces the stored procedure&#39;s SELECT ... LEFT JOIN ...)
+#    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
 raw_sales:
     type: dataset
     table: RAW_SALES
     dimension: [dt_month, store_id, prod_id]
     columns:
         dt_month:
+            abbr: dt_month
         store_id:
+            abbr: store_id
         prod_id:
+            abbr: prod_id
         amt:
+            abbr: amt
         # pk() chain enrichment replaces LEFT JOINs
         store_name: pk({store_id}).{Dim Customer}.store_name
         hq_id: pk({store_id}).{Dim Customer}.hq_id
@@ -231,10 +247,10 @@ report:
     allows:
         - RPT_X
     filters:
-        dt_month: { range: [&#39;2024-01-01&#39;, &#39;2024-03-01&#39;] }
+        dt_month: { range: ['2024-01-01', '2024-03-01'] }
     columns:
         dimension: [dt_month, store_name]
-        sales: &#39;{sales}&#39;
+        sales: '{sales}'
 </code></pre>
 <p><strong>When to use this pattern</strong>:</p>
 <ul>
@@ -262,10 +278,15 @@ report:
         - customer
     columns:
         dt_date:
+            abbr: dt_date
         product:
+            abbr: product
         region:
+            abbr: region
         customer:
+            abbr: customer
         amount:
+            abbr: amount
 
 inventory:
     type: dataset
@@ -276,9 +297,13 @@ inventory:
         - warehouse
     columns:
         dt_date:
+            abbr: dt_date
         product:
+            abbr: product
         warehouse:
+            abbr: warehouse
         units:
+            abbr: units
 
 total_sales:
     type: measure
@@ -320,7 +345,7 @@ GROUP BY dt_date, region
 <pre><code class="language-sql">-- Selected month
 SELECT product, region, AGG(total_sales) AS period_sales
 FROM MODEL
-WHERE dt_month = date(current_date, &#39;start of month&#39;)
+WHERE dt_month = date(current_date, 'start of month')
 GROUP BY product, region
 
 -- All history
@@ -328,6 +353,6 @@ SELECT product, region, AGG(total_sales) AS all_time_sales
 FROM MODEL
 GROUP BY product, region
 </code></pre>
-<p>Run the statements separately with the model definitions required by this page. For a complete executed comparison within one report, see <a href="examples--fixed-total-en.html">fixed-axis denominators</a>. Its ordinary <code>month</code> grouping field is distinct from <code>dim_dt</code> time context.</p>
+<p>Run the statements separately with the model definitions required by this page. For a complete executed comparison within one report, see <a href="examples--fixed-total-en.html">fixed-axis denominators</a>. It groups date values by <code>dt_month</code>.</p>
 <p><strong>Key points</strong>: Measures from different datasets can be queried together if they share enough dimensions. If dimensions don&#39;t align, use separate queries or carefully apply <code>-d</code> modifiers. Dropping dimensions to force compatibility can produce misleading results — document your intent.</p>
 </main></body></html>

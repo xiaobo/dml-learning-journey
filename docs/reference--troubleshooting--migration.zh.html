@@ -11,10 +11,10 @@
 <p><strong>错误</strong>：仅凭编译成功就认定 <code>-c</code> 的输出正确。<strong>修正</strong>：分别执行原始 SQL 和编译生成的 SQL，比较结果集。</p>
 <p><a id="p6"></a></p>
 <h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. 为特定筛选条件或查询维度组合创建专用指标 <a class="section-link" aria-label="本节链接" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
-<p><strong>错误</strong>：分别创建 <code>sales_north</code>、<code>sales_south</code>、<code>sales_east</code>，或在 <code>WHERE region = 'North'</code> 已足够时仍创建 <code>sales_north</code>。<strong>修正</strong>：定义一个通用指标 <code>sales</code>，并在查询中使用 <code>WHERE region = 'North'</code>。</p>
+<p><strong>错误</strong>：分别创建 <code>sales_north</code>、<code>sales_south</code>、<code>sales_east</code>，或在 <code>WHERE 地区 = 'North'</code> 已足够时仍创建 <code>sales_north</code>。<strong>修正</strong>：定义一个通用指标 <code>销售额</code>，并在查询中使用 <code>WHERE 地区 = 'North'</code>。</p>
 <p><a id="p7"></a></p>
 <h2 id="p7-duplicating-aggregation-formulas">P7. 重复定义聚合公式 <a class="section-link" aria-label="本节链接" href="#p7-duplicating-aggregation-formulas">#</a></h2>
-<p><strong>错误</strong>：同时定义 <code>revenue: SUM({amount})</code> 和 <code>total_revenue: SUM({amount})</code>。<strong>修正</strong>：只定义一个原子指标，所有需要该计算的地方都引用它。</p>
+<p><strong>错误</strong>：同时定义 <code>收入: SUM({销售金额})</code> 和 <code>total_revenue: SUM({销售金额})</code>。<strong>修正</strong>：只定义一个原子指标，所有需要该计算的地方都引用它。</p>
 <hr>
 <h2 id="category-model-query-sql">类别：Model Query 的 SQL <a class="section-link" aria-label="本节链接" href="#category-model-query-sql">#</a></h2>
 <h2 id="sql-accepted-by-draft-conversion">可转换为草稿的 SQL <a class="section-link" aria-label="本节链接" href="#sql-accepted-by-draft-conversion">#</a></h2>
@@ -31,8 +31,8 @@
 <td>使用 <code>CAST(sale_date AS date) AS d</code> 或 <code>CAST('2025-01-01' AS date)</code>。</td>
 </tr>
 <tr>
-<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
-<td>使用 <code>SUM(CASE WHEN paid THEN amount END)</code>。</td>
+<td><code>SUM(销售金额) FILTER (WHERE paid)</code></td>
+<td>使用 <code>SUM(CASE WHEN paid THEN 销售金额 END)</code>。</td>
 </tr>
 <tr>
 <td><code>QUALIFY ROW_NUMBER() ... = 1</code> 或 <code>DISTINCT ON</code></td>

@@ -25,11 +25,11 @@
 </tr>
 <tr>
 <td><code>referred column {DATASET}.col is undefined</code> in query filter</td>
-<td>String form: <code>&quot;{DATASET}.col = value&quot;:</code></td>
+<td>String form: <code>"{DATASET}.col = value":</code></td>
 </tr>
 <tr>
-<td>Two-element list <code>dt_date: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;]</code> returns only 2 days</td>
-<td>Bare list compiles to <code>IN (...)</code> exact match, not a range. Use <code>dt_date: { range: [&#39;2024-01-01&#39;, &#39;2025-12-31&#39;] }</code> for inclusive intervals</td>
+<td>Two-element list <code>dt_date: ['2024-01-01', '2025-12-31']</code> returns only 2 days</td>
+<td>Bare list compiles to <code>IN (...)</code> exact match, not a range. Use <code>dt_date: { range: ['2024-01-01', '2025-12-31'] }</code> for inclusive intervals</td>
 </tr>
 <tr>
 <td>Branch-specific date window</td>
@@ -83,7 +83,7 @@ sales:
 <p>See the dimension-role contract in <a href="explanation--dimensions.html">dimension roles</a>.</p>
 <p><a id="p64"></a></p>
 <h2 id="p64-materialize-true-on-a-measure">P64. <code>materialize: true</code> on a measure <a class="section-link" aria-label="Link to section" href="#p64-materialize-true-on-a-measure">#</a></h2>
-<p><strong>Symptom</strong>: <code>ERROR error during processing [ref null]: undefined modifier &#39;materialize&#39;</code> at compile time; the measure is silently dropped (<code>0 measure(s) processed</code>).
+<p><strong>Symptom</strong>: <code>ERROR error during processing [ref null]: undefined modifier 'materialize'</code> at compile time; the measure is silently dropped (<code>0 measure(s) processed</code>).
 <strong>Wrong</strong>: adding <code>materialize: true</code> to a measure definition, expecting the compiler to pre-aggregate it. There is no measure-level materialize flag (verified with <code>dmlc -c</code>, dmlc 0.3.16).
 <strong>Fix</strong>: declare materialization with a top-level <code>type: materialize</code> object (<code>parameters:</code> + <code>dimension:</code> + <code>measures:</code>), or dataset-level <code>materialize: &lt;name&gt;</code> — never on a measure. See <a href="reference--materialization.html#55-materialize-definition-type-materialize">Materialize definition (<code>type: materialize</code>)</a> and <a href="reference--examples--models.html#materialize">materialization examples</a>.</p>
 <pre><code class="language-yaml"># Wrong
@@ -91,7 +91,7 @@ sales:
     type: measure
     dataset: transactions
     formula: SUM({amount})
-    materialize: true   # ← undefined modifier &#39;materialize&#39;
+    materialize: true   # ← undefined modifier 'materialize'
 
 # Right
 DWS_SALES:
@@ -112,7 +112,7 @@ dimension:
 
 # Right, inline scalar
 dimension:
-    - payment_day: &#39;cast({authorization_ts: {+d: payment_id}} as date)&#39;
+    - payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'
 </code></pre>
 <p><a id="p67"></a></p>
 <h2 id="p67-incompatible-or-dependent-measure-derived-dimensions">P67. Incompatible or dependent measure-derived dimensions <a class="section-link" aria-label="Link to section" href="#p67-incompatible-or-dependent-measure-derived-dimensions">#</a></h2>
@@ -126,15 +126,15 @@ dimension:
 <strong>Fix</strong>: surround a finer-grain reference with the intended aggregation, such as <code>SUM({sales: {+d: store_id}})</code>. For ratios, roll up components and recompute. For distinct, median, percentile, and similar measures, preserve suitable inputs/states or define a separate supported measure; otherwise accept the compile error.</p>
 <p><a id="p69"></a></p>
 <h2 id="p69-fine-grain-where-hung-on-coarse-query-filters">P69. Fine-grain <code>WHERE</code> hung on coarse query <code>filters:</code> <a class="section-link" aria-label="Link to section" href="#p69-fine-grain-where-hung-on-coarse-query-filters">#</a></h2>
-<p><strong>Symptom</strong>: CTE aggregates at (G) (e.g. product×region), filters (<code>cnt &gt; 3</code>), then <code>SUM</code>s to (Q) (e.g. product). Draft/<code>--to-dml</code> emits query dimension (Q) only with <code>filters: &quot;cnt &gt; 3&quot;</code> and <code>SUM({total: {+d: region}})</code>. Compile/fusion may turn this into product-level <code>HAVING COUNT(1) &gt; 3</code> — wrong population.</p>
+<p><strong>Symptom</strong>: CTE aggregates at (G) (e.g. product×region), filters (<code>cnt &gt; 3</code>), then <code>SUM</code>s to (Q) (e.g. product). Draft/<code>--to-dml</code> emits query dimension (Q) only with <code>filters: "cnt &gt; 3"</code> and <code>SUM({total: {+d: region}})</code>. Compile/fusion may turn this into product-level <code>HAVING COUNT(1) &gt; 3</code> — wrong population.</p>
 <p><strong>Wrong</strong>:</p>
 <pre><code class="language-yaml">filters:
-  &quot;cnt &gt; 3&quot;:                 # cnt is not defined at product-only grain
+  "cnt &gt; 3":                 # cnt is not defined at product-only grain
 columns:
   dimension: [product]
-  grand_total: &#39;SUM({total: {+d: region}})&#39;
+  grand_total: 'SUM({total: {+d: region}})'
 </code></pre>
-<p><strong>Also wrong</strong>: <code>SUM({total: {+d: region, +f: &#39;{cnt} &gt; 3&#39;}})</code> uses an aggregate measure in an input predicate. The diagnostic refers to the predicate, not a general ban on applying <code>+f</code> to measure references. See the <a href="reference--modifiers.html#22-function-modifiers">capability table</a>.</p>
+<p><strong>Also wrong</strong>: <code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code> uses an aggregate measure in an input predicate. The diagnostic refers to the predicate, not a general ban on applying <code>+f</code> to measure references. See the <a href="reference--modifiers.html#22-function-modifiers">capability table</a>.</p>
 <p><strong>Fix</strong> — filter inside the roll-up at the shared fine grain:</p>
 <pre><code class="language-yaml">grand_total: |-
   SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
@@ -146,13 +146,13 @@ columns:
 <p><strong>Symptom</strong>: <code>window functions are not allowed in atomic measures</code>, or (older binaries) exit 0 with illegal <code>SUM(…) OVER (…) … GROUP BY</code> missing partition columns.</p>
 <p><strong>Wrong</strong>:</p>
 <pre><code class="language-yaml">measures:
-  净购进量: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+  net_purchase_quantity: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
 </code></pre>
 <p><strong>Fix</strong>: <strong>window placement</strong> — detail OVER under <code>columns:</code>, then atomic agg:</p>
 <pre><code class="language-yaml">columns:
-  net_qty: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+  net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
 measures:
-  sum_net_qty: &#39;SUM({net_qty})&#39;
+  sum_net_qty: 'SUM({net_qty})'
 </code></pre>
 <p>Post-<code>GROUP-BY</code> rank/share stays a <strong>composite</strong> (no <code>dataset:</code>) with <code>{-d:}</code> / <code>{-df:}</code>. Contract: <a href="explanation--window-placement.html">Window placement</a>.</p>
 <p><a id="p71"></a></p>
@@ -170,14 +170,14 @@ measures:
 <p><a id="p72"></a></p>
 <h2 id="p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. Two grain fields aliasing one column mis-anchor cross-dataset rollups <a class="section-link" aria-label="Link to section" href="#p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">#</a></h2>
 <p><strong>Symptom</strong>: strict compile passes, diagnostics empty, but a ratio is wrong — e.g. lift denominator is <code>left_count * left_count</code> instead of <code>left_count * right_count</code>.</p>
-<p><strong>Wrong</strong>: a dataset exposes two fields backed by one physical column (<code>left_product_id: &#39;{product_id}&#39;</code>, <code>right_product_id: &#39;{product_id}&#39;</code>), and a second-role rollup <code>{sold_baskets: {-df: [left_product_id]}}</code> (or <code>{dimension: [month, store, right_product_id]}</code>) is expected to join on <code>right_product_id</code>. The compiler re-aliases the reduced temp&#39;s key and joins it on the <strong>first</strong> role&#39;s key (<code>support.product = pair.left_product_id</code>).</p>
+<p><strong>Wrong</strong>: a dataset exposes two fields backed by one physical column (<code>left_product_id: '{product_id}'</code>, <code>right_product_id: '{product_id}'</code>), and a second-role rollup <code>{sold_baskets: {-df: [left_product_id]}}</code> (or <code>{dimension: [month, store, right_product_id]}</code>) is expected to join on <code>right_product_id</code>. The compiler re-aliases the reduced temp&#39;s key and joins it on the <strong>first</strong> role&#39;s key (<code>support.product = pair.left_product_id</code>).</p>
 <p><strong>Fix</strong>: look up each role with <code>pk()</code> into a <code>sql:</code> dataset that groups the source at <code>(shared dims, product_id)</code> with a declared <code>dimension:</code> (P77); <code>pk()</code> keys are positional and explicit, so left and right cannot collapse. Or keep <code>-df</code> rollups only at grains with no alias collision. Verify in compiled SQL: two separate joins, <code>… product_id = t.left_product_id</code> and <code>… product_id = t.right_product_id</code>.</p>
 <p><a id="p73"></a></p>
 <h2 id="p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. <code>-df</code> rollup composites emit partner-only rows — and can fabricate key values <a class="section-link" aria-label="Link to section" href="#p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">#</a></h2>
 <p><strong>Symptom</strong>: a measure rolled up from another dataset compiles to a <code>FULL OUTER JOIN</code> composite; rows that exist only in the rolled-up partner emit output rows. The partner temp may project <code>max(&lt;col&gt;)</code> fillers for grain fields it lacks, so an orphan <code>(month, store, product)</code> row can surface as <code>left = right = product</code> — a fabricated self-pair, not just NULLs.</p>
 <p><strong>Fix</strong>: keep a selected primary measure that is NULL on partner-only rows and guard the query with a formula-keyed filter:</p>
 <pre><code class="language-yaml">filters:
-    &#39;{pair_basket_count} is not null&#39;:      # formula as key, empty value
+    '{pair_basket_count} is not null':      # formula as key, empty value
 </code></pre>
 <p>This compiles to a join-back <code>WHERE &lt;primary&gt; IS NOT NULL</code> — and the proven presence also reduces the emitted <code>FULL OUTER JOIN</code> to <code>LEFT JOIN</code>. Judge the final join type in emitted SQL, not the composition template. Prove the contract first: a valid primary group must never have a NULL primary measure, and the guard only holds when partner-only rows lack it. (Complements <a href="reference--modifiers.html#23-dimension-modifiers">Dimension modifiers</a>b.)</p>
 <p><a id="p74"></a></p>
@@ -187,12 +187,12 @@ measures:
 <p><strong>Fix</strong>: prefer one <code>table:</code> dataset per physical table with alias columns. If you must role-play, keep the column sets identical and verify every rollup temp&#39;s <code>pk(...)</code> in emitted SQL — a warning here is a semantic error, not a nit.</p>
 <p><a id="p75"></a></p>
 <h2 id="p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">P75. Measure guard filters in query <code>filters:</code> — shape and failure mode <a class="section-link" aria-label="Link to section" href="#p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">#</a></h2>
-<p><strong>Right</strong>: <code>&#39;{measure} is not null&#39;:</code> — the entire formula is the key, value empty. This is the way to prune FOJ orphan rows at the query grain.</p>
-<p><strong>Wrong</strong>: <code>my_measure: {condition: &#39;...&#39;}</code> → schema error (<code>condition</code> is not a filter property). <code>my_measure: &#39;&lt;expr&gt;&#39;</code> treats the key as a column name; when it resolves to a measure, <code>Query.treat_filters</code> can NPE instead of emitting a diagnostic.</p>
+<p><strong>Right</strong>: <code>'{measure} is not null':</code> — the entire formula is the key, value empty. This is the way to prune FOJ orphan rows at the query grain.</p>
+<p><strong>Wrong</strong>: <code>my_measure: {condition: '...'}</code> → schema error (<code>condition</code> is not a filter property). <code>my_measure: '&lt;expr&gt;'</code> treats the key as a column name; when it resolves to a measure, <code>Query.treat_filters</code> can NPE instead of emitting a diagnostic.</p>
 <p><strong>Fix</strong>: use the bare-formula key and make sure the referenced measure resolves at the query grain; an unresolvable measure reference fails with NPE, not a readable error.</p>
 <p><a id="p76"></a></p>
 <h2 id="p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">P76. <code>-df</code> / <code>-d</code> arguments are declared grain field names, not source columns <a class="section-link" aria-label="Link to section" href="#p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">#</a></h2>
-<p><strong>Symptom</strong>: <code>column(s) [x] has been specified as -d/-df, but not in dimension [...]</code> after renaming a query dimension through a binding (<code>columns.dimension: [..., new_name: &#39;{col}&#39;]</code>).</p>
+<p><strong>Symptom</strong>: <code>column(s) [x] has been specified as -d/-df, but not in dimension [...]</code> after renaming a query dimension through a binding (<code>columns.dimension: [..., new_name: '{col}']</code>).</p>
 <p><strong>Cause</strong>: the binding synthesizes an internal field (<code>new_name__&lt;query&gt;</code>); modifiers remove fields by their <strong>grain</strong> names, and the underlying column name no longer exists in the grain.</p>
 <p><strong>Fix</strong>: pass the declared grain field names to <code>-df</code> / <code>-d</code> / <code>dimension:</code>. If a field must stay removable by name, keep it on the dataset under that name.</p>
 <p><a id="p77"></a></p>
@@ -220,5 +220,5 @@ measures:
 <p><a id="p78"></a></p>
 <h2 id="p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">P78. A <code>sql:</code> escape must bake its own population/window predicates <a class="section-link" aria-label="Link to section" href="#p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">#</a></h2>
 <p><strong>Symptom</strong>: query <code>dt_*</code> range filters do <strong>not</strong> push inside a <code>sql:</code> block&#39;s text — they land on the outer <code>WHERE</code> of the compiled derived temp. Inside a self-join escape an unbounded inner leg silently widens the population (e.g. right-leg rows outside the report window form pairs).</p>
-<p><strong>Fix</strong>: bake permanent population predicates (<code>line_status = &#39;SOLD&#39;</code>) and symmetric window bounds into the escape&#39;s inner query so every leg/branch sees identical eligibility; let query <code>filters:</code> handle report scope on the outer keys. And when the escape reads a <code>table:</code>-owned physical table, reference <code>from {Dataset}</code> (P22b) — never the raw table name.</p>
+<p><strong>Fix</strong>: bake permanent population predicates (<code>line_status = 'SOLD'</code>) and symmetric window bounds into the escape&#39;s inner query so every leg/branch sees identical eligibility; let query <code>filters:</code> handle report scope on the outer keys. And when the escape reads a <code>table:</code>-owned physical table, reference <code>from {Dataset}</code> (P22b) — never the raw table name.</p>
 </main></body></html>

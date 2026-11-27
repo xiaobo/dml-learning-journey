@@ -11,26 +11,26 @@
 <p><strong>誤り</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>。<strong>修正</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>。まだ終了していない当月を除外します。</p>
 <p><a id="p32"></a></p>
 <h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. 期間全体を単位とする GROUP BY で ytd 修飾子を使用している <a class="section-link" aria-label="この節へのリンク" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
-<p><strong>誤り</strong>: <code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>: <code>ytd</code> は累計値を返します。<code>dt_date</code> 単位で集計します。<code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code></p>
+<p><strong>誤り</strong>: <code>SELECT dt_year, AGG(売上高, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>: <code>ytd</code> は累計値を返します。<code>dt_date</code> 単位で集計します。<code>SELECT dt_date, AGG(売上高, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code></p>
 <p><a id="p33"></a></p>
 <h2 id="p33-period-to-date-with-date-range">P33. 期間の初日から基準日までの累計に日付範囲を指定している <a class="section-link" aria-label="この節へのリンク" href="#p33-period-to-date-with-date-range">#</a></h2>
-<p><strong>誤り</strong>: YTD に <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> を使用する。<strong>修正</strong>: <code>WHERE dt_date = date(current_date)</code> と <code>AGG(sales, 'ytd')</code> を組み合わせます。日付範囲は修飾子が決定します。</p>
+<p><strong>誤り</strong>: YTD に <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> を使用する。<strong>修正</strong>: <code>WHERE dt_date = date(current_date)</code> と <code>AGG(売上高, 'ytd')</code> を組み合わせます。日付範囲は修飾子が決定します。</p>
 <hr>
 <h2 id="category-compilation-and-validation">カテゴリ：コンパイルと検証 <a class="section-link" aria-label="この節へのリンク" href="#category-compilation-and-validation">#</a></h2>
 <p><a id="p59"></a></p>
 <h2 id="p59-yoy-without-column-probe">P59. 比較対象の列を確認せずに前年同期比を求める <a class="section-link" aria-label="この節へのリンク" href="#p59-yoy-without-column-probe">#</a></h2>
-<p><strong>誤り</strong>: <code>去年同期出厂价金额</code> の合計がゼロのときに <code>AGG(销售额, 'yoy')</code> を使用する。<strong>修正</strong>: 前年同期比について説明できると伝える前に、詳細クエリで <code>SUM(去年同期出厂价金额)</code> を確認します。</p>
+<p><strong>誤り</strong>: <code>前年同期出荷金額</code> の合計がゼロのときに <code>AGG(売上高, 'yoy')</code> を使用する。<strong>修正</strong>: 前年同期比について説明できると伝える前に、詳細クエリで <code>SUM(前年同期出荷金額)</code> を確認します。</p>
 <h2 id="extra-month-after-the-latest-source-data">ソースデータの最終月より後の月が結果に含まれる <a class="section-link" aria-label="この節へのリンク" href="#extra-month-after-the-latest-source-data">#</a></h2>
 <p>期間を比較する場合は、レポートの対象月の範囲を明示的に指定します。完全外部結合では、どちらか一方の期間にだけ存在するグループも残ることがあります。12 月の売上が 1 月の前期売上として対応付けられると、日付範囲を制限していないクエリの結果には、レポートの対象外でも 1 月が含まれることがあります。</p>
-<p>この例では、2024 年 1 月から 2025 年 12 月までのデータを使用します。毎月、5 つのカテゴリすべてに売上があります。モデルには、<code>revenue: SUM({amount})</code>、<code>dt_month</code> という名前の月ディメンション、<code>revenue_mom: '{revenue: pop}'</code> が定義されています。</p>
-<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+<p>この例では、2024 年 1 月から 2025 年 12 月までのデータを使用します。毎月、5 つのカテゴリすべてに売上があります。モデルには、<code>収益: SUM({売上金額})</code>、<code>dt_month</code> という名前の月ディメンション、<code>revenue_mom: '{収益: pop}'</code> が定義されています。</p>
+<pre><code class="language-sql">SELECT dt_month, 分類, AGG(収益), AGG(revenue_mom)
 FROM MODEL
 WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
-GROUP BY dt_month, category
+GROUP BY dt_month, 分類
 </code></pre>
 <p>サンプルデータでは、このクエリは 120 行を返し、手書きの SQL の結果と一致します。日付フィルターを外すと、検証対象のクエリは 125 行を返します。追加された 2026 年 1 月の 5 行には 12 月の売上だけが集計されるため、当期売上高と伸び率はいずれも NULL になります。</p>
 <h3 id="reconcile-both-periods-by-category">両期間の売上高をカテゴリ別に照合する <a class="section-link" aria-label="この節へのリンク" href="#reconcile-both-periods-by-category">#</a></h3>
-<p>期間ごとの売上高合計を比較するレポートでは、レポートの対象月の範囲内で、どちらかの期間に売上高があるカテゴリを残します。両方の値を表示するには、SELECT リストに <code>AGG({revenue: pp}) AS previous_revenue</code> を追加します。</p>
+<p>期間ごとの売上高合計を比較するレポートでは、レポートの対象月の範囲内で、どちらかの期間に売上高があるカテゴリを残します。両方の値を表示するには、SELECT リストに <code>AGG({収益: pp}) AS previous_revenue</code> を追加します。</p>
 <table>
 <thead>
 <tr>

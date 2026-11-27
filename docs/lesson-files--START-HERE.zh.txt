@@ -1,0 +1,7 @@
+解压后，在项目文件夹中运行以下命令，用 DuckDB 核对报表。将返回的两行与 expected.csv 对照。
+
+dmlc -q setup.sql
+dmlc -q --with-validation --model=duckdb/model.dml query.sql
+
+SQL Server:
+dmlc -c --strict --model=model.dml query.sql

@@ -2,16 +2,16 @@
 <p>本节涵盖定义、名称、查找和元数据。声明语法见<a href="reference--model-structure.zh.html">模型结构</a>和<a href="reference--measures.zh.html">指标声明</a>。</p>
 <p><a id="p21"></a></p>
 <h2 id="p21-agg-in-measure-formulas">P21. 在指标公式中使用 AGG() <a class="section-link" aria-label="本节链接" href="#p21-agg-in-measure-formulas">#</a></h2>
-<p><strong>错误</strong>：在 <code>.dml</code> 中使用 <code>sales: AGG({amount})</code>。<strong>修正</strong>：<code>sales: SUM({amount})</code>。在 <code>.dml</code> 中使用 SQL 聚合函数。</p>
+<p><strong>错误</strong>：在 <code>.dml</code> 中使用 <code>销售额: AGG({销售金额})</code>。<strong>修正</strong>：<code>销售额: SUM({销售金额})</code>。在 <code>.dml</code> 中使用 SQL 聚合函数。</p>
 <p><a id="p22"></a></p>
 <h2 id="p22-cross-dataset-references-without-lookup">P22. 未使用查找的跨数据集引用 <a class="section-link" aria-label="本节链接" href="#p22-cross-dataset-references-without-lookup">#</a></h2>
-<p><strong>错误</strong>：跨数据集使用 <code>profit: SUM({sales.amount} - {costs.amount})</code>。<strong>修正</strong>：使用通过 <code>{DATASET}.column</code> 或 <code>pk(...)</code> 查找的列宏。</p>
+<p><strong>错误</strong>：跨数据集使用 <code>利润: SUM({销售额.销售金额} - {成本.销售金额})</code>。<strong>修正</strong>：使用通过 <code>{DATASET}.column</code> 或 <code>pk(...)</code> 查找的列宏。</p>
 <p><a id="p22b"></a></p>
 <h2 id="p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">P22b. 在另一个数据集的 <code>sql:</code> 中连接通过 <code>table:</code> 归属于某个数据集的物理表 <a class="section-link" aria-label="本节链接" href="#p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">#</a></h2>
 <p><strong>错误</strong>：<code>Policy</code> 定义了 <code>table: policy</code>，另一个数据集却在 <code>sql:</code> 中使用 <code>from policy</code> 或 <code>join policy</code>。<strong>修正</strong>：用 <code>from {Policy}</code> 或 <code>join {Policy}</code> 引用数据集，而不是物理表。若要在不使用 SQL 连接的情况下引用属性，请使用 <code>pk(...).{Policy}.Col</code>。<code>sql:</code> 中的 <code>{Policy}</code> 用于替换表来源，并非列表达式。编译器会将它改写为数据集的查询名称。请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a>。</p>
 <p><a id="p23"></a></p>
 <h2 id="p23-missing-dataset-on-atomic-measures">P23. 原子指标缺少 <code>dataset:</code> <a class="section-link" aria-label="本节链接" href="#p23-missing-dataset-on-atomic-measures">#</a></h2>
-<p><strong>错误</strong>：<code>sales: type: measure, formula: SUM({amount})</code>，未指定数据集。<strong>修正</strong>：<code>sales: type: measure, dataset: transactions, formula: SUM({amount})</code></p>
+<p><strong>错误</strong>：<code>销售额: type: measure, formula: SUM({销售金额})</code>，未指定数据集。<strong>修正</strong>：<code>销售额: type: measure, dataset: 交易明细, formula: SUM({销售金额})</code></p>
 <p><a id="p24"></a></p>
 <h2 id="p24-overly-specific-measure-names">P24. 指标名称过于具体 <a class="section-link" aria-label="本节链接" href="#p24-overly-specific-measure-names">#</a></h2>
 <p><strong>错误</strong>：<code>sales_q1_2024_north</code>、<code>sales_john_doe</code>。<strong>修正</strong>：将通用指标与查询筛选条件结合使用。</p>
@@ -20,25 +20,25 @@
 <p><strong>错误</strong>：指标说明中未写明“排除退货”或“包含零值”。<strong>修正</strong>：对于不易从定义看出的行为，始终添加 <code>description:</code>。记录数据集维度、每行的含义、适用范围标志以及容易引起误解的名称。请参阅<a href="how-to--write-model-metadata.zh.html">编写模型元数据</a>。</p>
 <p><a id="p27"></a></p>
 <h2 id="p27-mixing-dimension-constrained-measures-with-incompatible-queries">P27. 在不兼容的查询中使用有维度限制的指标 <a class="section-link" aria-label="本节链接" href="#p27-mixing-dimension-constrained-measures-with-incompatible-queries">#</a></h2>
-<p><strong>错误</strong>：在查询维度为 <code>[dt_month]</code> 的查询中选择 <code>sales_by_product</code>（允许的维度为 <code>[product]</code>）和 <code>total_sales</code>。<strong>修正</strong>：确保每个指标都允许使用该查询维度，且各指标定义行的粒度相互兼容，或者使用独立的查询。</p>
+<p><strong>错误</strong>：在查询维度为 <code>[dt_month]</code> 的查询中选择 <code>商品销售额</code>（允许的维度为 <code>[商品]</code>）和 <code>销售总额</code>。<strong>修正</strong>：确保每个指标都允许使用该查询维度，且各指标定义行的粒度相互兼容，或者使用独立的查询。</p>
 <p><a id="p28"></a></p>
 <h2 id="p28-using-d-when-group-by-suffices">P28. 在 <code>GROUP BY</code> 已足够时使用 <code>+d</code> <a class="section-link" aria-label="本节链接" href="#p28-using-d-when-group-by-suffices">#</a></h2>
-<p><strong>错误</strong>：创建 <code>sales_by_region: SUM({sales: {+d: region}})</code>。<strong>修正</strong>：定义 <code>sales: SUM({amount})</code>，并使用查询 <code>SELECT region, AGG(sales) FROM MODEL GROUP BY region</code>。</p>
+<p><strong>错误</strong>：创建 <code>sales_by_region: SUM({销售额: {+d: 地区}})</code>。<strong>修正</strong>：定义 <code>销售额: SUM({销售金额})</code>，并使用查询 <code>SELECT 地区, AGG(销售额) FROM MODEL GROUP BY 地区</code>。</p>
 <p><a id="p28b"></a></p>
 <h2 id="p28b-null-contagion-when-a-joined-row-is-missing">P28b. 连接缺行时的 NULL 传播 <a class="section-link" aria-label="本节链接" href="#p28b-null-contagion-when-a-joined-row-is-missing">#</a></h2>
-<p><strong>错误</strong>：<code>profit: '{revenue} - {costs}'</code>。如果任意一侧在当前数据切片中缺行（FOJ 或稀疏的 dt），该侧的输入为 NULL，差值也会变为 NULL。</p>
+<p><strong>错误</strong>：<code>利润: '{收入} - {成本}'</code>。如果任意一侧在当前数据切片中缺行（FOJ 或稀疏的 dt），该侧的输入为 NULL，差值也会变为 NULL。</p>
 <p><strong>修正：缺行时填充默认值</strong>（<a href="reference--measures.zh.html#fill-default-when-row-missing">缺行填充</a>）：</p>
 <ol>
 <li>将 <code>isnull</code>、<code>ifnull</code> 或 <code>coalesce(公式, 字面量)</code> 用作最外层函数，为稀疏输入<strong>启用填充</strong>：</li>
 </ol>
-<pre><code class="language-yaml">revenue: 'isnull(SUM({amount}), 0)'   # or wrap the existing measure formula outermost
-costs: 'isnull(SUM({cost}), 0)'
-profit: '{revenue} - {costs}'         # use sites of revenue/costs → 0
+<pre><code class="language-yaml">收入: 'isnull(SUM({销售金额}), 0)' # or wrap the existing measure formula outermost
+成本: 'isnull(SUM({成本金额}), 0)'
+利润: '{收入} - {成本}' # use sites of revenue/costs → 0
 </code></pre>
 <ol start="2">
 <li>如果结果粒度下缺少对应的行，而<strong>结果列</strong>本身必须为非 NULL，请直接对结果启用填充：</li>
 </ol>
-<pre><code class="language-yaml">profit: 'isnull({revenue} - {costs}, 0)'
+<pre><code class="language-yaml">利润: 'isnull({收入} - {成本}, 0)'
 </code></pre>
 <p><strong>以下做法不够，或无法启用填充：</strong>使用 <code>isnull({a}, {b})</code>、<code>coalesce(a, b, 0)</code>，单独使用 <code>{m: pp}</code>，或期待外层无关的复合指标自动套用 <code>isnull</code>。将<strong>已启用填充</strong>的依赖指标嵌入复合指标后，在稀疏 FOJ 中引用该依赖指标时，其填充表达式仍会展开。请参阅<a href="reference--measures.zh.html#fill-default-when-row-missing"><code>measures.md</code> 填充默认值</a>。</p>
 <p><a id="p28c"></a></p>
@@ -50,22 +50,22 @@ profit: '{revenue} - {costs}'         # use sites of revenue/costs → 0
 <h2 id="category-time-handling">类别：时间处理 <a class="section-link" aria-label="本节链接" href="#category-time-handling">#</a></h2>
 <p><a id="p37"></a></p>
 <h2 id="p37-modifiers-on-columns">P37. 列上的修饰符 <a class="section-link" aria-label="本节链接" href="#p37-modifiers-on-columns">#</a></h2>
-<p><strong>错误</strong>：在公式中使用 <code>{customer_id: {+d: customer_id}}</code>。<strong>修正</strong>：在要计算的指标上指定下钻，例如 <code>{sales: {+d: customer_id}}</code>。输入修饰符 <code>+f</code> 等其他修饰符也有适用于列的写法。这一限制并非适用于所有列修饰符。</p>
+<p><strong>错误</strong>：在公式中使用 <code>{客户编号: {+d: 客户编号}}</code>。<strong>修正</strong>：在要计算的指标上指定下钻，例如 <code>{销售额: {+d: 客户编号}}</code>。输入修饰符 <code>+f</code> 等其他修饰符也有适用于列的写法。这一限制并非适用于所有列修饰符。</p>
 <p><a id="p38"></a></p>
 <h2 id="p38-unquoted-yaml-formulas">P38. YAML 公式未加引号 <a class="section-link" aria-label="本节链接" href="#p38-unquoted-yaml-formulas">#</a></h2>
-<p><strong>错误</strong>：<code>formula: SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})</code> 的值包含 <code>:</code>、<code>{</code> 或 <code>-</code>，但未加引号。<strong>修正</strong>：<code>formula: 'SUMIF(...)'</code></p>
+<p><strong>错误</strong>：<code>formula: SUMIF({销售额: {+d: dt_month}}, {dt_month} = {首次购买月份})</code> 的值包含 <code>:</code>、<code>{</code> 或 <code>-</code>，但未加引号。<strong>修正</strong>：<code>formula: 'SUMIF(...)'</code></p>
 <p><a id="p39"></a></p>
 <h2 id="p39-dataset-on-composite-measures">P39. 在复合指标上指定 <code>dataset:</code> <a class="section-link" aria-label="本节链接" href="#p39-dataset-on-composite-measures">#</a></h2>
 <p><strong>错误</strong>：引用其他指标的复合指标仍指定了 <code>dataset:</code>。<strong>修正</strong>：公式引用其他指标时，省略 <code>dataset:</code>。仅在原子指标中保留 <code>dataset:</code>。</p>
 <p><a id="p40"></a></p>
 <h2 id="p40-measure-cannot-be-redefined--duplicate-formula">P40. 无法重新定义指标或公式重复 <a class="section-link" aria-label="本节链接" href="#p40-measure-cannot-be-redefined--duplicate-formula">#</a></h2>
-<p><strong>错误</strong>：当 <code>sales</code> 或 <code>x</code> 已是现有指标时，分别使用 <code>SELECT AGG(sales) AS sales</code> 或 <code>AGG(x) AS x</code>。<strong>修正</strong>：使用 <code>SELECT AGG(sales)</code>，省略别名，或指定一个与现有指标名称不同的别名（<code>AS sales_value</code>）。如果编译器提示“<code>use existing measure "X"</code>”，请使用 <code>AGG(X)</code>，无需重新写出公式。</p>
+<p><strong>错误</strong>：当 <code>销售额</code> 或 <code>x</code> 已是现有指标时，分别使用 <code>SELECT AGG(销售额) AS 销售额</code> 或 <code>AGG(x) AS x</code>。<strong>修正</strong>：使用 <code>SELECT AGG(销售额)</code>，省略别名，或指定一个与现有指标名称不同的别名（<code>AS sales_value</code>）。如果编译器提示“<code>use existing measure "X"</code>”，请使用 <code>AGG(X)</code>，无需重新写出公式。</p>
 <p><a id="p41"></a></p>
 <h2 id="p41-dml--syntax-in-model-query-sql">P41. 在模型查询的 SQL 中使用 DML 的 <code>{...}</code> 语法 <a class="section-link" aria-label="本节链接" href="#p41-dml--syntax-in-model-query-sql">#</a></h2>
-<p><strong>错误</strong>：<code>SELECT {dt_month}, AGG({sales}) FROM MODEL</code>。花括号仅用于 <code>.dml</code> 公式。<strong>修正</strong>：<code>SELECT dt_month, AGG(sales) FROM MODEL</code>。在查询中，仅在使用<strong>修饰符</strong>的写法中使用 <code>AGG({sales: pop})</code>。</p>
+<p><strong>错误</strong>：<code>SELECT {dt_month}, AGG({销售额}) FROM MODEL</code>。花括号仅用于 <code>.dml</code> 公式。<strong>修正</strong>：<code>SELECT dt_month, AGG(销售额) FROM MODEL</code>。在查询中，仅在使用<strong>修饰符</strong>的写法中使用 <code>AGG({销售额: pop})</code>。</p>
 <p><a id="p42"></a></p>
 <h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. <code>.dml</code> 公式中不带花括号的列名与 <code>{col}</code> 的区别 <a class="section-link" aria-label="本节链接" href="#p42-bare-name-vs-col-inside-dml-formulas">#</a></h2>
-<p><strong>错误理解：</strong> 把 <code>formula: calc_amt * 2</code> 当成“漏写花括号”或“编译器漏检”。不带花括号的 <code>calc_amt</code> 会绑定到表中的<strong>物理</strong>列（原样传递给 SQL）。<strong>修正：</strong> 要引用<strong>计算</strong>列的定义，请用花括号括住列名，例如 <code>formula: '{calc_amt} * 2'</code>。引用物理列时直接写列名，例如 <code>net: amount - discount</code>。请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a>。</p>
+<p><strong>错误理解：</strong> 把 <code>formula: calc_amt * 2</code> 当成“漏写花括号”或“编译器漏检”。不带花括号的 <code>calc_amt</code> 会绑定到表中的<strong>物理</strong>列（原样传递给 SQL）。<strong>修正：</strong> 要引用<strong>计算</strong>列的定义，请用花括号括住列名，例如 <code>formula: '{calc_amt} * 2'</code>。引用物理列时直接写列名，例如 <code>net: 销售金额 - 折扣金额</code>。请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a>。</p>
 <h2 id="模型排错">模型排错 <a class="section-link" aria-label="本节链接" href="#模型排错">#</a></h2>
 <p>先检查入口模型中的 <code>dialect:</code> 设置，以及 <code>includes:</code> 中的路径和名称。确认数据集的 <code>dimension:</code> 能唯一标识源行，并按声明顺序向 <code>pk(...)</code> 传入完整的键。先修复第一条明确报告的缺失引用或冲突，再重新运行 lint。</p>
 </main></body></html>

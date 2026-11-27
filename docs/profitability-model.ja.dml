@@ -1,0 +1,41 @@
+dialect: mssql
+
+売上と原価:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [売上明細番号]
+  columns:
+    売上明細番号:
+      abbr: id
+    元データの地域:
+      abbr: region
+    地域: '{元データの地域}'
+    dt_month:
+      abbr: dt_month
+    売上金額:
+      abbr: revenue_amount
+    原価金額:
+      abbr: cost_amount
+  measures:
+    純売上高: SUM({売上金額})
+    売上原価: SUM({原価金額})
+
+粗利益:
+  type: measure
+  formula: '{純売上高} - {売上原価}'
+
+粗利率:
+  type: measure
+  formula: 'DIVIDE({粗利益}, {純売上高})'
+
+年初来粗利率:
+  type: measure
+  formula: 'DIVIDE({純売上高: ytd} - {売上原価: ytd}, {純売上高: ytd})'
+
+前年同期の年初来粗利率:
+  type: measure
+  formula: 'DIVIDE({純売上高: {ytd, ya}} - {売上原価: {ytd, ya}}, {純売上高: {ytd, ya}})'
+
+粗利率の前年差ポイント:
+  type: measure
+  formula: '100 * ({年初来粗利率} - {前年同期の年初来粗利率})'

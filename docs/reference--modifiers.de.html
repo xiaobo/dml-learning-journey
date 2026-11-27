@@ -1,7 +1,7 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kennzahlmodifikatoren · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Seite beschreibt den Aufbau der Modifikatorwerte, die Wirkung von Filtern und die Kombination von Modifikatoren. Die Seite Ausdrücke und Funktionen behandelt Referenzen und integrierte Funktionen. Die Sei"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Kennzahlmodifikatoren · DML"><meta property="og:description" content="Diese Seite beschreibt den Aufbau der Modifikatorwerte, die Wirkung von Filtern und die Kombination von Modifikatoren. Die Seite Ausdrücke und Funktionen behandelt Referenzen und integrierte Funktionen. Die Sei"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--modifiers.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--modifiers.html">English</a> <a lang="zh" hreflang="zh" href="reference--modifiers.zh.html">中文</a></header><main><h1 id="measure-modifiers">Kennzahlmodifikatoren</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#payload-structure">Aufbau der Modifikatorwerte</a></li><li><a href="#time-modifiers">Zeitmodifikatoren</a></li><li><a href="#function-modifiers">Funktionsmodifikatoren</a></li><li><a href="#dimension-modifiers">Dimensionsmodifikatoren</a></li><li><a href="#quick-glossary-avoid-ambiguity">Kurzes Glossar zur eindeutigen Begriffswahl</a></li><li><a href="#same-dimension-modifier-conflicts">Konflikte zwischen Modifikatoren für dasselbe Dimensionsfeld</a></li><li><a href="#-df--combined--d-and--f"><code>-df</code> kombiniert <code>-d</code> und <code>-f</code></a></li><li><a href="#-d-on-composite-measures-with-full-outer-join"><code>{-d:}</code> bei zusammengesetzten Kennzahlen mit FULL OUTER JOIN</a></li><li><a href="#combining-modifiers">Modifikatoren kombinieren</a></li><li><a href="#modifier-stacking">Modifikatoren verketten</a></li><li><a href="#修饰符速查">Modifikatoren im Überblick</a></li><li><a href="#time-modifiers-on-composite-ratios">Zeitmodifikatoren für zusammengesetzte Verhältniskennzahlen</a></li><li><a href="#fixed-axis-totals-and-output-membership">Summen mit festen Achsen und Auswahl der Ausgabezeilen</a></li></ul></details>
 <p>Diese Seite beschreibt den Aufbau der Modifikatorwerte, die Wirkung von Filtern und die Kombination von Modifikatoren. Die Seite <a href="reference--expressions.de.html">Ausdrücke und Funktionen</a> behandelt Referenzen und integrierte Funktionen. Die Seite <a href="reference--examples--aggregation.de.html">Beispiele für die Aggregation auf feinerer Ebene</a> zeigt die vollständigen Verarbeitungsschritte.</p>
 <h2 id="payload-structure">Aufbau der Modifikatorwerte <a class="section-link" aria-label="Link zum Abschnitt" href="#payload-structure">#</a></h2>
-<p>In <code>{measure: {modifier_a: value, modifier_b: value}}</code> hat das äußere Objekt genau einen Schlüssel für die Zielkennzahl. Die darin enthaltene Zuordnung von Modifikatoren kann mehrere Schlüssel enthalten, sofern die <a href="reference--semantics.de.html#44-modifier-schema-constraints">Modifikatorbeschränkungen</a> eingehalten werden.</p>
+<p>In <code>{measure: {modifier_a: Wert, modifier_b: Wert}}</code> hat das äußere Objekt genau einen Schlüssel für die Zielkennzahl. Die darin enthaltene Zuordnung von Modifikatoren kann mehrere Schlüssel enthalten, sofern die <a href="reference--semantics.de.html#44-modifier-schema-constraints">Modifikatorbeschränkungen</a> eingehalten werden.</p>
 <table>
 <thead>
 <tr>
@@ -11,7 +11,7 @@
 </thead>
 <tbody><tr>
 <td><code>dim_dt</code></td>
-<td>Formel als Zeichenfolge oder Objekt mit den Feldern <code>value</code> und <code>range</code></td>
+<td>Formel als Zeichenfolge oder Objekt mit den Feldern <code>Wert</code> und <code>range</code></td>
 </tr>
 <tr>
 <td><code>dim_dt as date</code>, <code>dim_dt as week</code>, <code>dim_dt as month</code>, <code>dim_dt as quarter</code>, <code>dim_dt as year</code>, <code>dim_dt as hour</code></td>
@@ -19,7 +19,7 @@
 </tr>
 <tr>
 <td><code>+f</code></td>
-<td>Filtername als Zeichenfolge, Liste von Filternamen oder Inline-Objekt wie <code>{column: value}</code></td>
+<td>Filtername als Zeichenfolge, Liste von Filternamen oder Inline-Objekt wie <code>{column: Wert}</code></td>
 </tr>
 <tr>
 <td><code>-f</code></td>
@@ -53,11 +53,11 @@
 <td><code>pop</code>, <code>yoy</code>, <code>mom</code></td>
 </tr>
 </tbody></table>
-<p><strong>Verkettung</strong>. Modifikatoren lassen sich verketten. <code>AGG(sales, 'ytd', 'ya')</code> ergibt den Wert vom Beginn des Vorjahres bis zum entsprechenden Stichtag im Vorjahr. Die vollständigen Regeln stehen unter <a href="reference--modifiers.de.html#25-modifier-stacking">Verkettung von Modifikatoren</a>.</p>
+<p><strong>Verkettung</strong>. Modifikatoren lassen sich verketten. <code>AGG(Umsatz, 'ytd', 'ya')</code> ergibt den Wert vom Beginn des Vorjahres bis zum entsprechenden Stichtag im Vorjahr. Die vollständigen Regeln stehen unter <a href="reference--modifiers.de.html#25-modifier-stacking">Verkettung von Modifikatoren</a>.</p>
 <p><strong>Zeitkontext</strong>. Zeitmodifikatoren benötigen eine auflösbare Referenz auf <code>dim_dt</code> und müssen die Voraussetzungen ihrer Makros erfüllen. Eine Gruppierung nach einem Zeitfeld stellt den Kontext am deutlichsten her. Auch ein Zeitfilter kann den Kontext liefern. Siehe <a href="reference--model-query-sql.de.html#35-group-by-rules">Zeitregeln für Model Query</a>.</p>
 <p><strong>Periodenumrechnung</strong> mit <code>dim_dt</code></p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({Umsatz: {dim_dt as quarter: pp}}) as Vorquartalsumsatz
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p>Mit <code>dim_dt as quarter</code> arbeitet <code>pp</code> auf Quartalsebene, auch wenn die Abfrage nach Jahr und Quartal gruppiert.</p>
@@ -95,30 +95,30 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 <tr>
 <td>Atomare Kennzahl + Prädikat auf einer Quellspalte</td>
-<td>Unterstützt. Beispielsweise erzeugt <code>{sales: {+f: "status = 1"}}</code> ein bedingtes SUM.</td>
+<td>Unterstützt. Beispielsweise erzeugt <code>{Umsatz: {+f: "Bestellstatus = 1"}}</code> ein bedingtes SUM.</td>
 </tr>
 <tr>
 <td>Einfache zusammengesetzte Kennzahl + Prädikat auf einer Quellspalte</td>
-<td>Der Filter wird an die atomaren Kennzahlen weitergegeben, von denen die zusammengesetzte Kennzahl abhängt. Das wurde für <code>divide({sales}, {cnt})</code> geprüft. Nur verwenden, wenn der Filter auf alle diese atomaren Kennzahlen angewendet werden soll.</td>
+<td>Der Filter wird an die atomaren Kennzahlen weitergegeben, von denen die zusammengesetzte Kennzahl abhängt. Das wurde für <code>divide({Umsatz}, {Verkaufsanzahl})</code> geprüft. Nur verwenden, wenn der Filter auf alle diese atomaren Kennzahlen angewendet werden soll.</td>
 </tr>
 <tr>
 <td>Atomare Kennzahl mit <code>+d</code> und <code>+f</code> auf einer Quellspalte</td>
 <td>Beim geprüften Rollup mit AVG unterstützt. Prüfen Sie, ob die Filterung vor der Aggregation auf feinerer Ebene erfolgt.</td>
 </tr>
 <tr>
-<td>Prädikat, das eine aggregierte Kennzahl referenziert, beispielsweise <code>"{cnt} &gt; 3"</code></td>
+<td>Prädikat, das eine aggregierte Kennzahl referenziert, beispielsweise <code>"{Verkaufsanzahl} &gt; 3"</code></td>
 <td>Wird mit <code>cannot use +f modifier with measure(s)</code> abgelehnt. Verwenden Sie die <a href="reference--examples--aggregation.de.html#26a-fine-grain-filter-then-d-roll-up">Beispiele für Filter auf feinerer Ebene</a>.</td>
 </tr>
 </tbody></table>
 <p>Eine gefilterte Referenz auf eine atomare Kennzahl wird für sich genommen auf der aktuellen Abfrageebene ausgewertet. Geht es um Werte pro Entität, behalten Sie <code>+d</code> und eine explizite äußere Aggregation bei, insbesondere bei AVG, MIN, MAX und COUNT. Ein bedingtes SUM gibt NULL zurück, wenn keine Eingabezeile die Bedingung erfüllt. Ein explizites <code>ELSE 0</code> hat eine andere Semantik. Beim Filtern der Eingabe können Gruppen erhalten bleiben, die nur ausgeschlossene Zeilen enthalten.</p>
 <p><strong>fn-Makros für Fensterfunktionen</strong> erzeugen <code>rank() over (...)</code> im kompilierten SQL. Verwenden Sie sie in Model Query SQL als <code>AGG(measure, 'rank')</code> oder <code>AGG({measure: rank})</code>. Die vollständige Liste und die Formeln finden Sie in <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a>.</p>
 <p><strong>Filtermodifikator</strong> in <code>.dml</code> (Spalte als Ziel)</p>
-<pre><code class="language-yaml">completed_sales:
+<pre><code class="language-yaml">UmsatzAbgeschlossenerBestellungen:
     type: measure
-    formula: "{amount: {+f: {status: 'completed'}}}"
+    formula: "{Verkaufsbetrag: {+f: {Bestellstatus: 'completed'}}}"
 </code></pre>
 <p><strong>Filtermodifikator</strong> in Model Query SQL</p>
-<pre><code class="language-sql">SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+<pre><code class="language-sql">SELECT AGG(Umsatz, '+f', Region = 'North') FROM MODEL
 </code></pre>
 <p><a id="23-dimension-modifiers"></a></p>
 <h2 id="dimension-modifiers">Dimensionsmodifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#dimension-modifiers">#</a></h2>
@@ -224,12 +224,12 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 </tbody></table>
 <p><strong>Beispiel: Markenanteil je Filiale</strong>. Der Zähler berücksichtigt die ausgewählten Marken, der Nenner alle Marken.</p>
-<pre><code class="language-yaml">brand_share:
+<pre><code class="language-yaml">Markenumsatzanteil:
     type: measure
-    formula: 'divide({sales} * 100.0, {sales: {-df: brand_id}})'
+    formula: 'divide({Umsatz} * 100.0, {Umsatz: {-df: brand_id}})'
 </code></pre>
-<p>Auf der Abfrageebene <code>[store_id, brand_id]</code> gilt ein Abfragefilter auf <code>brand_id</code> für den Zähler. Der Nenner lässt dieses Feld und seinen Filter weg und behält den Filialkontext bei.</p>
-<p><strong>Nachverfolgung von Abhängigkeiten</strong>. Der Compiler verfolgt Abhängigkeiten über <code>pk()</code>-Ketten. Ein Filter auf <code>客户标准名称</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) wird blockiert, wenn <code>store_id</code> mit <code>-df</code> entfernt wird, weil die Spalte von <code>store_id</code> abhängt.</p>
+<p>Auf der Abfrageebene <code>[Filialnummer, brand_id]</code> gilt ein Abfragefilter auf <code>brand_id</code> für den Zähler. Der Nenner lässt dieses Feld und seinen Filter weg und behält den Filialkontext bei.</p>
+<p><strong>Nachverfolgung von Abhängigkeiten</strong>. Der Compiler verfolgt Abhängigkeiten über <code>pk()</code>-Ketten. Ein Filter auf <code>客户标准名称</code> (<code>pk({Filialnummer}).MDM_STORE(Filialnummer).Filialname</code>) wird blockiert, wenn <code>Filialnummer</code> mit <code>-df</code> entfernt wird, weil die Spalte von <code>Filialnummer</code> abhängt.</p>
 <p><strong>Entsprechungen in anderen Systemen</strong></p>
 <table>
 <thead>
@@ -260,16 +260,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <td>Verwenden Sie eine gefilterte Kennzahl (<code>filters:</code> an der Kennzahl).</td>
 </tr>
 </tbody></table>
-<pre><code class="language-sql">-- Product share within category
-SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
-FROM MODEL GROUP BY category, product
+<pre><code class="language-sql">-- Product Anteil within Kategorie
+SELECT Kategorie, Produkt,
+       AGG(Umsatz) as Artikelumsatz,
+       AGG({Umsatz: {dimension: [Kategorie]}}) as Kategoriesumme
+FROM MODEL GROUP BY Kategorie, Produkt
 </code></pre>
 <pre><code class="language-sql">-- Remove time grouping while retaining the selected time filter
-SELECT region, AGG({sales: {-d: dim_dt}}) as selected_period_sales
+SELECT Region, AGG({Umsatz: {-d: dim_dt}}) as UmsatzImZeitraum
 FROM MODEL WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region
+GROUP BY Region
 </code></pre>
 <p><a id="23b--d-on-composite-measures-with-full-outer-join"></a></p>
 <h2 id="-d-on-composite-measures-with-full-outer-join"><code>{-d:}</code> bei zusammengesetzten Kennzahlen mit FULL OUTER JOIN <a class="section-link" aria-label="Link zum Abschnitt" href="#-d-on-composite-measures-with-full-outer-join">#</a></h2>
@@ -279,33 +279,33 @@ GROUP BY region
 <h2 id="combining-modifiers">Modifikatoren kombinieren <a class="section-link" aria-label="Link zum Abschnitt" href="#combining-modifiers">#</a></h2>
 <p>In einer Referenz lassen sich mehrere Modifikatoren kombinieren. Dabei gelten die Regeln für <a href="reference--modifiers.de.html#same-dimension-d-with--d--df--illegal">Konflikte innerhalb derselben Dimension</a> und die <a href="reference--semantics.de.html#44-modifier-schema-constraints">Einschränkungen für Modifikatoren</a>:</p>
 <pre><code class="language-yaml"># Filter + dimension (outer SUM rolls +d back to query grain)
-formula: 'SUM({sales: {+d: customer, +f: {region: "North"}}})'
+formula: 'SUM({Umsatz: {+d: Kunde, +f: {Region: "North"}}})'
 
 # Legal: +d and -d on DIFFERENT fields
-formula: 'SUM({sales: {+d: customer, -d: brand}})'
+formula: 'SUM({Umsatz: {+d: Kunde, -d: Marke}})'
 
 # Rejected: the same field cannot appear in +d and -d or -df in one modifier object:
 # formula: 'SUM({sales: {+d: store_id, -d: store_id}})'
 # formula: '{sales: {+d: store_id, -df: store_id}}'
 
 # Time + dimension
-formula: '{sales: {+d: customer}, yoy}'
+formula: '{Umsatz: {+d: Kunde}, yoy}'
 
 # Dimension + rank
-formula: '{sales: {-d: dim_dt, rank}}'
+formula: '{Umsatz: {-d: dim_dt, rank}}'
 
 # Dimension + filter removal (ratio with deferred filters)
-formula: 'divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})'
+formula: 'divide({Umsatz: {-df: brand_id}} * 100.0, {Umsatz: {-df: [Filialnummer, brand_id]}})'
 
 # Filter + absolute grain (e.g., ratio numerator/denominator at different grains)
-formula: 'DIVIDE({sales: {+f: "status = 1", dimension: [prod_id]}}, {sales: {+f: "status = 1", dimension: [prod_id, store_id]}})'
+formula: 'DIVIDE({Umsatz: {+f: "Bestellstatus = 1", dimension: [Artikelnummer]}}, {Umsatz: {+f: "Bestellstatus = 1", dimension: [Artikelnummer, Filialnummer]}})'
 </code></pre>
 <p>In Model Query SQL:</p>
-<pre><code class="language-sql">SELECT product,
-       AGG({sales: {-d: dt_date, rank}}) as all_time_rank
+<pre><code class="language-sql">SELECT Produkt,
+       AGG({Umsatz: {-d: dt_date, rank}}) as RangÜberAlleJahre
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY Produkt
 </code></pre>
 <p><a id="25-modifier-stacking"></a></p>
 <h2 id="modifier-stacking">Modifikatoren verketten <a class="section-link" aria-label="Link zum Abschnitt" href="#modifier-stacking">#</a></h2>
@@ -318,17 +318,17 @@ GROUP BY product
 #     type: measure
 #     formula: '{sales: yoy}'
 #   ...then: {sales_yoy: rank}
-q_col: '{sales: {yoy, rank}}'
+q_col: '{Umsatz: {yoy, rank}}'
 </code></pre>
-<p><strong>Zeitmodifikatoren und Funktionen mit mehreren Berechnungspfaden:</strong> In der geprüften Version wendet der Compiler <code>ytd</code> sowohl im aktuellen Zweig als auch im Vergleichszweig von <code>yoy</code> an. Im protokollierten Test auf Monatsebene erzeugten <code>{sales: {yoy, ytd}}</code> und <code>{sales: {ytd, yoy}}</code> identisches SQL. Der YTD-Umsatz wird durch den YTD-Umsatz des Vorjahres geteilt. Anschließend wird eins abgezogen. Die monatlichen Wachstumsraten werden dabei nicht addiert. Sortieren Sie Modifikatoren nicht nach Kategorie und leiten Sie nicht allein aus den generierten Namen der Zwischenkennzahlen eine andere Bedeutung ab.</p>
-<p>Makros wie <code>firstday</code> ändern die Ebene, auf der Zeilen oder Summen definiert sind. Für sie gelten bei mehreren Berechnungspfaden zusätzliche Einschränkungen. Kompilieren Sie genau die gewünschte Kombination und prüfen Sie das Ergebnis, bevor Sie sich darauf verlassen. Setzen Sie selbst geschriebene <code>+f</code>-Ausdrücke mit YAML-Indikatoren in Anführungszeichen, wie in <code>{sales: {+f: "amount &gt; 5", yoy}}</code>.</p>
+<p><strong>Zeitmodifikatoren und Funktionen mit mehreren Berechnungspfaden:</strong> In der geprüften Version wendet der Compiler <code>ytd</code> sowohl im aktuellen Zweig als auch im Vergleichszweig von <code>yoy</code> an. Im protokollierten Test auf Monatsebene erzeugten <code>{Umsatz: {yoy, ytd}}</code> und <code>{Umsatz: {ytd, yoy}}</code> identisches SQL. Der YTD-Umsatz wird durch den YTD-Umsatz des Vorjahres geteilt. Anschließend wird eins abgezogen. Die monatlichen Wachstumsraten werden dabei nicht addiert. Sortieren Sie Modifikatoren nicht nach Kategorie und leiten Sie nicht allein aus den generierten Namen der Zwischenkennzahlen eine andere Bedeutung ab.</p>
+<p>Makros wie <code>firstday</code> ändern die Ebene, auf der Zeilen oder Summen definiert sind. Für sie gelten bei mehreren Berechnungspfaden zusätzliche Einschränkungen. Kompilieren Sie genau die gewünschte Kombination und prüfen Sie das Ergebnis, bevor Sie sich darauf verlassen. Setzen Sie selbst geschriebene <code>+f</code>-Ausdrücke mit YAML-Indikatoren in Anführungszeichen, wie in <code>{Umsatz: {+f: "Verkaufsbetrag &gt; 5", yoy}}</code>.</p>
 <p><strong>Zwischenkennzahlen wiederverwenden.</strong> Bevor der Compiler eine neue Zwischenkennzahl erstellt, sucht er unter den vorhandenen Kennzahlen nach derselben Formel. Dabei berücksichtigt er die ausgeschriebene Formel, die Kurzschreibweise und die Map-Form. Findet er eine passende benutzerdefinierte oder zuvor generierte Kennzahl, verwendet er sie erneut. So entstehen keine überflüssigen Zwischenkennzahlen, und Sie können deren Namen gezielt festlegen.</p>
-<p><strong>Namenskonflikte behandeln.</strong> Wenn der automatisch generierte Name einer Zwischenkennzahl (z. B. <code>sales_yoy</code>) mit dem Namen einer vorhandenen Kennzahl übereinstimmt, die eine <em>andere</em> Formel hat, hängt der Compiler ein numerisches Suffix an, etwa <code>sales_yoy__2</code> oder <code>sales_yoy__3</code>.</p>
+<p><strong>Namenskonflikte behandeln.</strong> Wenn der automatisch generierte Name einer Zwischenkennzahl (z. B. <code>UmsatzZumVorjahr</code>) mit dem Namen einer vorhandenen Kennzahl übereinstimmt, die eine <em>andere</em> Formel hat, hängt der Compiler ein numerisches Suffix an, etwa <code>sales_yoy__2</code> oder <code>sales_yoy__3</code>.</p>
 <p><strong>Kompatibilität:</strong> Ob eine Verkettung gültig ist, hängt von den Voraussetzungen der Makros, dem Zeitkontext, den zulässigen Dimensionen, doppelten Schlüsseln und der erneuten Aggregation ab. Kompilieren Sie genau diese Verkettung mit der Zielversion. Zwei Bereichsmakros oder wiederholte Makroschlüssel lassen sich nicht als allgemeines Mittel zur Verkettung verwenden. Wenn nach der expliziten Angabe der einzelnen Schritte weiterhin ein Fehler auftritt, bewahren Sie die Diagnosemeldung und das reproduzierbare Beispiel auf. Eine manuell benannte Zwischenkennzahl belegt für sich allein keine Gleichwertigkeit.</p>
 <h2 id="修饰符速查">Modifikatoren im Überblick <a class="section-link" aria-label="Link zum Abschnitt" href="#修饰符速查">#</a></h2>
-<p>Modifikatoren wirken sich nur auf die jeweilige Kennzahlreferenz aus. Mit <code>{sales: {+f: {status: completed}}}</code> schränken Sie die Eingabedaten der Kennzahl ein. Mit <code>+d</code> fügen Sie der Berechnung eine Gruppierung hinzu. Eine äußere Aggregation führt das Ergebnis anschließend auf die Gruppierung des Berichts zurück. Mit <code>-d</code> entfernen Sie eine Gruppierungsdimension. Mit <code>-df</code> entfernen Sie zugleich die zugehörigen Filter auf dieser Dimension. Der Zeitmodifikator <code>pp</code> liefert den Wert der Vorperiode, <code>pop</code> berechnet die relative Veränderung gegenüber der Vorperiode und <code>ytd</code> berechnet den kumulierten Wert seit Jahresbeginn. Mehrere Modifikatoren werden in der angegebenen Reihenfolge angewendet.</p>
+<p>Modifikatoren wirken sich nur auf die jeweilige Kennzahlreferenz aus. Mit <code>{Umsatz: {+f: {Bestellstatus: completed}}}</code> schränken Sie die Eingabedaten der Kennzahl ein. Mit <code>+d</code> fügen Sie der Berechnung eine Gruppierung hinzu. Eine äußere Aggregation führt das Ergebnis anschließend auf die Gruppierung des Berichts zurück. Mit <code>-d</code> entfernen Sie eine Gruppierungsdimension. Mit <code>-df</code> entfernen Sie zugleich die zugehörigen Filter auf dieser Dimension. Der Zeitmodifikator <code>pp</code> liefert den Wert der Vorperiode, <code>pop</code> berechnet die relative Veränderung gegenüber der Vorperiode und <code>ytd</code> berechnet den kumulierten Wert seit Jahresbeginn. Mehrere Modifikatoren werden in der angegebenen Reihenfolge angewendet.</p>
 <h2 id="time-modifiers-on-composite-ratios">Zeitmodifikatoren für zusammengesetzte Verhältniskennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#time-modifiers-on-composite-ratios">#</a></h2>
-<p>Ein Zeitmodifikator lässt sich direkt auf eine benannte zusammengesetzte Kennzahl anwenden. Definieren Sie beispielsweise <code>gross_margin_ytd</code> mit <code>formula: '{gross_margin: ytd}'</code>. Dabei teilt <code>gross_margin</code> den Bruttogewinn durch den Umsatz. Im kumulierten Zeitkontext werden zuerst die zugrunde liegenden Kennzahlen und anschließend das Verhältnis neu berechnet. Die Monatsprozentsätze werden nicht addiert. Siehe das <a href="reference--examples--composable-metrics.de.html">vollständige Beispiel zur Profitabilität</a>. Dieses geprüfte Beispiel belegt nicht, dass sich beliebige nicht additive Formeln ohne Prüfung ihrer Semantik auf einer höheren Ebene aggregieren lassen.</p>
+<p>Ein Zeitmodifikator lässt sich direkt auf eine benannte zusammengesetzte Kennzahl anwenden. Definieren Sie beispielsweise <code>BruttomargeSeitJahresbeginn</code> mit <code>formula: '{Bruttomarge: ytd}'</code>. Dabei teilt <code>Bruttomarge</code> den Bruttogewinn durch den Umsatz. Im kumulierten Zeitkontext werden zuerst die zugrunde liegenden Kennzahlen und anschließend das Verhältnis neu berechnet. Die Monatsprozentsätze werden nicht addiert. Siehe das <a href="reference--examples--composable-metrics.de.html">vollständige Beispiel zur Profitabilität</a>. Dieses geprüfte Beispiel belegt nicht, dass sich beliebige nicht additive Formeln ohne Prüfung ihrer Semantik auf einer höheren Ebene aggregieren lassen.</p>
 <h2 id="fixed-axis-totals-and-output-membership">Summen mit festen Achsen und Auswahl der Ausgabezeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#fixed-axis-totals-and-output-membership">#</a></h2>
-<p>Das <a href="examples--fixed-total.de.html">Beispiel mit fester Summe</a> verwendet ein gewöhnliches Feld namens <code>month</code> und eine Abfrage, die nach Region und Monat gruppiert. Wenn Januar ausgewählt ist, bleibt der Nenner mit <code>-d: month</code> auf Januar beschränkt, während <code>-df: month</code> beide Monate der Testdaten einbezieht. Beide Abfragen geben weiterhin ausschließlich Zeilen für Januar aus. Aus diesen Testdaten lassen sich keine Aussagen über dynamische Pivot-Achsen, Prädikate auf Zwischensummenebene oder das Entfernen von <code>dim_dt</code> in beliebigen Fällen ableiten.</p>
+<p>Das <a href="examples--fixed-total.de.html">Beispiel mit fester Summe</a> verwendet das Datumsfeld <code>dt_month</code> und eine Abfrage, die nach Region und Monat gruppiert. Wenn Januar ausgewählt ist, bleibt der Nenner mit <code>-d: dt_month</code> auf Januar beschränkt, während <code>-df: dt_month</code> beide Monate der Testdaten einbezieht. Beide Abfragen geben weiterhin ausschließlich Zeilen für Januar aus. Aus diesen Testdaten lassen sich keine Aussagen über dynamische Pivot-Achsen, Prädikate auf Zwischensummenebene oder das Entfernen von <code>dim_dt</code> in beliebigen Fällen ableiten.</p>
 </main></body></html>

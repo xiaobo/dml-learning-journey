@@ -5,24 +5,28 @@
 <details><summary>Vollständige Datei: ytd/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+Verkäufe:
   type: dataset
   table: YTD_FACT
-  dimension: [id]
+  dimension: [Kennung]
   columns:
-    id:
+    Kennung:
+      abbr: id
     dt_month:
-    revenue_amount:
-    profit_amount:
+      abbr: dt_month
+    Erlösbetrag:
+      abbr: revenue_amount
+    Gewinnbetrag:
+      abbr: profit_amount
   measures:
-    revenue: SUM({revenue_amount})
-    profit: SUM({profit_amount})
-margin:
+    Erlös: SUM({Erlösbetrag})
+    Gewinn: SUM({Gewinnbetrag})
+Gewinnmarge:
   type: measure
-  formula: 'DIVIDE({profit} * 1.0, {revenue})'
-margin_ytd:
+  formula: 'DIVIDE({Gewinn} * 1.0, {Erlös})'
+GewinnmargeSeitJahresbeginn:
   type: measure
-  formula: '{margin: ytd}'
+  formula: '{Gewinnmarge: ytd}'
 </code></pre>
 </details>
 <details><summary>Vollständige Datei: ytd/setup.sql</summary>
@@ -32,15 +36,15 @@ margin_ytd:
 </details>
 <details><summary>Vollständige Datei: ytd/february.sql</summary>
 
-<pre><code class="language-sql">SELECT AGG(margin_ytd), AGG(revenue) FROM MODEL WHERE dt_month='2024-02-01'
+<pre><code class="language-sql">SELECT AGG(GewinnmargeSeitJahresbeginn), AGG(Erlös) FROM MODEL WHERE dt_month='2024-02-01'
 </code></pre>
 </details>
 
-<p>Das Modell definiert <code>margin_ytd</code> als <code>'{margin: ytd}'</code>. Zähler und Nenner werden jeweils über den gesamten kumulierten Zeitraum berechnet, bevor sie dividiert werden. Der Durchschnitt aus 30% und 15% beantwortet eine andere Frage.</p>
+<p>Das Modell definiert <code>GewinnmargeSeitJahresbeginn</code> als <code>'{Gewinnmarge: ytd}'</code>. Zähler und Nenner werden jeweils über den gesamten kumulierten Zeitraum berechnet, bevor sie dividiert werden. Der Durchschnitt aus 30% und 15% beantwortet eine andere Frage.</p>
 <h2 id="observe-missing-context">Das Verhalten bei fehlendem Zeitkontext prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#observe-missing-context">#</a></h2>
 <details><summary>Vollständige Datei: ytd/missing_context.sql</summary>
 
-<pre><code class="language-sql">SELECT AGG(margin_ytd) FROM MODEL
+<pre><code class="language-sql">SELECT AGG(GewinnmargeSeitJahresbeginn) FROM MODEL
 </code></pre>
 </details>
 
@@ -48,7 +52,7 @@ margin_ytd:
 <h2 id="grouped-months-can-exist-without-sales">Die Gruppierung kann auch Monate ohne Verkäufe enthalten <a class="section-link" aria-label="Link zum Abschnitt" href="#grouped-months-can-exist-without-sales">#</a></h2>
 <details><summary>Vollständige Datei: ytd/months.sql</summary>
 
-<pre><code class="language-sql">SELECT dt_month, AGG(margin_ytd), AGG(revenue) FROM MODEL GROUP BY dt_month ORDER BY dt_month
+<pre><code class="language-sql">SELECT dt_month, AGG(GewinnmargeSeitJahresbeginn), AGG(Erlös) FROM MODEL GROUP BY dt_month ORDER BY dt_month
 </code></pre>
 </details>
 
@@ -56,6 +60,6 @@ margin_ytd:
 <p>Wenn der Bericht genau einen Monat als Ende des kumulierten Zeitraums benötigt, setzen Sie dafür einen expliziten Filter. Prüfen Sie nach einer Änderung des Zeitraums sowohl die ausgegebenen Monate als auch den Zeitraum der Eingangsdaten für jede Kennzahl.</p>
 <p><a hreflang="zh" href="examples--time-context-zh.html">中文</a> · <a href="examples--index.de.html">Beispiele</a> · <a href="how-to--compile-and-validate.de.html">Kompilieren und prüfen</a></p>
 <h2 id="run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen <a class="section-link" aria-label="Link zum Abschnitt" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
-<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-13) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
+<p><a href="task-examples.de.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
+<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-27) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
 </main></body></html>

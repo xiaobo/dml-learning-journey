@@ -27,35 +27,39 @@
 </tbody></table>
 <p>Prüfen Sie das generierte SQL, um festzustellen, in welcher Stufe jedes Fenster ausgewertet wird. Kompilierung, Ausführung in der Datenbank und Ergebnisvergleich sind separate Prüfschritte.</p>
 <h2 id="detail-window">Detailfenster <a class="section-link" aria-label="Link zum Abschnitt" href="#detail-window">#</a></h2>
-<pre><code class="language-yaml">fact:
+<pre><code class="language-yaml">Transaktionsdaten:
   type: dataset
   table: FACT_SALES
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
-    customer:
-    region:
-    amount:
-    customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
+    VerkaufspositionID:
+      abbr: id
+    Kunde:
+      abbr: customer
+    Region:
+      abbr: region
+    Verkaufsbetrag:
+      abbr: amount
+    Kundenbetrag: 'SUM({Verkaufsbetrag}) OVER (PARTITION BY {Kunde})'
   measures:
-    repeated_customer_amount: 'SUM({customer_amount})'
+    KundenbetragJeZeile: 'SUM({Kundenbetrag})'
 </code></pre>
 <p>Das Fenster gibt die Gesamtsumme eines Kunden in jeder Detailzeile dieses Kunden aus. Beim Summieren der berechneten Spalte fließt diese Gesamtsumme einmal pro Quellzeile ein. Das Ergebnis enthält die Kundensummen daher mehrfach, wenn mehrere Zeilen zum selben Kunden vorliegen. Das Beispiel veranschaulicht die Platzierung und dient nicht als Empfehlung für eine Umsatzkennzahl.</p>
 <p>Ein Fenster, dessen Ergebnis von der Zeilenreihenfolge abhängt, hängt auch von der Sortierung, dem Fensterrahmen, dem Schlüssel zur Auflösung von Gleichständen und der Menge der Quellzeilen ab. Wird ein Filter in einer anderen Stufe angewendet, kann sich jedes Fensterergebnis innerhalb einer Partition ändern.</p>
-<p>Ein Detailfenster kann auch vor der Aggregation eine letzte Beobachtung auswählen. Für eine Quelle mit <code>dt_month</code> und <code>revenue_amount</code> fügt die geprüfte Variante die folgende Spalte und Kennzahl hinzu.</p>
+<p>Ein Detailfenster kann auch vor der Aggregation eine letzte Beobachtung auswählen. Für eine Quelle mit <code>dt_month</code> und <code>Erlösbetrag</code> fügt die geprüfte Variante die folgende Spalte und Kennzahl hinzu.</p>
 <pre><code class="language-yaml"># Under the dataset's columns:
-is_last_month: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
+ImVormonat: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
 # Under the same dataset's measures:
-last_month_revenue: 'SUM({revenue_amount} * {is_last_month})'
+Vormonatserlös: 'SUM({Erlösbetrag} * {ImVormonat})'
 </code></pre>
 <p><code>MAX(...) OVER ()</code> bestimmt den jüngsten Monat in den Eingabezeilen des Detailfensters. Die Kennzahl summiert ausschließlich Beträge aus diesem Monat. Das Fenster partitioniert nicht nach Entität. Liegt für eine Entität in diesem Monat keine Beobachtung vor, wird ihr letzter bekannter Bestand oder Kontostand nicht fortgeschrieben. Legen Sie bei Lagerbeständen oder Kontoständen vor der Übernahme einer Formel fest, ob „letzte“ je Entität oder für alle gemeinsam gilt, wie fehlende Beobachtungen behandelt werden und welche Filter die Eingabezeilen des Fensters eingrenzen.</p>
 <h2 id="post-aggregation-window">Fenster nach der Aggregation <a class="section-link" aria-label="Link zum Abschnitt" href="#post-aggregation-window">#</a></h2>
-<p>Ausgehend von der atomaren Kennzahl <code>sales: SUM({amount})</code> ermittelt diese zusammengesetzte Formel den Rang der aggregierten Umsätze.</p>
-<pre><code class="language-yaml">customer_rank:
+<p>Ausgehend von der atomaren Kennzahl <code>Umsatz: SUM({Verkaufsbetrag})</code> ermittelt diese zusammengesetzte Formel den Rang der aggregierten Umsätze.</p>
+<pre><code class="language-yaml">Kundenrang:
   type: measure
-  formula: 'rank() over (partition by {-d: customer} order by {sales} desc)'
+  formula: 'rank() over (partition by {-d: Kunde} order by {Umsatz} desc)'
 </code></pre>
-<p>Wenn die Abfragezeilen auf der Ebene <code>[region, customer]</code> definiert sind, behält der Partitionierungsausdruck die übrigen Abfragefelder bei, hier <code>region</code>. Das geprüfte SQL gruppiert nach Region und Kunde und ermittelt dann innerhalb jeder Region den Rang von <code>SUM(amount)</code>. Die physischen Faktzeilen dienen nicht als Eingabe für die Rangberechnung.</p>
+<p>Wenn die Abfragezeilen auf der Ebene <code>[Region, Kunde]</code> definiert sind, behält der Partitionierungsausdruck die übrigen Abfragefelder bei, hier <code>Region</code>. Das geprüfte SQL gruppiert nach Region und Kunde und ermittelt dann innerhalb jeder Region den Rang von <code>SUM(amount)</code>. Die physischen Faktzeilen dienen nicht als Eingabe für die Rangberechnung.</p>
 <p><code>+d</code> richtet eine Aggregationsstufe mit feinerer Granularität ein. Ein gruppierter Wert wird dadurch nicht zum Attribut eines Detailfensters. Filter auf Quelldaten, Filter auf Fensterergebnisse und Filter im abschließenden Bericht können unterschiedliche Zeilenmengen auswählen.</p>
 <p>Model Query akzeptiert auch die geprüften direkten Fensterausdrücke. Die <a href="reference--model-query-sql.de.html">Abfragereferenz</a> beschreibt die verfügbaren Abfrageschnittstellen. Aus der Unterstützung einer Schreibweise lässt sich keine Unterstützung beliebiger Fensterrahmen oder Dialekte ableiten.</p>
 <h2 id="row-windows-and-calendar-periods">Zeilenfenster und Kalenderzeiträume <a class="section-link" aria-label="Link zum Abschnitt" href="#row-windows-and-calendar-periods">#</a></h2>

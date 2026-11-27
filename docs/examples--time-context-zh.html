@@ -1,46 +1,50 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>只显示一个累计 KPI，时间截止点放在哪里？ · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="累计指标需要明确的时间上下文；同一个查询的日期筛选也会影响其他普通指标。 不应默认为今天或数据中最新日期。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-zh.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="只显示一个累计 KPI，时间截止点放在哪里？ · DML"><meta property="og:description" content="累计指标需要明确的时间上下文；同一个查询的日期筛选也会影响其他普通指标。 不应默认为今天或数据中最新日期。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--time-context-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="examples--time-context.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="examples--time-context.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--time-context-en.html">English</a></header><main><h1 id="只显示一个累计-kpi时间截止点放在哪里">只显示一个累计 KPI，时间截止点放在哪里？</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#一个比率两种时间范围">一个比率，两种时间范围</a></li><li><a href="#缺少时间上下文时">缺少时间上下文时</a></li><li><a href="#按月份分组不保证只出现有销售的月份">按月份分组不保证只出现有销售的月份</a></li><li><a href="#运行与验证范围">运行与验证范围</a></li></ul></details>
 <p><strong>累计指标需要明确的时间上下文；同一个查询的日期筛选也会影响其他普通指标。</strong> 不应默认为今天或数据中最新日期。</p>
 <h2 id="一个比率两种时间范围">一个比率，两种时间范围 <a class="section-link" aria-label="本节链接" href="#一个比率两种时间范围">#</a></h2>
-<p>一月收入10、利润3；二月收入20、利润3。二月查询中，累计毛利率为 <code>(3+3)/(10+20)=20%</code>，普通收入为20，而不是累计收入30。</p>
+<p>一月收入10、利润3；二月收入20、利润3。二月查询中，年初至今利润率为 <code>(3+3)/(10+20)=20%</code>，普通收入为20，而不是累计收入30。</p>
 <details><summary>完整文件 / Complete file: ytd/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+销售记录:
   type: dataset
   table: YTD_FACT
-  dimension: [id]
+  dimension: [编号]
   columns:
-    id:
+    编号:
+      abbr: id
     dt_month:
-    revenue_amount:
-    profit_amount:
+      abbr: dt_month
+    收入金额:
+      abbr: revenue_amount
+    利润金额:
+      abbr: profit_amount
   measures:
-    revenue: SUM({revenue_amount})
-    profit: SUM({profit_amount})
-margin:
+    收入: SUM({收入金额})
+    利润: SUM({利润金额})
+利润率:
   type: measure
-  formula: &#39;DIVIDE({profit} * 1.0, {revenue})&#39;
-margin_ytd:
+  formula: 'DIVIDE({利润} * 1.0, {收入})'
+年初至今利润率:
   type: measure
-  formula: &#39;{margin: ytd}&#39;
+  formula: '{利润率: ytd}'
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: ytd/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE YTD_FACT(id INTEGER, dt_month DATE,revenue_amount INTEGER,profit_amount INTEGER); INSERT INTO YTD_FACT VALUES (1,&#39;2024-01-01&#39;,10,3),(2,&#39;2024-02-01&#39;,20,3);
+<pre><code class="language-sql">CREATE TABLE YTD_FACT(id INTEGER, dt_month DATE,revenue_amount INTEGER,profit_amount INTEGER); INSERT INTO YTD_FACT VALUES (1,'2024-01-01',10,3),(2,'2024-02-01',20,3);
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: ytd/february.sql</summary>
 
-<pre><code class="language-sql">SELECT AGG(margin_ytd), AGG(revenue) FROM MODEL WHERE dt_month=&#39;2024-02-01&#39;
+<pre><code class="language-sql">SELECT AGG(年初至今利润率), AGG(收入) FROM MODEL WHERE dt_month='2024-02-01'
 </code></pre>
 </details>
 
-<p>模型中 <code>margin_ytd</code> 使用 <code>&#39;{margin: ytd}&#39;</code>。先在累计范围计算组成项，再相除，不能把30%与15%直接平均。</p>
+<p>模型中 <code>年初至今利润率</code> 使用 <code>&#39;{利润率: ytd}&#39;</code>。先在累计范围计算组成项，再相除，不能把30%与15%直接平均。</p>
 <h2 id="缺少时间上下文时">缺少时间上下文时 <a class="section-link" aria-label="本节链接" href="#缺少时间上下文时">#</a></h2>
 <details><summary>完整文件 / Complete file: ytd/missing_context.sql</summary>
 
-<pre><code class="language-sql">SELECT AGG(margin_ytd) FROM MODEL
+<pre><code class="language-sql">SELECT AGG(年初至今利润率) FROM MODEL
 </code></pre>
 </details>
 
@@ -48,15 +52,15 @@ margin_ytd:
 <h2 id="按月份分组不保证只出现有销售的月份">按月份分组不保证只出现有销售的月份 <a class="section-link" aria-label="本节链接" href="#按月份分组不保证只出现有销售的月份">#</a></h2>
 <details><summary>完整文件 / Complete file: ytd/months.sql</summary>
 
-<pre><code class="language-sql">SELECT dt_month, AGG(margin_ytd), AGG(revenue) FROM MODEL GROUP BY dt_month ORDER BY dt_month
+<pre><code class="language-sql">SELECT dt_month, AGG(年初至今利润率), AGG(收入) FROM MODEL GROUP BY dt_month ORDER BY dt_month
 </code></pre>
 </details>
 
-<p>本夹具返回12个月：一月累计30%、收入10；二月累计20%、收入20；三月至十二月累计20%、普通收入为 NULL。累计分支使用日历产生的月份，不能把这些行描述为新增交易，也不能把 NULL 当成零收入。</p>
+<p>这个例子返回12个月：一月累计30%、收入10；二月累计20%、收入20；三月至十二月累计20%、普通收入为 NULL。累计分支使用日历产生的月份，不能把这些行描述为新增交易，也不能把 NULL 当成零收入。</p>
 <p>如果报表只需要某个截止月份，请显式筛选。改变日期范围后，仍需检查输出月份与每个指标的范围。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
-<p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
+<p><a href="task-examples.zh.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p>本例在 dmlc 0.3.16、2026-11-27 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--time-context-en.html">English</a></p>
 </main></body></html>

@@ -13,7 +13,17 @@ GROUP BY id, region
 HAVING COUNT(*) &gt; 1;</code></pre>
 <table>
 <thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
-<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table><details><summary>See how the lookup key is defined in DML</summary><pre><code>D:
+  type: dataset
+  table: DIM
+  dimension: [id, region]
+  columns:
+    id:
+      abbr: id
+    region:
+      abbr: region
+    label:
+      abbr: label</code></pre></details>
 </section>
 <section>
 <h2>How does this affect the report?</h2>

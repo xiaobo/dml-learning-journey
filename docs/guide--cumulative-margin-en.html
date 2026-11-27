@@ -33,7 +33,7 @@
 <p>The cumulative result is (400 − 300) / 400 = <strong>25%</strong>. Averaging 40% and 20% gives 30%, which answers a different question: the unweighted average of monthly ratios. The two methods agree in some cases, such as equal monthly revenue, but cannot be substituted generally.</p>
 <h2 id="see-the-calculation-change">See the calculation change <a class="section-link" aria-label="Link to section" href="#see-the-calculation-change">#</a></h2>
 <p><a href="learn.en.html#gross-margin">Open the gross margin animation</a>, select North, and choose the fourth scene. Switch from the monthly context to year to date. Revenue changes from 300 to 400, cost from 240 to 300, and the margin from 20% to 25%.</p>
-<p>Apply the period to the named ratio with <code>formula: &#39;{gross_margin: ytd}&#39;</code>. This recalculates the ratio over the cumulative period, rather than adding monthly ratios. The short form was executed on DuckDB and checked against independent SQL; the SQL Server compiler record alone is not evidence of database execution. The model is:</p>
+<p>The model applies <code>ytd</code> to net revenue and sales cost. It subtracts cumulative cost from cumulative revenue, then divides by cumulative revenue.</p>
 <details><summary>Inspect the complete DML model</summary>
 
 <pre><code class="language-yaml">dialect: mssql
@@ -44,39 +44,44 @@ FACT_PROFITABILITY:
   dimension: [id]
   columns:
     id:
+      abbr: id
     region:
+      abbr: region
     dt_month:
+      abbr: dt_month
     revenue_amount:
+      abbr: revenue_amount
     cost_amount:
+      abbr: cost_amount
   measures:
     net_revenue: SUM({revenue_amount})
     sales_cost: SUM({cost_amount})
 
 gross_profit:
   type: measure
-  formula: &#39;{net_revenue} - {sales_cost}&#39;
+  formula: '{net_revenue} - {sales_cost}'
 
 gross_margin:
   type: measure
-  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+  formula: 'DIVIDE({gross_profit}, {net_revenue})'
 
 gross_margin_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
 
 gross_margin_prior_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
 
 margin_change_pp:
   type: measure
-  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
 </code></pre>
 </details>
 
 <h2 id="a-difference-in-percentage-points">A difference in percentage points <a class="section-link" aria-label="Link to section" href="#a-difference-in-percentage-points">#</a></h2>
 <p>North&#39;s prior-year cumulative margin is 20%. Moving from 20% to 25% is an increase of <strong>5 percentage points</strong>. Relative growth is (25% / 20%) − 1 = 25%; label these calculations separately.</p>
-<p><a href="reference--examples--composable-metrics.html">Read the complete worked example</a> or <a href="profitability-comparison.sql">download the comparison query</a>. The <a href="profitability-compiler-observations.json">compiler record</a> covers strict compilation and SQL inspection, not database execution. Use decimal monetary columns in your physical table. Zero revenue produces NULL; missing history remains missing.</p>
+<p><a href="reference--examples--composable-metrics.html">Read the complete worked example</a> or <a href="profitability-comparison.en.sql" download="comparison.sql">download the comparison query</a>. The <a href="profitability-compiler-observations.en.json" download="compiler-observations.json">compiler record</a> covers strict compilation and SQL inspection, not database execution. Use decimal monetary columns in your physical table. Zero revenue produces NULL; missing history remains missing.</p>
 <h2 id="continue-learning">Continue learning <a class="section-link" aria-label="Link to section" href="#continue-learning">#</a></h2>
 <p><a href="journey.en.html#expressions">How composite measures reuse definitions</a> · <a href="journey.en.html#time">Change the calculation context</a> · <a hreflang="zh" href="guide--cumulative-margin-zh.html">中文</a></p>
-</main></body></html>
+<p><a data-profit-download href="profitability-example.en.zip">Download the gross margin example</a></p></main></body></html>

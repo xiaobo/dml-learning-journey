@@ -1,0 +1,41 @@
+dialect: mssql
+
+ErlöseUndKosten:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [VerkaufspositionID]
+  columns:
+    VerkaufspositionID:
+      abbr: id
+    Quellregion:
+      abbr: region
+    Region: '{Quellregion}'
+    dt_month:
+      abbr: dt_month
+    Erlösbetrag:
+      abbr: revenue_amount
+    Kostenbetrag:
+      abbr: cost_amount
+  measures:
+    Nettoerlös: SUM({Erlösbetrag})
+    Umsatzkosten: SUM({Kostenbetrag})
+
+Rohertrag:
+  type: measure
+  formula: '{Nettoerlös} - {Umsatzkosten}'
+
+Bruttomarge:
+  type: measure
+  formula: 'DIVIDE({Rohertrag}, {Nettoerlös})'
+
+BruttomargeSeitJahresbeginn:
+  type: measure
+  formula: 'DIVIDE({Nettoerlös: ytd} - {Umsatzkosten: ytd}, {Nettoerlös: ytd})'
+
+BruttomargeImVorjahreszeitraum:
+  type: measure
+  formula: 'DIVIDE({Nettoerlös: {ytd, ya}} - {Umsatzkosten: {ytd, ya}}, {Nettoerlös: {ytd, ya}})'
+
+MargenänderungInProzentpunkten:
+  type: measure
+  formula: '100 * ({BruttomargeSeitJahresbeginn} - {BruttomargeImVorjahreszeitraum})'

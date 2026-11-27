@@ -13,7 +13,17 @@ GROUP BY id, region
 HAVING COUNT(*) &gt; 1;</code></pre>
 <table>
 <thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
-<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table><details><summary>DMLでキーの定義を確認する</summary><pre><code>対応表:
+  type: dataset
+  table: DIM
+  dimension: [番号, 地域]
+  columns:
+    番号:
+      abbr: id
+    地域:
+      abbr: region
+    名称:
+      abbr: label</code></pre></details>
 </section>
 <section>
 <h2>レポートの数字はどう変わる？</h2>

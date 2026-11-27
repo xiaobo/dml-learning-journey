@@ -6,55 +6,60 @@
 <p>Der logische Datensatz heißt FACT_PROFITABILITY und seine physische Quelle ist TABLE_PROFITABILITY. Die Quellfelder und Kennzahlen haben unterschiedliche Namen, damit die Referenzen eindeutig sind. Der vollständige Quellschlüssel lautet [id]. Verwenden Sie in der physischen Tabelle Dezimaltypen für revenue_amount und cost_amount. CSV enthält keine SQL-Spaltentypen, und bei einer Ganzzahldivision ginge der Nachkommaanteil der Marge verloren.</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_PROFITABILITY:
+ErlöseUndKosten:
   type: dataset
   table: TABLE_PROFITABILITY
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
-    region:
+    VerkaufspositionID:
+      abbr: id
+    Region:
+      abbr: region
     dt_month:
-    revenue_amount:
-    cost_amount:
+      abbr: dt_month
+    Erlösbetrag:
+      abbr: revenue_amount
+    Kostenbetrag:
+      abbr: cost_amount
   measures:
-    net_revenue: SUM({revenue_amount})
-    sales_cost: SUM({cost_amount})
+    Nettoerlös: SUM({Erlösbetrag})
+    Umsatzkosten: SUM({Kostenbetrag})
 
-gross_profit:
+Rohertrag:
   type: measure
-  formula: '{net_revenue} - {sales_cost}'
+  formula: '{Nettoerlös} - {Umsatzkosten}'
 
-gross_margin:
+Bruttomarge:
   type: measure
-  formula: 'DIVIDE({gross_profit}, {net_revenue})'
+  formula: 'DIVIDE({Rohertrag}, {Nettoerlös})'
 
-gross_margin_ytd:
+BruttomargeSeitJahresbeginn:
   type: measure
-  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+  formula: 'DIVIDE({Nettoerlös: ytd} - {Umsatzkosten: ytd}, {Nettoerlös: ytd})'
 
-gross_margin_prior_ytd:
+BruttomargeImVorjahreszeitraum:
   type: measure
-  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+  formula: 'DIVIDE({Nettoerlös: {ytd, ya}} - {Umsatzkosten: {ytd, ya}}, {Nettoerlös: {ytd, ya}})'
 
-margin_change_pp:
+MargenänderungInProzentpunkten:
   type: measure
-  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
+  formula: '100 * ({BruttomargeSeitJahresbeginn} - {BruttomargeImVorjahreszeitraum})'
 </code></pre>
 <p>Sie können <a href="profitability-model.dml">model.dml</a>, die <a href="TABLE_PROFITABILITY.csv">Quelldaten als CSV</a> oder die <a href="profitability-data.json">Quelldaten als JSON</a> herunterladen.</p>
 <h2 id="change-the-context">Den Kontext ändern <a class="section-link" aria-label="Link zum Abschnitt" href="#change-the-context">#</a></h2>
 <p>Für North beträgt der Umsatz im Februar 2025 300, die Kosten betragen 240. Daraus ergibt sich eine Marge von 20%. Im Januar beträgt der Umsatz 100 bei Kosten von 60 und einer Marge von 40%. Seit Jahresbeginn betragen der Umsatz 400 und die Kosten 300. Die kumulierte Marge beträgt 25% und entspricht damit nicht dem einfachen Durchschnitt der Monatsmargen von 30%.</p>
-<p>Wenden Sie den Zeitmodifikator direkt auf die benannte Verhältniskennzahl an: <code>formula: '{gross_margin: ytd}'</code>. Dadurch wird die Bruttomarge aus den zugrunde liegenden Umsätzen und Kosten für den kumulierten Zeitraum neu berechnet. Die monatlichen Prozentwerte werden weder addiert noch gemittelt. Für YTD im Vorjahr verwenden Sie <code>'{gross_margin: {ytd, ya}}'</code>.</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+<p>Im Modell zum Herunterladen gilt <code>ytd</code> sowohl für den Nettoerlös als auch für die Umsatzkosten. Das Modell zieht die kumulierten Kosten vom kumulierten Erlös ab und teilt die Differenz durch den kumulierten Erlös. Für den Vorjahreszeitraum gilt <code>{ytd, ya}</code> für beide Beträge.</p>
+<pre><code class="language-sql">SELECT Region, dt_month, AGG(BruttomargeSeitJahresbeginn)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY Region, dt_month
 </code></pre>
 <h2 id="compare-the-same-period">Den gleichen Zeitraum vergleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#compare-the-same-period">#</a></h2>
 <p>Von Januar bis Februar 2024 beträgt der Umsatz für North 200 bei Kosten von 160. Daraus ergibt sich eine kumulierte Marge von 20%. Die aktuelle kumulierte Marge von 25% liegt <strong>5 Prozentpunkte höher</strong>. Das relative Wachstum läge bei 25%. Es wird anders berechnet und entspricht nicht der angezeigten Differenz.</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+<pre><code class="language-sql">SELECT Region, dt_month, AGG(BruttomargeSeitJahresbeginn), AGG(BruttomargeImVorjahreszeitraum), AGG(MargenänderungInProzentpunkten)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY Region, dt_month
 </code></pre>
 <p>Laden Sie die <a href="profitability-monthly.sql">monatliche Abfrage</a>, die <a href="profitability-cumulative.sql">kumulative Abfrage</a> oder die <a href="profitability-comparison.sql">Vergleichsabfrage</a> herunter. Für Standardzeitberechnungen muss außerdem die DML_CALENDAR des Compilers auf der Zielverbindung verfügbar sein.</p>
 <h2 id="inspect-the-evidence">Die Prüfergebnisse ansehen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-evidence">#</a></h2>

@@ -202,7 +202,7 @@
 <li><strong>错误码</strong>：VALIDATION_ERROR。请在 <code>data.issues</code> 中查看问题类型。</li>
 <li><strong>常见原因</strong>：数据集的完整维度值组合出现多次，或按范围查找时可能匹配到范围相互重叠的源数据行。</li>
 <li><strong>建议的修复方法</strong>：修正源键、数据集的 <code>dimension:</code> 字段列表、重叠的范围或源数据，然后重新运行 <code>--validate</code>。无论是在编译生成的 SQL 中使用 <code>DISTINCT</code>/<code>GROUP BY</code>，还是使用 <code>DISTINCTCOUNT</code> 指标，都无法解决 <code>pk(...)</code> 查找结果不唯一的问题。</li>
-<li><strong>示例</strong>：<code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+<li><strong>示例</strong>：<code>Declared DML dataset dimension is not unique in dataset '订单明细' on this connection at validation time.</code></li>
 </ul>
 <p><a id="validation_query_failed"></a></p>
 <h4 id="execution_error-1">EXECUTION_ERROR</h4>

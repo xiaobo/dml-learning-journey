@@ -1,0 +1,74 @@
+dialect: mssql
+
+地区名录:
+  type: dataset
+  table: TABLE_REGION
+  dimension: [地区]
+  columns:
+    地区:
+      abbr: region
+    地区负责人:
+      abbr: manager
+
+销售明细:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [销售明细编号]
+  columns:
+    销售明细编号:
+      abbr: id
+    源表地区:
+      abbr: region
+    地区: '{源表地区}'
+    客户:
+      abbr: customer
+    dt_month:
+      abbr: dt_month
+    订单状态:
+      abbr: status
+    销售金额:
+      abbr: amount
+    地区负责人: 'pk(region).{地区名录}.地区负责人'
+  measures:
+    销售额: SUM({销售金额})
+    销售笔数: COUNT(1)
+
+每笔平均销售额:
+  type: measure
+  formula: 'DIVIDE({销售额}, {销售笔数})'
+
+已完成订单销售额:
+  type: measure
+  formula: '{销售额: {+f: {订单状态: completed}}}'
+
+所选地区内销售占比:
+  type: measure
+  formula: 'DIVIDE({销售额}, {销售额: {-d: 地区}})'
+
+占全部地区销售额的比例:
+  type: measure
+  formula: 'DIVIDE({销售额}, {销售额: {-df: 地区}})'
+
+客户平均销售额:
+  type: measure
+  formula: 'AVG({销售额: {+d: 客户}})'
+
+客户销售额合计:
+  type: measure
+  formula: 'SUM({销售额: {+d: 客户}})'
+
+单个客户最高销售额:
+  type: measure
+  formula: 'MAX({销售额: {+d: 客户}})'
+
+上月销售额:
+  type: measure
+  formula: '{销售额: pp}'
+
+销售额环比增长率:
+  type: measure
+  formula: '{销售额: pop}'
+
+上月销售额缺失时记零:
+  type: measure
+  formula: 'ISNULL({销售额: pp}, 0)'

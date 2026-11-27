@@ -60,7 +60,7 @@ sales:
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;short&gt;        # abbreviation for display
+            abbr: &lt;source_column&gt; # column name in the source table
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -134,7 +134,7 @@ sales:
 <tr>
 <td><code>{calc_amt}</code></td>
 <td><strong>Calculated</strong> column (or measure / column-macro) — DMX expands the definition</td>
-<td><code>doubled: &#39;{calc_amt} * 2&#39;</code></td>
+<td><code>doubled: '{calc_amt} * 2'</code></td>
 </tr>
 </tbody></table>
 <p>Bare names on calculated columns mean &quot;treat this identifier as a native SQL column,&quot; which can appear to work via SELECT-alias order but does <strong>not</strong> expand the calculated definition. Brace when the formula should reuse that definition.</p>
@@ -145,7 +145,7 @@ sales:
 <pre><code class="language-yaml">column-macros:
     datasets: [tx, orders]       # scoped datasets
     columns:                     # shared column definitions
-        region: &#39;{stores}.region&#39;  # cross-dataset lookup
+        region: '{stores}.region' # cross-dataset lookup
     dimensions[dt]:
         dt_month: month
 
@@ -167,7 +167,7 @@ sales:
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>SQL-safe short name for internal use only — temp tables, joins, and <code>materialize</code> output. Never appears in final query column aliases (those use the business name key or an explicit <code>AS</code> alias)</td>
+<td>For a dataset column, use the column name from the source table. For a measure, you can supply a short internal name. Query results use the business name or the alias you specify with <code>AS</code>.</td>
 </tr>
 <tr>
 <td><code>description</code></td>

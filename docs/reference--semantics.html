@@ -111,7 +111,7 @@
 <p><a id="23-context-transition"></a></p>
 <h3 id="context-transition">Context transition <a class="section-link" aria-label="Link to section" href="#context-transition">#</a></h3>
 <p>Modifiers transform the evaluation context. The compiler applies modifiers to derive a new context for measure evaluation:</p>
-<pre><code>apply_modifier(Context, Modifier) -&gt; Context&#39;
+<pre><code>apply_modifier(Context, Modifier) -&gt; Context'
 </code></pre>
 <table>
 <thead>
@@ -169,7 +169,7 @@
 <p><strong>Properties</strong>:</p>
 <ul>
 <li><code>{dim_dt}</code> — resolves to the query&#39;s current time field (e.g. <code>dt_month</code>, <code>dt_quarter</code>)</li>
-<li><code>{dim_dt.datetype}</code> — type string: <code>&#39;day&#39;</code>, <code>&#39;week&#39;</code>, <code>&#39;month&#39;</code>, <code>&#39;quarter&#39;</code>, <code>&#39;year&#39;</code></li>
+<li><code>{dim_dt.datetype}</code> — type string: <code>'day'</code>, <code>'week'</code>, <code>'month'</code>, <code>'quarter'</code>, <code>'year'</code></li>
 <li><code>{dim_dt.periods_per_year}</code> — periods per year: 52 for weeks, 12 for months, 4 for quarters</li>
 <li><code>{dim_dt.datepart}</code> — SQL datepart string</li>
 </ul>
@@ -245,7 +245,9 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
     dimension: [dt_date]
     columns:
         dt_date:
+            abbr: dt_date
         dt_week:
+            abbr: dt_week
         dt_month:
             source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
         dt_quarter:
@@ -352,14 +354,14 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
 <td>Fine-grain value, then an <strong>explicit outer aggregate</strong> rolls back to the current query grain</td>
 </tr>
 <tr>
-<td>Query dim binding <code>- lab: &#39;{m: {+d: K}}&#39;</code></td>
+<td>Query dim binding <code>- lab: '{m: {+d: K}}'</code></td>
 <td>Measure-as-dimension (<a href="#37-measure-as-dimension">Measure-as-dimension</a>): the result is a grouping key, not an ordinary rolled-up measure column</td>
 </tr>
 </tbody></table>
 <p>The outer aggregation function (<code>SUM</code>, <code>AVG</code>, <code>MAX</code>, etc.) is <strong>chosen by the author</strong>. The compiler does not invent it. With an outer aggregate, the compiler typically emits a CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
 <p><strong>Pattern</strong>: atomic measure → <code>+d</code> drill-down inside a composite that supplies the outer aggregate → query at any grain</p>
 <pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
-销售量:
+sales_quantity:
     type: measure
     dataset: o2o_pos
     formula: SUM(count_qty)
@@ -367,30 +369,30 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
 # Distribution SKU count: how many products have sales &gt; 0?
 # {销售量: {+d: prod_id}} drills down to per-product grain,
 # then DISTINCTCOUNTIF counts products with positive sales.
-分销SKU数:
+distributed_skus:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+        DISTINCTCOUNTIF({prod_id}, {sales_quantity: {+d: prod_id}} &gt; 0)
 
 # Distribution store count: how many stores have sales &gt; 0?
-分销客户数:
+buying_stores:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+        DISTINCTCOUNTIF({store_id}, {sales_quantity: {+d: store_id}} &gt; 0)
 
 # Average sales per store (selling power)
-卖力:
+sales_per_buying_store:
     type: measure
     formula: |-
-        divide({销售额}, {分销客户数})
+        divide({sales}, {buying_stores})
 </code></pre>
 <pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
 -- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
 SELECT dt_quarter, brand,
-       AGG(销售额),
-       AGG(分销SKU数),
-       AGG(分销客户数),
-       AGG(卖力)
+       AGG(sales),
+       AGG(distributed_skus),
+       AGG(buying_stores),
+       AGG(sales_per_buying_store)
 FROM MODEL
 GROUP BY dt_quarter, brand
 </code></pre>
@@ -445,7 +447,7 @@ GROUP BY dt_quarter, brand
 </thead>
 <tbody><tr>
 <td>Named measure + explicit <code>+d</code></td>
-<td><code>- first_purchase_month: &#39;{first_purchase_month: {+d: store_id}}&#39;</code></td>
+<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
 <td>Evaluate the measure with <code>store_id</code> appended to its evaluation dimension; use the result as the query-dimension field</td>
 </tr>
 <tr>
@@ -455,17 +457,17 @@ GROUP BY dt_quarter, brand
 </tr>
 <tr>
 <td>Scalar wrap over <code>{m: {+d: dim}}</code></td>
-<td><code>- payment_day: &#39;cast({authorization_ts: {+d: payment_id}} as date)&#39;</code></td>
+<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
 <td>Evaluate the scalar once per complete key and use the result as a query-dimension field.</td>
 </tr>
 <tr>
 <td>Named scalar measure + <code>+d</code> on the query</td>
-<td>measure <code>formula: &#39;cast({authorization_ts} as date)&#39;</code>, then <code>- payment_day: &#39;{dt_payment_day: {+d: payment_id}}&#39;</code></td>
+<td>measure <code>formula: 'cast({authorization_ts} as date)'</code>, then <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
 <td>Equivalent preferred authoring shape when the scalar is reusable</td>
 </tr>
 <tr>
 <td><code>dimension:</code> / <code>rank</code> label (no <code>+d</code>)</td>
-<td><code>- brand_bucket: &#39;iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, &#39;&#39;others&#39;&#39;)&#39;</code></td>
+<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
 <td>Query-dimension formula that replaces evaluation dimension via <code>dimension:</code> / uses <code>rank</code>; not the <code>+d</code> multi-pass attachment pattern</td>
 </tr>
 </tbody></table>
@@ -513,16 +515,16 @@ GROUP BY dt_quarter, brand
 <p><code>first_purchase_month</code> below specifically means the first <strong>positive monthly net-sales</strong> month within the evaluation scope. <code>purchase_span</code> explicitly evaluates both endpoints at the entity grain and surrounds the finer result with the final aggregation.</p>
 <pre><code class="language-yaml">first_purchase_month:
     type: measure
-    formula: &#39;MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)&#39;
+    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
 
 report:
     type: query
     allows: ALL
     columns:
         dimension:
-            - first_purchase_month: &#39;{first_purchase_month: {+d: store_id}}&#39;
+            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
         sales:
-        purchase_span: &#39;SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))&#39;
+        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
 </code></pre>
 <ul>
 <li>Query result grain: <code>[first_purchase_month]</code>.</li>

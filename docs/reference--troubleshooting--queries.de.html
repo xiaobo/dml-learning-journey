@@ -2,33 +2,33 @@
 <p>Diese Einträge behandeln SQL- und YAML-Abfragen. Die unterstützte Syntax ist unter <a href="reference--model-query-sql.de.html">Modellabfrage in SQL</a> und <a href="reference--query-yaml.de.html">YAML-Abfragen</a> beschrieben.</p>
 <p><a id="p8"></a></p>
 <h2 id="p8-forgetting-agg-in-aggregation-queries">P8. Fehlendes AGG() in Aggregatabfragen <a class="section-link" aria-label="Link zum Abschnitt" href="#p8-forgetting-agg-in-aggregation-queries">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT product, sales FROM MODEL GROUP BY product</code> <strong>Korrektur</strong>: <code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></p>
+<p><strong>Falsch</strong>: <code>SELECT Produkt, Umsatz FROM MODEL GROUP BY Produkt</code> <strong>Korrektur</strong>: <code>SELECT Produkt, AGG(Umsatz) FROM MODEL GROUP BY Produkt</code></p>
 <p><a id="p9"></a></p>
 <h2 id="p9-adding-redundant-alias-on-agg">P9. Überflüssiger Alias für AGG() <a class="section-link" aria-label="Link zum Abschnitt" href="#p9-adding-redundant-alias-on-agg">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT AGG(sales) as sales</code> <strong>Korrektur</strong>: <code>SELECT AGG(sales)</code> erhält automatisch den Alias <code>sales</code>.</p>
+<p><strong>Falsch</strong>: <code>SELECT AGG(Umsatz) as Umsatz</code> <strong>Korrektur</strong>: <code>SELECT AGG(Umsatz)</code> erhält automatisch den Alias <code>Umsatz</code>.</p>
 <p><a id="p10"></a></p>
 <h2 id="p10-using-subqueries">P10. Verwendung von Unterabfragen <a class="section-link" aria-label="Link zum Abschnitt" href="#p10-using-subqueries">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT * FROM MODEL WHERE sales &gt; (SELECT AVG(sales) FROM MODEL)</code> <strong>Korrektur</strong>: Verwenden Sie <code>HAVING</code> mit einer Kennzahl, wie in <code>HAVING AGG(sales) &gt; AGG(avg_sales)</code>.</p>
+<p><strong>Falsch</strong>: <code>SELECT * FROM MODEL WHERE Umsatz &gt; (SELECT AVG(Umsatz) FROM MODEL)</code> <strong>Korrektur</strong>: Verwenden Sie <code>HAVING</code> mit einer Kennzahl, wie in <code>HAVING AGG(Umsatz) &gt; AGG(avg_sales)</code>.</p>
 <p><a id="p11"></a></p>
 <h2 id="p11-using-joins">P11. Verwendung von JOINs <a class="section-link" aria-label="Link zum Abschnitt" href="#p11-using-joins">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.id = b.id</code> <strong>Korrektur</strong>: Verwenden Sie datasetübergreifende Spaltenmakros oder Lookups mit <code>pk(...)</code> in der <code>.dml</code>-Datei.</p>
+<p><strong>Falsch</strong>: <code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.VerkaufspositionID = b.VerkaufspositionID</code> <strong>Korrektur</strong>: Verwenden Sie datasetübergreifende Spaltenmakros oder Lookups mit <code>pk(...)</code> in der <code>.dml</code>-Datei.</p>
 <p><a id="p12"></a></p>
 <h2 id="p12-missing-time-context-for-time-modifiers">P12. Fehlender Zeitkontext für Zeitmodifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#p12-missing-time-context-for-time-modifiers">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT product, AGG({sales: yoy}) FROM MODEL GROUP BY product</code> (weder ein Zeitfeld als Gruppierung noch ein Zeitfilter)</p>
+<p><strong>Falsch</strong>: <code>SELECT Produkt, AGG({Umsatz: yoy}) FROM MODEL GROUP BY Produkt</code> (weder ein Zeitfeld als Gruppierung noch ein Zeitfilter)</p>
 <p><strong>Regel</strong>: Legen Sie den Zeitkontext fest und erfüllen Sie die Voraussetzungen der Makros. Am klarsten ist es, ausdrücklich nach einem Zeitfeld zu gruppieren. Auch ein Zeitfilter kann den Kontext liefern. Verwenden Sie für eine bessere Lesbarkeit möglichst nur eine Zeitebene für Zeilen oder Aggregate.</p>
 <p><strong>Referenz zum Zeitkontext</strong>: <a href="reference--modifiers.de.html#21-time-modifiers">Zeitmodifikatoren</a>.</p>
 <p><strong>Korrekt (Vorjahresvergleich auf Monatsebene)</strong>:</p>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY dt_month
+<pre><code class="language-sql">SELECT dt_month, AGG(Umsatz), AGG({Umsatz: yoy}) FROM MODEL GROUP BY dt_month
 </code></pre>
 <p><strong>Korrekt (YTD auf Tagesebene)</strong>:</p>
-<pre><code class="language-sql">SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
+<pre><code class="language-sql">SELECT dt_date, AGG(Umsatz, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
 </code></pre>
 <p><a id="p13"></a></p>
 <h2 id="p13-mixing-time-granularities">P13. Verwendung mehrerer Zeitebenen <a class="section-link" aria-label="Link zum Abschnitt" href="#p13-mixing-time-granularities">#</a></h2>
 <p><strong>Empfehlung</strong>: Verwenden Sie möglichst nur eine Zeitebene. Der geprüfte Build akzeptiert <code>dt_year, dt_month</code> gemeinsam. Dass der Build mehrere Felder akzeptiert, garantiert nicht, dass jede Makrokombination den beabsichtigten Zeitkontext erhält. Prüfen Sie, welche Zeitebene ermittelt wurde.</p>
 <p><a id="p14"></a></p>
 <h2 id="p14-adding-unnecessary-null-filters">P14. Unnötige Filter auf Nullwerte <a class="section-link" aria-label="Link zum Abschnitt" href="#p14-adding-unnecessary-null-filters">#</a></h2>
-<p><strong>Falsch</strong>: <code>WHERE customer is not null</code> ohne ausdrückliche Anforderung. <strong>Korrektur</strong>: Schließen Sie Nullwerte nur aus, wenn die Fragestellung dies ausdrücklich verlangt.</p>
+<p><strong>Falsch</strong>: <code>WHERE Kunde is not null</code> ohne ausdrückliche Anforderung. <strong>Korrektur</strong>: Schließen Sie Nullwerte nur aus, wenn die Fragestellung dies ausdrücklich verlangt.</p>
 <p><a id="p15"></a></p>
 <h2 id="p15-using-between-for-single-periods">P15. Verwendung von BETWEEN für einzelne Zeiträume <a class="section-link" aria-label="Link zum Abschnitt" href="#p15-using-between-for-single-periods">#</a></h2>
 <p><strong>Empfehlung</strong>: <code>dt_month = '2024-01-01'</code> wählt eindeutig den Januar aus. Ein Datumsintervall ist gültig, wenn genau dieser Zeitraum gemeint ist. Geben Sie die Grenzen ausdrücklich an und prüfen Sie, wie Zeitstempel und der letzte Tag des Intervalls behandelt werden.</p>
@@ -40,10 +40,10 @@
 <p><strong>Falsch</strong>: <code>ORDER BY</code> zu jeder Abfrage hinzufügen. <strong>Korrektur</strong>: Verwenden Sie ORDER BY nur für Top N oder wenn die Fragestellung ausdrücklich eine Rangfolge verlangt.</p>
 <p><a id="p18"></a></p>
 <h2 id="p18-manual-growth-rate-calculation">P18. Manuelle Berechnung der Wachstumsrate <a class="section-link" aria-label="Link zum Abschnitt" href="#p18-manual-growth-rate-calculation">#</a></h2>
-<p><strong>Falsch</strong>: <code>DIVIDE(AGG(sales), AGG(sales, 'ya')) - 1</code> <strong>Korrektur</strong>: Verwenden Sie <code>AGG(sales, 'yoy')</code> mit dem integrierten Modifikator.</p>
+<p><strong>Falsch</strong>: <code>DIVIDE(AGG(Umsatz), AGG(Umsatz, 'ya')) - 1</code> <strong>Korrektur</strong>: Verwenden Sie <code>AGG(Umsatz, 'yoy')</code> mit dem integrierten Modifikator.</p>
 <p><a id="p20"></a></p>
 <h2 id="p20-using-distinct-alone-for-existence-checks">P20. Existenzprüfung allein mit DISTINCT <a class="section-link" aria-label="Link zum Abschnitt" href="#p20-using-distinct-alone-for-existence-checks">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT DISTINCT customer FROM MODEL.transactions</code> für die Frage „Haben wir überhaupt Kunden?“ <strong>Korrektur</strong>: Geben Sie mit <code>SELECT customer, dt_date, transaction_id FROM MODEL.transactions LIMIT 1</code> einen konkreten Datensatz zurück.</p>
+<p><strong>Falsch</strong>: <code>SELECT DISTINCT Kunde FROM MODEL.Transaktionen</code> für die Frage „Haben wir überhaupt Kunden?“ <strong>Korrektur</strong>: Geben Sie mit <code>SELECT Kunde, dt_date, TransaktionsID FROM MODEL.Transaktionen LIMIT 1</code> einen konkreten Datensatz zurück.</p>
 <hr>
 <h2 id="category-dml-model-design">Kategorie: DML-Modellierung <a class="section-link" aria-label="Link zum Abschnitt" href="#category-dml-model-design">#</a></h2>
 <p><a id="p45"></a></p>
@@ -51,13 +51,13 @@
 <p><strong>Falsch</strong>: <code>dataset: DATASET_PRODUCTS</code> in einer Abfrage, die die Kennzahl <code>total_cost:</code> auswählt. <strong>Korrektur</strong>: Entfernen Sie <code>dataset:</code>, um in den Aggregatmodus zu wechseln, oder entfernen Sie die Kennzahl aus der Detailabfrage.</p>
 <p><a id="p46"></a></p>
 <h2 id="p46-bare-column-name-in-aggregate-query">P46. Spaltenname ohne Dataset-Angabe in einer Aggregatabfrage <a class="section-link" aria-label="Link zum Abschnitt" href="#p46-bare-column-name-in-aggregate-query">#</a></h2>
-<p><strong>Falsch</strong>: <code>prod_id:</code> ohne <code>dataset:</code>, wenn die Spalte zu <code>DATASET_PRODUCTS</code> gehört. <strong>Korrektur</strong>: <code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code>.</p>
+<p><strong>Falsch</strong>: <code>Artikelnummer:</code> ohne <code>dataset:</code>, wenn die Spalte zu <code>DATASET_PRODUCTS</code> gehört. <strong>Korrektur</strong>: <code>Artikelnummer: "{DATASET_PRODUCTS}.Artikelnummer"</code>.</p>
 <p><a id="p47"></a></p>
 <h2 id="p47-mismatched-dimension-field-names-across-datasets">P47. Uneinheitliche Dimensionsfeldnamen in verschiedenen Datasets <a class="section-link" aria-label="Link zum Abschnitt" href="#p47-mismatched-dimension-field-names-across-datasets">#</a></h2>
-<p><strong>Falsch</strong>: <code>DATASET_PT</code> verwendet die Dimension <code>id</code>, <code>DATASET_MC</code> die Dimension <code>tag_id</code>. <strong>Korrektur</strong>: Verwenden Sie einen einheitlichen Namen (z. B. <code>tag_id</code>) und ordnen Sie die Spalten des Data Warehouse in <code>columns:</code> zu (<code>tag_id: id</code>).</p>
+<p><strong>Falsch</strong>: <code>DATASET_PT</code> verwendet die Dimension <code>VerkaufspositionID</code>, <code>DATASET_MC</code> die Dimension <code>tag_id</code>. <strong>Korrektur</strong>: Verwenden Sie einen einheitlichen Namen (z. B. <code>tag_id</code>) und ordnen Sie die Spalten des Data Warehouse in <code>columns:</code> zu (<code>tag_id: VerkaufspositionID</code>).</p>
 <p><a id="p48"></a></p>
 <h2 id="p48-mapping-used-as-a-dimension-field-in-dimension">P48. Zuordnung als Dimensionsfeld in <code>dimension:</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#p48-mapping-used-as-a-dimension-field-in-dimension">#</a></h2>
-<p><strong>Falsch</strong>: <code>- f_tag_id: {DATASET_PT}.id</code> unter <code>columns: dimension:</code>. <strong>Korrektur</strong>: Führen Sie nur <code>- f_tag_id</code> auf. Definieren Sie die Formel <code>f_tag_id: |- …</code> separat.</p>
+<p><strong>Falsch</strong>: <code>- f_tag_id: {DATASET_PT}.VerkaufspositionID</code> unter <code>columns: dimension:</code>. <strong>Korrektur</strong>: Führen Sie nur <code>- f_tag_id</code> auf. Definieren Sie die Formel <code>f_tag_id: |- …</code> separat.</p>
 <p><a id="p49"></a></p>
 <h2 id="p49-dimension-field-under-measures">P49. Dimensionsfeld unter <code>measures:</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#p49-dimension-field-under-measures">#</a></h2>
 <p><strong>Falsch</strong>: <code>tag_id:</code> mit einer Formel unter <code>measures:</code> im Dataset. <strong>Korrektur</strong>: Geben Sie unter <code>dimension:</code> im Dataset an, auf welcher Ebene die Zeilen definiert sind. Verwenden Sie Kennzahlen nur für Aggregationen.</p>
@@ -77,7 +77,7 @@
 <p><strong>Falsch</strong>: <code>WHERE dt_month = (SELECT MAX(dt_month) FROM MODEL ...)</code> <strong>Lösung</strong>: Den Monat für die Prüfung fest vorgeben oder die Detailabfrage <code>SELECT MAX(dt_month) FROM MODEL.&lt;dataset&gt;</code> verwenden.</p>
 <p><a id="p61"></a></p>
 <h2 id="p61-aggregating-directly-on-dataset-with-group-by">P61. Direkt auf dem Datensatz mit GROUP BY aggregieren <a class="section-link" aria-label="Link zum Abschnitt" href="#p61-aggregating-directly-on-dataset-with-group-by">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code> <strong>Symptom</strong>: <code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code> <strong>Lösung</strong>: Entweder (a) Kennzahlen in <code>model.dml</code> definieren und <code>FROM MODEL</code> mit <code>AGG()</code> verwenden oder (b) für Ad-hoc-Abfragen Inline-Kennzahlen in Kommentarblöcken der Form <code>/** dml ... **/</code> verwenden, ohne <code>.dml</code> zu bearbeiten (siehe <a href="reference--model-query-sql.de.html#312-inline-measures--dml--">Inline-Kennzahlen (<code>/** dml ... **/</code>)</a>).</p>
+<p><strong>Falsch</strong>: <code>SELECT Käufernummer, 品牌, SUM(Abgabepreisbetrag) FROM MODEL.DATASET_X GROUP BY Käufernummer, 品牌</code> <strong>Symptom</strong>: <code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code> <strong>Lösung</strong>: Entweder (a) Kennzahlen in <code>model.dml</code> definieren und <code>FROM MODEL</code> mit <code>AGG()</code> verwenden oder (b) für Ad-hoc-Abfragen Inline-Kennzahlen in Kommentarblöcken der Form <code>/** dml ... **/</code> verwenden, ohne <code>.dml</code> zu bearbeiten (siehe <a href="reference--model-query-sql.de.html#312-inline-measures--dml--">Inline-Kennzahlen (<code>/** dml ... **/</code>)</a>).</p>
 <h2 id="查询排错">Fehlerbehebung bei Abfragen <a class="section-link" aria-label="Link zum Abschnitt" href="#查询排错">#</a></h2>
 <p>Prüfen Sie zunächst das Modell und die Joins mit einer Abfrage, die nur eine Kennzahl enthält. Fügen Sie dann Dimensionen, Filter und Kennzahlen einzeln wieder hinzu. Wenn die Abfrage zu viele Zeilen liefert, prüfen Sie, ob Schlüssel im Datensatz mehrfach vorkommen, wie viele Zeilen nach dem Join vorliegen und welche Schlüssel nur im Vergleichszeitraum vorkommen. Wenn Werte abweichen, führen Sie eine separate Abfrage in SQL mit demselben Zeitraum und demselben Datenstand aus und vergleichen Sie für jede Gruppe die Schlüssel, NULL und die Kennzahlenwerte.</p>
 </main></body></html>

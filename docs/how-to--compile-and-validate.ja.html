@@ -53,7 +53,7 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p><code>default</code> を対象の接続名に置き換えます。終了コード、検証ステータス、検証したデータセット、報告された問題を確認します。CLI の JSON レポートでは、検証の詳細は <code>data</code> にあります。</p>
 <p>検証では、クエリが使用する宣言済みのデータセットキーごとに、同じキー値に対応するソース行が最大1行であることを確認します。また、<code>EXPLAIN</code>を使って、データベースがクエリの実行計画を作成できるかを確認します。業務上の集計値は、独立したSQLクエリの結果で確認します。</p>
-<p>たとえば、異なる2件の仕訳が同じキー<code>(account, invoice, party)</code>を持ち、金額がそれぞれ10と20だとします。この組み合わせがデータセットの<code>dimension:</code>として宣言されている場合、検証ではそのキーと、一致した2行が報告されます。<code>--with-validation</code>を指定すると、クエリは実行前に停止します。仕訳のIDをデータセットキーとして宣言し、クエリで account、invoice、party ごとにグループ化すると、合計は30になります。2行が意図しない重複である場合は、ソースデータか、重複を生じさせた結合を修正します。</p>
+<p>たとえば、異なる2件の仕訳が同じキー<code>(勘定科目, 請求書, party)</code>を持ち、金額がそれぞれ10と20だとします。この組み合わせがデータセットの<code>dimension:</code>として宣言されている場合、検証ではそのキーと、一致した2行が報告されます。<code>--with-validation</code>を指定すると、クエリは実行前に停止します。仕訳のIDをデータセットキーとして宣言し、クエリで account、invoice、party ごとにグループ化すると、合計は30になります。2行が意図しない重複である場合は、ソースデータか、重複を生じさせた結合を修正します。</p>
 <p>モデル、クエリの仕様、接続、関連するソースデータのいずれかが変わった場合は、検証をやり直します。前提条件が満たされていない場合は、チェックの結果を<code>not run</code>として記録し、不足している前提条件を明記します。</p>
 <h2 id="5-execute-and-compare-results">5. クエリを実行して結果を比較する <a class="section-link" aria-label="この節へのリンク" href="#5-execute-and-compare-results">#</a></h2>
 <p><code>--with-validation</code>を指定し、対象の接続先でクエリを実行します。このオプションを付けずに実行すると、接続先のデータを使ったデータセットキーの検証と、データベースで実行計画を作成できるかどうかの確認が省略されます。</p>
@@ -68,8 +68,34 @@ process.exitCode = result.status ?? 1;
 <h2 id="practice-a-modeldata-contract-repair">モデルとデータの不整合の修正を練習する <a class="section-link" aria-label="この節へのリンク" href="#practice-a-modeldata-contract-repair">#</a></h2>
 <p><a href="examples--compound-key.ja.html">複合キー</a>と<a href="examples--range-lookup.ja.html">有効範囲</a>の例を実行します。通常の検証、意図的に作った重複や範囲の重なりによる検証エラー、修正後の検証と、それに続く結果の比較を確認します。これにより、参照結果を使う前に、宣言されたキーと実際のデータの不整合を見つけられます。検証とクエリの実行は別々の処理です。検証に合格しても、両方の処理が同じスナップショットを使うことや、今後もキーの一意性が保たれることは保証されません。</p>
 <h2 id="inspect-a-change-or-recover-an-existing-query">変化を調べる、または既存のクエリを復元する <a class="section-link" aria-label="この節へのリンク" href="#inspect-a-change-or-recover-an-existing-query">#</a></h2>
-<p><code>--explain-change</code> では、指標名と対象期間を指定し、どの期間と比較するかを決めます。次の例では前の期間と比較します。必要な引数は <code>dmlc --advanced-help</code> で確認できます。<code>net_revenue</code>、<code>dt_month</code>、<code>region</code> を含むモデルで確認したコマンドは次のとおりです。</p>
-<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+<p><code>--explain-change</code> では、指標名と対象期間を指定し、どの期間と比較するかを決めます。次の例では前の期間と比較します。必要な引数は <code>dmlc --advanced-help</code> で確認できます。<code>純売上高</code>、<code>dt_month</code>、<code>地域</code> を含むモデルで確認したコマンドは次のとおりです。</p>
+<p>空の DuckDB データベースに、次の 4 件の売上を登録します。金額はすべて返金を差し引いた後の値です。文を <code>monthly-sales.sql</code> に保存し、DuckDB の接続を使って <code>dmlc -q monthly-sales.sql</code> を実行します。</p>
+<pre><code class="language-sql">CREATE TABLE monthly_sales (id INTEGER, dt_month DATE, region VARCHAR, net_amount INTEGER);
+INSERT INTO monthly_sales VALUES
+  (1, DATE '2025-01-01', 'North', 100),
+  (2, DATE '2025-01-01', 'South', 200),
+  (3, DATE '2025-02-01', 'North', 300),
+  (4, DATE '2025-02-01', 'South', 100);
+</code></pre>
+<p>次のモデルを例のディレクトリに <code>model.dml</code> として保存し、2 月と 1 月を比較します。</p>
+<pre><code class="language-yaml">dialect: duckdb
+取引明細:
+    type: dataset
+    table: monthly_sales
+    dimension: [売上明細番号]
+    columns:
+        売上明細番号:
+            abbr: id
+        dt_month:
+            abbr: dt_month
+        地域:
+            abbr: region
+        純額:
+            abbr: net_amount
+    measures:
+        純売上高: SUM({純額})
+</code></pre>
+<pre><code class="language-powershell">dmlc --explain-change --measure=純売上高 --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=地域 --model=model.dml
 </code></pre>
 <p>比較用のテストデータでは、基準値は 300、現在値は 400、地域別の寄与は +200 と -100 です。これらはこのテストデータの値であり、このサイトのすべての例に共通する値ではありません。ディメンションの順位を解釈する前に、基準値と現在値を確認してください。寄与と意外性スコアは、何を調べるかを決める手がかりになります。原因の特定や交絡要因の除外はできません。</p>
 <p>既存の SQL クエリから、<code>--to-dml</code> でモデルとクエリのドラフトを生成できます。</p>

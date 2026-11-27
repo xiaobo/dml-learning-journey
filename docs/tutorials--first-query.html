@@ -5,7 +5,7 @@
 <pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
 </code></pre>
-<p>The output includes the version, build timestamp, and platform. The <a href="compiler-observations.json">tutorial compiler record</a> identifies the build used to check this tutorial.</p>
+<p>Record the version and build timestamp shown here so you can check which compiler produced your result.</p>
 <p>Now, create a new directory for our files.</p>
 <pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
 Set-Location first-query
@@ -21,15 +21,18 @@ FACT_SALES:
   dimension: [id]
   columns:
     id:
+      abbr: id
     region:
+      abbr: region
     amount:
+      abbr: amount
   measures:
     sales: SUM({amount})
     cnt: COUNT(1)
 
 average_sale:
   type: measure
-  formula: &#39;DIVIDE({sales}, {cnt})&#39;
+  formula: 'DIVIDE({sales}, {cnt})'
 </code></pre>
 <p><code>FACT_SALES</code> declares one source row per <code>id</code>. <code>sales</code> and <code>cnt</code> aggregate those rows. <code>average_sale</code> divides their results.</p>
 <p>Now, lint the model.</p>
@@ -49,7 +52,7 @@ GROUP BY region
 <pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
 $LASTEXITCODE
 </code></pre>
-<p>The JSON reports <code>status: ok</code>, <code>exitCode: 0</code>, and no error or warning in <code>diagnostics</code>. <code>data.sql</code> contains <code>SUM(amount)</code>, <code>COUNT(1)</code>, and <code>GROUP BY region</code>. The final projection contains <code>region</code>, <code>sales</code>, and <code>average_sale</code>.</p>
+<p>The JSON reports <code>status: ok</code>, <code>exitCode: 0</code>, and no error or warning in <code>diagnostics</code>. In <code>data.sql</code>, check how the query groups sales by region and calculates the average. The output columns are <code>region</code>, <code>sales</code>, and <code>average_sale</code>.</p>
 <p>The compiler may include a informational <code>DATASET_GRAIN_UNVERIFIED</code> diagnostic. We have compiled the declared model without checking a physical <code>TABLE_SALES</code> table.</p>
 <h2 id="inspect-the-result">Inspect the result <a class="section-link" aria-label="Link to section" href="#inspect-the-result">#</a></h2>
 <p>Open the SQL artifact under <code>gen</code>. Find the aggregate expressions and the grouping by <code>region</code>. We now have a complete model and consumer query, with generated SQL to inspect.</p>

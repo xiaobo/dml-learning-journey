@@ -26,9 +26,9 @@ SET dt_quarter = DATEFROMPARTS(YEAR(dt_date), 3 * (DATEPART(quarter, dt_date) - 
 ALTER TABLE dbo.DML_CALENDAR ALTER COLUMN dt_quarter date NOT NULL;
 
 ;WITH dates AS (
-    SELECT CAST(&#39;20250301&#39; AS date) AS dt_date
+    SELECT CAST('20250301' AS date) AS dt_date
     UNION ALL
-    SELECT DATEADD(day, 1, dt_date) FROM dates WHERE dt_date &lt; &#39;20250630&#39;
+    SELECT DATEADD(day, 1, dt_date) FROM dates WHERE dt_date &lt; '20250630'
 )
 INSERT dbo.DML_CALENDAR (dt_date, dt_month, dt_quarter)
 SELECT dt_date, DATEFROMPARTS(YEAR(dt_date), MONTH(dt_date), 1),
@@ -59,7 +59,7 @@ quarterly_sales:
   allows: [SALES_QUARTERLY]
   filters:
     dt_quarter:
-      range: [&#39;2025-01-01&#39;, &#39;2025-01-01&#39;]
+      range: ['2025-01-01', '2025-01-01']
   columns:
     dimension: [dt_quarter]
     sales:
@@ -106,26 +106,26 @@ $compiled.data.sql         # sql
 <pre><code class="language-sql">-- 1. March backfill. After the source write commits, register the
 --    refresh demand and attempt to call the runner.
 INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
-VALUES (9, N&#39;North&#39;, N&#39;A&#39;, &#39;20250301&#39;, N&#39;completed&#39;, 30);
+VALUES (9, N'North', N'A', '20250301', N'completed', 30);
 
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize = N&#39;SALES_MONTHLY&#39;,
-    @_range_start = &#39;20250301&#39;,
-    @_range_end   = &#39;20250331&#39;;
+    @_materialize = N'SALES_MONTHLY',
+    @_range_start = '20250301',
+    @_range_end   = '20250331';
 
 -- 2. April arrives for the first time. After the write commits,
 --    prepare Q2 for the first time.
 INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
-VALUES (10, N&#39;South&#39;, N&#39;C&#39;, &#39;20250401&#39;, N&#39;completed&#39;, 40);
+VALUES (10, N'South', N'C', '20250401', N'completed', 40);
 
 -- 3. Back to Q1. After the February correction commits, refresh
 --    the month and the quarter.
 UPDATE dbo.TABLE_SALES SET amount = 25 WHERE id = 2;
 
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize = N&#39;SALES_MONTHLY&#39;,
-    @_range_start = &#39;20250201&#39;,
-    @_range_end   = &#39;20250228&#39;;
+    @_materialize = N'SALES_MONTHLY',
+    @_range_start = '20250201',
+    @_range_end   = '20250228';
 </code></pre>
 <p>After each step, verify the result with the report range listed in the table before moving on. If your load script opens an explicit transaction, commit it first, then call refresh on an autocommit connection.</p>
 </details>
@@ -172,7 +172,7 @@ EXEC dbo.DML_REFRESH_MAZ
 <p>With read permission on the state table, check partitions with:</p>
 <pre><code class="language-sql">SELECT materialize, dim_dt, state, COALESCE(last_end_time, created_end_time) AS build_finished_at
 FROM dbo.DML_MATERIALIZE_STATE
-WHERE materialize IN (N&#39;SALES_QUARTERLY&#39;, N&#39;SALES_MONTHLY&#39;)
+WHERE materialize IN (N'SALES_QUARTERLY', N'SALES_MONTHLY')
 ORDER BY materialize, dim_dt;
 </code></pre>
 <p><code>state = 0</code> means ordinary invalidation, <code>state = 3</code> means invalid and pending active refresh, and <code>state = 1</code> means a complete result has been published. The build time records when the Maz&#39;s writer finished. To judge whether a given correction is included, also check the invalidation notification and the preparation that followed.</p>
@@ -181,7 +181,7 @@ ORDER BY materialize, dim_dt;
     SELECT DATEFROMPARTS(YEAR(dt_month), 3 * (DATEPART(quarter, dt_month) - 1) + 1, 1) AS dt_quarter,
            amount
     FROM dbo.TABLE_SALES
-    WHERE dt_month &gt;= &#39;20250101&#39; AND dt_month &lt; &#39;20250701&#39;
+    WHERE dt_month &gt;= '20250101' AND dt_month &lt; '20250701'
 )
 SELECT dt_quarter, SUM(amount) AS sales
 FROM source_rows

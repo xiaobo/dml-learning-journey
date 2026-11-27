@@ -6,16 +6,20 @@
  let locale = document.documentElement.dataset.courseLocale || 'en';
  try { const saved = localStorage.getItem(storageKey); if (!document.documentElement.dataset.courseLocale && supported.includes(saved)) locale = saved; } catch {}
  const select = document.getElementById('course-language');
+ function names(text) {
+  const terms=window.DMLLearningSamples?.[locale]?.terms || {};
+  return text.replace(/TABLE_[A-Z_]+\.[A-Za-z_]+|[A-Za-z_][A-Za-z_0-9]*/g,k=>terms[k]||k);
+ }
  function t(key,args={}) {
   let value = catalogs[locale].ui[key] ?? catalogs.en.ui[key];
   if (typeof value === 'object') value = value[new Intl.PluralRules(locale).select(args.n)] || value.other;
   if (typeof value !== 'string') throw Error('Missing message: '+key);
-  return value.replace(/\{(\w+)\}/g,(match,name) => args[name] === undefined ? match : String(args[name]));
+  return names(value.replace(/\{(\w+)\}/g,(match,name) => args[name] === undefined ? match : String(args[name])));
  }
  function staticText() {
   for (const element of document.querySelectorAll('[data-i18n]')) {
    const key = element.dataset.i18n;
-   element.innerHTML = catalogs[locale].static[key] ?? catalogs.en.static[key];
+   element.innerHTML = (catalogs[locale].static[key] ?? catalogs.en.static[key]).split(/(<[^>]+>)/).map(part=>part.startsWith('<')?part:names(part)).join('');
   }
   for (const attr of ['aria-label','alt']) {
    for (const element of document.querySelectorAll('[data-i18n-'+attr+']')) {
@@ -43,10 +47,10 @@
   if (anchor) requestAnimationFrame(() => window.scrollBy({top:anchor.element.getBoundingClientRect().top-anchor.top,behavior:'instant'}));
  }
  window.SmallJourneyI18n = {
-  t, change,
+  t, change, names,
   get locale() { return locale; },
   chapter(index) { return catalogs[locale].chapters[index]; },
-  quiz(quiz) { return {...quiz,...catalogs[locale].quizzes[quiz.chapter]}; },
+  quiz(quiz) { const base={...quiz,...catalogs[locale].quizzes[quiz.chapter]}; for(const key of ['question','hint','explanation']) if(typeof base[key]==='string') base[key]=names(base[key]); base.options=base.options.map(names); return base; },
   number(value) { return new Intl.NumberFormat(locale,{maximumFractionDigits:2,useGrouping:false}).format(value); },
   percent(value) { return new Intl.NumberFormat(locale,{style:'percent',maximumFractionDigits:2,useGrouping:false}).format(value); }
  };

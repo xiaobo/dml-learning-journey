@@ -3,47 +3,53 @@
 <h2 id="dimension-modifiers">维度修饰符 <a class="section-link" aria-label="本节链接" href="#dimension-modifiers">#</a></h2>
 <p><strong>业务问题</strong>：每种产品在所属类别中的占比是多少？</p>
 <h3 id="product-share-within-category">产品在所属类别中的占比 <a class="section-link" aria-label="本节链接" href="#product-share-within-category">#</a></h3>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
+<pre><code class="language-sql">SELECT 类别, 商品,
+       AGG(销售额) as 商品销售额,
+       AGG({销售额: {dimension: [类别]}}) as 品类销售总额
 FROM MODEL
-GROUP BY category, product
+GROUP BY 类别, 商品
 </code></pre>
-<p>这里，<code>{sales: {dimension: [category]}}</code> 移除 <code>product</code> 和 <code>region</code>，因此 <code>sales</code> 仅按类别计算。</p>
+<p>这里，<code>{销售额: {dimension: [类别]}}</code> 移除 <code>商品</code> 和 <code>地区</code>，因此 <code>销售额</code> 仅按类别计算。</p>
 <h3 id="using-pot-percentage-of-total">使用 <code>pot</code>（占总计的百分比） <a class="section-link" aria-label="本节链接" href="#using-pot-percentage-of-total">#</a></h3>
 <p><code>pot</code> 移除<strong>所有</strong>维度，从而计算每行占总计的比例：</p>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: pot}) as share_of_grand_total
+<pre><code class="language-sql">SELECT 类别, 商品,
+       AGG(销售额) as 商品销售额,
+       AGG({销售额: pot}) as 占总计的比例
 FROM MODEL
-GROUP BY category, product
+GROUP BY 类别, 商品
 </code></pre>
 <p>如果要计算在上级维度内的占比（例如产品值除以类别总计），请改用 <code>dimension</code> 修饰符：</p>
-<pre><code class="language-sql">-- Share of category (product / category total)
-SELECT category, product,
-       AGG(sales) as product_sales,
-       DIVIDE(AGG(sales), AGG({sales: {dimension: [category]}})) as category_share
+<pre><code class="language-sql">-- Share of 类别 (商品 / 类别 合计)
+SELECT 类别, 商品,
+       AGG(销售额) as 商品销售额,
+       DIVIDE(AGG(销售额), AGG({销售额: {dimension: [类别]}})) as 品类销售占比
 FROM MODEL
-GROUP BY category, product
+GROUP BY 类别, 商品
 </code></pre>
 <h3 id="hidden-dimension-fields">隐藏的维度字段 <a class="section-link" aria-label="本节链接" href="#hidden-dimension-fields">#</a></h3>
 <p>数据集有时包含仅供内部计算使用、不应向最终用户显示的维度。</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">交易明细:
     type: dataset
+    table: fact_transactions
     dimension:
         - dt_date
-        - product
-        - region
+        - 商品
+        - 地区
     columns:
         dt_date:
-        product:
-        region:
-        transaction_id:          # internal dimension, not for analysis
-        amount:
+            abbr: dt_date
+        商品:
+            abbr: product
+        地区:
+            abbr: region
+        交易编号:          # internal dimension, not for analysis
+            abbr: transaction_id
+        销售金额:
+            abbr: amount
 </code></pre>
-<p><code>transaction_id</code> 仍可用于 <code>+d</code> 修饰符，但不会显示在 MODEL 表中。</p>
+<p><code>交易编号</code> 仍可用于 <code>+d</code> 修饰符，但不会显示在 MODEL 表中。</p>
 <h3 id="moving-annual-total-mat">滚动年度总计（MAT） <a class="section-link" aria-label="本节链接" href="#moving-annual-total-mat">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+<pre><code class="language-sql">SELECT dt_month, AGG(销售额), AGG({销售额: mat})
 FROM MODEL
 WHERE dt_month BETWEEN date(current_date, 'start of month', '-12 months')
                    AND date(current_date, 'start of month', '-1 month')
@@ -55,33 +61,34 @@ GROUP BY dt_month
 <h2 id="combo-columns">组合列 <a class="section-link" aria-label="本节链接" href="#combo-columns">#</a></h2>
 <p><strong>业务问题</strong>：如何按产品显示已支付发票中的最小开票数量？</p>
 <h3 id="conditional-aggregation">条件聚合 <a class="section-link" aria-label="本节链接" href="#conditional-aggregation">#</a></h3>
-<pre><code class="language-yaml">min_paid_qty:
+<pre><code class="language-yaml">最少已付数量:
     type: measure
-    dataset: transactions
-    formula: MINIF({quantity}, {is_paid} = 1)
+    dataset: 交易明细
+    formula: MINIF({数量}, {是否已付款} = 1)
 </code></pre>
-<pre><code class="language-sql">SELECT product, AGG(min_paid_qty)
+<pre><code class="language-sql">SELECT 商品, AGG(最少已付数量)
 FROM MODEL
-GROUP BY product
+GROUP BY 商品
 </code></pre>
 <h3 id="calendar-densification-vs-fill-default">补齐日历日期与填充默认值的区别 <a class="section-link" aria-label="本节链接" href="#calendar-densification-vs-fill-default">#</a></h3>
-<p><strong>补齐日期</strong>（显示每个日期）：先确保日历或连续日期序列具备所需粒度，例如在 <code>Dim Calendar</code> 上设置标志，然后按该粒度查询。</p>
-<pre><code class="language-yaml">Dim Calendar:
+<p><strong>补齐日期</strong>（显示每个日期）：先确保日历或连续日期序列具备所需粒度，例如在 <code>日历</code> 上设置标志，然后按该粒度查询。</p>
+<pre><code class="language-yaml">日历:
     type: dataset
     table: DML_CALENDAR
     dimension:
         - dt_date
     columns:
         dt_date:
-        has_data:
+            abbr: dt_date
+        是否有数据:
             source: '1'
 </code></pre>
 <p><strong>行缺失时填充默认值</strong>（防止连接 / FOJ 后 NULL 传播）：在表达式最外层使用 <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code> 启用填充。填充仅在该指标的<strong>使用处</strong>生效。请参阅<a href="reference--measures.zh.html#fill-default-when-row-missing">缺失行填充</a>。</p>
-<pre><code class="language-yaml">daily_sales:
+<pre><code class="language-yaml">每日销售额:
     type: measure
-    formula: 'isnull(SUM({sales: {+d: dt_date}}), 0)'   # activate
+    formula: 'isnull(SUM({销售额: {+d: dt_date}}), 0)' # activate
 </code></pre>
-<p>对于后续组合计算，不要仅依赖 <code>SUM(isnull({sales: {+d: dt_date}}, 0))</code> 来处理<strong>连接后缺失的行</strong>。请为将要引用的指标启用填充，或为组合计算的结果启用填充。</p>
+<p>对于后续组合计算，不要仅依赖 <code>SUM(isnull({销售额: {+d: dt_date}}, 0))</code> 来处理<strong>连接后缺失的行</strong>。请为将要引用的指标启用填充，或为组合计算的结果启用填充。</p>
 <p><strong>要点</strong>：使用 <code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> 进行返回单个值的条件聚合。<strong>日期</strong>有缺失时，补齐日期；<strong>连接后的指标行</strong>有缺失时，在使用处填充默认值（P28b）。</p>
 <h3 id="allows-all-for-materialization-selection">使用 <code>allows: ALL</code> 选择物化结果 <a class="section-link" aria-label="本节链接" href="#allows-all-for-materialization-selection">#</a></h3>
 <p>有关语法和示例，请参阅 <a href="reference--query-yaml.zh.html#411-allows-all"><code>allows: ALL</code></a>。<code>allows: ALL</code> 允许将兼容的物化结果纳入候选范围，指标的粒度约束仍然适用。</p>
@@ -90,18 +97,18 @@ GROUP BY product
 <p><strong>业务问题</strong>：某个仪表板每小时查询一次过去 24 个月的月度销售额、同比增长率和 MAT。底层数据集非常大。</p>
 <h3 id="solution-materialize">解决方案：物化 <a class="section-link" aria-label="本节链接" href="#solution-materialize">#</a></h3>
 <p>先定义指标，再定义一个物化对象，按固定粒度预聚合这些指标：</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
 
-sales_yoy:
+销售额同比:
     type: measure
-    formula: '{sales: yoy}'
+    formula: '{销售额: yoy}'
 
-sales_mat:
+销售汇总:
     type: measure
-    formula: '{sales: mat}'
+    formula: '{销售额: mat}'
 
 DWS_SALES_DATE_PRODUCT:
     type: materialize
@@ -109,11 +116,11 @@ DWS_SALES_DATE_PRODUCT:
         dt_date: date
     dimension:
         - dt_date
-        - product
+        - 商品
     measures:
-        - sales
-        - sales_yoy
-        - sales_mat
+        - 销售额
+        - 销售额同比
+        - 销售汇总
 </code></pre>
 <p>数据集也可以在自身定义中直接声明物化（在数据集上指定 <code>materialize: &lt;name&gt;</code>）。请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a>。有关独立对象形式，请参阅<a href="reference--materialization.zh.html">物化声明</a>。</p>
 <blockquote>
@@ -126,12 +133,12 @@ DWS_SALES_DATE_PRODUCT:
 <li>物化通过对应的存储过程（<code>parameters:</code>）刷新，不会实时更新。</li>
 </ol>
 <h3 id="query-with-non-materialized-filter">使用未物化维度筛选的查询 <a class="section-link" aria-label="本节链接" href="#query-with-non-materialized-filter">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
+<pre><code class="language-sql">SELECT dt_month, 商品, 地区, AGG(销售额)
 FROM MODEL
-WHERE region = 'North'
-GROUP BY dt_month, product, region
+WHERE 地区 = 'North'
+GROUP BY dt_month, 商品, 地区
 </code></pre>
-<p>如果物化粒度为 <code>dt_date + product</code>（不含 <code>region</code>），则无法用该物化结果处理此查询。必要时可以考虑按多个粒度分别物化。</p>
+<p>如果物化粒度为 <code>dt_date + 商品</code>（不含 <code>地区</code>），则无法用该物化结果处理此查询。必要时可以考虑按多个粒度分别物化。</p>
 <h3 id="when-to-materialize">何时使用物化 <a class="section-link" aria-label="本节链接" href="#when-to-materialize">#</a></h3>
 <table>
 <thead>
@@ -161,50 +168,59 @@ GROUP BY dt_month, product, region
 <td>是</td>
 </tr>
 </tbody></table>
-<p><strong>要点</strong>：使用 <code>type: materialize</code> 对象声明物化（用 <code>dimension:</code> 指定粒度，用 <code>measures:</code> 指定指标）。不能直接在指标上声明物化。查询仍按常规方式引用已物化的指标（<code>AGG(sales)</code>）。请参阅<a href="reference--materialization.zh.html#55-materialize-definition-type-materialize">物化定义（<code>type: materialize</code>）</a>和<a href="how-to--design-materializations.zh.html">物化设计</a>。</p>
+<p><strong>要点</strong>：使用 <code>type: materialize</code> 对象声明物化（用 <code>dimension:</code> 指定粒度，用 <code>measures:</code> 指定指标）。不能直接在指标上声明物化。查询仍按常规方式引用已物化的指标（<code>AGG(销售额)</code>）。请参阅<a href="reference--materialization.zh.html#55-materialize-definition-type-materialize">物化定义（<code>type: materialize</code>）</a>和<a href="how-to--design-materializations.zh.html">物化设计</a>。</p>
 <h3 id="materialize-as-etl-replacement">使用物化替代 ETL <a class="section-link" aria-label="本节链接" href="#materialize-as-etl-replacement">#</a></h3>
 <p><strong>业务问题</strong>：一个存储过程构建事实表（<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>），随后报表使用 <code>RPT_X</code>。能否用 DML 替代这个存储过程？</p>
 <h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">解决方案：将 ETL 流水线建模为物化对象 <a class="section-link" aria-label="本节链接" href="#solution-model-the-etl-pipeline-as-a-materialize-object">#</a></h3>
 <p>请对<strong>整个流水线</strong>建模，而不是将 <code>RPT_X</code> 视为外部构建的 <code>table:</code> 数据集。将原始数据源定义为 <code>table:</code> 数据集，通过链式调用 <code>pk()</code> 补充数据，再将 <code>RPT_X</code> 定义为 <code>type: materialize</code> 对象，从补充后的数据源进行预聚合。</p>
 <pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure's #temp tables)
-Dim Customer:
+客户名录:
     type: dataset
     table: MDM_STORE
-    dimension: [store_id]
+    dimension: [门店编号]
     columns:
-        store_id:
-        store_name:
-        hq_id:
+        门店编号:
+            abbr: store_id
+        门店名称:
+            abbr: store_name
+        总部编号:
+            abbr: hq_id
 
-Dim Org:
+组织名录:
     type: dataset
     table: MDM_ORG
-    dimension: [org_id]
+    dimension: [组织编号]
     columns:
-        org_id:
-        emp_name:
+        组织编号:
+            abbr: org_id
+        员工姓名:
+            abbr: emp_name
 
 # 2. Source fact dataset with pk() chain enrichment
 #    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
-raw_sales:
+销售明细数据:
     type: dataset
     table: RAW_SALES
-    dimension: [dt_month, store_id, prod_id]
+    dimension: [dt_month, 门店编号, 商品编号]
     columns:
         dt_month:
-        store_id:
-        prod_id:
-        amt:
+            abbr: dt_month
+        门店编号:
+            abbr: store_id
+        商品编号:
+            abbr: prod_id
+        金额:
+            abbr: amt
         # pk() chain enrichment replaces LEFT JOINs
-        store_name: pk({store_id}).{Dim Customer}.store_name
-        hq_id: pk({store_id}).{Dim Customer}.hq_id
+        门店名称: pk({门店编号}).{客户名录}.门店名称
+        总部编号: pk({门店编号}).{客户名录}.总部编号
         # nested pk() chain: hq_id → Dim Customer → ... (hq_id is itself a pk result)
-        hq_name: pk({hq_id}).{Dim Customer}.store_name
+        总部名称: pk({总部编号}).{客户名录}.门店名称
         # three-hop chain: store → hq_id → org_id → emp_name
-        hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-        hq_emp: pk({hq_org_id}).{Dim Org}.emp_name
+        总部组织编号: pk({总部编号}).{客户名录}.组织编号
+        总部员工: pk({总部组织编号}).{组织名录}.员工姓名
     measures:
-        sales: SUM({amt})
+        销售额: SUM({金额})
 
 # 3. Materialize replaces INSERT INTO RPT_X
 #    Grain keys (dt_month, store_id, prod_id) go in dimension:.
@@ -216,14 +232,14 @@ RPT_X:
         dt_month: range
     dimension:
         - dt_month
-        - store_id
-        - prod_id
+        - 门店编号
+        - 商品编号
     dimension_columns:
-        store_name:
-        hq_name:
-        hq_emp:
+        门店名称:
+        总部名称:
+        总部员工:
     measures:
-        - sales
+        - 销售额
 
 # 4. Report query consumes the materialize
 report:
@@ -233,8 +249,8 @@ report:
     filters:
         dt_month: { range: ['2024-01-01', '2024-03-01'] }
     columns:
-        dimension: [dt_month, store_name]
-        sales: '{sales}'
+        dimension: [dt_month, 门店名称]
+        销售额: '{销售额}'
 </code></pre>
 <p><strong>何时使用此模式</strong>：</p>
 <ul>
@@ -249,85 +265,94 @@ report:
 </ul>
 <hr>
 <h2 id="uneven-dimensions">维度不一致 <a class="section-link" aria-label="本节链接" href="#uneven-dimensions">#</a></h2>
-<p><strong>业务问题</strong>：比较按地区划分的销售额和按仓库划分的库存。两者共有 <code>dt_date</code> 和 <code>product</code>，但 <code>region</code> 和 <code>warehouse</code> 都不是共有维度。</p>
+<p><strong>业务问题</strong>：比较按地区划分的销售额和按仓库划分的库存。两者共有 <code>dt_date</code> 和 <code>商品</code>，但 <code>地区</code> 和 <code>仓库</code> 都不是共有维度。</p>
 <h3 id="the-challenge">比较的难点 <a class="section-link" aria-label="本节链接" href="#the-challenge">#</a></h3>
 <p>如果数据集的维度完全不同，必须先对齐维度，才能直接比较其中的指标。</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">销售额:
     type: dataset
     table: fact_sales
     dimension:
         - dt_date
-        - product
-        - region
-        - customer
+        - 商品
+        - 地区
+        - 客户
     columns:
         dt_date:
-        product:
-        region:
-        customer:
-        amount:
+            abbr: dt_date
+        商品:
+            abbr: product
+        地区:
+            abbr: region
+        客户:
+            abbr: customer
+        销售金额:
+            abbr: amount
 
-inventory:
+库存:
     type: dataset
     table: fact_inventory
     dimension:
         - dt_date
-        - product
-        - warehouse
+        - 商品
+        - 仓库
     columns:
         dt_date:
-        product:
-        warehouse:
-        units:
+            abbr: dt_date
+        商品:
+            abbr: product
+        仓库:
+            abbr: warehouse
+        件数:
+            abbr: units
 
-total_sales:
+销售总额:
     type: measure
-    dataset: sales
-    formula: SUM({amount})
+    dataset: 销售额
+    formula: SUM({销售金额})
 
-total_inventory:
+库存总量:
     type: measure
-    dataset: inventory
-    formula: SUM({units})
+    dataset: 库存
+    formula: SUM({件数})
 </code></pre>
 <h3 id="common-grain-by-product-and-date">共同粒度：按产品和日期 <a class="section-link" aria-label="本节链接" href="#common-grain-by-product-and-date">#</a></h3>
-<pre><code class="language-sql">SELECT dt_date, product, AGG(total_sales), AGG(total_inventory)
+<pre><code class="language-sql">SELECT dt_date, 商品, AGG(销售总额), AGG(库存总量)
 FROM MODEL
 WHERE dt_date = date(current_date)
-GROUP BY dt_date, product
+GROUP BY dt_date, 商品
 </code></pre>
-<p>两项指标共有 <code>dt_date</code> 和 <code>product</code>，因此可以这样比较。模型会隐式处理缺少的维度。</p>
+<p>两项指标共有 <code>dt_date</code> 和 <code>商品</code>，因此可以这样比较。模型会隐式处理缺少的维度。</p>
 <h3 id="if-you-need-region--warehouse-in-the-same-query">同一查询中需要同时使用地区和仓库时 <a class="section-link" aria-label="本节链接" href="#if-you-need-region--warehouse-in-the-same-query">#</a></h3>
-<p>通常<strong>不能</strong>同时按 <code>region</code> 和 <code>warehouse</code> 分组，因为 <code>total_inventory</code> 没有 <code>region</code>，而 <code>total_sales</code> 没有 <code>warehouse</code>。</p>
+<p>通常<strong>不能</strong>同时按 <code>地区</code> 和 <code>仓库</code> 分组，因为 <code>库存总量</code> 没有 <code>地区</code>，而 <code>销售总额</code> 没有 <code>仓库</code>。</p>
 <p><strong>方案 1</strong>：使用两个独立查询</p>
-<pre><code class="language-sql">-- Sales by region
-SELECT dt_date, region, AGG(total_sales) FROM MODEL GROUP BY dt_date, region
+<pre><code class="language-sql">-- Sales by 地区
+SELECT dt_date, 地区, AGG(销售总额) FROM MODEL GROUP BY dt_date, 地区
 
--- Inventory by warehouse
-SELECT dt_date, warehouse, AGG(total_inventory) FROM MODEL GROUP BY dt_date, warehouse
+-- Inventory by 仓库
+SELECT dt_date, 仓库, AGG(库存总量) FROM MODEL GROUP BY dt_date, 仓库
 </code></pre>
 <p><strong>方案 2</strong>：使用修饰符移除不兼容的维度</p>
-<pre><code class="language-sql">SELECT dt_date, region,
-       AGG(total_sales) as sales,
-       AGG({total_inventory: {-d: warehouse}}) as inventory_dropped_warehouse
+<pre><code class="language-sql">SELECT dt_date, 地区,
+       AGG(销售总额) as 销售额,
+       AGG({库存总量: {-d: 仓库}}) as 所有仓库库存量
 FROM MODEL
-GROUP BY dt_date, region
+GROUP BY dt_date, 地区
 </code></pre>
-<p><code>{-d: warehouse}</code> 将 <code>warehouse</code> 从定义库存粒度的维度中移除。这样，库存按 <code>dt_date + product</code> 粒度计算，并可与 <code>dt_date + region + product</code> 粒度的销售额联接。不过，这种联接在业务含义上通常值得商榷，请谨慎使用。</p>
+<p><code>{-d: 仓库}</code> 将 <code>仓库</code> 从定义库存粒度的维度中移除。这样，库存按 <code>dt_date + 商品</code> 粒度计算，并可与 <code>dt_date + 地区 + 商品</code> 粒度的销售额联接。不过，这种联接在业务含义上通常值得商榷，请谨慎使用。</p>
 <p><a id="minus-dim_dt-pattern"></a></p>
 <h3 id="selected-period-and-all-history-totals">所选期间与全部历史的合计 <a class="section-link" aria-label="本节链接" href="#selected-period-and-all-history-totals">#</a></h3>
 <p><code>-d</code> 会取消分组。如果仍有月份筛选条件，取消分组并不意味着查询涵盖全部历史。对于这些模型片段，请使用各自明确指定范围的独立查询：</p>
 <pre><code class="language-sql">-- Selected month
-SELECT product, region, AGG(total_sales) AS period_sales
+SELECT 商品, 地区, AGG(销售总额) AS 期间销售额
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product, region
+GROUP BY 商品, 地区
 
 -- All history
-SELECT product, region, AGG(total_sales) AS all_time_sales
+SELECT 商品, 地区, AGG(销售总额) AS 历年销售额
 FROM MODEL
-GROUP BY product, region
+GROUP BY 商品, 地区
 </code></pre>
-<p>请使用本页要求的模型定义，分别执行这些语句。有关在同一份报表中实际执行完整比较的示例，请参阅<a href="examples--fixed-total-zh.html">固定轴分母</a>。该示例中的常规分组字段 <code>month</code> 有别于时间上下文 <code>dim_dt</code>。</p>
+<p>请使用本页要求的模型定义，分别执行这些语句。有关在同一份报表中实际执行完整比较的示例，请参阅<a href="examples--fixed-total-zh.html">固定轴分母</a>。示例按 <code>dt_month</code> 对日期分组。</p>
 <p><strong>要点</strong>：如果不同数据集中的指标有足够多的共有维度，就可以在同一查询中查询这些指标。如果维度不一致，请使用独立查询，或谨慎使用 <code>-d</code> 修饰符。为强行兼容而移除维度可能产生误导性结果，请记录这样做的目的。</p>
 </main></body></html>

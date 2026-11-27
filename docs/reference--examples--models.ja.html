@@ -3,47 +3,53 @@
 <h2 id="dimension-modifiers">ディメンション修飾子 <a class="section-link" aria-label="この節へのリンク" href="#dimension-modifiers">#</a></h2>
 <p><strong>分析の問い</strong>：各製品が属するカテゴリ内で、その製品の割合はどのくらいですか？</p>
 <h3 id="product-share-within-category">カテゴリ内の製品別割合 <a class="section-link" aria-label="この節へのリンク" href="#product-share-within-category">#</a></h3>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
+<pre><code class="language-sql">SELECT 分類, 商品,
+       AGG(売上高) as 商品別売上高,
+       AGG({売上高: {dimension: [分類]}}) as 分類別売上合計
 FROM MODEL
-GROUP BY category, product
+GROUP BY 分類, 商品
 </code></pre>
-<p>ここでは <code>{sales: {dimension: [category]}}</code> が <code>product</code> と <code>region</code> を除外するため、<code>sales</code> はカテゴリだけを粒度として評価されます。</p>
+<p>ここでは <code>{売上高: {dimension: [分類]}}</code> が <code>商品</code> と <code>地域</code> を除外するため、<code>売上高</code> はカテゴリだけを粒度として評価されます。</p>
 <h3 id="using-pot-percentage-of-total"><code>pot</code> の使用（総計に対する割合） <a class="section-link" aria-label="この節へのリンク" href="#using-pot-percentage-of-total">#</a></h3>
 <p><code>pot</code> は<strong>すべての</strong>ディメンションを除外し、各行の値が総計に占める割合を求めます。</p>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: pot}) as share_of_grand_total
+<pre><code class="language-sql">SELECT 分類, 商品,
+       AGG(売上高) as 商品別売上高,
+       AGG({売上高: pot}) as 総計構成比
 FROM MODEL
-GROUP BY category, product
+GROUP BY 分類, 商品
 </code></pre>
 <p>親ディメンション内での割合（たとえば、製品の値をカテゴリの合計で割った値）を求める場合は、代わりに <code>dimension</code> 修飾子を使用します。</p>
-<pre><code class="language-sql">-- Share of category (product / category total)
-SELECT category, product,
-       AGG(sales) as product_sales,
-       DIVIDE(AGG(sales), AGG({sales: {dimension: [category]}})) as category_share
+<pre><code class="language-sql">-- Share of 分類 (商品 / 分類 合計)
+SELECT 分類, 商品,
+       AGG(売上高) as 商品別売上高,
+       DIVIDE(AGG(売上高), AGG({売上高: {dimension: [分類]}})) as 分類別売上構成比
 FROM MODEL
-GROUP BY category, product
+GROUP BY 分類, 商品
 </code></pre>
 <h3 id="hidden-dimension-fields">非表示のディメンションフィールド <a class="section-link" aria-label="この節へのリンク" href="#hidden-dimension-fields">#</a></h3>
 <p>データセットには、内部計算に必要でも、エンドユーザーには表示すべきでないディメンションが含まれることがあります。</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">取引明細:
     type: dataset
+    table: fact_transactions
     dimension:
         - dt_date
-        - product
-        - region
+        - 商品
+        - 地域
     columns:
         dt_date:
-        product:
-        region:
-        transaction_id:          # internal dimension, not for analysis
-        amount:
+            abbr: dt_date
+        商品:
+            abbr: product
+        地域:
+            abbr: region
+        取引番号:          # internal dimension, not for analysis
+            abbr: transaction_id
+        売上金額:
+            abbr: amount
 </code></pre>
-<p><code>transaction_id</code> は引き続き <code>+d</code> 修飾子で使えます。MODEL テーブルには表示されません。</p>
+<p><code>取引番号</code> は引き続き <code>+d</code> 修飾子で使えます。MODEL テーブルには表示されません。</p>
 <h3 id="moving-annual-total-mat">移動年間合計（MAT） <a class="section-link" aria-label="この節へのリンク" href="#moving-annual-total-mat">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+<pre><code class="language-sql">SELECT dt_month, AGG(売上高), AGG({売上高: mat})
 FROM MODEL
 WHERE dt_month BETWEEN date(current_date, 'start of month', '-12 months')
                    AND date(current_date, 'start of month', '-1 month')
@@ -55,33 +61,34 @@ GROUP BY dt_month
 <h2 id="combo-columns">組み合わせ列 <a class="section-link" aria-label="この節へのリンク" href="#combo-columns">#</a></h2>
 <p><strong>分析の問い</strong>：製品ごとに、支払い済みの請求書に記載された数量の最小値を表示するにはどうすればよいですか？</p>
 <h3 id="conditional-aggregation">条件付き集計 <a class="section-link" aria-label="この節へのリンク" href="#conditional-aggregation">#</a></h3>
-<pre><code class="language-yaml">min_paid_qty:
+<pre><code class="language-yaml">最小支払済数量:
     type: measure
-    dataset: transactions
-    formula: MINIF({quantity}, {is_paid} = 1)
+    dataset: 取引明細
+    formula: MINIF({数量}, {支払済} = 1)
 </code></pre>
-<pre><code class="language-sql">SELECT product, AGG(min_paid_qty)
+<pre><code class="language-sql">SELECT 商品, AGG(最小支払済数量)
 FROM MODEL
-GROUP BY product
+GROUP BY 商品
 </code></pre>
 <h3 id="calendar-densification-vs-fill-default">日付の補完と既定値による補完の違い <a class="section-link" aria-label="この節へのリンク" href="#calendar-densification-vs-fill-default">#</a></h3>
-<p><strong>日付を補完する</strong>（すべての日付を表示）：カレンダーまたは連続した日付系列で必要な粒度が使えるようにします。たとえば、<code>Dim Calendar</code> でフラグを設定し、その粒度でクエリを実行します。</p>
-<pre><code class="language-yaml">Dim Calendar:
+<p><strong>日付を補完する</strong>（すべての日付を表示）：カレンダーまたは連続した日付系列で必要な粒度が使えるようにします。たとえば、<code>カレンダー</code> でフラグを設定し、その粒度でクエリを実行します。</p>
+<pre><code class="language-yaml">カレンダー:
     type: dataset
     table: DML_CALENDAR
     dimension:
         - dt_date
     columns:
         dt_date:
-        has_data:
+            abbr: dt_date
+        データ有無:
             source: '1'
 </code></pre>
 <p><strong>行が欠落している場合に既定値で補完する</strong>（結合 / FOJ 後の NULL の伝播を防ぐ）：最外層に <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code> を指定して有効にします。補完が適用されるのは、その指標の<strong>使用箇所</strong>だけです。詳細は<a href="reference--measures.ja.html#fill-default-when-row-missing">欠落行の補完</a>を参照してください。</p>
-<pre><code class="language-yaml">daily_sales:
+<pre><code class="language-yaml">日別売上高:
     type: measure
-    formula: 'isnull(SUM({sales: {+d: dt_date}}), 0)'   # activate
+    formula: 'isnull(SUM({売上高: {+d: dt_date}}), 0)' # activate
 </code></pre>
-<p>後続の複合計算で<strong>結合後の欠落行</strong>を補う場合は、<code>SUM(isnull({sales: {+d: dt_date}}, 0))</code> だけに頼らないでください。参照する指標か、複合計算の結果に対して補完を有効にします。</p>
+<p>後続の複合計算で<strong>結合後の欠落行</strong>を補う場合は、<code>SUM(isnull({売上高: {+d: dt_date}}, 0))</code> だけに頼らないでください。参照する指標か、複合計算の結果に対して補完を有効にします。</p>
 <p><strong>要点</strong>：条件に基づいて単一の値に集計するには、<code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> を使用します。<strong>日付</strong>に欠落がある場合は日付を補完し、<strong>結合後の指標の行</strong>に欠落がある場合は使用箇所で既定値を使って補完します（P28b）。</p>
 <h3 id="allows-all-for-materialization-selection">マテリアライズ候補の選択に使う <code>allows: ALL</code> <a class="section-link" aria-label="この節へのリンク" href="#allows-all-for-materialization-selection">#</a></h3>
 <p>構文と例については、<a href="reference--query-yaml.ja.html#411-allows-all"><code>allows: ALL</code></a>を参照してください。<code>allows: ALL</code> を指定すると、互換性のあるマテリアライズを候補にできます。指標の粒度に関する制約は引き続き適用されます。</p>
@@ -90,18 +97,18 @@ GROUP BY product
 <p><strong>分析の問い</strong>：あるダッシュボードは、過去 24 か月の月次売上、前年同月比の伸び率、MAT を毎時クエリします。元のデータセットは非常に大きくなっています。</p>
 <h3 id="solution-materialize">解決策：マテリアライズする <a class="section-link" aria-label="この節へのリンク" href="#solution-materialize">#</a></h3>
 <p>指標を定義し、続いて、それらの指標を固定の粒度で事前集計するマテリアライズオブジェクトを定義します。</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
 
-sales_yoy:
+売上高前年同期比:
     type: measure
-    formula: '{sales: yoy}'
+    formula: '{売上高: yoy}'
 
-sales_mat:
+売上集計:
     type: measure
-    formula: '{sales: mat}'
+    formula: '{売上高: mat}'
 
 DWS_SALES_DATE_PRODUCT:
     type: materialize
@@ -109,11 +116,11 @@ DWS_SALES_DATE_PRODUCT:
         dt_date: date
     dimension:
         - dt_date
-        - product
+        - 商品
     measures:
-        - sales
-        - sales_yoy
-        - sales_mat
+        - 売上高
+        - 売上高前年同期比
+        - 売上集計
 </code></pre>
 <p>データセットは、自身の定義内でマテリアライズを宣言することもできます（データセットに <code>materialize: &lt;name&gt;</code> を指定）。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセット定義（<code>type: dataset</code>）</a>を参照してください。独立したオブジェクトとして定義する形式については、<a href="reference--materialization.ja.html">マテリアライズの宣言</a>を参照してください。</p>
 <blockquote>
@@ -126,12 +133,12 @@ DWS_SALES_DATE_PRODUCT:
 <li>マテリアライズの更新は、対応するストアドプロシージャ（<code>parameters:</code>）で行います。リアルタイムでは更新されません。</li>
 </ol>
 <h3 id="query-with-non-materialized-filter">マテリアライズされていないディメンションで絞り込むクエリ <a class="section-link" aria-label="この節へのリンク" href="#query-with-non-materialized-filter">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
+<pre><code class="language-sql">SELECT dt_month, 商品, 地域, AGG(売上高)
 FROM MODEL
-WHERE region = 'North'
-GROUP BY dt_month, product, region
+WHERE 地域 = 'North'
+GROUP BY dt_month, 商品, 地域
 </code></pre>
-<p>マテリアライズの粒度が <code>dt_date + product</code>（<code>region</code> なし）の場合、このクエリにはそのマテリアライズを使用できません。必要に応じて、複数の粒度でのマテリアライズを検討してください。</p>
+<p>マテリアライズの粒度が <code>dt_date + 商品</code>（<code>地域</code> なし）の場合、このクエリにはそのマテリアライズを使用できません。必要に応じて、複数の粒度でのマテリアライズを検討してください。</p>
 <h3 id="when-to-materialize">マテリアライズが適した場面 <a class="section-link" aria-label="この節へのリンク" href="#when-to-materialize">#</a></h3>
 <table>
 <thead>
@@ -161,50 +168,59 @@ GROUP BY dt_month, product, region
 <td>はい</td>
 </tr>
 </tbody></table>
-<p><strong>要点</strong>：マテリアライズは <code>type: materialize</code> オブジェクトで宣言します（粒度は <code>dimension:</code>、指標は <code>measures:</code> で指定）。指標自体には宣言できません。マテリアライズされた指標は、クエリで通常どおり参照します（<code>AGG(sales)</code>）。<a href="reference--materialization.ja.html#55-materialize-definition-type-materialize">マテリアライズの定義（<code>type: materialize</code>）</a>と<a href="how-to--design-materializations.ja.html">マテリアライズの設計</a>を参照してください。</p>
+<p><strong>要点</strong>：マテリアライズは <code>type: materialize</code> オブジェクトで宣言します（粒度は <code>dimension:</code>、指標は <code>measures:</code> で指定）。指標自体には宣言できません。マテリアライズされた指標は、クエリで通常どおり参照します（<code>AGG(売上高)</code>）。<a href="reference--materialization.ja.html#55-materialize-definition-type-materialize">マテリアライズの定義（<code>type: materialize</code>）</a>と<a href="how-to--design-materializations.ja.html">マテリアライズの設計</a>を参照してください。</p>
 <h3 id="materialize-as-etl-replacement">ETL をマテリアライズで置き換える <a class="section-link" aria-label="この節へのリンク" href="#materialize-as-etl-replacement">#</a></h3>
 <p><strong>分析の問い</strong>：ストアドプロシージャがファクトテーブルを作成し（<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>）、レポートがその後 <code>RPT_X</code> を使用します。このストアドプロシージャを DML で置き換えられますか？</p>
 <h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">解決策：ETL パイプラインをマテリアライズオブジェクトとしてモデル化する <a class="section-link" aria-label="この節へのリンク" href="#solution-model-the-etl-pipeline-as-a-materialize-object">#</a></h3>
 <p><code>RPT_X</code> を外部で作成された <code>table:</code> データセットとして扱う代わりに、<strong>パイプライン全体</strong>をモデル化します。元データを <code>table:</code> データセットとして定義し、<code>pk()</code> を連鎖させてデータを補強し、<code>RPT_X</code> を補強済みのデータソースから事前集計する <code>type: materialize</code> として定義します。</p>
 <pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure's #temp tables)
-Dim Customer:
+顧客台帳:
     type: dataset
     table: MDM_STORE
-    dimension: [store_id]
+    dimension: [店舗番号]
     columns:
-        store_id:
-        store_name:
-        hq_id:
+        店舗番号:
+            abbr: store_id
+        店舗名:
+            abbr: store_name
+        本部番号:
+            abbr: hq_id
 
-Dim Org:
+組織台帳:
     type: dataset
     table: MDM_ORG
-    dimension: [org_id]
+    dimension: [組織番号]
     columns:
-        org_id:
-        emp_name:
+        組織番号:
+            abbr: org_id
+        従業員名:
+            abbr: emp_name
 
 # 2. Source fact dataset with pk() chain enrichment
 #    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
-raw_sales:
+売上明細データ:
     type: dataset
     table: RAW_SALES
-    dimension: [dt_month, store_id, prod_id]
+    dimension: [dt_month, 店舗番号, 商品番号]
     columns:
         dt_month:
-        store_id:
-        prod_id:
-        amt:
+            abbr: dt_month
+        店舗番号:
+            abbr: store_id
+        商品番号:
+            abbr: prod_id
+        金額:
+            abbr: amt
         # pk() chain enrichment replaces LEFT JOINs
-        store_name: pk({store_id}).{Dim Customer}.store_name
-        hq_id: pk({store_id}).{Dim Customer}.hq_id
+        店舗名: pk({店舗番号}).{顧客台帳}.店舗名
+        本部番号: pk({店舗番号}).{顧客台帳}.本部番号
         # nested pk() chain: hq_id → Dim Customer → ... (hq_id is itself a pk result)
-        hq_name: pk({hq_id}).{Dim Customer}.store_name
+        本部名: pk({本部番号}).{顧客台帳}.店舗名
         # three-hop chain: store → hq_id → org_id → emp_name
-        hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-        hq_emp: pk({hq_org_id}).{Dim Org}.emp_name
+        本部組織番号: pk({本部番号}).{顧客台帳}.組織番号
+        本部従業員: pk({本部組織番号}).{組織台帳}.従業員名
     measures:
-        sales: SUM({amt})
+        売上高: SUM({金額})
 
 # 3. Materialize replaces INSERT INTO RPT_X
 #    Grain keys (dt_month, store_id, prod_id) go in dimension:.
@@ -216,14 +232,14 @@ RPT_X:
         dt_month: range
     dimension:
         - dt_month
-        - store_id
-        - prod_id
+        - 店舗番号
+        - 商品番号
     dimension_columns:
-        store_name:
-        hq_name:
-        hq_emp:
+        店舗名:
+        本部名:
+        本部従業員:
     measures:
-        - sales
+        - 売上高
 
 # 4. Report query consumes the materialize
 report:
@@ -233,8 +249,8 @@ report:
     filters:
         dt_month: { range: ['2024-01-01', '2024-03-01'] }
     columns:
-        dimension: [dt_month, store_name]
-        sales: '{sales}'
+        dimension: [dt_month, 店舗名]
+        売上高: '{売上高}'
 </code></pre>
 <p><strong>このパターンを使う場面</strong>：</p>
 <ul>
@@ -249,85 +265,94 @@ report:
 </ul>
 <hr>
 <h2 id="uneven-dimensions">ディメンションが異なる場合 <a class="section-link" aria-label="この節へのリンク" href="#uneven-dimensions">#</a></h2>
-<p><strong>分析したいこと</strong>：地域別の売上と倉庫別の在庫を比較します。<code>dt_date</code> と <code>product</code> は共通ですが、<code>region</code> と <code>warehouse</code> は共通ではありません。</p>
+<p><strong>分析したいこと</strong>：地域別の売上と倉庫別の在庫を比較します。<code>dt_date</code> と <code>商品</code> は共通ですが、<code>地域</code> と <code>倉庫</code> は共通ではありません。</p>
 <h3 id="the-challenge">比較の課題 <a class="section-link" aria-label="この節へのリンク" href="#the-challenge">#</a></h3>
 <p>ディメンションがまったく異なるデータセットの指標は、ディメンションをそろえない限り直接比較できません。</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">売上高:
     type: dataset
     table: fact_sales
     dimension:
         - dt_date
-        - product
-        - region
-        - customer
+        - 商品
+        - 地域
+        - 顧客
     columns:
         dt_date:
-        product:
-        region:
-        customer:
-        amount:
+            abbr: dt_date
+        商品:
+            abbr: product
+        地域:
+            abbr: region
+        顧客:
+            abbr: customer
+        売上金額:
+            abbr: amount
 
-inventory:
+在庫:
     type: dataset
     table: fact_inventory
     dimension:
         - dt_date
-        - product
-        - warehouse
+        - 商品
+        - 倉庫
     columns:
         dt_date:
-        product:
-        warehouse:
-        units:
+            abbr: dt_date
+        商品:
+            abbr: product
+        倉庫:
+            abbr: warehouse
+        個数:
+            abbr: units
 
-total_sales:
+総売上高:
     type: measure
-    dataset: sales
-    formula: SUM({amount})
+    dataset: 売上高
+    formula: SUM({売上金額})
 
-total_inventory:
+総在庫数:
     type: measure
-    dataset: inventory
-    formula: SUM({units})
+    dataset: 在庫
+    formula: SUM({個数})
 </code></pre>
 <h3 id="common-grain-by-product-and-date">共通の粒度：商品と日付単位 <a class="section-link" aria-label="この節へのリンク" href="#common-grain-by-product-and-date">#</a></h3>
-<pre><code class="language-sql">SELECT dt_date, product, AGG(total_sales), AGG(total_inventory)
+<pre><code class="language-sql">SELECT dt_date, 商品, AGG(総売上高), AGG(総在庫数)
 FROM MODEL
 WHERE dt_date = date(current_date)
-GROUP BY dt_date, product
+GROUP BY dt_date, 商品
 </code></pre>
-<p>両方の指標に <code>dt_date</code> と <code>product</code> が共通しているため、この比較が可能です。モデルは欠けているディメンションを暗黙的に処理します。</p>
+<p>両方の指標に <code>dt_date</code> と <code>商品</code> が共通しているため、この比較が可能です。モデルは欠けているディメンションを暗黙的に処理します。</p>
 <h3 id="if-you-need-region--warehouse-in-the-same-query">同じクエリに地域と倉庫が必要な場合 <a class="section-link" aria-label="この節へのリンク" href="#if-you-need-region--warehouse-in-the-same-query">#</a></h3>
-<p>通常、<code>region</code> と <code>warehouse</code> の両方でグループ化することは <strong>できません</strong>。<code>total_inventory</code> には <code>region</code> がなく、<code>total_sales</code> には <code>warehouse</code> がないためです。</p>
+<p>通常、<code>地域</code> と <code>倉庫</code> の両方でグループ化することは <strong>できません</strong>。<code>総在庫数</code> には <code>地域</code> がなく、<code>総売上高</code> には <code>倉庫</code> がないためです。</p>
 <p><strong>方法 1</strong>：2 つのクエリに分ける</p>
-<pre><code class="language-sql">-- Sales by region
-SELECT dt_date, region, AGG(total_sales) FROM MODEL GROUP BY dt_date, region
+<pre><code class="language-sql">-- Sales by 地域
+SELECT dt_date, 地域, AGG(総売上高) FROM MODEL GROUP BY dt_date, 地域
 
--- Inventory by warehouse
-SELECT dt_date, warehouse, AGG(total_inventory) FROM MODEL GROUP BY dt_date, warehouse
+-- Inventory by 倉庫
+SELECT dt_date, 倉庫, AGG(総在庫数) FROM MODEL GROUP BY dt_date, 倉庫
 </code></pre>
 <p><strong>方法 2</strong>：修飾子で互換性のないディメンションを除外する</p>
-<pre><code class="language-sql">SELECT dt_date, region,
-       AGG(total_sales) as sales,
-       AGG({total_inventory: {-d: warehouse}}) as inventory_dropped_warehouse
+<pre><code class="language-sql">SELECT dt_date, 地域,
+       AGG(総売上高) as 売上高,
+       AGG({総在庫数: {-d: 倉庫}}) as 全倉庫在庫数
 FROM MODEL
-GROUP BY dt_date, region
+GROUP BY dt_date, 地域
 </code></pre>
-<p><code>{-d: warehouse}</code> は、在庫の粒度を定めるディメンションから <code>warehouse</code> を除外します。これにより、在庫は <code>dt_date + product</code> の粒度で計算され、<code>dt_date + region + product</code> の粒度の売上と結合できます。ただし、通常はこの結合が業務上の意味に合うか疑問が残るため、慎重に扱ってください。</p>
+<p><code>{-d: 倉庫}</code> は、在庫の粒度を定めるディメンションから <code>倉庫</code> を除外します。これにより、在庫は <code>dt_date + 商品</code> の粒度で計算され、<code>dt_date + 地域 + 商品</code> の粒度の売上と結合できます。ただし、通常はこの結合が業務上の意味に合うか疑問が残るため、慎重に扱ってください。</p>
 <p><a id="minus-dim_dt-pattern"></a></p>
 <h3 id="selected-period-and-all-history-totals">選択した期間と全履歴の合計 <a class="section-link" aria-label="この節へのリンク" href="#selected-period-and-all-history-totals">#</a></h3>
 <p><code>-d</code> はグループ化を解除します。月のフィルターが残っている場合、全履歴が対象になるわけではありません。これらのモデル断片では、対象範囲を明示したクエリを個別に使用します。</p>
 <pre><code class="language-sql">-- Selected month
-SELECT product, region, AGG(total_sales) AS period_sales
+SELECT 商品, 地域, AGG(総売上高) AS 期間売上高
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product, region
+GROUP BY 商品, 地域
 
 -- All history
-SELECT product, region, AGG(total_sales) AS all_time_sales
+SELECT 商品, 地域, AGG(総売上高) AS 全期間売上高
 FROM MODEL
-GROUP BY product, region
+GROUP BY 商品, 地域
 </code></pre>
-<p>このページで必要となるモデル定義を使って、各ステートメントを個別に実行してください。1 つのレポート内で比較を最後まで実行した例は、<a href="examples--fixed-total.ja.html">固定軸の分母</a>を参照してください。その例で通常のグループ化に使うフィールド <code>month</code> は、時間コンテキスト <code>dim_dt</code> とは別です。</p>
+<p>このページで必要となるモデル定義を使って、各ステートメントを個別に実行してください。1 つのレポート内で比較を最後まで実行した例は、<a href="examples--fixed-total.ja.html">固定軸の分母</a>を参照してください。この例では日付を <code>dt_month</code> でグループ化します。</p>
 <p><strong>要点</strong>：共通するディメンションが十分にあれば、異なるデータセットの指標を同じクエリで取得できます。ディメンションがそろわない場合は、クエリを分けるか、<code>-d</code> 修飾子を慎重に適用してください。互換性を持たせるためにディメンションを除外すると、結果が誤解を招くことがあります。除外の意図を記録してください。</p>
 </main></body></html>

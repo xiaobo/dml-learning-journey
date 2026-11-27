@@ -27,35 +27,39 @@
 </tbody></table>
 <p>检查生成的 SQL，确认各窗口在哪个阶段计算。编译、在数据库中执行和比较结果是三项独立的检查。</p>
 <h2 id="detail-window">明细窗口 <a class="section-link" aria-label="本节链接" href="#detail-window">#</a></h2>
-<pre><code class="language-yaml">fact:
+<pre><code class="language-yaml">交易记录:
   type: dataset
   table: FACT_SALES
-  dimension: [id]
+  dimension: [销售明细编号]
   columns:
-    id:
-    customer:
-    region:
-    amount:
-    customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
+    销售明细编号:
+      abbr: id
+    客户:
+      abbr: customer
+    地区:
+      abbr: region
+    销售金额:
+      abbr: amount
+    客户交易额: 'SUM({销售金额}) OVER (PARTITION BY {客户})'
   measures:
-    repeated_customer_amount: 'SUM({customer_amount})'
+    逐行客户交易额: 'SUM({客户交易额})'
 </code></pre>
 <p>窗口会在同一客户的每个明细行中重复写入该客户的总额。对计算列求和时，每个源行都会计入一次该行上的客户总额。结果并非按客户去重后的总额，因此此示例仅用于说明窗口的位置，不作为推荐的销售额指标。</p>
 <p>对行顺序敏感的窗口还取决于排序、窗口帧、用于确定并列行顺序的键，以及参与计算的源行集合。改变过滤器的应用阶段，可能会改变一个分区内的所有窗口结果。</p>
-<p>明细窗口也可以在聚合前选取最后一条观测记录。对于包含 <code>dt_month</code> 和 <code>revenue_amount</code> 的数据源，经验证的写法会添加以下列和指标。</p>
+<p>明细窗口也可以在聚合前选取最后一条观测记录。对于包含 <code>dt_month</code> 和 <code>收入金额</code> 的数据源，经验证的写法会添加以下列和指标。</p>
 <pre><code class="language-yaml"># Under the dataset's columns:
-is_last_month: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
+是否上月: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
 # Under the same dataset's measures:
-last_month_revenue: 'SUM({revenue_amount} * {is_last_month})'
+上月收入: 'SUM({收入金额} * {是否上月})'
 </code></pre>
 <p><code>MAX(...) OVER ()</code> 从明细窗口的输入中选出唯一一个最近月份。指标只汇总该月的金额。窗口不按实体分区。如果某个实体在该月没有观测记录，其最后一个已知余额不会结转至该月。对于库存或账户余额，采用公式前，请先明确“最后”是按实体确定还是在全局范围内确定、如何处理缺失的观测记录，以及哪些过滤器限定窗口的输入范围。</p>
 <h2 id="post-aggregation-window">聚合后的窗口 <a class="section-link" aria-label="本节链接" href="#post-aggregation-window">#</a></h2>
-<p>给定原子指标 <code>sales: SUM({amount})</code>，此复合公式对聚合后的销售额进行排名。</p>
-<pre><code class="language-yaml">customer_rank:
+<p>给定原子指标 <code>销售额: SUM({销售金额})</code>，此复合公式对聚合后的销售额进行排名。</p>
+<pre><code class="language-yaml">客户排名:
   type: measure
-  formula: 'rank() over (partition by {-d: customer} order by {sales} desc)'
+  formula: 'rank() over (partition by {-d: 客户} order by {销售额} desc)'
 </code></pre>
-<p>当查询行按 <code>[region, customer]</code> 的粒度定义时，分区表达式保留查询中的其他字段，此处为 <code>region</code>。经验证的 SQL 先按地区和客户分组，再在每个地区内对 <code>SUM(amount)</code> 进行排名。排名的输入不包括物理事实行。</p>
+<p>当查询行按 <code>[地区, 客户]</code> 的粒度定义时，分区表达式保留查询中的其他字段，此处为 <code>地区</code>。经验证的 SQL 先按地区和客户分组，再在每个地区内对 <code>SUM(amount)</code> 进行排名。排名的输入不包括物理事实行。</p>
 <p><code>+d</code> 建立一个粒度更细的聚合阶段。它不会将分组值变成明细窗口的属性。源数据过滤器、窗口结果过滤器和最终报表过滤器可能会选出不同的行集合。</p>
 <p>Model Query 也接受经过验证的直接编写窗口表达式的形式。<a href="reference--model-query-sql.zh.html">查询参考</a>介绍了可用的查询接口。接受其中一种写法，并不代表支持任意窗口帧或方言。</p>
 <h2 id="row-windows-and-calendar-periods">行窗口与日历期间 <a class="section-link" aria-label="本节链接" href="#row-windows-and-calendar-periods">#</a></h2>

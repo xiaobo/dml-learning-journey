@@ -14,12 +14,12 @@
 <tbody><tr>
 <td>列</td>
 <td><code>{column_name}</code></td>
-<td><code>SUM({amount})</code></td>
+<td><code>SUM({销售金额})</code></td>
 </tr>
 <tr>
 <td>指标</td>
 <td><code>{measure_name}</code></td>
-<td><code>DIVIDE({sales}, {count})</code></td>
+<td><code>DIVIDE({销售额}, {count})</code></td>
 </tr>
 <tr>
 <td>其他数据集中的列</td>
@@ -29,12 +29,12 @@
 <tr>
 <td>带修饰符的指标</td>
 <td><code>{measure: modifier}</code></td>
-<td><code>{sales: yoy}</code></td>
+<td><code>{销售额: yoy}</code></td>
 </tr>
 <tr>
 <td>带嵌套修饰符的指标</td>
 <td><code>{measure: {modifier: sub}}</code></td>
-<td><code>{sales: {+d: customer}}</code></td>
+<td><code>{销售额: {+d: 客户}}</code></td>
 </tr>
 </tbody></table>
 <h3 id="in-model-query-sql">在 Model Query SQL 中 <a class="section-link" aria-label="本节链接" href="#in-model-query-sql">#</a></h3>
@@ -49,22 +49,22 @@
 <tbody><tr>
 <td>列（维度）</td>
 <td>直接使用名称</td>
-<td><code>SELECT product, dt_month</code></td>
+<td><code>SELECT 商品, dt_month</code></td>
 </tr>
 <tr>
 <td>指标</td>
 <td><code>AGG(measure_name)</code></td>
-<td><code>AGG(sales)</code></td>
+<td><code>AGG(销售额)</code></td>
 </tr>
 <tr>
 <td>带修饰符的指标</td>
 <td><code>AGG({measure: modifier})</code></td>
-<td><code>AGG({sales: yoy})</code></td>
+<td><code>AGG({销售额: yoy})</code></td>
 </tr>
 <tr>
 <td>以位置参数指定修饰符的指标</td>
 <td><code>AGG(measure, 'modifier')</code></td>
-<td><code>AGG(sales, 'yoy')</code></td>
+<td><code>AGG(销售额, 'yoy')</code></td>
 </tr>
 </tbody></table>
 <p><strong>基本规则</strong>：花括号 <code>{...}</code> 仅用于 <code>.dml</code>。在 Model Query SQL 中，维度直接使用名称，指标使用 <code>AGG(...)</code>。唯一的例外是修饰符写法 <code>AGG({measure: modifier})</code>。</p>
@@ -72,7 +72,7 @@
 <p>查找支持单字段键、复合键和带生效日期的键。请提供目标的完整键，而不是使用该查找的查询的分组字段。此类属性查找不同于在数据集 SQL 中准备关系，也不同于组合独立聚合的指标。参见<a href="explanation--core-concepts.zh.html#2-source-relations-lookups-and-metric-composition">源关系、查找与指标组合</a>。</p>
 <p>在 <code>.dml</code> 公式中查找其他数据集的列：</p>
 <pre><code class="language-yaml"># Single PK
-formula: 'SUM({amount} * pk(customer_id).{customers}.tier_discount)'
+formula: 'SUM({销售金额} * pk(客户编号).{客户数}.tier_discount)'
 
 # Composite PK
 formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
@@ -81,14 +81,14 @@ formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
 <h3 id="compound-and-effective-date-keys">复合键和带生效日期的键 <a class="section-link" aria-label="本节链接" href="#compound-and-effective-date-keys">#</a></h3>
 <p>目标的 <code>dimension:</code> 定义其完整的源键，而不是报表的分组方式。以下两种查找写法均按声明顺序使用目标字段：</p>
 <pre><code class="language-yaml"># Target with a compound key:
-dimension: [id, region]
+dimension: [销售明细编号, 地区]
 # Column in the referring dataset:
-label: 'pk({id}, {region}).{D}.label'
+名称: 'pk({销售明细编号}, {地区}).{D}.名称'
 </code></pre>
 <pre><code class="language-yaml"># Target with an object key and validity interval:
-dimension: [id, 'range(valid_from, valid_to)']
+dimension: [销售明细编号, 'range(valid_from, valid_to)']
 # Column in the referring dataset:
-label: 'pk({id}, {event_date}).{D}.label'
+名称: 'pk({销售明细编号}, {dt_date}).{D}.名称'
 </code></pre>
 <p>请保留 <code>'range(valid_from, valid_to)'</code> 的引号，使逗号留在同一个 YAML 列表项中。事件日期按 <code>[valid_from, valid_to)</code> 匹配，包含起始日期，排除结束日期。因此，2 月 1 日的事件匹配从 2 月 1 日开始的区间，而不匹配当天结束的区间。这与数据库中用于生成数组的 <code>range()</code> 函数不同。</p>
 <p>只要整个复合键唯一，同一 ID 就可以出现在多个地区。同一 ID 的有效日期区间不得重叠。即使编译成功，目标记录重复或区间重叠仍可能使查询产生额外的行。<code>--validate</code> 验证所观察到的数据是否满足键约束，但不会修复数据，也不保证后续执行使用同一数据快照。</p>
@@ -98,7 +98,7 @@ label: 'pk({id}, {event_date}).{D}.label'
 <h2 id="functions">函数 <a class="section-link" aria-label="本节链接" href="#functions">#</a></h2>
 <p><a id="31-core-aggregation-functions"></a></p>
 <h3 id="core-aggregation-functions">基本聚合函数 <a class="section-link" aria-label="本节链接" href="#core-aggregation-functions">#</a></h3>
-<p>这些函数在 <code>.dml</code> 和 Model Query SQL 中均可使用。在 <code>.dml</code> 中，它们可以聚合原始列（<code>SUM({amount})</code>）或更细粒度的指标（<code>SUM({sales: {+d: product}})</code>）。在 Model Query SQL 中，它们只能聚合更细粒度的指标。例如，<code>SUM(AGG({sales: {+d: product}}))</code> 将各产品的销售额相加，得出销售总额。仅引用指标时，单独使用 <code>AGG(measure)</code>。</p>
+<p>这些函数在 <code>.dml</code> 和 Model Query SQL 中均可使用。在 <code>.dml</code> 中，它们可以聚合原始列（<code>SUM({销售金额})</code>）或更细粒度的指标（<code>SUM({销售额: {+d: 商品}})</code>）。在 Model Query SQL 中，它们只能聚合更细粒度的指标。例如，<code>SUM(AGG({销售额: {+d: 商品}}))</code> 将各产品的销售额相加，得出销售总额。仅引用指标时，单独使用 <code>AGG(measure)</code>。</p>
 <table>
 <thead>
 <tr>
@@ -207,16 +207,16 @@ label: 'pk({id}, {event_date}).{D}.label'
 </tbody></table>
 <p><strong>条件聚合示例</strong>：</p>
 <pre><code class="language-yaml"># In .dml
-completed_sales:
+已完成订单销售额:
     type: measure
-    formula: SUMIF({amount}, {status} = 'completed')
+    formula: SUMIF({销售金额}, {订单状态} = 'completed')
 
-high_value_customers:
+高价值客户数:
     type: measure
-    formula: 'DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)'
+    formula: 'DISTINCTCOUNTIF({客户编号}, {销售额: {+d: 客户编号}} &gt; 1000)'
 </code></pre>
 <pre><code class="language-sql">-- In Model Query SQL (modifier form)
-SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+SELECT AGG(销售额, '+f', 地区 = 'North') FROM MODEL
 </code></pre>
 <p><a id="33-conditional-and-utility-functions"></a></p>
 <h3 id="conditional-and-utility-functions">条件函数和辅助函数 <a class="section-link" aria-label="本节链接" href="#conditional-and-utility-functions">#</a></h3>
@@ -246,9 +246,9 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 </tbody></table>
 <p>辅助函数使用 SQL 表达式层。它们可以在公式中使用，但不属于 DML 的正式内在符号。DML 函数目录只将 DML 自身定义的函数列为此类符号，例如 <code>AGG</code>、<code>DIVIDE</code> 和 <code>SUMIF</code>。</p>
 <p>如果指标公式的最外层是以字面量作为后备值的 NULL 合并操作，则该指标的各个引用位置会启用<a href="reference--measures.zh.html#fill-default-when-row-missing">缺失行填充</a>。</p>
-<pre><code class="language-yaml">daily_sales:
+<pre><code class="language-yaml">每日销售额:
     type: measure
-    formula: SUM(ISNULL({sales: {+d: dt_date}}, 0))
+    formula: SUM(ISNULL({销售额: {+d: dt_date}}, 0))
 </code></pre>
 <p><a id="34-date-functions-sqlite-dialect"></a></p>
 <h3 id="date-functions-sqlite-dialect">日期函数（SQLite 方言） <a class="section-link" aria-label="本节链接" href="#date-functions-sqlite-dialect">#</a></h3>
@@ -302,15 +302,15 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 <tbody><tr>
 <td>位置参数写法</td>
 <td><code>AGG(measure, 'mod1', 'mod2')</code></td>
-<td><code>AGG(sales, 'yoy')</code></td>
+<td><code>AGG(销售额, 'yoy')</code></td>
 </tr>
 <tr>
 <td>花括号写法</td>
 <td><code>AGG({measure: mod})</code></td>
-<td><code>AGG({sales: yoy})</code></td>
+<td><code>AGG({销售额: yoy})</code></td>
 </tr>
 </tbody></table>
-<p><strong>别名规则</strong>：正式规则表见<a href="reference--model-query-sql.zh.html#33-alias-rules">Model Query 别名规则</a>。<code>AGG(sales)</code> 会自动获得别名，<code>AGG({sales: yoy})</code> 则必须使用 <code>AS</code>。</p>
+<p><strong>别名规则</strong>：正式规则表见<a href="reference--model-query-sql.zh.html#33-alias-rules">Model Query 别名规则</a>。<code>AGG(销售额)</code> 会自动获得别名，<code>AGG({销售额: yoy})</code> 则必须使用 <code>AS</code>。</p>
 <hr>
 <h2 id="runtime-variables">运行时变量 <a class="section-link" aria-label="本节链接" href="#runtime-variables">#</a></h2>
 <p>这些变量是求值上下文的占位符，而非调用方提供的查询参数。有关应用程序中的绑定，请参见<a href="reference--model-query-sql.zh.html#jdbc-parameters-and-query-kind">JDBC 参数和查询类型</a>。物理 SQL 层的绑定即使通过检查，也不会建立 Model Query 的语义绑定。</p>
@@ -342,5 +342,5 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 <h2 id="database-defined-scalar-functions">数据库定义的标量函数 <a class="section-link" aria-label="本节链接" href="#database-defined-scalar-functions">#</a></h2>
 <p>标量函数调用可以保留在生成的 SQL 中，包括在原子指标内部调用函数，或将函数应用于指标的聚合结果。DML 负责管理指标上下文，目标数据库决定函数的实现及其是否可用。有关可运行的示例、求值阶段的差异和验证要求，请参阅<a href="how-to--define-macros.zh.html#calling-a-function-defined-in-your-database">经过验证的自定义修饰符和数据库函数</a>。这一说明并不普遍适用于聚合 UDF 或返回表的 UDF。</p>
 <h2 id="complete-lookup-examples">完整的查找示例 <a class="section-link" aria-label="本节链接" href="#complete-lookup-examples">#</a></h2>
-<p><code>pk()</code> 按目标数据集中维度的顺序接收参数，并不限于单个键。<a href="examples--compound-key-zh.html">复合键示例</a>声明 <code>[id, region]</code>，并使用 validate-only 检查目标数据集中的键组合是否重复。<a href="examples--range-lookup-zh.html">范围示例</a>使用 <code>[id, 'range(valid_from, valid_to)']</code>，并通过该示例的测试数据验证范围包含起点、排除终点，且重叠的范围会被拒绝。这些示例并不能证明支持任意多对多分配。</p>
+<p><code>pk()</code> 按目标数据集中维度的顺序接收参数，并不限于单个键。<a href="examples--compound-key-zh.html">复合键示例</a>声明 <code>[销售明细编号, 地区]</code>，并使用 validate-only 检查目标数据集中的键组合是否重复。<a href="examples--range-lookup-zh.html">范围示例</a>使用 <code>[销售明细编号, 'range(valid_from, valid_to)']</code>，并通过该示例的测试数据验证范围包含起点、排除终点，且重叠的范围会被拒绝。这些示例并不能证明支持任意多对多分配。</p>
 </main></body></html>

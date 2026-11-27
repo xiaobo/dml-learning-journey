@@ -8,10 +8,10 @@
 [order_id, line_id]
 [product_id, dt_month]
 </code></pre>
-<p>上面的每一行都是一个维度。<code>[product_id, dt_month]</code> 是一个包含两个字段的维度。</p>
+<p>上面的每一行都是一个维度。<code>[商品编号, dt_month]</code> 是一个包含两个字段的维度。</p>
 <p>指标的 <code>dimensions:</code> 多嵌套一层列表，因为它可以包含多个可供选择的允许维度：</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id]
+  - [客户编号]
   - [account_id, dt_month]
 </code></pre>
 <p>外层列表包含两个允许的维度。每个内层列表都是一个维度。</p>
@@ -52,7 +52,7 @@
 <td>限定指标可按哪些维度求值。它不声明如何标识源数据行，也不声明查询如何分组。</td>
 </tr>
 </tbody></table>
-<p>这些作用不能互换。例如，将 <code>[region]</code> 添加到指标的 <code>dimensions:</code> 中，并不会把 <code>region</code> 添加到查询结果中。查询仍然需要 <code>GROUP BY region</code> 或 <code>columns.dimension: [region]</code>。</p>
+<p>这些作用不能互换。例如，将 <code>[地区]</code> 添加到指标的 <code>dimensions:</code> 中，并不会把 <code>地区</code> 添加到查询结果中。查询仍然需要 <code>GROUP BY 地区</code> 或 <code>columns.dimension: [地区]</code>。</p>
 <h2 id="3-grain-is-derived-from-a-dimension">3. 粒度由维度决定 <a class="section-link" aria-label="本节链接" href="#3-grain-is-derived-from-a-dimension">#</a></h2>
 <p><strong>粒度</strong>描述在特定上下文中应用维度后，每一行代表什么。</p>
 <table>
@@ -65,17 +65,17 @@
 </thead>
 <tbody><tr>
 <td>订单明细数据集</td>
-<td><code>[order_id, line_id]</code></td>
+<td><code>[订单号, 行号]</code></td>
 <td>每条订单明细对应一条源数据行</td>
 </tr>
 <tr>
 <td>按产品分组的月度查询</td>
-<td><code>[product_id, dt_month]</code></td>
+<td><code>[商品编号, dt_month]</code></td>
 <td>每个产品与月份的组合对应一条结果行</td>
 </tr>
 <tr>
 <td>按客户求值</td>
-<td><code>[customer_id]</code></td>
+<td><code>[客户编号]</code></td>
 <td>每位客户对应一个中间值</td>
 </tr>
 <tr>
@@ -88,17 +88,21 @@
 <p>添加维度字段通常会使粒度更细，移除维度字段通常会使粒度更粗。仅凭这一规律不足以证明兼容性，还需要考虑字段的派生方式、时间关系、指标约束和数据集边界。由编译器验证声明的关系。</p>
 <h2 id="4-dataset-dimension-source-row-identity">4. 数据集维度与源数据行标识 <a class="section-link" aria-label="本节链接" href="#4-dataset-dimension-source-row-identity">#</a></h2>
 <p>数据集维度包含用于标识单条物理源数据行的字段：</p>
-<pre><code class="language-yaml">Order Line:
+<pre><code class="language-yaml">订单明细:
     type: dataset
     table: tabOrderLine
-    dimension: [order_id, line_id]
+    dimension: [订单号, 行号]
     columns:
-        order_id:
-        line_id:
-        product_id:
-        net_amount:
+        订单号:
+            abbr: order_id
+        行号:
+            abbr: line_id
+        商品编号:
+            abbr: product_id
+        净额:
+            abbr: net_amount
 </code></pre>
-<p>唯一性要求适用于 <code>[order_id, line_id]</code> 的完整值组合。<code>order_id</code> 可以在不同订单明细中重复，<code>line_id</code> 可以在不同订单中重复，而完整的数据集维度仍保持唯一。</p>
+<p>唯一性要求适用于 <code>[订单号, 行号]</code> 的完整值组合。<code>订单号</code> 可以在不同订单明细中重复，<code>行号</code> 可以在不同订单中重复，而完整的数据集维度仍保持唯一。</p>
 <p>不要用值可能重复的业务分组代替物理行标识。如果源数据中同一个 <code>[account_id, invoice_id]</code> 值组合对应多条账目记录，即使报表经常按该组合分组，这个列表也不是有效的数据集维度。应使用账目记录的物理键作为数据集维度，并使用 <code>[account_id, invoice_id]</code> 作为查询维度或物化维度。</p>
 <p><code>pk(...)</code> 依赖目标数据集的维度：</p>
 <ul>
@@ -109,24 +113,24 @@
 <p>编译器信赖这一约定，并且可能将查找转换为 <code>LEFT JOIN</code>。因此，目标键重复可能导致行数成倍增加，指标值也可能被重复计入。在编译生成的 SQL 中添加 <code>DISTINCT</code> 或 <code>GROUP BY</code>，无法修复模型对这一约定的违反。</p>
 <h2 id="5-query-dimension-result-grouping">5. 查询维度与结果分组 <a class="section-link" aria-label="本节链接" href="#5-query-dimension-result-grouping">#</a></h2>
 <p>在 Model Query SQL 中：</p>
-<pre><code class="language-sql">SELECT dt_month, product_id, AGG(net_sales)
+<pre><code class="language-sql">SELECT dt_month, 商品编号, AGG(净销售额)
 FROM MODEL
-GROUP BY dt_month, product_id
+GROUP BY dt_month, 商品编号
 </code></pre>
-<p>查询维度为 <code>[dt_month, product_id]</code>。每个结果行代表一个月份值与产品值的组合。</p>
+<p>查询维度为 <code>[dt_month, 商品编号]</code>。每个结果行代表一个月份值与产品值的组合。</p>
 <p>在 DML 格式的查询中，同样的作用由显式声明指定：</p>
-<pre><code class="language-yaml">Monthly Product Sales:
+<pre><code class="language-yaml">商品月销售:
     type: query
     columns:
-        dimension: [dt_month, product_id]
-        net_sales: "{net_sales}"
+        dimension: [dt_month, 商品编号]
+        净销售额: "{净销售额}"
 </code></pre>
 <p>没有分组的查询没有查询维度。如果指标允许，查询将在总计上下文中返回结果。</p>
 <p>如果兼容的指标来自不同的数据集，编译器会先分别将每个指标聚合到查询粒度，再通过共有的维度字段合并结果。这样可以避免先连接明细行时常见的聚合重复计入问题。数据集维度仍须有效，<code>pk(...)</code> 查找仍须保证匹配的唯一性。</p>
 <p>查询维度字段也可以使用<strong>充当维度的指标</strong>，即把指标结果用作查询维度字段，通常通过 <code>{name: {+d: dim}}</code> 绑定。它仍然承担查询维度的作用，不用于通过数据集的 <code>dimension:</code> 标识源数据行。编写规则请参阅<a href="explanation--measure-as-dimension.zh.html">充当维度的指标</a>。</p>
 <h2 id="6-evaluation-dimension-one-measure-reference">6. 单个指标引用的求值维度 <a class="section-link" aria-label="本节链接" href="#6-evaluation-dimension-one-measure-reference">#</a></h2>
 <p>查询维度为指标引用提供初始上下文。公式结构、允许的维度和修饰符决定其实际求值维度。</p>
-<p>给定查询维度 <code>[dt_month, region, brand]</code>：</p>
+<p>给定查询维度 <code>[dt_month, 地区, 品牌]</code>：</p>
 <table>
 <thead>
 <tr>
@@ -136,27 +140,27 @@ GROUP BY dt_month, product_id
 </tr>
 </thead>
 <tbody><tr>
-<td><code>{sales}</code></td>
+<td><code>{销售额}</code></td>
 <td>无维度修饰符</td>
 <td>解析得到的目标维度</td>
 </tr>
 <tr>
-<td><code>{sales: {+d: customer_id}}</code></td>
-<td>添加维度字段 <code>customer_id</code></td>
-<td><code>[dt_month, region, brand, customer_id]</code></td>
+<td><code>{销售额: {+d: 客户编号}}</code></td>
+<td>添加维度字段 <code>客户编号</code></td>
+<td><code>[dt_month, 地区, 品牌, 客户编号]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {-d: brand}}</code></td>
-<td>移除维度字段 <code>brand</code></td>
-<td><code>[dt_month, region]</code></td>
+<td><code>{销售额: {-d: 品牌}}</code></td>
+<td>移除维度字段 <code>品牌</code></td>
+<td><code>[dt_month, 地区]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: [region]}}</code></td>
+<td><code>{销售额: {dimension: [地区]}}</code></td>
 <td>替换整个维度</td>
-<td><code>[region]</code></td>
+<td><code>[地区]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: []}}</code></td>
+<td><code>{销售额: {dimension: []}}</code></td>
 <td>清除维度</td>
 <td>总计上下文</td>
 </tr>
@@ -165,22 +169,22 @@ GROUP BY dt_month, product_id
 <p><code>-d</code> 移除一个维度字段，但在编译器将筛选条件下推到数据集时，保留该字段上的查询筛选条件。<code>-df</code> 移除该字段，并阻止其相关筛选条件针对该引用传播。如果分母必须包含查询筛选条件排除的值，请使用后者。有关语法和筛选行为，请参阅<a href="reference--modifiers.zh.html">指标修饰符</a>。</p>
 <h2 id="7-allowed-dimensions-measure-validity">7. 指标求值的允许维度 <a class="section-link" aria-label="本节链接" href="#7-allowed-dimensions-measure-validity">#</a></h2>
 <p>当业务定义有此要求时，可通过指标的 <code>dimensions:</code> 限制有效的求值维度：</p>
-<pre><code class="language-yaml">Revenue per Customer:
+<pre><code class="language-yaml">每客户收入:
     type: measure
-    formula: DIVIDE({net_sales}, {active_customers})
+    formula: DIVIDE({净销售额}, {活跃客户数})
     dimensions:
-      - [customer_id]
+      - [客户编号]
 </code></pre>
-<p><code>[customer_id]</code> 是一个封闭的允许维度，仅包含列出的字段。它约束求值，既不标识数据集中的行，也不对查询输出分组。</p>
+<p><code>[客户编号]</code> 是一个封闭的允许维度，仅包含列出的字段。它约束求值，既不标识数据集中的行，也不对查询输出分组。</p>
 <p>省略号允许加入其他维度字段，同时仍要求包含列出的字段：</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id, ...]
+  - [客户编号, ...]
 </code></pre>
-<p>这样可接受包含 <code>customer_id</code> 的兼容求值维度。如果省略指标的 <code>dimensions:</code>，则允许使用与该指标及其依赖的数据集兼容的任何维度。</p>
+<p>这样可接受包含 <code>客户编号</code> 的兼容求值维度。如果省略指标的 <code>dimensions:</code>，则允许使用与该指标及其依赖的数据集兼容的任何维度。</p>
 <p>如果公式需要某个必需的维度字段，而查询未提供该字段，请使用 <code>+d</code> 将它添加到相应的指标引用中，并执行所需的外层聚合。不要仅为满足中间计算的需要而在查询中添加分组。</p>
 <h2 id="8-materialization-dimension-stored-output-identity">8. 物化维度与存储结果的标识 <a class="section-link" aria-label="本节链接" href="#8-materialization-dimension-stored-output-identity">#</a></h2>
 <p>物化维度声明存储结果的分组方式和键：</p>
-<pre><code class="language-yaml">Monthly Account Balance:
+<pre><code class="language-yaml">月度账户余额:
     type: materialize
     dimension: [account_id, dt_month]
     measures: [closing_balance]

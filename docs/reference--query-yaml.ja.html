@@ -12,10 +12,10 @@
     columns:
         dimension:
             - dt_month
-            - product
-        sales:               # measure reference (no AGG needed)
-        sales_yoy:
-            formula: '{sales: yoy}'
+            - 商品
+        売上高:               # measure reference (no AGG needed)
+        売上高前年同期比:
+            formula: '{売上高: yoy}'
 </code></pre>
 <p><code>columns:</code> は必須です。ディメンションを指定するキー以外は出力列の名前を表し、その値には式または指標への直接参照を指定します。オプションの <code>dataset:</code> はデータセットクエリ形式を選択するもので、<code>columns.dimension</code> とは併用できません。</p>
 <p>クエリフィルターには次の形式があります。各キーはフィルターの名前を表し、指標参照の修飾子からその名前で指定できます。</p>
@@ -27,7 +27,7 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td><code>&lt;column&gt;: &lt;値&gt;</code></td>
 <td>同名の列に対する等価条件</td>
 </tr>
 <tr>
@@ -35,7 +35,7 @@
 <td>指定した値のリストに含まれるかどうかの判定</td>
 </tr>
 <tr>
-<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, 値: &lt;値&gt;}</code></td>
 <td>明示的に指定した列に対する名前付き等価フィルター</td>
 </tr>
 <tr>
@@ -70,12 +70,12 @@
 </tr>
 </tbody></table>
 <pre><code class="language-yaml"># Detail query
-product_list:
+商品一覧:
     type: query
     dataset: DATASET_PRODUCTS
     columns:
         dimension:
-            - product
+            - 商品
 </code></pre>
 <p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
 <h2 id="auto-join-of-multi-dataset-measures">複数のデータセットの指標の自動結合 <a class="section-link" aria-label="この節へのリンク" href="#auto-join-of-multi-dataset-measures">#</a></h2>
@@ -95,22 +95,22 @@ product_list:
 <tbody><tr>
 <td>同じデータセットのディメンションフィールド</td>
 <td>名前のみ</td>
-<td><code>product:</code></td>
+<td><code>商品:</code></td>
 </tr>
 <tr>
 <td>別のデータセットのディメンションフィールド</td>
 <td><code>"{DATASET}.column"</code></td>
-<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+<td><code>商品番号: "{DATASET_PRODUCTS}.商品番号"</code></td>
 </tr>
 <tr>
 <td>指標</td>
 <td>名前のみ</td>
-<td><code>sales:</code></td>
+<td><code>売上高:</code></td>
 </tr>
 <tr>
 <td>修飾子付きの指標</td>
 <td><code>formula:</code></td>
-<td><code>sales_yoy: {sales: yoy}</code></td>
+<td><code>売上高前年同期比: {売上高: yoy}</code></td>
 </tr>
 </tbody></table>
 <p><strong>注意</strong>：<code>dataset:</code> を指定していない集計クエリで、特定のデータセットに属する列を単独の列名で参照するとエラーになります。<code>"{DATASET}.column"</code> の形式を使用してください。</p>
@@ -135,13 +135,13 @@ product_list:
 <tr>
 <td><strong>クエリ列 → 指標（自動エイリアス）</strong></td>
 <td>式のないクエリ列で、列名が指標名と一致します。</td>
-<td><code>revenue:</code>（指標 <code>revenue</code> が存在する場合）</td>
+<td><code>収益:</code>（指標 <code>収益</code> が存在する場合）</td>
 <td>コンパイラが指標の <code>formula:</code> に指定された式を代入します。</td>
 </tr>
 <tr>
 <td><strong>クエリ列 → データセットの列（自動エイリアス）</strong></td>
 <td>式のないクエリ列で、列名がデータセットの列名と一致し、そのデータセットの列を<strong>クエリのディメンションから導出できる</strong>必要があります。</td>
-<td><code>prod_name:</code>（<code>pk({prod_id})</code> の連鎖をたどって参照するデータセットの列）</td>
+<td><code>prod_name:</code>（<code>pk({商品番号})</code> の連鎖をたどって参照するデータセットの列）</td>
 <td>コンパイラがデータセットの定義から列を解決します。</td>
 </tr>
 </tbody></table>
@@ -150,8 +150,8 @@ product_list:
 <li><code>dmlc -c</code> は、データセットの列がテーブルスキーマに存在するかどうかを検証しません。列名が一致していなくてもコンパイルは成功しますが、実行時に SQL エラーが発生します。列名の不一致を検出するには <code>validateOnly</code> を使用してください。データベース接続が必要です。</li>
 <li>クエリ列の名前が指標名にも導出可能なデータセットの列名にも一致しない場合、<code>not defined, add formula?</code> エラーが発生します。</li>
 <li>クエリ列の名前が指標名と異なる場合は、式（<code>display_name: '{measure_name}'</code>）を明示的に指定するか、<code>abbr:</code> で指標名を変更してください。</li>
-<li>クエリのディメンションから<strong>導出できない</strong>データセットの列を参照すると、<code>cannot be derived from dimension [store_id]</code> エラーが発生します。たとえば、ディメンションフィールドに依存しない元のファクト列がこれに該当します。</li>
-<li>そのまま渡す列（<code>formula:</code> なし）は、オブジェクト形式でメタデータプロパティ（<code>description:</code>、<code>visibility:</code>）を指定できます。この場合、<code>formula:</code> は不要です。たとえば、<code>revenue: { description: 'Total revenue' }</code> は自動エイリアスによって指標 <code>revenue</code> に対応付けられ、説明が追加されます。</li>
+<li>クエリのディメンションから<strong>導出できない</strong>データセットの列を参照すると、<code>cannot be derived from dimension [店舗番号]</code> エラーが発生します。たとえば、ディメンションフィールドに依存しない元のファクト列がこれに該当します。</li>
+<li>そのまま渡す列（<code>formula:</code> なし）は、オブジェクト形式でメタデータプロパティ（<code>description:</code>、<code>visibility:</code>）を指定できます。この場合、<code>formula:</code> は不要です。たとえば、<code>収益: { description: 'Total revenue' }</code> は自動エイリアスによって指標 <code>収益</code> に対応付けられ、説明が追加されます。</li>
 </ul>
 <p><a id="46-visibility-hidden"></a></p>
 <h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="この節へのリンク" href="#visibility-hidden">#</a></h2>
@@ -191,26 +191,26 @@ product_list:
 <pre><code class="language-yaml">columns:
     dimension:
         - dt_month
-        - product
+        - 商品
         # Correct: list dimension field names only
 </code></pre>
 <p><strong>誤り</strong>: データセットをまたぐ列の<strong>マッピング</strong>をクエリのディメンションフィールドに含めないでください。これらの式は個別のクエリ列として定義します。</p>
 <pre><code class="language-yaml"># Wrong
 columns:
     dimension:
-        - f_tag_id: {DATASET_PT}.id
+        - f_tag_id: {DATASET_PT}.売上明細番号
 
 # Correct
 columns:
     dimension:
         - f_tag_id
-    f_tag_id: "{DATASET_PT}.id"
+    f_tag_id: "{DATASET_PT}.売上明細番号"
 </code></pre>
 <p><strong>例外：指標をディメンションとして使う場合</strong>、クエリディメンションのエントリに<strong>指標</strong>をバインドできます（通常は <code>+d</code> を使用します）。この場合、クエリはその指標値を単位として行をグループ化します。</p>
 <pre><code class="language-yaml">columns:
     dimension:
-        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-    sales:
+        - 初回購入月: '{初回購入月: {+d: 店舗番号}}'
+    売上高:
 </code></pre>
 <p>分類対象のエンティティのキーは、<code>+d</code>（推奨）または <code>dimension:</code> で明示します。完全なキーが一致する場合は、複数の独立したフィールドを使用できます。通常の出力指標は、<code>Q ∪ K</code> のレベルから上位のレベルに正しく集計できる必要があります。ラベルに対するフィルター（式の <code>filters:</code> または Model Query の <code>HAVING</code>）は、ラベルが存在するようになった<strong>後</strong>に適用されます。<a href="explanation--measure-as-dimension.ja.html">指標をディメンションとして使う</a>を参照してください。物理マッピングや <code>{DATASET}.col</code> マッピングにはこの例外を使用しないでください。</p>
 <p><a id="48-filter-placement-hierarchy"></a></p>
@@ -266,7 +266,7 @@ filters:
 </tr>
 <tr>
 <td>クエリフィルターで <code>referred column {DATASET}.col is undefined</code> が発生する</td>
-<td>文字列形式を使用する: <code>"{DATASET}.col = value":</code></td>
+<td>文字列形式を使用する: <code>"{DATASET}.col = 値":</code></td>
 </tr>
 <tr>
 <td>日付ディメンションに要素が 2 つのリストを指定すると、2 日分の行しか返らない</td>
@@ -280,7 +280,7 @@ filters:
 <p><a id="49-pk-chaining"></a></p>
 <h2 id="pk-chaining"><code>pk</code> の連鎖 <a class="section-link" aria-label="この節へのリンク" href="#pk-chaining">#</a></h2>
 <pre><code class="language-yaml"># Single PK lookup
-formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+formula: 'pk(顧客番号).{DATASET_CUSTOMERS}.tier'
 
 # Composite PK — all columns required
 formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
@@ -289,14 +289,14 @@ formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
 <p><strong>連鎖の入れ子</strong>: ある <code>pk()</code> の連鎖から導出した列を、別の <code>pk()</code> の連鎖のキーとして使用できます。コンパイラは導出の連鎖をたどり、対応する入れ子の <code>LEFT JOIN</code> を生成します。この方法を使うと、属性を検索し、その属性を使って別の属性を検索する処理を、<code>sql:</code> や <code>after:</code> を使わずに直接モデル化できます。</p>
 <pre><code class="language-yaml"># fact dataset
 columns:
-    store_id:
+    店舗番号:
     # First hop: store_id → Dim Customer → hq_id
-    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    本部番号: pk({店舗番号}).{顧客台帳}.本部番号
     # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
-    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    本部コード: pk({本部番号}).{顧客台帳}.store_code
     # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
-    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+    本部組織番号: pk({本部番号}).{顧客台帳}.組織番号
+    本部担当者名: pk({本部組織番号}).{組織台帳}.従業員名
 </code></pre>
 <p>確認済みのビルドでは、列の依存関係や <code>pk()</code> の参照先を含め、同じファイル内の前方参照がサポートされます。読みやすくするため、依存先を先に記述します。インクルードには別の可視性境界があります。<a href="reference--model-composition.ja.html">モデルの合成</a>を参照してください。</p>
 <p><a id="410-after-clause"></a></p>
@@ -306,9 +306,9 @@ columns:
 <pre><code class="language-yaml">my_report:
     type: query
     columns:
-        dimension: [product]
-        sales:
-    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+        dimension: [商品]
+        売上高:
+    after: 'select * from {QUERY} ORDER BY 売上高 DESC LIMIT 10'
 </code></pre>
 <p><code>after:</code> を指定する場合は、<code>{QUERY}</code> が必須です。これは、クエリ後の文が参照する、コンパイル済みクエリの結果を表します。「並べ替えのみ」とは、このラッパーと ORDER BY/TOP/LIMIT 以外に業務ロジックがないことを意味します。明示した並べ替え順がクエリの既定の出力順と一致すると、前段のコンパイラが <code>redundant ORDER BY</code> 警告を出します。該当箇所のヒントに従ってください。<code>after:</code> にほかの重要な処理が残る場合は、冗長な <code>ORDER BY</code> 句だけを削除します。ブロック全体を削除するのは、ほかに処理が残らない場合だけです。</p>
 <p><strong>誤り</strong>：標準の指標クエリで、<code>after:</code> 内の <code>group by</code> を使って再集計する。指標の集計はクエリブロックで行います。</p>
@@ -321,7 +321,7 @@ columns:
     columns:
         dimension:
             - dt_date
-        sales:
+        売上高:
 </code></pre>
 <p><code>allows:</code> は、使用候補となるマテリアライゼーションを指定します。<code>ALL</code> は候補の使用を許可し、<code>NONE</code> はマテリアライゼーションの使用を無効にします。名前を明示すると、その名前のものに候補が絞られます。候補を使用できるかどうかは、行や集計値を定義する粒度とフィルターが、それぞれクエリに適合するかどうかで決まります。この設定で指標の <code>dimensions:</code> の制約が緩和されたり、クエリの粒度を任意に指定できるようになったりすることはありません。<a href="reference--materialization.ja.html">マテリアライゼーションの宣言</a>を参照してください。</p>
 <p><a id="412-yaml-syntax-pitfalls"></a></p>

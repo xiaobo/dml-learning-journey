@@ -32,49 +32,55 @@
 <p>Die <a href="profitability-data.json">Beispieldaten</a> ergeben (400 − 300) / 400 = <strong>25 %</strong>. Der Mittelwert aus 40 % und 20 % beträgt 30 %. Beide Ergebnisse stimmen etwa bei gleichem Monatsumsatz überein, im Allgemeinen jedoch nicht.</p>
 <h2 id="die-berechnung-nachvollziehen">Die Berechnung nachvollziehen <a class="section-link" aria-label="Link zum Abschnitt" href="#die-berechnung-nachvollziehen">#</a></h2>
 <p>Öffnen Sie die <a href="learn.de.html#gross-margin">Animation zur Bruttomarge</a>. Wählen Sie North und im vierten Schritt den Zeitraum seit Jahresbeginn. Der Umsatz steigt von 300 auf 400, die Kosten von 240 auf 300 und die Marge von 20 % auf 25 %.</p>
-<p>Mit <code>formula: &#39;{gross_margin: ytd}&#39;</code> wenden Sie den Zeitraum auf die definierte Marge an. Dadurch wird die Marge aus den kumulierten Beträgen neu berechnet. Diese Schreibweise wurde in DuckDB ausgeführt und mit einer unabhängigen SQL-Abfrage verglichen. Für SQL Server liegt ein Compilerprotokoll vor.</p>
+<p>Das Modell summiert Nettoerlös und Umsatzkosten mit <code>ytd</code> jeweils seit Jahresbeginn. Von diesem Nettoerlös zieht es die kumulierten Kosten ab und teilt die Differenz durch den kumulierten Nettoerlös.</p>
 <details><summary>Vollständiges DML-Modell ansehen</summary>
 
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_PROFITABILITY:
+ErlöseUndKosten:
   type: dataset
   table: TABLE_PROFITABILITY
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
-    region:
+    VerkaufspositionID:
+      abbr: id
+    Quellregion:
+      abbr: region
+    Region: '{Quellregion}'
     dt_month:
-    revenue_amount:
-    cost_amount:
+      abbr: dt_month
+    Erlösbetrag:
+      abbr: revenue_amount
+    Kostenbetrag:
+      abbr: cost_amount
   measures:
-    net_revenue: SUM({revenue_amount})
-    sales_cost: SUM({cost_amount})
+    Nettoerlös: SUM({Erlösbetrag})
+    Umsatzkosten: SUM({Kostenbetrag})
 
-gross_profit:
+Rohertrag:
   type: measure
-  formula: &#39;{net_revenue} - {sales_cost}&#39;
+  formula: '{Nettoerlös} - {Umsatzkosten}'
 
-gross_margin:
+Bruttomarge:
   type: measure
-  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+  formula: 'DIVIDE({Rohertrag}, {Nettoerlös})'
 
-gross_margin_ytd:
+BruttomargeSeitJahresbeginn:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: 'DIVIDE({Nettoerlös: ytd} - {Umsatzkosten: ytd}, {Nettoerlös: ytd})'
 
-gross_margin_prior_ytd:
+BruttomargeImVorjahreszeitraum:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: 'DIVIDE({Nettoerlös: {ytd, ya}} - {Umsatzkosten: {ytd, ya}}, {Nettoerlös: {ytd, ya}})'
 
-margin_change_pp:
+MargenänderungInProzentpunkten:
   type: measure
-  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+  formula: '100 * ({BruttomargeSeitJahresbeginn} - {BruttomargeImVorjahreszeitraum})'
 </code></pre>
 </details>
 
 <h2 id="prozent-und-prozentpunkte">Prozent und Prozentpunkte <a class="section-link" aria-label="Link zum Abschnitt" href="#prozent-und-prozentpunkte">#</a></h2>
 <p>Die kumulierte Marge im gleichen Vorjahreszeitraum beträgt 20 %. Der Anstieg auf 25 % entspricht <strong>5 Prozentpunkten</strong>. Die relative Zunahme beträgt (25 % / 20 %) − 1 = 25 %. Geben Sie im Bericht an, welche der beiden Größen gemeint ist.</p>
-<p>Siehe <a href="reference--examples--composable-metrics.de.html">vollständiges Beispiel</a>, <a href="profitability-comparison.sql">Vergleichsabfrage</a> und <a href="profitability-compiler-observations.json">Compilerprotokoll</a>. Das Protokoll belegt die strikte Kompilierung und die Prüfung des SQL. Verwenden Sie in der Quelltabelle Dezimalspalten für Geldbeträge. Bei einem Umsatz von 0 liefert die Berechnung NULL. Fehlende Vorjahreswerte bleiben leer.</p>
+<p>Siehe <a href="reference--examples--composable-metrics.de.html">vollständiges Beispiel</a>, <a href="profitability-comparison.de.sql" download="comparison.sql">Vergleichsabfrage</a> und <a href="profitability-compiler-observations.de.json" download="compiler-observations.json">Compilerprotokoll</a>. Das Protokoll belegt die strikte Kompilierung und die Prüfung des SQL. Verwenden Sie in der Quelltabelle Dezimalspalten für Geldbeträge. Bei einem Umsatz von 0 liefert die Berechnung NULL. Fehlende Vorjahreswerte bleiben leer.</p>
 <p><a href="journey.de.html#expressions">Formeln wiederverwenden</a> · <a href="journey.de.html#time">Zeitraum wechseln</a></p>
-</main></body></html>
+<p><a data-profit-download href="profitability-example.de.zip">Beispiel zur Bruttomarge herunterladen</a></p></main></body></html>

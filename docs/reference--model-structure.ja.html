@@ -33,11 +33,11 @@
 </tbody></table>
 <p><strong>オブジェクト名の規則</strong>: 予約キーワード（<code>includes</code>、<code>column-macros</code>、<code>datasets</code>、<code>measures</code>、<code>columns</code>、<code>dimensions[dt]</code>、<code>dt-macros</code>、<code>fn-macros</code>、<code>materializes</code>、<code>queries</code>、<code>dialects</code>およびそれらの単数形）を除く任意の文字列です。</p>
 <p><strong>指標定義の簡略形</strong>: 最上位のマッピングの値に文字列だけを指定すると、指標の式を表す省略記法として扱われます。</p>
-<pre><code class="language-yaml">sales: SUM({amount})
+<pre><code class="language-yaml">売上高: SUM({売上金額})
 # equivalent to:
-sales:
+売上高:
     type: measure
-    formula: SUM({amount})
+    formula: SUM({売上金額})
 </code></pre>
 <h3 id="sql-dialect">SQL方言 <a class="section-link" aria-label="この節へのリンク" href="#sql-dialect">#</a></h3>
 <p>確認に使用したコンパイラは、<code>adb_mysql</code>、<code>duckdb</code>、<code>mssql</code>、<code>mysql</code>、<code>postgres</code>、<code>sqlite</code>を認識します。現行のコンパイラでは、確認したモデルに方言の指定がないとコンパイルが拒否されます。対象の方言を明示的に指定してください。DuckDB接続を設定しても、モデルの対象方言は変わりません。DuckDBを対象とする場合は、<code>dialect: duckdb</code>を指定してください。</p>
@@ -60,7 +60,7 @@ sales:
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;short&gt;        # abbreviation for display
+            abbr: &lt;source_column&gt; # column name in the source table
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -97,22 +97,22 @@ sales:
 </thead>
 <tbody><tr>
 <td>直接参照</td>
-<td><code>amount:</code>（null）</td>
+<td><code>売上金額:</code>（null）</td>
 <td>元のテーブルの列をそのまま使用</td>
 </tr>
 <tr>
 <td>計算（インライン）</td>
-<td><code>net: amount - discount</code>（文字列）</td>
+<td><code>net: 売上金額 - 割引額</code>（文字列）</td>
 <td>式から導出される列</td>
 </tr>
 <tr>
 <td>計算（ブロック）</td>
-<td><code>net: { formula: amount - discount }</code></td>
+<td><code>net: { formula: 売上金額 - 割引額 }</code></td>
 <td>メタデータ付きの派生列</td>
 </tr>
 <tr>
 <td>検証式付き</td>
-<td><code>net: { source: amount - discount }</code></td>
+<td><code>net: { source: 売上金額 - 割引額 }</code></td>
 <td>データソースを検証する式を宣言します。コンパイルだけでは、ソースの値が等しいことは確認できません。</td>
 </tr>
 </tbody></table>
@@ -126,14 +126,14 @@ sales:
 </tr>
 </thead>
 <tbody><tr>
-<td><code>amount</code> 単独</td>
+<td><code>売上金額</code> 単独</td>
 <td><strong>物理</strong>（ネイティブ）テーブル列。コンパイラは名前をそのままSQLに渡します。</td>
-<td>両方の列が直接参照の場合の<code>net: amount - discount</code></td>
+<td>両方の列が直接参照の場合の<code>net: 売上金額 - 割引額</code></td>
 </tr>
 <tr>
 <td><code>{calc_amt}</code></td>
 <td><strong>計算</strong>列（または指標や列マクロ）。DMXが定義を展開します。</td>
-<td><code>doubled: '{calc_amt} * 2'</code></td>
+<td><code>二倍値: '{calc_amt} * 2'</code></td>
 </tr>
 </tbody></table>
 <p>計算列の式に波かっこなしで名前を書くと、その識別子はネイティブのSQL列として扱われます。SELECT内のエイリアスの順序によっては動作しているように見えますが、計算列の定義は<strong>展開されません</strong>。式でその定義を再利用するには、名前を波かっこで囲みます。</p>
@@ -144,7 +144,7 @@ sales:
 <pre><code class="language-yaml">column-macros:
     datasets: [tx, orders]       # scoped datasets
     columns:                     # shared column definitions
-        region: '{stores}.region'  # cross-dataset lookup
+        地域: '{店舗数}.地域' # cross-dataset lookup
     dimensions[dt]:
         dt_month: month
 
@@ -166,7 +166,7 @@ sales:
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>SQL で安全に使える内部専用の短縮名です。一時テーブル、結合、<code>materialize</code> の出力で使用します。最終的なクエリ結果の列エイリアスにはこの短縮名は一切使われません。列エイリアスには、業務上の名前を表すキーか、<code>AS</code> で明示したエイリアスが使われます。</td>
+<td>データセットの列には、元のテーブルの列名を指定します。指標には内部で使う略称を指定できます。クエリ結果には業務上の名前か、<code>AS</code> で指定した別名が表示されます。</td>
 </tr>
 <tr>
 <td><code>description</code></td>

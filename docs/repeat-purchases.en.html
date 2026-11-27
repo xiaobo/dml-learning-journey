@@ -1,27 +1,39 @@
 <!doctype html><html lang="en" data-course-locale="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Do two orders from the same supplier on the same day count as a repeat purchase?</title><link rel="stylesheet" href="official.css?v=6a3ff6e4bb"><meta name="description" content="Four stores ordered from you this week. A placed two orders on Monday. B placed one on Monday and another on Tuesday. Which stores would you count as repeat buyers in your weekly sales report?"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Do two orders from the same supplier on the same day count as a repeat purchase?"><meta property="og:description" content="Four stores ordered from you this week. A placed two orders on Monday. B placed one on Monday and another on Tuesday. Which stores would you count as repeat buyers in your weekly sales report?"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/repeat-purchases.en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">Skip to content</a><header><div class="bar"><a class="brand" href="index.en.html">DML</a><nav><a data-text="docs" href="docs.html">Docs</a><a href="learn.en.html">Learn</a></nav><div class="tools"><a href="search.html">Search docs</a><a lang="zh" hreflang="zh" href="repeat-purchases.zh.html">中文</a><a lang="de" hreflang="de" href="repeat-purchases.de.html">Deutsch</a><a lang="ja" hreflang="ja" href="repeat-purchases.ja.html">日本語</a></div></div></header><main id="main"><article class="wrap repurchase"><h1>Do two orders from the same supplier on the same day count as a repeat purchase?</h1><p>Four stores ordered from you this week. A placed two orders on Monday. B placed one on Monday and another on Tuesday. Which stores would you count as repeat buyers in your weekly sales report?</p><h2>This week’s six orders</h2><table><thead><tr><th>Order ID</th><th>Store</th><th>Order date</th><th>Units</th></tr></thead><tbody><tr><td>1</td><td>A</td><td>Monday</td><td>1</td></tr><tr><td>2</td><td>A</td><td>Monday</td><td>1</td></tr><tr><td>3</td><td>B</td><td>Monday</td><td>1</td></tr><tr><td>4</td><td>B</td><td>Tuesday</td><td>1</td></tr><tr><td>5</td><td>C</td><td>Monday</td><td>2</td></tr><tr><td>6</td><td>D</td><td>Tuesday</td><td>2</td></tr></tbody></table><p>Each row is one order. All six orders include at least one unit.</p><section data-voting hidden><h2>What do you want your weekly report to show?</h2><button type="button" aria-pressed="false" data-vote="0">Stores that placed a second order this week</button> <button type="button" aria-pressed="false" data-vote="1">Stores that ordered on at least two days this week</button><div aria-live="polite"><p hidden data-feedback="0">With the original six orders, both A and B qualify under this rule.</p><p hidden data-feedback="1">With the original six orders, only B qualifies under this rule.</p></div></section><section data-comparison><h2>Which stores qualify under each rule?</h2><p>Count only orders placed this week. A store that bought last week and ordered just once this week doesn’t qualify under either rule.</p><div data-picker hidden><p>Change an order to see which stores qualify. Each change starts from the original six orders.</p><button type="button" aria-pressed="false" data-scenario="0">Original six orders</button> <button type="button" aria-pressed="false" data-scenario="1">Move A’s second order to Tuesday</button> <button type="button" aria-pressed="false" data-scenario="2">Split each order from C and D in two</button></div><section data-case="0"><h3>Original six orders</h3><p>A and B each placed two orders. A ordered twice on the same day. B ordered on two different days.</p><div class="case-metrics"><div><h4>Count orders</h4><strong data-rate>50%</strong><p>Qualifying stores this week: 2 of 4 (<span data-stores>A, B</span>).</p><p>A store qualifies if it placed at least two orders this week. DML counts distinct order IDs.</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>A has two distinct order IDs and qualifies. <code>order_count = 2</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_orders:
   type: measure
+  abbr: repeat_purchase_by_orders
   formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (2) by the number that ordered this week (4). The repeat purchase rate is 50%.</p><pre><code>repeat_purchase_rate_by_orders:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>25%</strong><p>Qualifying stores this week: 1 of 4 (<span data-stores>B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>A ordered on just one day and doesn’t qualify. <code>purchase_days = 1</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>25%</strong><p>Qualifying stores this week: 1 of 4 (<span data-stores>B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>A ordered on just one day and doesn’t qualify. <code>purchase_days = 1</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
   type: measure
+  abbr: repeat_purchase_by_days
   formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (1) by the number that ordered this week (4). The repeat purchase rate is 25%.</p><pre><code>repeat_purchase_rate_by_days:
   type: measure
+  abbr: repeat_purchase_rate_by_days
   formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>See order counts and days with an order for each store</summary><table><thead><tr><th>Store</th><th>Orders</th><th>Days with an order</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>1</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>1</td><td>1</td></tr><tr><td>D</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="1"><h3>Move A’s second order to Tuesday</h3><p>A still has two orders, now on different days. Both A and B ordered on two days.</p><div class="case-metrics"><div><h4>Count orders</h4><strong data-rate>50%</strong><p>Qualifying stores this week: 2 of 4 (<span data-stores>A, B</span>).</p><p>A store qualifies if it placed at least two orders this week. DML counts distinct order IDs.</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>A has two distinct order IDs and qualifies. <code>order_count = 2</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_orders:
   type: measure
+  abbr: repeat_purchase_by_orders
   formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (2) by the number that ordered this week (4). The repeat purchase rate is 50%.</p><pre><code>repeat_purchase_rate_by_orders:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>50%</strong><p>Qualifying stores this week: 2 of 4 (<span data-stores>A, B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>A ordered on Monday and Tuesday and qualifies. <code>purchase_days = 2</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>50%</strong><p>Qualifying stores this week: 2 of 4 (<span data-stores>A, B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>A ordered on Monday and Tuesday and qualifies. <code>purchase_days = 2</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
   type: measure
+  abbr: repeat_purchase_by_days
   formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (2) by the number that ordered this week (4). The repeat purchase rate is 50%.</p><pre><code>repeat_purchase_rate_by_days:
   type: measure
+  abbr: repeat_purchase_rate_by_days
   formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>See order counts and days with an order for each store</summary><table><thead><tr><th>Store</th><th>Orders</th><th>Days with an order</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>2</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>1</td><td>1</td></tr><tr><td>D</td><td>1</td><td>1</td></tr></tbody></table></details></section><section data-case="2"><h3>Split each order from C and D in two</h3><p>C and D each split one order into two on the same day. The four stores still bought eight units in total.</p><div class="case-metrics"><div><h4>Count orders</h4><strong data-rate>100%</strong><p>Qualifying stores this week: 4 of 4 (<span data-stores>A, B, C, D</span>).</p><p>A store qualifies if it placed at least two orders this week. DML counts distinct order IDs.</p><pre><code>order_count: DISTINCTCOUNT({order_id})</code></pre><p data-trace>C and D each have two distinct order IDs. Both qualify. <code>order_count = 2</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_orders:
   type: measure
+  abbr: repeat_purchase_by_orders
   formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (4) by the number that ordered this week (4). The repeat purchase rate is 100%.</p><pre><code>repeat_purchase_rate_by_orders:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>25%</strong><p>Qualifying stores this week: 1 of 4 (<span data-stores>B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({purchase_day})</code></pre><p data-trace>C and D each ordered on just one day. Neither qualifies. <code>purchase_days = 1</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
+  abbr: repeat_purchase_rate_by_orders
+  formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'</code></pre></details></div><div><h4>Count days with an order</h4><strong data-rate>25%</strong><p>Qualifying stores this week: 1 of 4 (<span data-stores>B</span>).</p><p>A store qualifies if it ordered on at least two different days this week. Several orders on one day count as one day.</p><pre><code>purchase_days: DISTINCTCOUNT({dt_date})</code></pre><p data-trace>C and D each ordered on just one day. Neither qualifies. <code>purchase_days = 1</code></p><details><summary>See the DML formulas for the store count and repeat purchase rate</summary><p><code>{+d: store_id}</code> tells DML to check each store separately. Each qualifying store counts once.</p><pre><code>repeat_purchase_by_days:
   type: measure
+  abbr: repeat_purchase_by_days
   formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'</code></pre><p>Divide the number of qualifying stores (1) by the number that ordered this week (4). The repeat purchase rate is 25%.</p><pre><code>repeat_purchase_rate_by_days:
   type: measure
+  abbr: repeat_purchase_rate_by_days
   formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></div></div><details><summary>See order counts and days with an order for each store</summary><table><thead><tr><th>Store</th><th>Orders</th><th>Days with an order</th></tr></thead><tbody><tr><td>A</td><td>2</td><td>1</td></tr><tr><td>B</td><td>2</td><td>2</td></tr><tr><td>C</td><td>2</td><td>1</td></tr><tr><td>D</td><td>2</td><td>1</td></tr></tbody></table></details></section></section><section><h2>Check against your own weekly report</h2><p>Choose the rule for your report. Run your existing SQL and the DML query on orders from the same week. Compare the stores first, then the rates. Two different lists can give the same percentage.</p><h3>Try it with the six orders</h3><p>The figures above come from DML queries. The script checks them against a separate SQL query on the same orders. It compares each store’s order count and days with an order, then checks both rates.</p><p><a href="repurchase.zip" download>Download the six orders, DML model and verification script (ZIP)</a></p><details><summary>Run the example</summary><p>In the extracted folder, load the orders into DuckDB. Then check how often and on how many days each store ordered, followed by both repeat purchase rates.</p><pre><code>dmlc -q setup.sql
 dmlc -q --with-validation --model=repurchase.dml stores.sql
 dmlc -q --with-validation --model=repurchase.dml rates.sql</code></pre><p>Optional: check the results automatically in PowerShell.</p><pre><code>./verify.ps1</code></pre><p>The script checks the original orders, A’s date change and the split orders from C and D.</p></details><details><summary>See the two queries used for the report</summary><p>First, check how many orders each store placed and on how many days.</p><pre><code>SELECT store_id, AGG(order_count), AGG(purchase_days)
@@ -29,7 +41,9 @@ FROM repurchase
 GROUP BY store_id
 ORDER BY store_id</code></pre><p>Then check the number of repeat buyers and the repeat purchase rates.</p><pre><code>SELECT AGG(active_stores), AGG(repeat_purchase_by_orders), AGG(repeat_purchase_by_days),
        AGG(repeat_purchase_rate_by_orders), AGG(repeat_purchase_rate_by_days)
-FROM repurchase</code></pre></details><details><summary>See the full DML model</summary><pre><code>dialect: duckdb
+FROM repurchase</code></pre></details><details><summary>Compare Tuesday’s orders with Monday’s</summary><p>With dt_date set to Tuesday, pp returns the previous day’s order count. In the original six orders, Tuesday has two orders and Monday has four.</p><pre><code>SELECT AGG(order_count), AGG(previous_day_order_count)
+FROM repurchase
+WHERE dt_date = '2025-02-04'</code></pre><pre><code>dmlc -q --model=repurchase.dml previous-day.sql</code></pre></details><details><summary>See the full DML model</summary><p>The model reads the receipts table directly. Under each dataset column, abbr names the source column.</p><pre><code>dialect: duckdb
 
 RECEIPTS:
   type: dataset
@@ -37,30 +51,43 @@ RECEIPTS:
   dimension: [order_id]
   columns:
     order_id:
+      abbr: order_id
     store_id:
-    purchase_day:
+      abbr: store_id
+    dt_date:
+      abbr: purchase_day
     units:
+      abbr: units
   measures:
     order_count: DISTINCTCOUNT({order_id})
-    purchase_days: DISTINCTCOUNT({purchase_day})
+    purchase_days: DISTINCTCOUNT({dt_date})
     purchased_units: SUM({units})
 
 active_stores:
   type: measure
+  abbr: active_stores
   formula: 'DISTINCTCOUNTIF({store_id}, {purchased_units: {+d: store_id}} &gt; 0)'
 
 repeat_purchase_by_orders:
   type: measure
+  abbr: repeat_purchase_by_orders
   formula: 'DISTINCTCOUNTIF({store_id}, {order_count: {+d: store_id}} &gt; 1)'
 
 repeat_purchase_by_days:
   type: measure
+  abbr: repeat_purchase_by_days
   formula: 'DISTINCTCOUNTIF({store_id}, {purchase_days: {+d: store_id}} &gt; 1)'
 
 repeat_purchase_rate_by_orders:
   type: measure
+  abbr: repeat_purchase_rate_by_orders
   formula: 'DIVIDE(1.0 * {repeat_purchase_by_orders}, {active_stores})'
 
 repeat_purchase_rate_by_days:
   type: measure
-  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'</code></pre></details></section></article><script defer src="repurchase.js?v=9b823b09ee"></script></main></body></html>
+  abbr: repeat_purchase_rate_by_days
+  formula: 'DIVIDE(1.0 * {repeat_purchase_by_days}, {active_stores})'
+
+previous_day_order_count:
+  type: measure
+  formula: '{order_count: pp}'</code></pre></details></section></article><script defer src="repurchase.js?v=9b823b09ee"></script></main></body></html>

@@ -1,58 +1,58 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Modellmetadaten schreiben · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Helfen Sie Lesern mit Beschreibungen, vor der Abfrage des Modells den passenden Datensatz, die richtige Grundgesamtheit und die passende Kennzahl auszuwählen."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Modellmetadaten schreiben · DML"><meta property="og:description" content="Helfen Sie Lesern mit Beschreibungen, vor der Abfrage des Modells den passenden Datensatz, die richtige Grundgesamtheit und die passende Kennzahl auszuwählen."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--write-model-metadata.html">English</a> <a lang="zh" hreflang="zh" href="how-to--write-model-metadata.zh.html">中文</a></header><main><h1 id="write-model-metadata">Modellmetadaten schreiben</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#describe-each-dataset">Jeden Datensatz beschreiben</a></li><li><a href="#explain-columns-that-affect-decisions">Spalten erläutern, die Entscheidungen beeinflussen</a></li><li><a href="#match-measure-names-to-their-formulas">Kennzahlnamen auf ihre Formeln abstimmen</a></li><li><a href="#set-internal-sql-names-when-needed">Bei Bedarf interne SQL-Namen festlegen</a></li><li><a href="#document-derived-labels-and-estimates">Abgeleitete Bezeichnungen und Schätzwerte dokumentieren</a></li><li><a href="#verify-the-metadata-with-the-model">Metadaten anhand des Modells prüfen</a></li></ul></details>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Modellmetadaten schreiben · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Helfen Sie Lesern mit Beschreibungen, vor der Abfrage des Modells den passenden Datensatz, die richtige Grundgesamtheit und die passende Kennzahl auszuwählen."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Modellmetadaten schreiben · DML"><meta property="og:description" content="Helfen Sie Lesern mit Beschreibungen, vor der Abfrage des Modells den passenden Datensatz, die richtige Grundgesamtheit und die passende Kennzahl auszuwählen."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--write-model-metadata.html">English</a> <a lang="zh" hreflang="zh" href="how-to--write-model-metadata.zh.html">中文</a></header><main><h1 id="write-model-metadata">Modellmetadaten schreiben</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#describe-each-dataset">Jeden Datensatz beschreiben</a></li><li><a href="#explain-columns-that-affect-decisions">Spalten erläutern, die Entscheidungen beeinflussen</a></li><li><a href="#match-measure-names-to-their-formulas">Kennzahlnamen auf ihre Formeln abstimmen</a></li><li><a href="#use-the-source-column-name">Den Spaltennamen aus der Quelltabelle angeben</a></li><li><a href="#document-derived-labels-and-estimates">Abgeleitete Bezeichnungen und Schätzwerte dokumentieren</a></li><li><a href="#verify-the-metadata-with-the-model">Metadaten anhand des Modells prüfen</a></li></ul></details>
 <p>Helfen Sie Lesern mit Beschreibungen, vor der Abfrage des Modells den passenden Datensatz, die richtige Grundgesamtheit und die passende Kennzahl auszuwählen.</p>
 <h2 id="describe-each-dataset">Jeden Datensatz beschreiben <a class="section-link" aria-label="Link zum Abschnitt" href="#describe-each-dataset">#</a></h2>
 <p>Geben Sie an, wofür eine einzelne Zeile in der Quelle steht und welche Felder sie identifizieren. Erläutern Sie die fachliche Bedeutung des zentralen Gesamtwerts, die erforderlichen Filter zur Eingrenzung des Geltungsbereichs und bekannte zeitliche oder geografische Grenzen.</p>
 <pre><code class="language-yaml">description: |-
-  一行代表一条管道交易明细，transaction_id 标识源记录。
-  SUM(出厂价金额) 为管道净额，包含调拨和总仓流转，不代表终端 POS 销售。
-  官方 UL 报告使用 是否统计UL = '是'。
-  渠道表示购买方侧业务渠道，与卖出方渠道不同。
+  Jede Zeile ist eine Transaktionsposition im Vertriebskanal; Belegnummer identifiziert den Quellsatz.
+  SUM(Abgabepreisbetrag) ergibt den Nettokanalumsatz einschließlich Umlagerungen und Bewegungen des Zentrallagers. Kassenumsätze sind ausgenommen.
+  Der offizielle UL-Bericht filtert auf InULBerücksichtigt = '是'.
+  Der Kanal beschreibt den Vertriebsweg des Käufers.
 </code></pre>
-<p>Wenn zwei Datensätze dieselbe Quelle aus Verkäufer- und Käufersicht darstellen, beschreiben Sie die unterschiedlichen Zuordnungen für <code>partner_id</code>. Erwecken Sie nur dann den Eindruck, dass die Quellzeilen für die beiden Datensätze auf unterschiedlichen Ebenen definiert sind, wenn das tatsächlich der Fall ist.</p>
+<p>Wenn zwei Datensätze dieselbe Quelle aus Verkäufer- und Käufersicht darstellen, beschreiben Sie die unterschiedlichen Zuordnungen für <code>Partnernummer</code>. Erwecken Sie nur dann den Eindruck, dass die Quellzeilen für die beiden Datensätze auf unterschiedlichen Ebenen definiert sind, wenn das tatsächlich der Fall ist.</p>
 <h2 id="explain-columns-that-affect-decisions">Spalten erläutern, die Entscheidungen beeinflussen <a class="section-link" aria-label="Link zum Abschnitt" href="#explain-columns-that-affect-decisions">#</a></h2>
 <p>Verwenden Sie die Objektform, wenn der Spaltenname die Bedeutung der Spalte nicht erkennen lässt.</p>
 <pre><code class="language-yaml">columns:
-  Businesschannel:
-    description: 购买方侧业务渠道。模型别名为渠道，与卖出方渠道不同。
-  是否统计UL:
-    description: 官方 UL 报告范围标志。报告和归因分析使用相同筛选。
-  去年同期出厂价金额:
-    description: 行级去年同期金额。计算同比前检查数据覆盖及缺失值。
+  Einkaufskanal:
+    description: Vertriebsweg des Käufers. Im Modell heißt er Vertriebskanal.
+  InULBerücksichtigt:
+    description: Kennzeichnet die Datensätze des UL-Berichts. Bericht und Ursachenanalyse verwenden denselben Filter.
+  AbgabepreisbetragVorjahr:
+    description: Betrag der Quellzeile für den Vorjahreszeitraum. Vor dem Vergleich Vollständigkeit und fehlende Werte prüfen.
 </code></pre>
 <p>Beschreiben Sie vorrangig Spalten, die die Grundgesamtheit, Gruppierungen, Joins oder Vergleiche beeinflussen. Geben Sie bekannte Einschränkungen als Fakten über die Quelle an. Stellen Sie eine Beobachtung aus einer einzelnen Stichprobe nicht als dauerhafte Eigenschaft der Spalte dar.</p>
 <h2 id="match-measure-names-to-their-formulas">Kennzahlnamen auf ihre Formeln abstimmen <a class="section-link" aria-label="Link zum Abschnitt" href="#match-measure-names-to-their-formulas">#</a></h2>
 <p>Verwenden Sie Fachbegriffe aus dem Geschäftsbereich als Kennzahlschlüssel. Geben Sie in der Beschreibung die Grundgesamtheit, die erforderliche Auswertungsdimension und das Verhalten bei NULL oder null an, wenn diese Angaben die Interpretation beeinflussen.</p>
 <p>Wenn ein älterer Name die Formel falsch wiedergibt, benennen Sie die kanonische Kennzahl um. Behalten Sie einen Alias nur bei, wenn bestehende Nutzer oder Anwendungen ihn aus Kompatibilitätsgründen benötigen. Belassen Sie atomare Definitionen bei dem jeweils zuständigen Datensatz.</p>
 <pre><code class="language-yaml"># Fragment under a dataset's measures mapping.
-管道净额:
-  description: 管道净额包含调拨和总仓流转，不代表终端 POS 销售。
-  formula: SUM({出厂价金额})
+Nettokanalumsatz:
+  description: Nettokanalumsatz einschließlich Umlagerungen und Bewegungen des Zentrallagers. Kassenumsätze sind ausgenommen.
+  formula: SUM({Abgabepreisbetrag})
 
-活跃购买方数:
-  description: 有记录的不同购买方代码数量，包含全部购买方类型。
-  formula: DISTINCTCOUNT({购买方代码})
+AktiveKäufer:
+  description: Anzahl unterschiedlicher erfasster Käufer aller Käufertypen.
+  formula: DISTINCTCOUNT({Käufernummer})
 
-活跃药店数:
-  description: 有记录且类型为 Drugstore 的不同购买方代码数量。
-  formula: 'DISTINCTCOUNTIF({购买方代码}, {购买方客户类型} = ''Drugstore'')'
+AktiveApotheken:
+  description: Anzahl unterschiedlicher erfasster Käufer vom Typ Drugstore.
+  formula: 'DISTINCTCOUNTIF({Käufernummer}, {Käufertyp} = ''Drugstore'')'
 </code></pre>
 <p>Kompensieren Sie einen irreführenden kanonischen Namen nicht mit einem Kommentar. Halten Sie eine dauerhaft geltende Einschränkung in <code>description:</code> fest, damit Werkzeuge, die Metadaten lesen, sie anzeigen können.</p>
-<h2 id="set-internal-sql-names-when-needed">Bei Bedarf interne SQL-Namen festlegen <a class="section-link" aria-label="Link zum Abschnitt" href="#set-internal-sql-names-when-needed">#</a></h2>
-<p>Verwenden Sie <code>abbr:</code>, um einen stabilen, mit SQL kompatiblen internen Namen festzulegen. Behalten Sie den fachlichen Schlüssel oder den expliziten Abfragealias als Namen für Nutzer und Anwendungen bei.</p>
-<pre><code class="language-yaml">进货额(不含税):
+<h2 id="use-the-source-column-name">Den Spaltennamen aus der Quelltabelle angeben <a class="section-link" aria-label="Link zum Abschnitt" href="#use-the-source-column-name">#</a></h2>
+<p>Wenn ein Datensatz auf einer einzigen Tabelle beruht, geben Sie unter <code>table:</code> die Quelltabelle und unter <code>abbr:</code> die Quellspalte an. In Abfragen verwenden Sie den fachlichen Namen. Das folgende Beispiel zeigt einen kurzen internen Namen für eine Kennzahl.</p>
+<pre><code class="language-yaml">EinkaufswertOhneSteuer:
   abbr: SaleAmountNoTax
   type: measure
-  dataset: transactions
-  description: 不含税的有效进货金额。
-  formula: SUM({valid_sale_amount})
+  dataset: Transaktionen
+  description: Gültiger Einkaufsbetrag ohne Steuer.
+  formula: SUM({GültigerUmsatz})
 </code></pre>
 <p>Prüfen Sie vor dem Umbenennen einer Kennzahl die Formelreferenzen und Abfragen sowie die Nutzer und Anwendungen, die materialisierte Ergebnisse verwenden. Ein <code>abbr</code> allein stellt nicht sicher, dass alle nachgelagerten Abhängigkeiten eine Umbenennung vertragen.</p>
 <h2 id="document-derived-labels-and-estimates">Abgeleitete Bezeichnungen und Schätzwerte dokumentieren <a class="section-link" aria-label="Link zum Abschnitt" href="#document-derived-labels-and-estimates">#</a></h2>
 <p>Wenn die Bedeutung eines Spaltenmakros erklärt werden muss, geben Sie <code>description:</code> und <code>formula:</code> an.</p>
 <pre><code class="language-yaml"># Fragment under a dataset's column-macros mapping.
-购买方渠道:
-  description: 购买方侧业务渠道，来源为 Businesschannel。
-  formula: '{Businesschannel}'
+EinkaufskanalDesKäufers:
+  description: Vertriebsweg des Käufers aus Businesschannel.
+  formula: '{Einkaufskanal}'
 </code></pre>
 <p>Wenn eine Bezeichnung aus fest codierten Regeln abgeleitet wird, geben Sie die betreffende Regel und ihre Grenzen an. Unterscheiden Sie eine im Modell definierte Kalenderbezeichnung vom offiziellen Geschäftskalender. Wenn eine Kennzahl Aktivitäten am Ende eines Prozesses anhand von Transaktionen in der Prozesskette schätzt, geben Sie an, welche Transaktionstypen sie einbezieht.</p>
 <h2 id="verify-the-metadata-with-the-model">Metadaten anhand des Modells prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#verify-the-metadata-with-the-model">#</a></h2>

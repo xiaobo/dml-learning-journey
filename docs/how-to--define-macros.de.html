@@ -17,7 +17,7 @@
 <tbody><tr>
 <td><code>dt-macro</code></td>
 <td>Zeitfenster verschieben oder erweitern</td>
-<td><code>value:</code> (Verschiebung um einen einzelnen Zeitversatz) oder <code>range:</code> <code>[start, end]</code></td>
+<td><code>Wert:</code> (Verschiebung um einen einzelnen Zeitversatz) oder <code>range:</code> <code>[start, end]</code></td>
 <td>Nein, das Makro arbeitet mit dem Zeitkontext.</td>
 </tr>
 <tr>
@@ -27,7 +27,7 @@
 <td>Ja, der Platzhalter wird durch die beim Aufruf angegebene Kennzahl ersetzt.</td>
 </tr>
 </tbody></table>
-<p>Verwenden Sie <code>value:</code> zum Verschieben eines Zeitpunkts und <code>range: [start, end]</code> für ein Zeitfenster. Ein <code>fn-macro</code> verwendet <code>{measure}</code> für die beim Aufruf angegebene Kennzahl. Ein <code>dt-macro</code> verwendet <code>{dim_dt}</code> für das ermittelte Zeitfeld. Mit der optionalen Eigenschaft <code>prerequisite:</code> können Sie einschränken, auf welchen Ebenen Zeilen oder Summen für die Auswertung definiert sein dürfen.</p>
+<p>Verwenden Sie <code>Wert:</code> zum Verschieben eines Zeitpunkts und <code>range: [start, end]</code> für ein Zeitfenster. Ein <code>fn-macro</code> verwendet <code>{measure}</code> für die beim Aufruf angegebene Kennzahl. Ein <code>dt-macro</code> verwendet <code>{dim_dt}</code> für das ermittelte Zeitfeld. Mit der optionalen Eigenschaft <code>prerequisite:</code> können Sie einschränken, auf welchen Ebenen Zeilen oder Summen für die Auswertung definiert sein dürfen.</p>
 <h2 id="choose-the-extension-point">Erweiterungspunkt auswählen <a class="section-link" aria-label="Link zum Abschnitt" href="#choose-the-extension-point">#</a></h2>
 <table>
 <thead>
@@ -67,24 +67,27 @@ INSERT INTO sales VALUES
 S:
   type: dataset
   table: sales
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
+    VerkaufspositionID:
+      abbr: id
     dt_month:
-    amount:
+      abbr: dt_month
+    Verkaufsbetrag:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-double_value:
+    Umsatz: SUM({Verkaufsbetrag})
+DoppelterBetrag:
   type: fn-macro
   formula: '{measure} * 2'
-prior_month:
+Vormonat:
   type: dt-macro
-  value: date({dim_dt}, '-1 month')
+  Wert: date({dim_dt}, '-1 month')
 </code></pre>
 <p>Bei einem Umsatz von 20 im Januar und 30 im Februar gilt:</p>
-<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
-       AGG({sales: prior_month}) AS previous,
-       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+<pre><code class="language-sql">SELECT AGG({Umsatz: DoppelterBetrag}) AS VerdoppelterWert,
+       AGG({Umsatz: Vormonat}) AS previous,
+       AGG({Umsatz: {DoppelterBetrag, Vormonat}}) AS VerdoppelterVorwert
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
@@ -93,23 +96,23 @@ WHERE dt_month = '2025-02-01'
 dmlc --validate query.sql --model=model.dml --connection=default --json
 dmlc query.sql --model=model.dml --connection=default
 </code></pre>
-<p>Die Ausführung ergab die Werte <strong>60, 20 und 40</strong>. Die strikte Kompilierung, der Modus validate-only und die Ausführung waren auf der geprüften DuckDB-Verbindung erfolgreich. Das Modell deklarierte <code>dialect: duckdb</code>, eine eindeutige Quell-ID <code>id</code> sowie <code>dt_month</code> und <code>sales: SUM({amount})</code>.</p>
+<p>Die Ausführung ergab die Werte <strong>60, 20 und 40</strong>. Die strikte Kompilierung, der Modus validate-only und die Ausführung waren auf der geprüften DuckDB-Verbindung erfolgreich. Das Modell deklarierte <code>dialect: duckdb</code>, eine eindeutige Quell-ID <code>VerkaufspositionID</code> sowie <code>dt_month</code> und <code>Umsatz: SUM({Verkaufsbetrag})</code>.</p>
 <p>Diese Kombination ist auf Sprachebene wiederverwendbar. Das Makro erhält die beim Aufruf angegebene Kennzahl und ihren Auswertungskontext. Es handelt sich nicht um eine API für beliebige Compiler-Plug-ins. Die Regeln zur Auswertungsebene, zu den zeitbezogenen Voraussetzungen und zur Reihenfolge der Modifikatoren gelten weiterhin. Ein eigener Name umgeht diese Regeln nicht.</p>
 <h2 id="calling-a-function-defined-in-your-database">Eine in Ihrer Datenbank definierte Funktion aufrufen <a class="section-link" aria-label="Link zum Abschnitt" href="#calling-a-function-defined-in-your-database">#</a></h2>
 <p><strong>DML kann Aufrufe von Skalarfunktionen im generierten SQL beibehalten. Die Datenbank stellt die Implementierung bereit.</strong> Installieren Sie zum Beispiel die folgende Funktion in der DuckDB-Übungsdatenbank, bevor Sie DML ausführen:</p>
 <pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
 </code></pre>
 <p>DuckDB implementiert diese Form als persistentes SQL-Skalarmakro. Das Beispiel prüft den Aufruf einer in der Datenbank definierten Skalarfunktion. Die Registrierung einer Python-UDF, Aggregat-UDFs und tabellenwertige Funktionen werden dabei nicht geprüft.</p>
-<p>Fügen Sie unter <code>S.measures</code> neben <code>sales</code> den folgenden Eintrag hinzu, um die Funktion vor der Aggregation auf die Quellwerte anzuwenden:</p>
+<p>Fügen Sie unter <code>S.measures</code> neben <code>Umsatz</code> den folgenden Eintrag hinzu, um die Funktion vor der Aggregation auf die Quellwerte anzuwenden:</p>
 <pre><code class="language-yaml"># Under the sales dataset's measures:
-net_sales: SUM(business_net({amount}))
+Nettoumsatz: SUM(business_net({Verkaufsbetrag}))
 </code></pre>
 <p>Vergleichen Sie diese Kennzahl anschließend mit einem Funktionsaufruf auf dem aggregierten Ergebnis:</p>
-<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+<pre><code class="language-sql">SELECT AGG(Nettoumsatz), business_net(AGG(Umsatz)) AS Nettosumme
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
-<p>Bei einem Februarumsatz von 30 ergaben beide Varianten <strong>24</strong>. Das generierte SQL behielt <code>SUM(business_net(amount))</code> und <code>business_net(SUM(amount))</code> bei. Die Funktionsaufrufe erfolgen in unterschiedlichen Auswertungsphasen. Hier führt die Linearität der Funktion zum gleichen Ergebnis. Rundungen, Schwellenwerte oder andere nichtlineare Funktionen können zu unterschiedlichen Ergebnissen führen. Wählen Sie daher gezielt, in welcher Phase die Funktion ausgewertet wird.</p>
+<p>Bei einem Februarumsatz von 30 ergaben beide Varianten <strong>24</strong>. Das generierte SQL behielt <code>SUM(business_net(Verkaufsbetrag))</code> und <code>business_net(SUM(Verkaufsbetrag))</code> bei. Die Funktionsaufrufe erfolgen in unterschiedlichen Auswertungsphasen. Hier führt die Linearität der Funktion zum gleichen Ergebnis. Rundungen, Schwellenwerte oder andere nichtlineare Funktionen können zu unterschiedlichen Ergebnissen führen. Wählen Sie daher gezielt, in welcher Phase die Funktion ausgewertet wird.</p>
 <h3 id="validate-the-function-on-the-intended-connection">Die Funktion auf der vorgesehenen Verbindung validieren <a class="section-link" aria-label="Link zum Abschnitt" href="#validate-the-function-on-the-intended-connection">#</a></h3>
 <p>DML installiert die Funktion nicht und schreibt ihre Implementierung nicht für andere Datenbanken um. Die Funktion muss für die ausführende Verbindung sichtbar sein, die Typen der generierten Argumente akzeptieren und für den jeweiligen Datenbankbenutzer zur Ausführung freigegeben sein. Funktionsnamen, Schemaqualifizierung, Bereitstellung und Portabilität hängen von der jeweiligen Datenbank ab.</p>
 <p>Der Aufruf einer absichtlich fehlenden Funktion <strong>bestand die strikte Kompilierung</strong>. Der anschließende Lauf im Modus validate-only schlug bei EXPLAIN fehl (Exitcode 65). Auch die direkte Ausführung schlug fehl (Exitcode 70). Eine erfolgreiche Kompilierung allein belegt daher nicht, dass eine UDF existiert oder aufgerufen werden kann. Verwenden Sie <a href="how-to--compile-and-validate.de.html">Kompilieren und Validieren</a> und vergleichen Sie anschließend die tatsächlichen Ergebnisse.</p>

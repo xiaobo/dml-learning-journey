@@ -33,38 +33,41 @@
 <td>40</td>
 </tr>
 </tbody></table>
-<p>Für den Quelldatensatz ist <code>dimension: [id]</code> definiert: Jede Zeile steht für einen Verkauf. Zwei Verkäufe können zur selben Region gehören. Daher lässt sich eine Quellzeile anhand von <code>region</code> nicht eindeutig identifizieren. Eine Abfrage kann diese Zeilen dennoch nach Region gruppieren.</p>
+<p>Für den Quelldatensatz ist <code>dimension: [VerkaufspositionID]</code> definiert: Jede Zeile steht für einen Verkauf. Zwei Verkäufe können zur selben Region gehören. Daher lässt sich eine Quellzeile anhand von <code>Region</code> nicht eindeutig identifizieren. Eine Abfrage kann diese Zeilen dennoch nach Region gruppieren.</p>
 <p>Die <a href="explanation--dimensions.de.html">Einführung in Dimensionen</a> erläutert im Detail, wie Quellzeilen identifiziert und für Berichte gruppiert werden.</p>
 <h2 id="dml-records-the-reusable-definitions">DML hält wiederverwendbare Definitionen fest <a class="section-link" aria-label="Link zum Abschnitt" href="#dml-records-the-reusable-definitions">#</a></h2>
 <p>Der Reisende hält seine Definitionen in einem Notizbuch fest. DML ist dieses Modell und wird in YAML geschrieben. Der folgende Ausschnitt deklariert zwei atomare Kennzahlen für den Verkaufsdatensatz:</p>
-<pre><code class="language-yaml">FACT_SALES:
+<pre><code class="language-yaml">Verkaufspositionen:
   type: dataset
   table: TABLE_SALES
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
-    region:
-    amount:
+    VerkaufspositionID:
+      abbr: id
+    Region:
+      abbr: region
+    Verkaufsbetrag:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-    cnt: COUNT(1)
+    Umsatz: SUM({Verkaufsbetrag})
+    Verkaufsanzahl: COUNT(1)
 </code></pre>
-<p><code>sales</code> summiert die Beträge. <code>cnt</code> zählt die Quellzeilen. Beide sind atomare Kennzahlen. Sie übernehmen <code>FACT_SALES</code> als Datensatz und aggregieren direkt dessen Zeilen oder Ausdrücke über dessen Spalten, ohne auf andere Kennzahlen zu verweisen. Berichte können sie wiederverwenden, sofern die Ebene, auf der Zeilen oder Summen definiert sind, mit der Berechnung der Kennzahlen vereinbar ist.</p>
+<p><code>Umsatz</code> summiert die Beträge. <code>Verkaufsanzahl</code> zählt die Quellzeilen. Beide sind atomare Kennzahlen. Sie übernehmen <code>Verkaufspositionen</code> als Datensatz und aggregieren direkt dessen Zeilen oder Ausdrücke über dessen Spalten, ohne auf andere Kennzahlen zu verweisen. Berichte können sie wiederverwenden, sofern die Ebene, auf der Zeilen oder Summen definiert sind, mit der Berechnung der Kennzahlen vereinbar ist.</p>
 <h2 id="dmx-expresses-a-calculation">DMX beschreibt eine Berechnung <a class="section-link" aria-label="Link zum Abschnitt" href="#dmx-expresses-a-calculation">#</a></h2>
 <p>Im Notizbuch steht auch, wie ein Durchschnitt berechnet wird:</p>
-<pre><code class="language-yaml">average_sale:
+<pre><code class="language-yaml">DurchschnittsumsatzJeVerkauf:
   type: measure
-  formula: 'DIVIDE({sales}, {cnt})'
+  formula: 'DIVIDE({Umsatz}, {Verkaufsanzahl})'
 </code></pre>
-<p>Der YAML-Abschnitt deklariert eine Kennzahl. Die darin enthaltene Formel ist in DMX geschrieben. <code>{sales}</code> und <code>{cnt}</code> verweisen auf Kennzahlen, und <code>DIVIDE</code> gibt bei einem Nenner von null NULL zurück. <code>average_sale</code> ist eine zusammengesetzte Kennzahl, weil sie auf andere Kennzahlen verweist. Sie hat keine Eigenschaft <code>dataset:</code>.</p>
+<p>Der YAML-Abschnitt deklariert eine Kennzahl. Die darin enthaltene Formel ist in DMX geschrieben. <code>{Umsatz}</code> und <code>{Verkaufsanzahl}</code> verweisen auf Kennzahlen, und <code>DIVIDE</code> gibt bei einem Nenner von null NULL zurück. <code>DurchschnittsumsatzJeVerkauf</code> ist eine zusammengesetzte Kennzahl, weil sie auf andere Kennzahlen verweist. Sie hat keine Eigenschaft <code>dataset:</code>.</p>
 <p>DMX ist die gemeinsame Ausdruckssyntax für Modelldefinitionen und Abfrageausdrücke. Zwischen Modell und Abfrage gibt es dafür keinen eigenen Verarbeitungsschritt. Die <a href="reference--expressions.de.html">Ausdrucksreferenz</a> legt die Syntax fest.</p>
 <h2 id="the-query-chooses-what-one-result-row-represents">Die Abfrage legt fest, wofür eine Ergebniszeile steht <a class="section-link" aria-label="Link zum Abschnitt" href="#the-query-chooses-what-one-result-row-represents">#</a></h2>
 <p>Der Reisende richtet sein Fernrohr auf die Regionen:</p>
-<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+<pre><code class="language-sql">SELECT Region, AGG(Umsatz), AGG(DurchschnittsumsatzJeVerkauf)
 FROM MODEL
-GROUP BY region
+GROUP BY Region
 </code></pre>
-<p><code>AGG</code> verweist auf eine Kennzahl aus dem Modell. Mit <code>GROUP BY region</code> liefert die Abfrage eine Ergebniszeile pro Region. Aus den vier erfundenen Verkäufen ergeben sich diese Werte:</p>
+<p><code>AGG</code> verweist auf eine Kennzahl aus dem Modell. Mit <code>GROUP BY Region</code> liefert die Abfrage eine Ergebniszeile pro Region. Aus den vier erfundenen Verkäufen ergeben sich diese Werte:</p>
 <table>
 <thead>
 <tr>
@@ -84,8 +87,8 @@ GROUP BY region
 <td>35</td>
 </tr>
 </tbody></table>
-<p>Ohne Gruppierungsfelder ergeben dieselben Modellkennzahlen einen Gesamtumsatz von 100 und einen durchschnittlichen Verkaufsbetrag von 25. Bei einer Gruppierung nach <code>id</code> gibt es ein Ergebnis pro Verkauf. In allen Fällen identifiziert <code>[id]</code> die Quellzeilen.</p>
-<p>Auf der Ebene des deklarierten Quellschlüssels <code>[id]</code> vereinfacht der geprüfte Compiler die Aggregation zu einem Ausdruck pro Zeile und meldet einen Befund der strikten Prüfung. Diese Vereinfachung setzt voraus, dass <code>id</code> in den Quelldaten eindeutig ist. Die Abfragen für den Gesamtwert und die Werte pro Region bestehen mit dem geprüften Build die strikte Kompilierung.</p>
+<p>Ohne Gruppierungsfelder ergeben dieselben Modellkennzahlen einen Gesamtumsatz von 100 und einen durchschnittlichen Verkaufsbetrag von 25. Bei einer Gruppierung nach <code>VerkaufspositionID</code> gibt es ein Ergebnis pro Verkauf. In allen Fällen identifiziert <code>[VerkaufspositionID]</code> die Quellzeilen.</p>
+<p>Auf der Ebene des deklarierten Quellschlüssels <code>[VerkaufspositionID]</code> vereinfacht der geprüfte Compiler die Aggregation zu einem Ausdruck pro Zeile und meldet einen Befund der strikten Prüfung. Diese Vereinfachung setzt voraus, dass <code>VerkaufspositionID</code> in den Quelldaten eindeutig ist. Die Abfragen für den Gesamtwert und die Werte pro Region bestehen mit dem geprüften Build die strikte Kompilierung.</p>
 <p>Das <a href="compiler-observations.json">Compilerprotokoll des Tutorials</a> dokumentiert die für das interaktive Projekt verwendete ausführbare Datei, ihren Fingerabdruck und die durchgeführten Prüfungen.</p>
 <p>Die interaktive Seite berechnet diese kleinen Beispieltabellen im Browser. Sie führt weder DML aus noch stellt sie eine Verbindung zu einer Datenbank her.</p>
 <h2 id="compilation-produces-sql">Die Kompilierung erzeugt SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#compilation-produces-sql">#</a></h2>

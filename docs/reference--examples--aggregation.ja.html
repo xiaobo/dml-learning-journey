@@ -5,57 +5,57 @@
 <p><code>+d</code>を使うと、<strong>2 段階の集計</strong>ができます。中間の粒度で指標を定義し、次にクエリの粒度まで集約します。コンパイラは CTE（<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>）を生成します。</p>
 <p><strong>パターン</strong>：ディメンションを限定した指標 → 上位の粒度に集約する指標 → クエリ</p>
 <pre><code class="language-yaml"># Step 1: require customer_id during evaluation
-customer_sales:
+顧客別売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
     dimensions:
-        - [customer_id, ...]  # customer required; additional query fields allowed
+        - [顧客番号, ...]  # customer required; additional query fields allowed
 
 # Step 2: evaluate with dimension [customer_id], then roll up to the query dimension
-total_customer_sales:
+顧客売上高合計:
     type: measure
-    formula: SUM({customer_sales: {+d: customer_id}})
+    formula: SUM({顧客別売上高: {+d: 顧客番号}})
 </code></pre>
-<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([brand], [region], total, etc.)
-SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand
+<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([ブランド], [地域], 合計, etc.)
+SELECT ブランド, AGG(顧客売上高合計) FROM MODEL GROUP BY ブランド
 </code></pre>
 <p><strong>RFM 分析</strong>：<code>+d</code> と fn マクロを使った完全な例：</p>
 <pre><code class="language-yaml"># .dml: customer-grain measures for RFM
-last_purchase_month:
+最終購入月:
     type: measure
-    formula: 'MAXIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MAXIF({dt_month}, {売上高: {+d: dt_month}} &gt; 0)'
     dimensions:
-        - [customer_id]
+        - [顧客番号]
 
-purchase_months:
+購入月数:
     type: measure
-    dataset: transactions
-    formula: 'COUNT(DISTINCT CASE WHEN {amount} &gt; 0 THEN {dt_month} ELSE NULL END)'
+    dataset: 取引明細
+    formula: 'COUNT(DISTINCT CASE WHEN {売上金額} &gt; 0 THEN {dt_month} ELSE NULL END)'
     dimensions:
-        - [customer_id]
+        - [顧客番号]
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: RFM with ranks
-SELECT AGG(sales) AS M, AGG(sales, 'rank') AS M_rank,
-       AGG(purchase_months) AS F, AGG(purchase_months, 'rank') AS F_rank,
-       AGG(last_purchase_month) AS R, AGG(last_purchase_month, 'rank_asc') AS R_rank
-FROM MODEL GROUP BY customer_id
+SELECT AGG(売上高) AS M, AGG(売上高, 'rank') AS M_rank,
+       AGG(購入月数) AS F, AGG(購入月数, 'rank') AS F_rank,
+       AGG(最終購入月) AS R, AGG(最終購入月, 'rank_asc') AS R_rank
+FROM MODEL GROUP BY 顧客番号
 </code></pre>
 <p><strong>インライン指標</strong>：<code>.dml</code>を変更せずに、<code>/** dml ... **/</code>のコメントブロックを使って、モデルクエリの SQL に一時的な指標を直接定義できます。構文とルールの詳細は「<a href="reference--model-query-sql.ja.html#312-inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>）</a>」を参照してください。</p>
 <pre><code class="language-sql">/** dml
-temp_customer_sales:
+顧客売上高中間値:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
     dimensions:
-        - [customer_id, ...]
+        - [顧客番号, ...]
 
-temp_avg_customer_sales:
+顧客平均売上高中間値:
     type: measure
-    formula: 'AVG({temp_customer_sales: {+d: customer_id}})'
+    formula: 'AVG({顧客売上高中間値: {+d: 顧客番号}})'
 **/
-SELECT brand, AGG(temp_avg_customer_sales) AS avg_customer_sales
-FROM MODEL GROUP BY brand
+SELECT ブランド, AGG(顧客平均売上高中間値) AS 顧客平均売上高
+FROM MODEL GROUP BY ブランド
 </code></pre>
 <p><a id="26a-fine-grain-filter-then-d-roll-up"></a></p>
 <h3 id="fine-grain-filter-then-d-roll-up">細かい粒度でフィルタリングしてから <code>+d</code> で集約 <a class="section-link" aria-label="この節へのリンク" href="#fine-grain-filter-then-d-roll-up">#</a></h3>
@@ -75,28 +75,30 @@ HAVING SUM(total) &gt; 500      -- report-level HAVING
     type: dataset
     table: FACT
     columns:
-        product:
-        region:
+        商品:
+            abbr: product
+        地域:
+            abbr: region
     measures:
-        total: SUM(amount)
-        cnt: COUNT(1)
+        合計: SUM(売上金額)
+        売上件数: COUNT(1)
 
-grand_total:
+総計:
     type: measure
     formula: |-
-        SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+        SUMIF({合計: {+d: 地域}}, {売上件数: {+d: 地域}} &gt; 3)
     # No qualifying fine rows -&gt; NULL. Use an explicit fill only if required.
 
 report:
     type: query
     filters:
-        "{grand_total} &gt; 500":
+        "{総計} &gt; 500":
     columns:
         dimension:
-            - product
-        grand_total:
+            - 商品
+        総計:
 </code></pre>
-<p><strong>例の読み方：</strong> <code>{cnt: {+d: region}}</code> と <code>{total: {+d: region}}</code> は、どちらも<strong>同じ</strong>細かい粒度 <code>(product, region)</code> で評価されます。<code>iif</code> または <code>SUMIF</code> によって、その粒度のどの行を外側の <code>SUM</code> に含めるかが決まります。クエリのディメンションは <code>product</code> のままです。</p>
+<p><strong>例の読み方：</strong> <code>{売上件数: {+d: 地域}}</code> と <code>{合計: {+d: 地域}}</code> は、どちらも<strong>同じ</strong>細かい粒度 <code>(商品, 地域)</code> で評価されます。<code>iif</code> または <code>SUMIF</code> によって、その粒度のどの行を外側の <code>SUM</code> に含めるかが決まります。クエリのディメンションは <code>商品</code> のままです。</p>
 <table>
 <thead>
 <tr>
@@ -105,53 +107,53 @@ report:
 </tr>
 </thead>
 <tbody><tr>
-<td><code>columns.dimension</code> に <code>product</code> だけを指定して <code>filters: "cnt &gt; 3"</code> でクエリする</td>
-<td><code>cnt</code> が定義時の粒度とは異なる粒度で参照されています。コンパイル時やクエリの統合時に、商品レベルの <code>HAVING COUNT(1) &gt; 3</code> へ誤って書き換えられることがあります。</td>
+<td><code>columns.dimension</code> に <code>商品</code> だけを指定して <code>filters: "売上件数 &gt; 3"</code> でクエリする</td>
+<td><code>売上件数</code> が定義時の粒度とは異なる粒度で参照されています。コンパイル時やクエリの統合時に、商品レベルの <code>HAVING COUNT(1) &gt; 3</code> へ誤って書き換えられることがあります。</td>
 </tr>
 <tr>
-<td><code>filters: "{cnt: {+d: region}} &gt; 3"</code></td>
+<td><code>filters: "{売上件数: {+d: 地域}} &gt; 3"</code></td>
 <td>コンパイルできる場合もありますが、処理の捉え方が逆になります。細かい粒度への掘り下げが、レポートのフィルターに埋め込まれているためです。</td>
 </tr>
 <tr>
-<td><code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code></td>
+<td><code>SUM({合計: {+d: 地域, +f: '{売上件数} &gt; 3'}})</code></td>
 <td>この条件は集計済みの指標を参照しています。<code>+f</code> が受け付けるのは入力行を絞り込む条件です。</td>
 </tr>
 </tbody></table>
-<p>SQL と同じ手順を明示したい場合の代替策として、細かい粒度のクエリ（<code>dimension: [product, region]</code>、<code>filters: "cnt &gt; 3"</code>）を残し、表示用の <code>after:</code> で再集計します。モデルを整備する際は、上記の指標による書き方を優先してください。</p>
+<p>SQL と同じ手順を明示したい場合の代替策として、細かい粒度のクエリ（<code>dimension: [商品, 地域]</code>、<code>filters: "売上件数 &gt; 3"</code>）を残し、表示用の <code>after:</code> で再集計します。モデルを整備する際は、上記の指標による書き方を優先してください。</p>
 <p>「<a href="how-to--design-measures.ja.html">指標の設計</a>」と、注意点「<a href="reference--troubleshooting--grain-and-joins.ja.html#p69">P69</a>」も参照してください。</p>
 <p><strong><code>+d</code> の制限</strong>：</p>
 <ul>
-<li><code>+d</code> だけでは、同じディメンションに独立した別名を 2 つ導入できません。完全な N×N の共起行列には、代わりに <code>sql:</code> を使ったデータセットを使用できます。宣言済みのソースを顧客で自己結合し、一意な <code>(customer, brand_from, brand_to)</code> の組み合わせを選択します。そのフィールドの組み合わせ全体をキーとして宣言し、2 つのブランドフィールドでグループ化して顧客数を数えます。確認済みの 2 ブランドのテストデータは、コンパイルと検証に成功し、A–A: 2、A–B: 1、B–A: 1、B–B: 1 を返します。この方法には、ブランドの組を表すリレーションを明示的に定義する必要があります。<code>+d</code> による自動変換ではありません。</li>
+<li><code>+d</code> だけでは、同じディメンションに独立した別名を 2 つ導入できません。完全な N×N の共起行列には、代わりに <code>sql:</code> を使ったデータセットを使用できます。宣言済みのソースを顧客で自己結合し、一意な <code>(顧客, brand_from, brand_to)</code> の組み合わせを選択します。そのフィールドの組み合わせ全体をキーとして宣言し、2 つのブランドフィールドでグループ化して顧客数を数えます。確認済みの 2 ブランドのテストデータは、コンパイルと検証に成功し、A–A: 2、A–B: 1、B–A: 1、B–B: 1 を返します。この方法には、ブランドの組を表すリレーションを明示的に定義する必要があります。<code>+d</code> による自動変換ではありません。</li>
 </ul>
 <p><code>+d</code> が<strong>クエリのディメンションバインディング</strong>（<code>columns.dimension: - name: '{m: {+d: K}}'</code>）にある場合は、上記の集約パターンではなく、<strong>指標をディメンションとして使う</strong>パターンです。「<a href="explanation--measure-as-dimension.ja.html">指標をディメンションとして使う</a>」を参照してください。</p>
 <p><strong>共起分析（1×N パターン）</strong>：<code>+d</code>、<code>-d</code>、<code>+f</code> を使って、対象ブランドともう一方のブランドの両方を購入した顧客数を、他のブランドごとに集計します。</p>
 <pre><code class="language-sql">/** dml
-target_brand_customers:
+対象ブランド顧客数:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: customer_id, -d: brand, +f: {brand: ''BrandA''}}} &gt; 0)'
+    formula: 'MAXIF(1, {売上高: {+d: 顧客番号, -d: ブランド, +f: {ブランド: ''BrandA''}}} &gt; 0)'
     dimensions:
-        - [..., customer_id]
+        - [..., 顧客番号]
 
-current_brand_customers:
+現在のブランドの顧客数:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: [brand, customer_id]}} &gt; 0)'
+    formula: 'MAXIF(1, {売上高: {+d: [ブランド, 顧客番号]}} &gt; 0)'
     dimensions:
-        - [brand, customer_id]
+        - [ブランド, 顧客番号]
 
-co_occurrence:
+共起回数:
     type: measure
-    formula: 'SUM({current_brand_customers: {+d: [brand, customer_id]}} * {target_brand_customers: {+d: customer_id}})'
+    formula: 'SUM({現在のブランドの顧客数: {+d: [ブランド, 顧客番号]}} * {対象ブランド顧客数: {+d: 顧客番号}})'
 **/
-SELECT brand, AGG(co_occurrence) AS overlap_with_brandA
-FROM MODEL GROUP BY brand ORDER BY AGG(co_occurrence) DESC
+SELECT ブランド, AGG(共起回数) AS ブランドA共通顧客数
+FROM MODEL GROUP BY ブランド ORDER BY AGG(共起回数) DESC
 </code></pre>
-<p><code>-d: brand</code> は、対象指標の評価ディメンションからディメンションフィールド <code>brand</code> を取り除きます。評価ディメンションには <code>[customer]</code> だけが残ります。<code>+f</code> で対象ブランドに絞り込み、2 つのフラグの積で両方のブランドを購入した顧客を数えます。</p>
+<p><code>-d: ブランド</code> は、対象指標の評価ディメンションからディメンションフィールド <code>ブランド</code> を取り除きます。評価ディメンションには <code>[顧客]</code> だけが残ります。<code>+f</code> で対象ブランドに絞り込み、2 つのフラグの積で両方のブランドを購入した顧客を数えます。</p>
 <p>指標の <code>dimensions:</code> は常に配列の配列です。内側の各リストは許可するディメンションを 1 つ定義し、外側のリストはそれらを選択肢としてまとめます。</p>
-<pre><code class="language-yaml">month_active_flag:
+<pre><code class="language-yaml">当月利用フラグ:
     type: measure
-    formula: 'ISNULL(MAXIF(1, {month_qty: {+d: [prod_id, dt_month]}} &gt; 0), 0)'
+    formula: 'ISNULL(MAXIF(1, {当月数量: {+d: [商品番号, dt_month]}} &gt; 0), 0)'
     dimensions:
-      - [store_id, dt_month, ...]
+      - [店舗番号, dt_month, ...]
 </code></pre>
 <p>許可するディメンションの定義で <code>...</code>（省略記号）を使うと、指標参照の評価ディメンションに、列挙されていないディメンションフィールドも含められます。ただし、列挙されたフィールドはすべて評価ディメンションに含める必要があります。</p>
 </main></body></html>

@@ -25,7 +25,7 @@
 </tr>
 <tr>
 <td>查询过滤器中出现 <code>referred column {DATASET}.col is undefined</code></td>
-<td>字符串形式：<code>"{DATASET}.col = value":</code></td>
+<td>字符串形式：<code>"{DATASET}.col = 数值":</code></td>
 </tr>
 <tr>
 <td>包含两个元素的列表 <code>dt_date: ['2024-01-01', '2025-12-31']</code> 只返回 2 天的数据</td>
@@ -39,16 +39,16 @@
 <h3 id="alternative-lookup-eligibility-can-strengthen-joins">使用备选查找的资格规则可能使连接变得更严格 <a class="section-link" aria-label="本节链接" href="#alternative-lookup-eligibility-can-strengthen-joins">#</a></h3>
 <p>“匹配目标维度，<strong>或者</strong>在无法匹配目标维度时匹配间接维度”这类资格规则使用两个可选关系。如果将派生标志放在查询的 <code>filters:</code> 中，编译生成的 SQL 可能会使其中一个查找变为必需（<code>INNER JOIN</code>），也可能在转换 <code>AND</code>/<code>OR</code> 表达式时丢失回退语义。</p>
 <p>建议采用以下结构。</p>
-<pre><code class="language-yaml">target_state: pk({snapshot_month}, {customer_id}).{TARGET_CUSTOMER}.state
-customer_is_eligible: |-
-  iif({target_state} = 1, 1,
-    iif(pk({customer_id}).{INDIRECT_CUSTOMER}.customer_id is not null, 1, 0))
-included_amount: iif({customer_is_eligible} = 1, {amount}, null)
+<pre><code class="language-yaml">目标状态: pk({dt_month}, {客户编号}).{TARGET_CUSTOMER}.state
+客户是否符合条件: |-
+  iif({目标状态} = 1, 1,
+    iif(pk({客户编号}).{INDIRECT_CUSTOMER}.客户编号 is not null, 1, 0))
+计入金额: iif({客户是否符合条件} = 1, {销售金额}, null)
 
 measures:
-  amount: SUM({included_amount})
+  销售金额: SUM({计入金额})
 </code></pre>
-<p>然后检查生成的 SQL。两个查找都必须保留为 <code>LEFT JOIN</code>，回退逻辑必须留在 <code>CASE</code> 内。如果需要对输出分组加以限制，应复用已选定的主要度量（<code>HAVING AGG(amount) is not null</code>），避免结果中带入额外的隐藏列。将键不唯一以及目标维度与间接维度重叠视为诊断线索。DML 关系不应悄然重现意外的行数膨胀。</p>
+<p>然后检查生成的 SQL。两个查找都必须保留为 <code>LEFT JOIN</code>，回退逻辑必须留在 <code>CASE</code> 内。如果需要对输出分组加以限制，应复用已选定的主要度量（<code>HAVING AGG(销售金额) is not null</code>），避免结果中带入额外的隐藏列。将键不唯一以及目标维度与间接维度重叠视为诊断线索。DML 关系不应悄然重现意外的行数膨胀。</p>
 <p><a id="p43"></a></p>
 <h2 id="p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> 与 <code>{-d: dim_dt}</code> 的对比（SQL 结构不同） <a class="section-link" aria-label="本节链接" href="#p43-dimension--vs--d-dim_dt-different-sql-shape">#</a></h2>
 <p><strong>错误</strong>：在基准 SQL 已经使用独立的 GROUP BY CTE 在更粗粒度上聚合的情况下，仍使用 <code>{-d: dim_dt}</code>。<strong>解决方法</strong>：使结构与基准一致。<code>{dimension: [cols]}</code> 强制生成独立的聚合 CTE，而 <code>{-d: dim_dt}</code> 使用窗口表达式 <code>OVER (PARTITION BY …)</code>。参见 <a href="#p44">P44</a> 和 <a href="reference--troubleshooting--queries.zh.html#p45">P45</a>。</p>
@@ -59,20 +59,20 @@ measures:
 <p>等同于 Model Query SQL。这里介绍 YAML 特有的常见陷阱。完整规则见<a href="reference--query-yaml.zh.html">YAML 查询声明</a>。</p>
 <p><a id="p62"></a></p>
 <h2 id="p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">P62. 将度量的 <code>dimensions:</code> 用于标识数据集行或对查询分组 <a class="section-link" aria-label="本节链接" href="#p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">#</a></h2>
-<p><strong>症状</strong>：在度量上写入 <code>dimensions: [[region]]</code>，期望它像数据集的 <code>dimension:</code> 一样，让查询输出按 <code>region</code> 分组。实际编译查询时不会生成该分组，或者查询在使用其他维度时失败。<strong>错误理解</strong>：度量的 <code>dimensions:</code> 用于声明数据集如何标识行，或控制查询如何分组。<strong>正确理解</strong>：度量的 <code>dimensions:</code> 包含<strong>允许使用的维度</strong>。每个内层列表表示一个维度，外层列表列出可选项。数据集行的标识由数据集的 <code>dimension:</code> 定义，分组由查询的 <code>GROUP BY</code> 或 <code>columns.dimension:</code> 指定。<strong>解决方法</strong>：除非指标确实需要限定为这些允许使用的维度，否则请移除度量的 <code>dimensions:</code>。在查询中指定结果分组（<code>GROUP BY</code> / <code>columns.dimension:</code>）。</p>
+<p><strong>症状</strong>：在度量上写入 <code>dimensions: [[地区]]</code>，期望它像数据集的 <code>dimension:</code> 一样，让查询输出按 <code>地区</code> 分组。实际编译查询时不会生成该分组，或者查询在使用其他维度时失败。<strong>错误理解</strong>：度量的 <code>dimensions:</code> 用于声明数据集如何标识行，或控制查询如何分组。<strong>正确理解</strong>：度量的 <code>dimensions:</code> 包含<strong>允许使用的维度</strong>。每个内层列表表示一个维度，外层列表列出可选项。数据集行的标识由数据集的 <code>dimension:</code> 定义，分组由查询的 <code>GROUP BY</code> 或 <code>columns.dimension:</code> 指定。<strong>解决方法</strong>：除非指标确实需要限定为这些允许使用的维度，否则请移除度量的 <code>dimensions:</code>。在查询中指定结果分组（<code>GROUP BY</code> / <code>columns.dimension:</code>）。</p>
 <pre><code class="language-yaml"># Wrong: expecting dimensions: to produce GROUP BY region
-sales:
+销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
     dimensions:
-        - [region]
+        - [地区]
 
 # Right: no dimensions: lock; grouping lives in the query
-sales:
+销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
 # SELECT region, AGG(sales) FROM MODEL GROUP BY region
 </code></pre>
 <p>维度角色的具体约定见<a href="explanation--dimensions.zh.html">维度角色</a>。</p>
@@ -80,10 +80,10 @@ sales:
 <h2 id="p64-materialize-true-on-a-measure">P64. 在度量上设置 <code>materialize: true</code> <a class="section-link" aria-label="本节链接" href="#p64-materialize-true-on-a-measure">#</a></h2>
 <p><strong>症状</strong>：编译时出现 <code>ERROR error during processing [ref null]: undefined modifier 'materialize'</code>，该度量被静默丢弃（<code>0 measure(s) processed</code>）。<strong>错误</strong>：在度量定义中添加 <code>materialize: true</code>，期望编译器对该度量进行预聚合。度量级别没有物化标志（已在 dmlc 0.3.16 中使用 <code>dmlc -c</code> 验证）。<strong>解决方法</strong>：使用顶层 <code>type: materialize</code> 对象（<code>parameters:</code> + <code>dimension:</code> + <code>measures:</code>），或在数据集级别使用 <code>materialize: &lt;name&gt;</code> 来声明物化。切勿在度量上声明物化。参见<a href="reference--materialization.zh.html#55-materialize-definition-type-materialize">物化定义（<code>type: materialize</code>）</a>和<a href="reference--examples--models.zh.html#materialize">物化示例</a>。</p>
 <pre><code class="language-yaml"># Wrong
-sales:
+销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
     materialize: true   # ← undefined modifier 'materialize'
 
 # Right
@@ -91,8 +91,8 @@ DWS_SALES:
     type: materialize
     parameters:
         dt_date: date
-    dimension: [dt_date, product]
-    measures: [sales]
+    dimension: [dt_date, 商品]
+    measures: [销售额]
 </code></pre>
 <p><a id="p66"></a></p>
 <h2 id="p66-measure-as-dimension-without-an-explicit-entity-key">P66. 在未显式指定实体键的情况下将度量用作维度 <a class="section-link" aria-label="本节链接" href="#p66-measure-as-dimension-without-an-explicit-entity-key">#</a></h2>
@@ -103,28 +103,28 @@ dimension:
 
 # Right, inline scalar
 dimension:
-    - payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'
+    - payment_day: 'cast({授权时间: {+d: payment_id}} as date)'
 </code></pre>
 <p><a id="p67"></a></p>
 <h2 id="p67-incompatible-or-dependent-measure-derived-dimensions">P67. 由指标派生的维度不兼容或存在依赖关系 <a class="section-link" aria-label="本节链接" href="#p67-incompatible-or-dependent-measure-derived-dimensions">#</a></h2>
-<p><strong>现象</strong>：编译时报告分类键不兼容，或标签之间存在依赖关系。<strong>错误用法</strong>：一个标签使用 <code>{+d: store_id}</code>，另一个标签使用 <code>{+d: customer_id}</code>，或一个标签引用同一查询中声明的另一个标签。<strong>修正方法</strong>：让相互独立的标签使用相同的完整实体键。键字段的顺序可以不同。如果标签确实定义在不同粒度上，请单独建模为关系或可复用的业务指标。</p>
+<p><strong>现象</strong>：编译时报告分类键不兼容，或标签之间存在依赖关系。<strong>错误用法</strong>：一个标签使用 <code>{+d: 门店编号}</code>，另一个标签使用 <code>{+d: 客户编号}</code>，或一个标签引用同一查询中声明的另一个标签。<strong>修正方法</strong>：让相互独立的标签使用相同的完整实体键。键字段的顺序可以不同。如果标签确实定义在不同粒度上，请单独建模为关系或可复用的业务指标。</p>
 <p><a id="p68"></a></p>
 <h2 id="p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">P68. 无法将输出指标从分类粒度汇总到更粗粒度 <a class="section-link" aria-label="本节链接" href="#p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">#</a></h2>
-<p><strong>现象</strong>：编译时报告缺少聚合，或无法重新聚合。<strong>错误用法</strong>：直接输出 <code>{sales: {+d: store_id}}</code>、对已计算出的去重计数求和，或在未定义所需权重的情况下对比率求平均值。<strong>修正方法</strong>：用所需的聚合函数包裹较细粒度的引用，例如 <code>SUM({sales: {+d: store_id}})</code>。对于比率，先汇总各组成部分，再重新计算比率。对于去重计数、中位数、百分位数及类似指标，请保留适用的输入或聚合状态，或单独定义一个受支持的指标。否则，只能接受编译错误。</p>
+<p><strong>现象</strong>：编译时报告缺少聚合，或无法重新聚合。<strong>错误用法</strong>：直接输出 <code>{销售额: {+d: 门店编号}}</code>、对已计算出的去重计数求和，或在未定义所需权重的情况下对比率求平均值。<strong>修正方法</strong>：用所需的聚合函数包裹较细粒度的引用，例如 <code>SUM({销售额: {+d: 门店编号}})</code>。对于比率，先汇总各组成部分，再重新计算比率。对于去重计数、中位数、百分位数及类似指标，请保留适用的输入或聚合状态，或单独定义一个受支持的指标。否则，只能接受编译错误。</p>
 <p><a id="p69"></a></p>
 <h2 id="p69-fine-grain-where-hung-on-coarse-query-filters">P69. 将细粒度的 <code>WHERE</code> 放在粗粒度查询的 <code>filters:</code> 中 <a class="section-link" aria-label="本节链接" href="#p69-fine-grain-where-hung-on-coarse-query-filters">#</a></h2>
-<p><strong>现象</strong>：CTE 先按粒度 (G)（例如商品×地区）聚合，再筛选（<code>cnt &gt; 3</code>），最后用 <code>SUM</code> 汇总到粒度 (Q)（例如商品）。草稿或 <code>--to-dml</code> 生成的查询只包含查询维度 (Q)，并带有 <code>filters: "cnt &gt; 3"</code> 和 <code>SUM({total: {+d: region}})</code>。编译或融合可能将其转换为商品级别的 <code>HAVING COUNT(1) &gt; 3</code>，导致统计范围有误。</p>
+<p><strong>现象</strong>：CTE 先按粒度 (G)（例如商品×地区）聚合，再筛选（<code>销售笔数 &gt; 3</code>），最后用 <code>SUM</code> 汇总到粒度 (Q)（例如商品）。草稿或 <code>--to-dml</code> 生成的查询只包含查询维度 (Q)，并带有 <code>filters: "销售笔数 &gt; 3"</code> 和 <code>SUM({合计: {+d: 地区}})</code>。编译或融合可能将其转换为商品级别的 <code>HAVING COUNT(1) &gt; 3</code>，导致统计范围有误。</p>
 <p><strong>错误用法</strong>：</p>
 <pre><code class="language-yaml">filters:
-  "cnt &gt; 3":                 # cnt is not defined at product-only grain
+  "销售笔数 &gt; 3":                 # cnt is not defined at product-only grain
 columns:
-  dimension: [product]
-  grand_total: 'SUM({total: {+d: region}})'
+  dimension: [商品]
+  总计: 'SUM({合计: {+d: 地区}})'
 </code></pre>
-<p><strong>另一种错误用法</strong>：<code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code> 在输入谓词中使用了聚合指标。诊断信息针对该谓词，并不表示禁止对指标引用应用 <code>+f</code>。请参阅<a href="reference--modifiers.zh.html#22-function-modifiers">功能支持表</a>。</p>
+<p><strong>另一种错误用法</strong>：<code>SUM({合计: {+d: 地区, +f: '{销售笔数} &gt; 3'}})</code> 在输入谓词中使用了聚合指标。诊断信息针对该谓词，并不表示禁止对指标引用应用 <code>+f</code>。请参阅<a href="reference--modifiers.zh.html#22-function-modifiers">功能支持表</a>。</p>
 <p><strong>修正方法</strong>：在汇总过程中，按共同的细粒度进行筛选。</p>
-<pre><code class="language-yaml">grand_total: |-
-  SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+<pre><code class="language-yaml">总计: |-
+  SUMIF({合计: {+d: 地区}}, {销售笔数: {+d: 地区}} &gt; 3)
 # No accepted fine rows -&gt; NULL; ELSE 0 would change that result.
 </code></pre>
 <p>查询中的 <code>filters:</code> 仅用于报表或 <code>HAVING</code> 作用域。请参阅<a href="reference--examples--aggregation.zh.html#26-multi-level-aggregation-with-d">使用 <code>+d</code> 进行多级聚合</a>a。</p>
@@ -133,22 +133,22 @@ columns:
 <p><strong>现象</strong>：出现 <code>window functions are not allowed in atomic measures</code>。旧版二进制文件则可能生成缺少分区列的无效 <code>SUM(…) OVER (…) … GROUP BY</code>，并以退出码 0 退出。</p>
 <p><strong>错误用法</strong>：</p>
 <pre><code class="language-yaml">measures:
-  净购进量: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+  净购进量: 'SUM({数量}) over (partition by {门店编号}, {商品编号})'
 </code></pre>
 <p><strong>修正方法</strong>：按<strong>窗口函数的放置规则</strong>，将明细行的 OVER 放在 <code>columns:</code> 下，然后执行原子聚合。</p>
 <pre><code class="language-yaml">columns:
-  net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+  净数量: 'SUM({数量}) over (partition by {门店编号}, {商品编号})'
 measures:
-  sum_net_qty: 'SUM({net_qty})'
+  净数量合计: 'SUM({净数量})'
 </code></pre>
 <p><code>GROUP-BY</code> 之后计算的排名或占比仍采用<strong>复合指标</strong>，使用 <code>{-d:}</code> 或 <code>{-df:}</code>（不指定 <code>dataset:</code>）。相关规则请参阅<a href="explanation--window-placement.zh.html">窗口函数的放置规则</a>。</p>
 <p><a id="p71"></a></p>
 <h2 id="p71-bare-col-in-measure-partition-by">P71. 在指标的 <code>PARTITION BY</code> 中直接使用 <code>{col}</code> <a class="section-link" aria-label="本节链接" href="#p71-bare-col-in-measure-partition-by">#</a></h2>
 <p><strong>现象</strong>：出现 <code>… reference is not allowed in PARTITION BY</code>，或出现有关 <code>{dimension:}</code> 或 <code>{-d:}</code> 的提示。</p>
-<p><strong>错误用法</strong>（用于指标）：<code>SUM({total}) over (partition by {product})</code>。<strong>修正方法</strong>：</p>
+<p><strong>错误用法</strong>（用于指标）：<code>SUM({合计}) over (partition by {商品})</code>。<strong>修正方法</strong>：</p>
 <ul>
-<li>对于明细行的窗口函数，将其移到 <code>columns:</code>，并在其中继续直接引用 <code>{product}</code>。</li>
-<li>对于聚合后应用的窗口函数，在复合指标中使用 <code>partition by {-d: region}</code> 或 <code>{dimension: product}</code>。</li>
+<li>对于明细行的窗口函数，将其移到 <code>columns:</code>，并在其中继续直接引用 <code>{商品}</code>。</li>
+<li>对于聚合后应用的窗口函数，在复合指标中使用 <code>partition by {-d: 地区}</code> 或 <code>{dimension: 商品}</code>。</li>
 </ul>
 <p>对于明细行的窗口函数，请勿将 <code>{-d:}</code> 放在数据集的 <code>columns:</code> 下。该处使用直接列引用。</p>
 <hr>
@@ -156,19 +156,19 @@ measures:
 <p><a id="p72"></a></p>
 <h2 id="p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. 定义粒度的两个字段指向同一列，导致跨数据集汇总使用错误的连接键 <a class="section-link" aria-label="本节链接" href="#p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">#</a></h2>
 <p><strong>现象</strong>：严格模式下编译通过，诊断信息为空，但比率有误。例如，提升度的分母是 <code>left_count * left_count</code>，而不是 <code>left_count * right_count</code>。</p>
-<p><strong>错误用法</strong>：数据集公开了由同一物理列提供的两个字段（<code>left_product_id: '{product_id}'</code>、<code>right_product_id: '{product_id}'</code>），并预期第二种角色的汇总 <code>{sold_baskets: {-df: [left_product_id]}}</code>（或 <code>{dimension: [month, store, right_product_id]}</code>）按 <code>right_product_id</code> 连接。编译器会为汇总到更粗粒度的临时结果的键重新指定别名，并使用<strong>第一种</strong>角色的键进行连接（<code>support.product = pair.left_product_id</code>）。</p>
-<p><strong>修正方法</strong>：对每种角色，使用 <code>pk()</code> 在一个 <code>sql:</code> 数据集中查找。该数据集按 <code>(shared dims, product_id)</code> 粒度对源数据分组，并声明 <code>dimension:</code>（P77）。<code>pk()</code> 的键显式指定并按位置匹配，因此左右两侧的键不会合并。也可以仅在不会发生别名冲突的粒度使用 <code>-df</code> 汇总。请检查生成的 SQL，确认其中有两个独立的连接，即 <code>… product_id = t.left_product_id</code> 和 <code>… product_id = t.right_product_id</code>。</p>
+<p><strong>错误用法</strong>：数据集公开了由同一物理列提供的两个字段（<code>left_product_id: '{商品编号}'</code>、<code>right_product_id: '{商品编号}'</code>），并预期第二种角色的汇总 <code>{sold_baskets: {-df: [left_product_id]}}</code>（或 <code>{dimension: [month, store, right_product_id]}</code>）按 <code>right_product_id</code> 连接。编译器会为汇总到更粗粒度的临时结果的键重新指定别名，并使用<strong>第一种</strong>角色的键进行连接（<code>support.商品 = pair.left_product_id</code>）。</p>
+<p><strong>修正方法</strong>：对每种角色，使用 <code>pk()</code> 在一个 <code>sql:</code> 数据集中查找。该数据集按 <code>(shared dims, 商品编号)</code> 粒度对源数据分组，并声明 <code>dimension:</code>（P77）。<code>pk()</code> 的键显式指定并按位置匹配，因此左右两侧的键不会合并。也可以仅在不会发生别名冲突的粒度使用 <code>-df</code> 汇总。请检查生成的 SQL，确认其中有两个独立的连接，即 <code>… 商品编号 = t.left_product_id</code> 和 <code>… 商品编号 = t.right_product_id</code>。</p>
 <p><a id="p73"></a></p>
 <h2 id="p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. 使用 <code>-df</code> 汇总的复合指标会输出仅存在于连接另一侧的行，并可能生成原本不存在的键值 <a class="section-link" aria-label="本节链接" href="#p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">#</a></h2>
-<p><strong>现象</strong>：从另一个数据集汇总的指标会编译成使用 <code>FULL OUTER JOIN</code> 的复合指标。仅存在于连接伙伴汇总结果中的行也会出现在输出中。连接伙伴的临时结果可能用 <code>max(&lt;col&gt;)</code> 填充缺失的粒度字段，导致没有匹配项的 <code>(month, store, product)</code> 行显示为 <code>left = right = product</code>。这会凭空生成一个商品与自身的配对，而不仅仅是产生 NULL 值。</p>
+<p><strong>现象</strong>：从另一个数据集汇总的指标会编译成使用 <code>FULL OUTER JOIN</code> 的复合指标。仅存在于连接伙伴汇总结果中的行也会出现在输出中。连接伙伴的临时结果可能用 <code>max(&lt;col&gt;)</code> 填充缺失的粒度字段，导致没有匹配项的 <code>(month, store, 商品)</code> 行显示为 <code>left = right = 商品</code>。这会凭空生成一个商品与自身的配对，而不仅仅是产生 NULL 值。</p>
 <p><strong>修正方法</strong>：在查询的选择列表中保留一个主指标，使其在仅存在于连接另一侧的行上取值为 NULL，并使用以公式为键的筛选条件约束查询。</p>
 <pre><code class="language-yaml">filters:
-    '{pair_basket_count} is not null':      # formula as key, empty value
+    '{同时购买的订单数} is not null':      # formula as key, empty value
 </code></pre>
 <p>编译后，回连处会生成条件 <code>WHERE &lt;primary&gt; IS NOT NULL</code>。确认主指标有值后，生成的 <code>FULL OUTER JOIN</code> 也会简化为 <code>LEFT JOIN</code>。请以生成的 SQL 为准判断最终的连接类型，而不是依据复合指标的模板。请先验证前提条件。任何有效的主分组中，主指标都不得为 NULL，且只有在仅存在于连接另一侧的行没有主指标值时，该筛选条件才有效。（这是对<a href="reference--modifiers.zh.html#23-dimension-modifiers">维度修饰符</a>b 的补充。）</p>
 <p><a id="p74"></a></p>
 <h2 id="p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">P74. 同一物理表上的两个 <code>table:</code> 数据集：合并行为与 <code>-df</code> 粒度的无提示丢失 <a class="section-link" aria-label="本节链接" href="#p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">#</a></h2>
-<p><strong>症状</strong>：<code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code>。随后，如果两个数据集的列集合不同，就会出现 <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code>，且汇总会在没有进一步提示的情况下按<strong>更粗</strong>的粒度聚合（例如用 <code>pk(store_id)</code> 代替 <code>pk(store_id, left_id)</code>）。</p>
+<p><strong>症状</strong>：<code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code>。随后，如果两个数据集的列集合不同，就会出现 <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code>，且汇总会在没有进一步提示的情况下按<strong>更粗</strong>的粒度聚合（例如用 <code>pk(门店编号)</code> 代替 <code>pk(门店编号, left_id)</code>）。</p>
 <p><strong>已验证（dmlc 0.3.16）</strong>：同一张表上的两个 <code>table:</code> 数据集本身<strong>不会</strong>导致崩溃。最小对称用例可以编译，第二个数据集用于不同角色时，甚至也能正确绑定 <code>-df</code>（<code>right_id = t1.right_id</code>）。两个数据集通过主键自连接合并为一个 <code>#TEMP</code>。但如果只给其中一侧添加列，合并就会使另一数据集的别名字段不再参与 <code>-df</code> 的名称解析。（此前的“重复 <code>table:</code> → NPE”报告误判了原因。崩溃是由 P75 的筛选器写法引起的。）</p>
 <p><strong>修复</strong>：优先为每张物理表使用一个带别名列的 <code>table:</code> 数据集。必须使用不同角色时，请保持列集合完全相同，并在生成的 SQL 中检查每个汇总临时表的 <code>pk(...)</code>。这里的警告表示语义错误，需要处理。</p>
 <p><a id="p75"></a></p>
@@ -197,7 +197,7 @@ measures:
 <p><strong>修复</strong>：明确指定一个预期的求值阶段。可以直接引用、显式指定细粒度引用并在外层聚合，或使用移除修饰符。作用于不同字段的修饰符仍可并用。本次检查的构建版本接受了所检查的冲突，未给出诊断信息，并在外层求和前重复输出各区域的总计。这违反了必须拒绝此类冲突的约定。请参阅<a href="reference--semantics.zh.html#45-modifier-composition">修饰符组合</a>。</p>
 <p><a id="p80"></a></p>
 <h2 id="p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> 导致引用输出粒度之外字段的查询筛选器不再应用于报表行 <a class="section-link" aria-label="本节链接" href="#p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">#</a></h2>
-<p><strong>错误行为</strong>：查询使用筛选器 <code>{store_id}=1</code>，某个指标使用 <code>{-f: store_id}</code>，且 <code>store_id</code> 不在输出粒度中 → 筛选器被无提示地省略 → 未筛选分支中的 FOJ 对应行出现在结果中。</p>
+<p><strong>错误行为</strong>：查询使用筛选器 <code>{门店编号}=1</code>，某个指标使用 <code>{-f: 门店编号}</code>，且 <code>门店编号</code> 不在输出粒度中 → 筛选器被无提示地省略 → 未筛选分支中的 FOJ 对应行出现在结果中。</p>
 <p><strong>修复</strong>：<code>-f</code> 仅从<strong>指标求值</strong>中移除筛选器。查询筛选器仍定义纳入查询的行集合。如果被屏蔽的筛选器无法引用输出列，请使用带 <code>EXISTS</code> 的相关子查询或半连接限制结果行。不要仅通过 <code>-f</code> 改变分组。</p>
 <p><a id="p81"></a></p>
 <h2 id="p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">P81. 使用 <code>dimension:</code> 跨粒度替换时间维度，未通过日历映射分发结果 <a class="section-link" aria-label="本节链接" href="#p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">#</a></h2>

@@ -95,7 +95,7 @@
 		@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 		@media print { .topbar,.chapter-nav,.choices,.next-links,.skip { display:none; } body { background:white; } .hero { padding-top:0; } .hero img { max-height:280px; object-fit:contain; } .chapter { break-inside:avoid; padding:30px 0; } }
 	</style>
-	<link rel="stylesheet" href="course.css?v=17885b6a74">
+	<link rel="stylesheet" href="course.css?v=10eaab4b0a">
 	<link rel="stylesheet" href="course-zh.css?v=c0af81f790">
 <style>.course-site-nav{display:flex;justify-content:flex-end;gap:1.25em;padding:6px 4vw;font:14px/1.5 system-ui}</style><meta name="description" content="用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/journey.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/journey.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/journey.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 互动教程：定义指标、组合计算与分析上下文"><meta property="og:description" content="用十二章完成一份二月销售报表。从四笔销售开始，复用度量，最后下载项目。先预测结果，再调整控件，检查答案。示例使用虚构数据，可离线运行。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/journey.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head>
 <body>
@@ -176,7 +176,7 @@
     amount:
   measures:
     sales: SUM({amount})
-    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> 引用模型列 <code>amount</code>。留空的列定义映射到同名物理列。</p></div>
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> 引用模型中的“销售金额”。字段的 <code>abbr</code> 对应源表中的列名。</p></div>
 		</section>
 		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
 			<div>
@@ -304,11 +304,11 @@ GROUP BY manager</code></pre><p data-i18n="lookups.text9">在存放示例表的�
 			<div id="final-feedback" class="feedback" role="status" aria-atomic="true"></div><div id="course-finish" class="course-complete" hidden=""><h3>Your regional report is ready.</h3><p data-i18n="capstone.text11">North：销售额 30，已完成 10，上月 20，平均每客户 15，占比 30%。South：销售额 70，已完成 70，上月 50，平均每客户 70，占比 70%。</p><p data-i18n="capstone.text12">要在浏览器之外运行，请打开项目的 START-HERE.txt。在空的练习数据库中建立示例表，检查模型，严格编译查询并查看生成的 SQL。记录严格检查发现的问题，再做实时验证和结果比较。</p></div>
 			</form>
 			<div class="explorer-grid final-preview">
-				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">模型笔记 · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">展示所选度量，以及它们引用的其他度量；随报表选项更新。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">查看完整模型笔记</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.dml" download="" data-i18n="capstone.notebookDownload">下载 model.dml</a></details></div>
+				<div><h3 class="preview-title" id="final-model-title" data-i18n="capstone.notebookTitle">模型笔记 · model.dml</h3><p class="small preview-note" data-i18n="capstone.notebookNote">展示所选度量，以及它们引用的其他度量；随报表选项更新。</p><pre class="notebook-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-model-excerpt"></code></pre><details><summary data-i18n="capstone.notebookFull">查看完整模型笔记</summary><pre class="model-preview" tabindex="0" aria-labelledby="final-model-title"><code id="final-full-model"></code></pre><a href="model.zh.dml" download="model.dml" download="" data-i18n="capstone.notebookDownload">下载 model.dml</a></details></div>
 				<div><h3 class="preview-title" data-i18n="capstone.queryTitle">报表问题 · query.sql</h3><p class="small preview-note" data-i18n="capstone.queryNote">查询复用这些定义，分组和筛选由报表控件决定。</p><pre><code id="final-query"></code></pre></div>
 			</div>
 			<div class="paper-panel lesson-table final-result"><h3 class="preview-title" data-i18n="capstone.resultTitle">示例结果</h3><div id="final-result"></div></div><p class="small" style="margin-top:18px" data-i18n="capstone.text13">预览只计算本页虚构数据，不能执行任意 DML。只有已记录的配套查询带有编译器证据，其他组合仍需单独编译检查。本页不连接数据库。</p>
-			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zip" download="" data-i18n="capstone.text14">下载已检查的项目</a></div>
+			<div class="download-row"><button type="button" class="secondary" id="download-query">Download my query.sql</button><a class="download-link" href="lesson-files.zh.zip" download="" data-i18n="capstone.text14">下载已检查的项目</a></div>
 			<div class="compiler-observation" data-probe="capstone"></div><details><summary data-i18n="capstone.text15">查看本地编译命令</summary><pre><code>dmlc.exe --lint model.dml --json
 dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</code></pre><p class="small" data-i18n="capstone.text16">这些编译命令无需数据库连接。项目还含有示例数据和 SQL Server 建表脚本，供独立数据库练习使用。预期关联警告已记录在编译快照中；预期警告不代表严格检查通过。</p></details>
 			<div class="next-links"><a href="tutorials--first-query.zh.html" data-i18n="capstone.text17">进入编译器教程</a><a href="reference--README.zh.html" data-i18n="capstone.text18">探索语言参考</a><a href="tutorials--interactive-journey.zh.html" data-i18n="capstone.text19">阅读练习指南</a><a href="maz-sqlserver.html" hreflang="zh-CN" data-i18n="capstone.mazExtension">使用 SQL Server Maz：数据就绪与 runner 进展</a></div>
@@ -318,11 +318,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">带上这些符号 · 随手速查</summary><p data-i18n="recall.intro">读引用时，先看“哪个度量”，再看“这一次怎么算”。这些是记忆提示，不是额外语法或算术运算。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">符号</th><th data-i18n="recall.meaning">回想它的含义</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。</p><p class="small" data-i18n="syntax.reference">需要更多形式时，查阅<a href="reference--modifiers.zh.html">修饰符规则与示例</a>。</p></details>
 		<footer><p data-i18n="common.text7">DML 定义，DMX 表达，Model Query 选择并分组。</p><p data-i18n="common.text8"><a href="compiler-observations.json">编译器记录</a> · <a href="explanation--visual-introduction.zh.html">原文字版介绍</a> · 可离线使用</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=a92c71e426"></script>
-	<script src="locales--zh.js?v=7346580e6d"></script>
-	<script src="locales--ja.js?v=55e01a5807"></script>
-	<script src="locales--de.js?v=e38dcdfc17"></script>
-	<script src="course-i18n.js?v=9435bb1a01"></script>
+	<script src="locales--en.js?v=db09ce2b9b"></script>
+	<script src="locales--zh.js?v=bc1a5123de"></script>
+	<script src="locales--ja.js?v=b1e43c3c6a"></script>
+	<script src="locales--de.js?v=5f49627531"></script>
+	<script src="journey-samples.js?v=7f6a183b8b"></script><script src="course-i18n.js?v=01b5f8c7a5"></script>
 	<script>
 		(() => {
 			const i18n = window.SmallJourneyI18n, t = i18n.t;
@@ -374,10 +374,10 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		})();
 	</script>
 	<script src="course-data.js?v=fa1f4bdbb5"></script>
-	<script src="course-definitions.js?v=1907b3c643"></script>
+	<script src="course-definitions.js?v=91c429158b"></script>
 	<script src="compiler-observations.js?v=1ccf083713"></script>
 	<script src="course-rewards.js?v=445824a005"></script>
-	<script src="course.js?v=7ded72104c"></script>
+	<script src="course.js?v=b1d732cb03"></script>
 	<script src="course-navigation.js?v=5181d006d7"></script>
 
 

@@ -176,7 +176,7 @@
 <p><strong>設計上の目的</strong>: メジャーの式では、具体的な時間フィールド（<code>dt_date</code>、<code>dt_month</code>、<code>dt_quarter</code>）の代わりに<code>dim_dt</code>を使います。これにより、式を書き換えずに任意の時間粒度でメジャーを評価できます。</p>
 <p><strong>期間の変換</strong>: <code>dim_dt as quarter</code>を使うと、クエリが年と四半期でグループ化されていても、<code>pp</code>は四半期単位で処理します。次の例を参照してください。</p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({売上高: {dim_dt as quarter: pp}}) as 前四半期売上高
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p><a id="25-standard-time-dimension-fields"></a></p>
@@ -228,14 +228,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p>同じ派生フィールドを複数の明示的な時間ソースから導出でき、ソースを一意に特定できない場合、ツールは任意の定義を選ばず、解決を失敗させる必要があります。</p>
 <p><a id="26-calendar-dataset"></a></p>
 <h3 id="calendar-dataset">カレンダーデータセット <a class="section-link" aria-label="この節へのリンク" href="#calendar-dataset">#</a></h3>
-<p>システムは、異なる時間粒度の間で時間値を参照するために、次のデータセットを提供します。<code>Dim Calendar</code></p>
-<pre><code class="language-yaml">Dim Calendar:
+<p>システムは、異なる時間粒度の間で時間値を参照するために、次のデータセットを提供します。<code>カレンダー</code></p>
+<pre><code class="language-yaml">カレンダー:
     type: dataset
     table: DML_CALENDAR
     dimension: [dt_date]
     columns:
         dt_date:
+            abbr: dt_date
         dt_week:
+            abbr: dt_week
         dt_month:
             source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
         dt_quarter:
@@ -272,7 +274,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tbody></table>
 <p>ソース側の<code>WHERE</code>と、条件に合わない場合にNULLを返すメジャー内の条件は、一般には置き換えられません。前者では対象外の行だけで構成されるグループが消えますが、後者では残る場合があります。これらのレイヤー間で条件を移す前に、グループの有無、同じクエリ内の他の指標、重複除去・結合・ウィンドウ処理の挙動、およびNULLのセマンティクスを検証してください。</p>
 <p><strong>プッシュダウンの規則</strong>: クエリの<code>filters:</code>で指定したフィルターは、集計前にデータセットの<code>WHERE</code>句にプッシュダウンされます。<code>-d</code>がより粗い粒度の一時テーブルを生成する場合も、フィルターは適用されるため、比率の分母が小さくなることがあります。特定のディメンションフィールドについてフィルターのプッシュダウンを無効にするには、<code>-df</code>を使います。</p>
-<p><strong>依存関係の追跡</strong>: コンパイラは列の導出元をたどります。<code>store_name</code>（<code>pk({store_id}).MDM_STORE(store_id).store_name</code>）のフィルターは、<code>store_id</code>に<code>-df</code>を指定するとプッシュダウンされません。この列が<code>store_id</code>だけから導出されるためです。</p>
+<p><strong>依存関係の追跡</strong>: コンパイラは列の導出元をたどります。<code>店舗名</code>（<code>pk({店舗番号}).MDM_STORE(店舗番号).店舗名</code>）のフィルターは、<code>店舗番号</code>に<code>-df</code>を指定するとプッシュダウンされません。この列が<code>店舗番号</code>だけから導出されるためです。</p>
 <hr>
 <p><a id="3--grain-system"></a></p>
 <h2 id="grain-system">粒度の仕組み <a class="section-link" aria-label="この節へのリンク" href="#grain-system">#</a></h2>
@@ -349,7 +351,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p>外側の集計関数（<code>SUM</code>、<code>AVG</code>、<code>MAX</code> など）は<strong>作成者が選びます</strong>。コンパイラが自動で選ぶことはありません。外側の集計がある場合、コンパイラは通常、CTE（<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>）を生成します。</p>
 <p><strong>パターン</strong>：アトミック指標 → 外側の集計を指定する複合指標の中で <code>+d</code> により細かい粒度に掘り下げる → 任意の粒度でクエリを実行する</p>
 <pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
-销售量:
+販売数量:
     type: measure
     dataset: o2o_pos
     formula: SUM(count_qty)
@@ -357,32 +359,32 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 # Distribution SKU count: how many products have sales &gt; 0?
 # {销售量: {+d: prod_id}} drills down to per-product grain,
 # then DISTINCTCOUNTIF counts products with positive sales.
-分销SKU数:
+取扱商品数:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+        DISTINCTCOUNTIF({商品番号}, {販売数量: {+d: 商品番号}} &gt; 0)
 
 # Distribution store count: how many stores have sales &gt; 0?
-分销客户数:
+取扱店舗数:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+        DISTINCTCOUNTIF({店舗番号}, {販売数量: {+d: 店舗番号}} &gt; 0)
 
 # Average sales per store (selling power)
-卖力:
+取扱店舗当たり売上高:
     type: measure
     formula: |-
-        divide({销售额}, {分销客户数})
+        divide({売上高}, {取扱店舗数})
 </code></pre>
-<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
--- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
-SELECT dt_quarter, brand,
-       AGG(销售额),
-       AGG(分销SKU数),
-       AGG(分销客户数),
-       AGG(卖力)
+<pre><code class="language-sql">-- Query at ブランド × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at 商品番号 / 店舗番号 grain, then rolls up.
+SELECT dt_quarter, ブランド,
+       AGG(売上高),
+       AGG(取扱商品数),
+       AGG(取扱店舗数),
+       AGG(取扱店舗当たり売上高)
 FROM MODEL
-GROUP BY dt_quarter, brand
+GROUP BY dt_quarter, ブランド
 </code></pre>
 <p><code>+d</code> が、明示的な外側の集計を含む指標の式の中ではなく、<strong>クエリディメンション</strong>のバインディングに指定されている場合は、<strong>指標をディメンションとして使用する方法</strong>（<a href="#37-measure-as-dimension">指標をディメンションとして使う</a>）に該当し、上記の 2 段階のパターンには該当しません。</p>
 <p><a id="34-cross-dataset-auto-join"></a></p>
@@ -395,7 +397,7 @@ GROUP BY dt_quarter, brand
 <h3 id="grain-safety-enforcement-existing-compiler-behavior">粒度の安全性チェック（既存のコンパイラの動作） <a class="section-link" aria-label="この節へのリンク" href="#grain-safety-enforcement-existing-compiler-behavior">#</a></h3>
 <p>コンパイラはコンパイル時に粒度の安全性をチェックします。</p>
 <ol>
-<li><p><strong>指標のディメンション制約違反</strong>：許可されているディメンションが <code>dimensions: [[customer_id]]</code> の指標を、<code>dt_date</code> も含むクエリディメンションで参照すると、コンパイラは次のメッセージを出して拒否します。</p>
+<li><p><strong>指標のディメンション制約違反</strong>：許可されているディメンションが <code>dimensions: [[顧客番号]]</code> の指標を、<code>dt_date</code> も含むクエリディメンションで参照すると、コンパイラは次のメッセージを出して拒否します。</p>
 <pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
 </code></pre>
 <p>コンパイラは、<code>...</code> で追加のディメンションフィールドを許可できる一方、列挙したフィールドは引き続き必須であることを示すヒント（Hint）を出すようになりました。また、不足している必須フィールドを <code>+d</code> で追加するよう案内します。追加のディメンションフィールドを許可するには <code>...</code> を使います。列挙したフィールドは引き続き必須です。</p>
@@ -435,27 +437,27 @@ GROUP BY dt_quarter, brand
 </thead>
 <tbody><tr>
 <td>名前付き指標と明示的な <code>+d</code></td>
-<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
-<td>指標の評価ディメンションに <code>store_id</code> を追加して指標を評価し、その結果をクエリディメンションのフィールドとして使います。</td>
+<td><code>- 初回購入月: '{初回購入月: {+d: 店舗番号}}'</code></td>
+<td>指標の評価ディメンションに <code>店舗番号</code> を追加して指標を評価し、その結果をクエリディメンションのフィールドとして使います。</td>
 </tr>
 <tr>
 <td>指標名のみ</td>
-<td><code>- first_purchase_month</code></td>
+<td><code>- 初回購入月</code></td>
 <td>指標から派生するディメンションには使えません。参照する箇所で完全な <code>+d</code> キーを明示する必要があります。</td>
 </tr>
 <tr>
 <td><code>{m: {+d: dim}}</code> を包むスカラー式</td>
-<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
+<td><code>- payment_day: 'cast({承認日時: {+d: payment_id}} as date)'</code></td>
 <td>完全なキーごとにスカラー式を 1 回評価し、その結果をクエリディメンションのフィールドとして使います。</td>
 </tr>
 <tr>
 <td>名前付きスカラー指標とクエリ側の <code>+d</code></td>
-<td>指標に <code>formula: 'cast({authorization_ts} as date)'</code> を指定し、続いて <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code> を記述</td>
+<td>指標に <code>formula: 'cast({承認日時} as date)'</code> を指定し、続いて <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code> を記述</td>
 <td>スカラー式を再利用できる場合に推奨される等価な記述形式</td>
 </tr>
 <tr>
 <td><code>dimension:</code> / <code>rank</code> のラベル（<code>+d</code> なし）</td>
-<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
+<td><code>- brand_bucket: 'iif({売上高: {dimension: [ブランド], rank}} &lt; 5, {ブランド}, ''others'')'</code></td>
 <td><code>dimension:</code> で評価ディメンションを置き換える、または <code>rank</code> を使うクエリディメンションの式です。<code>+d</code> による複数パスでの結合パターンには該当しません。</td>
 </tr>
 </tbody></table>
@@ -465,7 +467,7 @@ GROUP BY dt_quarter, brand
 <p>指標をディメンションとして使う式を <code>M</code>、その式で明示した <code>+d</code> フィールドの集合を <code>K</code>、通常のクエリディメンションのフィールドの集合を <code>Q</code> とします。評価と結合の粒度は <code>G = Q ∪ K</code> で、指標から派生したラベルは含みません。内部の集計段階で <code>K</code> が再定義されることはありません。</p>
 <ol>
 <li><strong>細かい粒度での評価。</strong> ディメンションとして使う各指標を <code>G</code> の粒度で評価します。通常の出力指標も <code>G</code> の粒度で評価し、後で上位の粒度に集計するために必要な状態や構成指標を保持します。</li>
-<li><strong>完全な分類キー <code>G</code> で結合。</strong> 分類リレーションには、完全なキーごとにスカラー値が 1 つ必要です。分類リレーションが、それを使う指標と同じリレーションにない場合は、分類値で指標をグループ化する前に結合します。店舗と月の組み合わせで分類する場合、結合には店舗と月の両方が必要で、<code>+d: store_id</code> だけでは不十分です。粗い粒度で結合するには、結合先で完全なキーを利用できるか、結合先から導出できることを証明できなければなりません。細かい粒度で結合するには、明示的なドリルダウンと上位の粒度への集計が必要です。NULL キーとクエリの対象データ集合に関するセマンティクスを維持します。</li>
+<li><strong>完全な分類キー <code>G</code> で結合。</strong> 分類リレーションには、完全なキーごとにスカラー値が 1 つ必要です。分類リレーションが、それを使う指標と同じリレーションにない場合は、分類値で指標をグループ化する前に結合します。店舗と月の組み合わせで分類する場合、結合には店舗と月の両方が必要で、<code>+d: 店舗番号</code> だけでは不十分です。粗い粒度で結合するには、結合先で完全なキーを利用できるか、結合先から導出できることを証明できなければなりません。細かい粒度で結合するには、明示的なドリルダウンと上位の粒度への集計が必要です。NULL キーとクエリの対象データ集合に関するセマンティクスを維持します。</li>
 <li><strong>クエリ結果の粒度に集計。</strong> 通常の指標を <code>{ measure-as-dimension fields } ∪ Q</code> の粒度に集計します。<code>K</code> のフィールドは、<code>Q</code> にも含まれるものを除いて取り除きます。通常の指標を <code>G</code> で評価してからこの集計を行う形に安全に書き換えられない場合、コンパイルは失敗します。</li>
 </ol>
 <p>処理の仕組みは、<code>+d</code> を使う多段集計（<a href="#33-multi-level-aggregation-via-d">多段集計</a>）と同じです。この用途では、ドリルダウンした粒度で得た指標の値が、複合式の中間入力にとどまらず、<strong>クエリディメンションのフィールド</strong>になります。</p>
@@ -500,24 +502,24 @@ GROUP BY dt_quarter, brand
 </ol>
 <p><a id="375-example"></a></p>
 <h4 id="example">例</h4>
-<p>以下の <code>first_purchase_month</code> は、評価範囲内で<strong>月間純売上高が正である</strong>最初の月を指します。<code>purchase_span</code> は両方の端点を明示的にエンティティ単位で評価し、その細かい粒度の結果に最終集計を適用します。</p>
-<pre><code class="language-yaml">first_purchase_month:
+<p>以下の <code>初回購入月</code> は、評価範囲内で<strong>月間純売上高が正である</strong>最初の月を指します。<code>購入期間</code> は両方の端点を明示的にエンティティ単位で評価し、その細かい粒度の結果に最終集計を適用します。</p>
+<pre><code class="language-yaml">初回購入月:
     type: measure
-    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MINIF({dt_month}, {売上高: {+d: dt_month}} &gt; 0)'
 
 report:
     type: query
     allows: ALL
     columns:
         dimension:
-            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-        sales:
-        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
+            - 初回購入月: '{初回購入月: {+d: 店舗番号}}'
+        売上高:
+        購入期間: 'SUM(datediff(day, {初回購入日: {+d: 店舗番号}}, {最終購入日: {+d: 店舗番号}}))'
 </code></pre>
 <ul>
-<li>クエリ結果の粒度は <code>[first_purchase_month]</code> です。</li>
-<li>ディメンションとして使う指標と <code>purchase_span</code> の両方に <code>{+d: store_id}</code> を適用し、より細かい粒度で評価します。</li>
-<li>最終的な <code>GROUP BY</code> では <code>first_purchase_month</code> を使用し、<code>store_id</code> を除外します。</li>
+<li>クエリ結果の粒度は <code>[初回購入月]</code> です。</li>
+<li>ディメンションとして使う指標と <code>購入期間</code> の両方に <code>{+d: 店舗番号}</code> を適用し、より細かい粒度で評価します。</li>
+<li>最終的な <code>GROUP BY</code> では <code>初回購入月</code> を使用し、<code>店舗番号</code> を除外します。</li>
 </ul>
 <p><a id="44-modifier-schema-constraints"></a></p>
 <h2 id="modifier-schema-constraints">修飾子のスキーマ制約 <a class="section-link" aria-label="この節へのリンク" href="#modifier-schema-constraints">#</a></h2>

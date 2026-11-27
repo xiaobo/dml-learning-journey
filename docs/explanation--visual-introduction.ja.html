@@ -33,38 +33,41 @@
 <td>40</td>
 </tr>
 </tbody></table>
-<p>ソースデータセットには <code>dimension: [id]</code> が定義されており、1行が1件の販売を表します。2件の販売が同じ地域に属することがあるため、<code>region</code> ではソース行を一意に識別できません。ただし、クエリでこれらの行を地域別にグループ化することはできます。</p>
+<p>ソースデータセットには <code>dimension: [売上明細番号]</code> が定義されており、1行が1件の販売を表します。2件の販売が同じ地域に属することがあるため、<code>地域</code> ではソース行を一意に識別できません。ただし、クエリでこれらの行を地域別にグループ化することはできます。</p>
 <p><a href="explanation--dimensions.ja.html">ディメンションの解説</a>では、ソース行の識別とレポートでのグループ化について詳しく説明します。</p>
 <h2 id="dml-records-the-reusable-definitions">再利用できる定義を DML で記述する <a class="section-link" aria-label="この節へのリンク" href="#dml-records-the-reusable-definitions">#</a></h2>
 <p>旅人はノートに定義を書き留めます。DML はそのノートに相当するモデルで、YAML で記述します。次のコードは、販売データセットに対して2つのアトミック指標を宣言します。</p>
-<pre><code class="language-yaml">FACT_SALES:
+<pre><code class="language-yaml">売上明細:
   type: dataset
   table: TABLE_SALES
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
-    region:
-    amount:
+    売上明細番号:
+      abbr: id
+    地域:
+      abbr: region
+    売上金額:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-    cnt: COUNT(1)
+    売上高: SUM({売上金額})
+    売上件数: COUNT(1)
 </code></pre>
-<p><code>sales</code> は金額を合計します。<code>cnt</code> はソース行の数を数えます。どちらもアトミック指標です。データセットとして <code>FACT_SALES</code> を継承します。直接集計する対象は、そのデータセットの行そのものか、列を使った式です。集計では他の指標を参照しません。行や合計を定義するレベルが指標の計算に適していれば、レポートでこれらの指標を再利用できます。</p>
+<p><code>売上高</code> は金額を合計します。<code>売上件数</code> はソース行の数を数えます。どちらもアトミック指標です。データセットとして <code>売上明細</code> を継承します。直接集計する対象は、そのデータセットの行そのものか、列を使った式です。集計では他の指標を参照しません。行や合計を定義するレベルが指標の計算に適していれば、レポートでこれらの指標を再利用できます。</p>
 <h2 id="dmx-expresses-a-calculation">DMXで計算式を記述する <a class="section-link" aria-label="この節へのリンク" href="#dmx-expresses-a-calculation">#</a></h2>
 <p>ノートには、平均の計算方法も記載されています。</p>
-<pre><code class="language-yaml">average_sale:
+<pre><code class="language-yaml">一件当たり売上高:
   type: measure
-  formula: 'DIVIDE({sales}, {cnt})'
+  formula: 'DIVIDE({売上高}, {売上件数})'
 </code></pre>
-<p>この YAML は指標を宣言します。その中の式は DMX で記述されています。<code>{sales}</code> と <code>{cnt}</code> は指標を参照し、<code>DIVIDE</code> は分母がゼロの場合に NULL を返します。<code>average_sale</code> は他の指標を参照するため複合指標であり、<code>dataset:</code> プロパティを持ちません。</p>
+<p>この YAML は指標を宣言します。その中の式は DMX で記述されています。<code>{売上高}</code> と <code>{売上件数}</code> は指標を参照し、<code>DIVIDE</code> は分母がゼロの場合に NULL を返します。<code>一件当たり売上高</code> は他の指標を参照するため複合指標であり、<code>dataset:</code> プロパティを持ちません。</p>
 <p>DMX は、モデル定義とクエリ式で共通の式構文です。モデルとクエリの間に独立した処理ステップとして入るわけではありません。構文は<a href="reference--expressions.ja.html">式リファレンス</a>で定義しています。</p>
 <h2 id="the-query-chooses-what-one-result-row-represents">クエリで結果の1行が何を表すかを決める <a class="section-link" aria-label="この節へのリンク" href="#the-query-chooses-what-one-result-row-represents">#</a></h2>
 <p>旅人は望遠鏡を各地域に向けます。</p>
-<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+<pre><code class="language-sql">SELECT 地域, AGG(売上高), AGG(一件当たり売上高)
 FROM MODEL
-GROUP BY region
+GROUP BY 地域
 </code></pre>
-<p><code>AGG</code> はモデルの指標を参照します。<code>GROUP BY region</code> を指定すると、地域ごとに結果が1行になります。架空の販売データ4件をもとに計算すると、次の値になります。</p>
+<p><code>AGG</code> はモデルの指標を参照します。<code>GROUP BY 地域</code> を指定すると、地域ごとに結果が1行になります。架空の販売データ4件をもとに計算すると、次の値になります。</p>
 <table>
 <thead>
 <tr>
@@ -84,8 +87,8 @@ GROUP BY region
 <td>35</td>
 </tr>
 </tbody></table>
-<p>グループ化フィールドを指定しない場合、同じモデル指標から売上合計 100 と1件あたりの平均売上 25 が得られます。<code>id</code> でグループ化すると、販売1件につき結果が1行になります。どの場合もソース行の識別子は <code>[id]</code> のままです。</p>
-<p>宣言されたソースキー <code>[id]</code> のレベルでは、検証対象のコンパイラが集計を行単位の式に簡略化し、厳格モードの指摘を報告します。この簡略化には、ソースデータ内で <code>id</code> が一意であることが前提となります。全体集計のクエリと地域別のクエリは、検証対象のビルドで厳格モードのコンパイルを通過します。</p>
+<p>グループ化フィールドを指定しない場合、同じモデル指標から売上合計 100 と1件あたりの平均売上 25 が得られます。<code>売上明細番号</code> でグループ化すると、販売1件につき結果が1行になります。どの場合もソース行の識別子は <code>[売上明細番号]</code> のままです。</p>
+<p>宣言されたソースキー <code>[売上明細番号]</code> のレベルでは、検証対象のコンパイラが集計を行単位の式に簡略化し、厳格モードの指摘を報告します。この簡略化には、ソースデータ内で <code>売上明細番号</code> が一意であることが前提となります。全体集計のクエリと地域別のクエリは、検証対象のビルドで厳格モードのコンパイルを通過します。</p>
 <p><a href="compiler-observations.json">チュートリアルのコンパイラ検証記録</a>には、インタラクティブプロジェクトで使用した実行ファイル、そのフィンガープリント、実施したチェックが記載されています。</p>
 <p>インタラクティブページは、これらの小さなサンプル表の値をブラウザー内で計算します。DML の実行やデータベースへの接続は行いません。</p>
 <h2 id="compilation-produces-sql">コンパイルで SQL を生成する <a class="section-link" aria-label="この節へのリンク" href="#compilation-produces-sql">#</a></h2>

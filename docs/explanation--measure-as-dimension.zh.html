@@ -2,17 +2,17 @@
 <p>该模式先为每个实体计算一个标签，再按标签对指标分组。标签在查询中充当维度，不用于标识源数据行。</p>
 <h2 id="entity-keys-and-evaluation-stages">实体键与求值阶段 <a class="section-link" aria-label="本节链接" href="#entity-keys-and-evaluation-stages">#</a></h2>
 <p>标签属于特定粒度下的实体，因此分类需要完整的实体键。设 <code>Q</code> 为常规报表字段，<code>K</code> 为实体键。指定 <code>+d: K</code> 后，分类器在 <code>Q ∪ K</code> 所定义的粒度上求值。编译器通过完整的键关联标签，再按 <code>Q</code> 和标签聚合常规指标。</p>
-<p>给定原子定义 <code>sales: SUM({amount})</code>，此查询片段按客户的销售额对客户分组。</p>
+<p>给定原子定义 <code>销售额: SUM({销售金额})</code>，此查询片段按客户的销售额对客户分组。</p>
 <pre><code class="language-yaml">report:
   type: query
   columns:
     dimension:
-      - sales_bucket: '{sales: {+d: customer}}'
-    total_sales: 'SUM({sales: {+d: customer}})'
+      - sales_bucket: '{销售额: {+d: 客户}}'
+    销售总额: 'SUM({销售额: {+d: 客户}})'
 </code></pre>
 <p>外层显式指定的 <code>SUM</code> 会将标签相同的客户的销售额相加。此示例直接使用销售额作为标签。业务分组需要单独定义分类器并进行验证。</p>
 <p>使用分类的地方必须显式指定键。仅写 <code>{measure}</code> 会被拒绝。度量定义内部粒度更细的求值阶段或同级指标都无法补足缺失的键。</p>
-<p>在当前已验证的构建版本中，经过测试的 <code>+d: customer</code> 和 <code>dimension: [customer]</code> 计数分类器会被编译为先按客户聚合，再按标签分组。这些测试仅验证所检查的写法。</p>
+<p>在当前已验证的构建版本中，经过测试的 <code>+d: 客户</code> 和 <code>dimension: [客户]</code> 计数分类器会被编译为先按客户聚合，再按标签分组。这些测试仅验证所检查的写法。</p>
 <h2 id="population-and-reaggregation">总体与重新聚合 <a class="section-link" aria-label="本节链接" href="#population-and-reaggregation">#</a></h2>
 <p>分类范围、哪些实体纳入总体以及报表范围是三项独立的决定。<code>-d</code> 会保留时间筛选条件，因此取消按时间分组并不意味着会按实体的整个生命周期进行分类。值为 NULL 的标签可以构成有效分组。仅凭该标签不能认定实体未纳入总体，分类也不会创建非活跃实体。</p>
 <p>使用多个标签时，需要彼此兼容的完整实体键，并且各标签必须独立定义。可加金额可以从实体粒度汇总。比率、平均值和去重计数需要使用在重新聚合时仍能保留其原有定义的组成项。</p>
@@ -21,5 +21,5 @@
 <p>Model Query 可以将度量谓词表示为 <code>HAVING</code>。谓词在语义上所处的阶段比这个关键字更重要。编译生成的 SQL 通常会对分类生成的关系使用 <code>WHERE</code>。将谓词移到分类之前，会改变用于计算标签的总体。</p>
 <p><a id="build-evidence-and-limitations"></a></p>
 <h2 id="limitations">限制 <a class="section-link" aria-label="本节链接" href="#limitations">#</a></h2>
-<p>该模式适用于查询中的 <code>columns.dimension</code>。在已验证的物化配置中，常规属性 <code>{region}</code> 可以编译，但 <code>{sales: {+d: id}}</code> 写在 <code>materialize.dimension_columns</code> 中时，会因引用了当前不可用的度量而被拒绝。请勿将查询分类器原样移入物化属性。检查生成的分类和重新聚合阶段，然后使用自己的数据验证键并比较结果值。</p>
+<p>该模式适用于查询中的 <code>columns.dimension</code>。在已验证的物化配置中，常规属性 <code>{地区}</code> 可以编译，但 <code>{销售额: {+d: 销售明细编号}}</code> 写在 <code>materialize.dimension_columns</code> 中时，会因引用了当前不可用的度量而被拒绝。请勿将查询分类器原样移入物化属性。检查生成的分类和重新聚合阶段，然后使用自己的数据验证键并比较结果值。</p>
 </main></body></html>

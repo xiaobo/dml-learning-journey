@@ -1,58 +1,58 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Write model metadata · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Use descriptions to help readers select the correct dataset, population, and measure before they query the model."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Write model metadata · DML"><meta property="og:description" content="Use descriptions to help readers select the correct dataset, population, and measure before they query the model."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.en.html">DML</a><a href="docs.html">Docs</a><a href="learn.en.html">Learn</a><a href="search.html">Search docs</a><a lang="de" hreflang="de" href="how-to--write-model-metadata.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="zh" hreflang="zh" href="how-to--write-model-metadata.zh.html">中文</a></header><main><h1 id="write-model-metadata">Write model metadata</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#describe-each-dataset">Describe each dataset</a></li><li><a href="#explain-columns-that-affect-decisions">Explain columns that affect decisions</a></li><li><a href="#match-measure-names-to-their-formulas">Match measure names to their formulas</a></li><li><a href="#set-internal-sql-names-when-needed">Set internal SQL names when needed</a></li><li><a href="#document-derived-labels-and-estimates">Document derived labels and estimates</a></li><li><a href="#verify-the-metadata-with-the-model">Verify the metadata with the model</a></li></ul></details>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Write model metadata · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Use descriptions to help readers select the correct dataset, population, and measure before they query the model."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Write model metadata · DML"><meta property="og:description" content="Use descriptions to help readers select the correct dataset, population, and measure before they query the model."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.en.html">DML</a><a href="docs.html">Docs</a><a href="learn.en.html">Learn</a><a href="search.html">Search docs</a><a lang="de" hreflang="de" href="how-to--write-model-metadata.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="zh" hreflang="zh" href="how-to--write-model-metadata.zh.html">中文</a></header><main><h1 id="write-model-metadata">Write model metadata</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#describe-each-dataset">Describe each dataset</a></li><li><a href="#explain-columns-that-affect-decisions">Explain columns that affect decisions</a></li><li><a href="#match-measure-names-to-their-formulas">Match measure names to their formulas</a></li><li><a href="#use-the-source-column-name">Use the source column name</a></li><li><a href="#document-derived-labels-and-estimates">Document derived labels and estimates</a></li><li><a href="#verify-the-metadata-with-the-model">Verify the metadata with the model</a></li></ul></details>
 <p>Use descriptions to help readers select the correct dataset, population, and measure before they query the model.</p>
 <h2 id="describe-each-dataset">Describe each dataset <a class="section-link" aria-label="Link to section" href="#describe-each-dataset">#</a></h2>
 <p>State what one source row represents and which fields identify it. Explain the business meaning of a headline total, required scope filters, and known time or geography limits.</p>
 <pre><code class="language-yaml">description: |-
-  一行代表一条管道交易明细，transaction_id 标识源记录。
-  SUM(出厂价金额) 为管道净额，包含调拨和总仓流转，不代表终端 POS 销售。
-  官方 UL 报告使用 是否统计UL = &#39;是&#39;。
-  渠道表示购买方侧业务渠道，与卖出方渠道不同。
+  One row represents a channel transaction line, identified by transaction_id.
+  SUM(ex_factory_amount) gives net channel sales including transfers and central warehouse movements. Excludes retail POS sales.
+  The official UL report selects included_in_ul = '是'.
+  The channel describes the buyer's distribution channel.
 </code></pre>
 <p>If two datasets expose seller and buyer perspectives over the same source, describe the different <code>partner_id</code> mappings. Do not imply that the datasets have different source grains unless they do.</p>
 <h2 id="explain-columns-that-affect-decisions">Explain columns that affect decisions <a class="section-link" aria-label="Link to section" href="#explain-columns-that-affect-decisions">#</a></h2>
 <p>Use object form when a column&#39;s name does not convey its meaning.</p>
 <pre><code class="language-yaml">columns:
   Businesschannel:
-    description: 购买方侧业务渠道。模型别名为渠道，与卖出方渠道不同。
-  是否统计UL:
-    description: 官方 UL 报告范围标志。报告和归因分析使用相同筛选。
-  去年同期出厂价金额:
-    description: 行级去年同期金额。计算同比前检查数据覆盖及缺失值。
+    description: The buyer's distribution channel. The model calls this sales_channel.
+  included_in_ul:
+    description: Marks records included in UL. Reports and attribution analyses use the same filter.
+  prior_year_ex_factory_amount:
+    description: Amount on the source row for the same period last year. Check coverage and missing values before comparing years.
 </code></pre>
 <p>Prioritize columns that affect population, grouping, joins, and comparisons. State known limitations as facts about the source. Do not turn a finding from one sample into a permanent property of the column.</p>
 <h2 id="match-measure-names-to-their-formulas">Match measure names to their formulas <a class="section-link" aria-label="Link to section" href="#match-measure-names-to-their-formulas">#</a></h2>
 <p>Use business terms as measure keys. Add a description that states the population, required evaluation dimension, and NULL or zero behavior when those affect interpretation.</p>
 <p>If a legacy name misrepresents a formula, rename the canonical measure. Keep an alias only when existing consumers need compatibility. Preserve dataset ownership for atomic definitions.</p>
-<pre><code class="language-yaml"># Fragment under a dataset&#39;s measures mapping.
-管道净额:
-  description: 管道净额包含调拨和总仓流转，不代表终端 POS 销售。
-  formula: SUM({出厂价金额})
+<pre><code class="language-yaml"># Fragment under a dataset's measures mapping.
+net_channel_sales:
+  description: Net channel sales include transfers and central warehouse movements. Retail POS sales are excluded.
+  formula: SUM({ex_factory_amount})
 
-活跃购买方数:
-  description: 有记录的不同购买方代码数量，包含全部购买方类型。
-  formula: DISTINCTCOUNT({购买方代码})
+active_buyers:
+  description: Number of distinct buyers with a record, across all buyer types.
+  formula: DISTINCTCOUNT({buyer_id})
 
-活跃药店数:
-  description: 有记录且类型为 Drugstore 的不同购买方代码数量。
-  formula: &#39;DISTINCTCOUNTIF({购买方代码}, {购买方客户类型} = &#39;&#39;Drugstore&#39;&#39;)&#39;
+active_pharmacies:
+  description: Number of distinct recorded buyers of type Drugstore.
+  formula: 'DISTINCTCOUNTIF({buyer_id}, {buyer_type} = ''Drugstore'')'
 </code></pre>
 <p>Do not use a comment to compensate for a misleading canonical name. Put a durable limitation in <code>description:</code> so tools that read metadata can expose it.</p>
-<h2 id="set-internal-sql-names-when-needed">Set internal SQL names when needed <a class="section-link" aria-label="Link to section" href="#set-internal-sql-names-when-needed">#</a></h2>
-<p>Use <code>abbr:</code> for a stable SQL-compatible internal name. Keep the business key or explicit query alias as the consumer-facing name.</p>
-<pre><code class="language-yaml">进货额(不含税):
+<h2 id="use-the-source-column-name">Use the source column name <a class="section-link" aria-label="Link to section" href="#use-the-source-column-name">#</a></h2>
+<p>For a dataset based on one table, set <code>table:</code> to the source table and <code>abbr:</code> to the source column. Readers use the business name in queries. A measure can also have a short internal name, as shown below.</p>
+<pre><code class="language-yaml">purchases_excl_tax:
   abbr: SaleAmountNoTax
   type: measure
   dataset: transactions
-  description: 不含税的有效进货金额。
+  description: Eligible purchase amount excluding tax.
   formula: SUM({valid_sale_amount})
 </code></pre>
 <p>Before renaming a measure, inspect formula references, queries, and materialization consumers. An <code>abbr</code> does not by itself make every downstream dependency safe to rename.</p>
 <h2 id="document-derived-labels-and-estimates">Document derived labels and estimates <a class="section-link" aria-label="Link to section" href="#document-derived-labels-and-estimates">#</a></h2>
 <p>For a column macro, provide <code>description:</code> and <code>formula:</code> when its meaning requires explanation.</p>
-<pre><code class="language-yaml"># Fragment under a dataset&#39;s column-macros mapping.
-购买方渠道:
-  description: 购买方侧业务渠道，来源为 Businesschannel。
-  formula: &#39;{Businesschannel}&#39;
+<pre><code class="language-yaml"># Fragment under a dataset's column-macros mapping.
+buyer_channel:
+  description: Buyer's distribution channel, from Businesschannel.
+  formula: '{Businesschannel}'
 </code></pre>
 <p>If a label comes from hardcoded rules, identify the rule and its limits. Distinguish a model-defined calendar label from an official business calendar. If a measure estimates terminal activity from pipeline transactions, state which transaction types it includes.</p>
 <h2 id="verify-the-metadata-with-the-model">Verify the metadata with the model <a class="section-link" aria-label="Link to section" href="#verify-the-metadata-with-the-model">#</a></h2>

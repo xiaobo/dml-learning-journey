@@ -35,25 +35,28 @@
 <p>DML 是独立的语义层编译器。它处理模型文件，并生成由数据库执行的 SQL。数据库权限和应用授权负责控制访问，仪表板和调度由外围系统负责。模型筛选条件本身不能作为访问控制策略。</p>
 <p>DML 检查声明结构和分析兼容性，例如粒度和时间上下文。它不会对 SQL 表达式进行完整的静态类型检查。物理值类型由数据库负责，模型校验所用的模式会拒绝列的 <code>type:</code> 声明。因此，无效的类型转换或函数参数可能通过编译，却在数据库执行时出错。请参阅<a href="reference--model-structure.zh.html#column-metadata-is-not-a-sql-type-declaration">列元数据和值类型</a>。</p>
 <p>数据集将列绑定到物理表或 SQL 关系。数据集的 <code>dimension:</code> 声明源行的完整键。</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">交易明细:
   type: dataset
   table: fact_transactions
-  dimension: [transaction_id]
+  dimension: [交易编号]
   columns:
-    transaction_id:
-    amount:
-    discount:
-    net_amount: amount - discount
+    交易编号:
+      abbr: transaction_id
+    销售金额:
+      abbr: amount
+    折扣金额:
+      abbr: discount
+    净额: 销售金额 - 折扣金额
   measures:
-    sales: SUM({net_amount})
-    number_of_transactions: COUNT(1)
+    销售额: SUM({净额})
+    交易笔数: COUNT(1)
 
-avg_transaction_value:
+每笔平均交易额:
   type: measure
-  formula: 'DIVIDE({sales}, {number_of_transactions})'
+  formula: 'DIVIDE({销售额}, {交易笔数})'
 </code></pre>
-<p><code>sales</code> 和 <code>number_of_transactions</code> 是原子指标。它们继承定义所在的数据集，直接聚合其中的行或列表达式，且不引用其他指标。虽然这两个原子指标都使用 <code>transactions</code>，但 <code>avg_transaction_value</code> 的公式引用了其他指标，因此它是复合指标。复合指标没有 <code>dataset:</code> 属性。</p>
-<p>在模型公式中，不带花括号的 <code>amount</code> 指向物理 SQL 列。<code>{net_amount}</code> 则展开为模型中计算列的表达式。即使逻辑名称和物理名称相同，花括号也能区分这两种引用。</p>
+<p><code>销售额</code> 和 <code>交易笔数</code> 是原子指标。它们继承定义所在的数据集，直接聚合其中的行或列表达式，且不引用其他指标。虽然这两个原子指标都使用 <code>交易明细</code>，但 <code>每笔平均交易额</code> 的公式引用了其他指标，因此它是复合指标。复合指标没有 <code>dataset:</code> 属性。</p>
+<p>在模型公式中，不带花括号的 <code>销售金额</code> 指向物理 SQL 列。<code>{净额}</code> 则展开为模型中计算列的表达式。即使逻辑名称和物理名称相同，花括号也能区分这两种引用。</p>
 <p>列宏定义可复用的列表达式或跨数据集查找。列宏可以让指标访问属性，无需在每个使用该指标的查询中编写联接。查找参数由目标数据集的完整键决定。请参阅<a href="#2-source-relations-lookups-and-metric-composition">源关系与查找</a>。</p>
 <p>Model Query 通过 <code>AGG(...)</code> 引用指标。模型公式直接使用 <code>SUM</code> 和 <code>COUNT</code> 等聚合函数。<code>AGG</code> 是查询引用指标的接口，不能替代模型公式中的 <code>SUM</code>。</p>
 <p>一次性使用的指标可以先定义在查询文件的<a href="reference--model-query-sql.zh.html#312-inline-measures--dml--">内联 DML 块</a>中。探索时无需先修改共享模型。将有用的定义纳入共享指标之前，请先审查这些定义。</p>
@@ -74,7 +77,7 @@ avg_transaction_value:
 </tr>
 <tr>
 <td>查找在事件日期有效的属性</td>
-<td>使用 <code>pk(id, event_date)</code> 对照 <code>[id, 'range(valid_from, valid_to)']</code> 查找</td>
+<td>使用 <code>pk(销售明细编号, dt_date)</code> 对照 <code>[销售明细编号, 'range(valid_from, valid_to)']</code> 查找</td>
 <td>校验的有限区间采用 <code>[start,end)</code> 的形式。同一 id 的区间不得重叠。</td>
 </tr>
 <tr>
@@ -121,7 +124,7 @@ avg_transaction_value:
 <td>允许使用的备选求值维度，每个内层列表对应一个维度</td>
 </tr>
 </tbody></table>
-<p>粒度描述在特定上下文中一行代表什么。例如，<code>[transaction_id]</code> 标识一笔交易，<code>[region, dt_month]</code> 则按地区和月份对报表分组。一个报表分组可以包含许多源行，因此不能替代源键。</p>
+<p>粒度描述在特定上下文中一行代表什么。例如，<code>[交易编号]</code> 标识一笔交易，<code>[地区, dt_month]</code> 则按地区和月份对报表分组。一个报表分组可以包含许多源行，因此不能替代源键。</p>
 <p>修饰符 <code>dimension: []</code> 清空求值维度，以计算总计。它不声明用于标识数据集行的键。<code>+d</code> 为中间计算添加字段。当公式需要更粗粒度的结果时，由显式指定的外层聚合汇总这些中间值。</p>
 <p>编译器依赖已声明的源键。即使编译成功，如果 <code>pk(...)</code> 的参照表中有重复键，同一条源记录也可能在关联时被匹配多次。校验可以检查当前数据中的键是否唯一。要确认查询结果是否符合预期，还需另行核对结果。</p>
 <p><a href="explanation--dimensions.zh.html">维度语义</a>更详细地介绍了这些作用及其影响。</p>

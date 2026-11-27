@@ -6,7 +6,7 @@
 <pre><code class="language-yaml">account_receivable:
     type: measure
     formula: |-
-        {amount: {+f: {account: &#39;Accounts Receivable (A/R)&#39;}}}
+        {amount: {+f: {account: 'Accounts Receivable (A/R)'}}}
 
 outstanding:
     type: measure
@@ -18,23 +18,23 @@ balance_due:
     type: measure
     description: Amounts due today or earlier
     formula: |-
-        {open_balance: {+f: &#39;due_date &lt;= date(current_date)&#39;}}
+        {open_balance: {+f: 'due_date &lt;= date(current_date)'}}
 </code></pre>
 <h3 id="transaction-counts">Transaction counts <a class="section-link" aria-label="Link to section" href="#transaction-counts">#</a></h3>
 <pre><code class="language-yaml">number_of_invoices:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : &#39;invoice&#39;}}}
+        {number_of_transactions: {+f: {transaction_type : 'invoice'}}}
 
 number_of_checks:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : &#39;check&#39;}}}
+        {number_of_transactions: {+f: {transaction_type : 'check'}}}
 
 number_of_received_checks:
     type: measure
     formula: |-
-        {number_of_checks: {+f: &#39;customer is not null&#39;}}
+        {number_of_checks: {+f: 'customer is not null'}}
 </code></pre>
 <hr>
 <p>General modeling rules (naming, <code>description:</code>, <code>abbr</code>): <a href="how-to--review-model.html">model review</a>. Pitfalls: <a href="reference--troubleshooting--README.html">Troubleshooting index</a> P1, P25.</p>
@@ -44,7 +44,7 @@ number_of_received_checks:
 <pre><code class="language-yaml">avg_invoice_value:
     type: measure
     formula: |-
-        divide({amount: {+f: {transaction_type: &#39;invoice&#39;}}}, {number_of_invoices})
+        divide({amount: {+f: {transaction_type: 'invoice'}}}, {number_of_invoices})
 </code></pre>
 <h3 id="frequency-calculations">Frequency calculations <a class="section-link" aria-label="Link to section" href="#frequency-calculations">#</a></h3>
 <pre><code class="language-yaml">avg_bill_frequency:

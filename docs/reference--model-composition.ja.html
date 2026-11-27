@@ -6,7 +6,7 @@
 <p>各ファイルで使えるのは、そのファイル内の定義と、自分で読み込んだファイルの定義です。読み込み元だけにあるデータセットを、読み込まれる側から参照することはできません。読み込みに失敗すると、読み込み元のモデルも無効になります。相対パスは、まず読み込みを指定したファイルの場所を基準に解決されます。環境で設定したモデルの検索パスとは別に、依存するファイルをモデルで指定してください。</p>
 <p>同じセッションで以前に読み込んだモデルの定義が、自動的に使えるようになることはありません。共通のデータセットと指標を一つのモデルに定義し、各レポートでそのモデルを読み込むと再利用できます。</p>
 <h2 id="logical-versus-physical-sql">SQL で使うモデル上の名前とデータベース上の名前 <a class="section-link" aria-label="この節へのリンク" href="#logical-versus-physical-sql">#</a></h2>
-<p>データセットの <code>sql:</code> で <code>FROM {Customers}</code> はモデル上のデータセットを、<code>FROM Customers</code> はデータベース上の表などを参照します。列の式で <code>{net_amount}</code> と書くと、そのモデル列の定義が展開されます。<code>net_amount</code> とだけ書くと、データベースに渡す SQL の列名になります。逆変換で生成される SQL に、データベース上の名前がそのまま残る場合もあります。</p>
+<p>データセットの <code>sql:</code> で <code>FROM {Customers}</code> はモデル上のデータセットを、<code>FROM Customers</code> はデータベース上の表などを参照します。列の式で <code>{純額}</code> と書くと、そのモデル列の定義が展開されます。<code>純額</code> とだけ書くと、データベースに渡す SQL の列名になります。逆変換で生成される SQL に、データベース上の名前がそのまま残る場合もあります。</p>
 <h2 id="direct-query-files">クエリファイルを直接コンパイルする <a class="section-link" aria-label="この節へのリンク" href="#direct-query-files">#</a></h2>
 <p>DML を直接コンパイルする場合、クエリ名は拡張子を除くファイル名と一致させます。たとえば <code>report.dml</code> に <code>report: {type: query, ...}</code> を記述します。クエリを含まないモデルを再利用するには Model Query SQL を使います。FROM に指定する名前はモデルのファイル名に基づきます。詳しくは<a href="reference--model-query-sql.ja.html#2-query-types">クエリの検索</a>を参照してください。</p>
 <p>レポートを実行する前に、使用するコンパイラで読み込み先、名前、生成された SQL を確認してください。</p>

@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>编写模型元数据 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="通过说明帮助读者在查询模型前选出合适的数据集、统计总体和指标。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="编写模型元数据 · DML"><meta property="og:description" content="通过说明帮助读者在查询模型前选出合适的数据集、统计总体和指标。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--write-model-metadata.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--write-model-metadata.html">English</a></header><main><h1 id="write-model-metadata">编写模型元数据</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#describe-each-dataset">说明每个数据集</a></li><li><a href="#explain-columns-that-affect-decisions">说明影响决策的列</a></li><li><a href="#match-measure-names-to-their-formulas">使指标名称与公式一致</a></li><li><a href="#set-internal-sql-names-when-needed">按需设置内部 SQL 名称</a></li><li><a href="#document-derived-labels-and-estimates">记录派生标签和估算值</a></li><li><a href="#verify-the-metadata-with-the-model">使用模型验证元数据</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>编写模型元数据 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="通过说明帮助读者在查询模型前选出合适的数据集、统计总体和指标。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="编写模型元数据 · DML"><meta property="og:description" content="通过说明帮助读者在查询模型前选出合适的数据集、统计总体和指标。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--write-model-metadata.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--write-model-metadata.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--write-model-metadata.html">English</a></header><main><h1 id="write-model-metadata">编写模型元数据</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#describe-each-dataset">说明每个数据集</a></li><li><a href="#explain-columns-that-affect-decisions">说明影响决策的列</a></li><li><a href="#match-measure-names-to-their-formulas">使指标名称与公式一致</a></li><li><a href="#use-the-source-column-name">对应源表列名</a></li><li><a href="#document-derived-labels-and-estimates">记录派生标签和估算值</a></li><li><a href="#verify-the-metadata-with-the-model">使用模型验证元数据</a></li></ul></details>
 <p>通过说明帮助读者在查询模型前选出合适的数据集、统计总体和指标。</p>
 <h2 id="describe-each-dataset">说明每个数据集 <a class="section-link" aria-label="本节链接" href="#describe-each-dataset">#</a></h2>
 <p>说明源数据中的一行代表什么，以及哪些字段可用于标识该行。解释主要汇总值的业务含义、限定范围所需的筛选条件，以及已知的时间或地域限制。</p>
@@ -8,11 +8,11 @@
   官方 UL 报告使用 是否统计UL = '是'。
   渠道表示购买方侧业务渠道，与卖出方渠道不同。
 </code></pre>
-<p>如果两个数据集分别从卖方和买方视角呈现同一数据源，请说明 <code>partner_id</code> 的映射有何不同。除非两个数据集的源数据行确实定义在不同层级，否则不要暗示它们的源数据粒度不同。</p>
+<p>如果两个数据集分别从卖方和买方视角呈现同一数据源，请说明 <code>合作方编号</code> 的映射有何不同。除非两个数据集的源数据行确实定义在不同层级，否则不要暗示它们的源数据粒度不同。</p>
 <h2 id="explain-columns-that-affect-decisions">说明影响决策的列 <a class="section-link" aria-label="本节链接" href="#explain-columns-that-affect-decisions">#</a></h2>
 <p>如果列名无法体现该列的含义，请使用对象形式。</p>
 <pre><code class="language-yaml">columns:
-  Businesschannel:
+  购买渠道:
     description: 购买方侧业务渠道。模型别名为渠道，与卖出方渠道不同。
   是否统计UL:
     description: 官方 UL 报告范围标志。报告和归因分析使用相同筛选。
@@ -37,14 +37,14 @@
   formula: 'DISTINCTCOUNTIF({购买方代码}, {购买方客户类型} = ''Drugstore'')'
 </code></pre>
 <p>不要用注释弥补容易误导的规范名称。将长期适用的限制写入 <code>description:</code>，以便读取元数据的工具显示该限制。</p>
-<h2 id="set-internal-sql-names-when-needed">按需设置内部 SQL 名称 <a class="section-link" aria-label="本节链接" href="#set-internal-sql-names-when-needed">#</a></h2>
-<p>使用 <code>abbr:</code> 指定一个稳定且与 SQL 兼容的内部名称。继续使用业务键或显式设置的查询别名作为面向使用方的名称。</p>
+<h2 id="use-the-source-column-name">对应源表列名 <a class="section-link" aria-label="本节链接" href="#use-the-source-column-name">#</a></h2>
+<p>如果数据集来自一张表，<code>table:</code> 填源表名，<code>abbr:</code> 填源表列名。写查询时用业务名称。指标也可以指定内部简称，见下例。</p>
 <pre><code class="language-yaml">进货额(不含税):
   abbr: SaleAmountNoTax
   type: measure
-  dataset: transactions
+  dataset: 交易明细
   description: 不含税的有效进货金额。
-  formula: SUM({valid_sale_amount})
+  formula: SUM({有效销售额})
 </code></pre>
 <p>重命名指标前，请检查公式中的引用、查询和物化结果的使用方。仅设置 <code>abbr</code> 并不能保证所有下游依赖都能安全地重命名。</p>
 <h2 id="document-derived-labels-and-estimates">记录派生标签和估算值 <a class="section-link" aria-label="本节链接" href="#document-derived-labels-and-estimates">#</a></h2>
@@ -52,7 +52,7 @@
 <pre><code class="language-yaml"># Fragment under a dataset's column-macros mapping.
 购买方渠道:
   description: 购买方侧业务渠道，来源为 Businesschannel。
-  formula: '{Businesschannel}'
+  formula: '{购买渠道}'
 </code></pre>
 <p>如果标签来自硬编码规则，请说明所用规则及其限制。区分模型定义的日历标签与正式业务日历。如果某个指标根据流程中的交易估算末端活动，请说明它涵盖哪些交易类型。</p>
 <h2 id="verify-the-metadata-with-the-model">使用模型验证元数据 <a class="section-link" aria-label="本节链接" href="#verify-the-metadata-with-the-model">#</a></h2>

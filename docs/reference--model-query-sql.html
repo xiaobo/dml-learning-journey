@@ -73,7 +73,7 @@
 <pre><code class="language-sql">-- Query SQL using model.dml
 SELECT product, dt_month, AGG(sales)
 FROM MODEL
-WHERE dt_month = date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)
+WHERE dt_month = date(current_date, 'start of month', '-1 month')
 GROUP BY product, dt_month
 
 -- Query SQL using acme.dml (dmlc --model=acme.dml …  or  --model=&lt;dir containing acme.dml&gt;)
@@ -89,7 +89,7 @@ GROUP BY product, dt_month
 <pre><code class="language-sql">-- Query SQL using model.dml
 SELECT dt_date, transaction_id, raw_amount
 FROM MODEL.transactions
-WHERE dt_month = date(current_date, &#39;start of month&#39;)
+WHERE dt_month = date(current_date, 'start of month')
 
 -- Query SQL using acme.dml
 SELECT ClaimNumber, ClaimOpenDate
@@ -166,7 +166,7 @@ SELECT DISTINCT product FROM MODEL.transactions
 <td><strong>Yes</strong> — <code>AS sales_yoy</code></td>
 </tr>
 <tr>
-<td><code>AGG(sales, &#39;pop&#39;) AS sales</code></td>
+<td><code>AGG(sales, 'pop') AS sales</code></td>
 <td><strong>Wrong</strong> — circular reference; use <code>AS sales_mom</code></td>
 </tr>
 <tr>
@@ -179,7 +179,7 @@ expression uses that name, such as <code>AGG(current_value)</code> after
 <code>AGG(sales) AS current_value</code>, the name refers to the prior result column. It
 does not fall back to an unrelated same-named DML measure.</p>
 <p>Aliasing a measure reference with a modifier back to the measure&#39;s own name
-(e.g. <code>AGG(sales, &#39;pop&#39;) AS sales</code>) causes a circular reference because the
+(e.g. <code>AGG(sales, 'pop') AS sales</code>) causes a circular reference because the
 compiler treats the alias as a redefinition of the measure. Use a distinct
 alias (e.g. <code>AS sales_mom</code>). Without a modifier, <code>AGG(sales) AS sales</code> is
 accepted as a redundant pass-through.</p>
@@ -187,9 +187,9 @@ accepted as a redundant pass-through.</p>
 <p><a id="34-where-rules"></a></p>
 <h3 id="where-rules">WHERE rules <a class="section-link" aria-label="Link to section" href="#where-rules">#</a></h3>
 <ul>
-<li>Use bare names for columns: <code>WHERE customer = &#39;John Doe&#39;</code></li>
+<li>Use bare names for columns: <code>WHERE customer = 'John Doe'</code></li>
 <li>Predicate order is not a syntax requirement.</li>
-<li>Use first-day format for time filters: <code>dt_month = &#39;2024-01-01&#39;</code></li>
+<li>Use first-day format for time filters: <code>dt_month = '2024-01-01'</code></li>
 <li>Prefer <code>=</code> over <code>BETWEEN</code> for single periods</li>
 <li>Don&#39;t add redundant null filters unless explicitly requested</li>
 </ul>
@@ -219,9 +219,9 @@ SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
 <h3 id="measure-reference-rules">Measure reference rules <a class="section-link" aria-label="Link to section" href="#measure-reference-rules">#</a></h3>
 <ul>
 <li>In queries: <code>AGG(measure)</code> — always wrap in <code>AGG()</code></li>
-<li>Modifier form: <code>AGG({measure: modifier})</code> or <code>AGG(measure, &#39;modifier&#39;)</code></li>
+<li>Modifier form: <code>AGG({measure: modifier})</code> or <code>AGG(measure, 'modifier')</code></li>
 <li>Never use <code>{...}</code> on bare columns in Model Query SQL (except modifier form inside <code>AGG</code>) — braces on bare columns are silently stripped to the bare name; use bare names directly</li>
-<li>If the compiler says <code>use existing measure &quot;X&quot;</code>, use <code>AGG(X)</code> — don&#39;t re-express the formula</li>
+<li>If the compiler says <code>use existing measure "X"</code>, use <code>AGG(X)</code> — don&#39;t re-express the formula</li>
 </ul>
 <p><a id="38-time-handling"></a></p>
 <h3 id="time-handling">Time handling <a class="section-link" aria-label="Link to section" href="#time-handling">#</a></h3>
@@ -231,7 +231,7 @@ SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
 dataset. Use the derived name directly; do not add duplicate physical columns only to satisfy a
 query, filter, or editor diagnostic. Go-to-definition on the derived name resolves to the
 explicit source time column.</p>
-<p><strong>Filtering</strong>: <code>WHERE dt_month = &#39;2024-01-01&#39;</code> (first day, <code>=</code> not <code>BETWEEN</code> for single periods).</p>
+<p><strong>Filtering</strong>: <code>WHERE dt_month = '2024-01-01'</code> (first day, <code>=</code> not <code>BETWEEN</code> for single periods).</p>
 <p>The <a href="reference--expressions.html#34-date-functions-sqlite-dialect">date function reference</a> describes SQLite-style expression forms. The compiler lowers supported forms to the selected dialect.</p>
 <p>For the checked query requesting both <code>dt_year</code> and <code>dt_month</code>, compilation rejects the query because <code>dt_year</code> is absent from the generated output. Do not treat this combination as a successful two-field report. If you only need the year as a display label, query at the required month grain and derive the label from that key after querying; verify the result grain separately. This does not establish that every query containing multiple time fields is unsupported.</p>
 <p><a id="39-having"></a></p>
@@ -243,11 +243,11 @@ GROUP BY customer
 HAVING AGG(outstanding) &gt; 0
 
 -- Products selling less than last month
-SELECT product, AGG(sales) as this_month, AGG(sales, &#39;pp&#39;) as last_month
+SELECT product, AGG(sales) as this_month, AGG(sales, 'pp') as last_month
 FROM MODEL
-WHERE dt_month = date(current_date, &#39;start of month&#39;)
+WHERE dt_month = date(current_date, 'start of month')
 GROUP BY product
-HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
+HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </code></pre>
 <p><strong>Measure-as-dimension note:</strong> a predicate on the classifier label (and/or sibling measures at label grain) is a <strong>label-pass</strong> filter. Model Query text may show <code>HAVING</code>, but the semantic contract is “after the label exists.” Compiled SQL often applies it as <code>WHERE</code> on the post-label CTE. Do not treat a doc-surface <code>HAVING</code> as permission to filter before classification. See <a href="explanation--measure-as-dimension.html#label-channel-filters">classifier-label filters</a>.</p>
 <p><a id="310-quick-reference"></a></p>
@@ -269,7 +269,7 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 </tr>
 <tr>
 <td>Filtered</td>
-<td><code>SELECT AGG(sales) FROM MODEL WHERE region = &#39;North&#39;</code></td>
+<td><code>SELECT AGG(sales) FROM MODEL WHERE region = 'North'</code></td>
 </tr>
 <tr>
 <td>Top N</td>
@@ -277,11 +277,11 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 </tr>
 <tr>
 <td>Growth rate</td>
-<td><code>SELECT dt_month, AGG(sales, &#39;yoy&#39;) AS sales_yoy FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(sales, 'yoy') AS sales_yoy FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>Period comparison</td>
-<td><code>SELECT dt_month, AGG(sales), AGG(sales, &#39;pp&#39;) AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(sales), AGG(sales, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>Share of total</td>
@@ -289,7 +289,7 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 </tr>
 <tr>
 <td>Ranking</td>
-<td><code>SELECT product, AGG(sales, &#39;rank&#39;) AS sales_rank FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT product, AGG(sales, 'rank') AS sales_rank FROM MODEL GROUP BY product</code></td>
 </tr>
 <tr>
 <td>Multi-level agg</td>
@@ -301,7 +301,7 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 </tr>
 <tr>
 <td>Filtered measure</td>
-<td><code>SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL</code></td>
+<td><code>SELECT AGG(sales, '+f', region = 'North') FROM MODEL</code></td>
 </tr>
 </tbody></table>
 <p>Time-comparison syntax can produce strict findings for key-union joins on the checked build. These examples show query forms. Read the diagnostics and inspect the emitted joins before executing.</p>
@@ -323,13 +323,13 @@ HAVING AGG(sales) &lt; AGG(sales, &#39;pp&#39;)
 </tr>
 <tr>
 <td>Sum of raw column</td>
-<td><code>SUM(出厂价金额)</code></td>
-<td>Define <code>销售额: SUM({出厂价金额})</code> in <code>model.dml</code> or inline, then <code>AGG(销售额)</code></td>
+<td><code>SUM(ex_factory_amount)</code></td>
+<td>Define <code>sales: SUM({ex_factory_amount})</code> in <code>model.dml</code> or inline, then <code>AGG(sales)</code></td>
 </tr>
 <tr>
 <td>Average of raw column</td>
 <td><code>AVG(销售数量)</code></td>
-<td>Define <code>均价: DIVIDE(SUM({出厂价金额}), NULLIF(SUM({销售数量}),0))</code> in <code>model.dml</code> or inline, then <code>AGG(均价)</code></td>
+<td>Define <code>均价: DIVIDE(SUM({ex_factory_amount}), NULLIF(SUM({销售数量}),0))</code> in <code>model.dml</code> or inline, then <code>AGG(均价)</code></td>
 </tr>
 <tr>
 <td>Scalar MIN/MAX of dimension</td>

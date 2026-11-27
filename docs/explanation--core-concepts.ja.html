@@ -35,25 +35,28 @@
 <p>DMLは、モデルファイルを処理し、データベースが実行するSQLを生成する独立したセマンティックレイヤーのコンパイラです。アクセスはデータベースの権限とアプリケーションの認可で制御します。ダッシュボードとスケジュール管理は周辺システムが担います。モデルのフィルターだけでは、アクセス制御ポリシーにはなりません。</p>
 <p>DMLは、宣言の構造と、粒度や時間コンテキストなどの分析上の互換性を検査します。SQL式の静的型チェックは完全には行いません。物理的な値の型はデータベースが扱い、検証に使うモデルスキーマは列の <code>type:</code> 宣言を受け付けません。そのため、型変換や関数の引数に誤りがあってもコンパイルを通過し、データベースでの実行時にエラーになることがあります。<a href="reference--model-structure.ja.html#column-metadata-is-not-a-sql-type-declaration">列のメタデータと値の型</a>を参照してください。</p>
 <p>データセットは、列を物理テーブルまたはSQLリレーションに結び付けます。<code>dimension:</code> には、ソース行の完全キーを宣言します。</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">取引明細:
   type: dataset
   table: fact_transactions
-  dimension: [transaction_id]
+  dimension: [取引番号]
   columns:
-    transaction_id:
-    amount:
-    discount:
-    net_amount: amount - discount
+    取引番号:
+      abbr: transaction_id
+    売上金額:
+      abbr: amount
+    割引額:
+      abbr: discount
+    純額: 売上金額 - 割引額
   measures:
-    sales: SUM({net_amount})
-    number_of_transactions: COUNT(1)
+    売上高: SUM({純額})
+    取引件数: COUNT(1)
 
-avg_transaction_value:
+平均取引額:
   type: measure
-  formula: 'DIVIDE({sales}, {number_of_transactions})'
+  formula: 'DIVIDE({売上高}, {取引件数})'
 </code></pre>
-<p><code>sales</code>と<code>number_of_transactions</code>はアトミック指標です。定義を含むデータセットを継承し、ほかの指標を参照せずに、そのデータセットの行または列式を直接集計します。どちらのアトミック指標も<code>transactions</code>を使用していますが、<code>avg_transaction_value</code>は数式でほかの指標を参照するため、複合指標です。複合指標には <code>dataset:</code> プロパティがありません。</p>
-<p>モデルの数式では、波括弧のない<code>amount</code>は物理SQL列を指します。<code>{net_amount}</code>は、モデルの計算列の式に展開されます。論理名と物理名が一致する場合も、波括弧で両者を区別できます。</p>
+<p><code>売上高</code>と<code>取引件数</code>はアトミック指標です。定義を含むデータセットを継承し、ほかの指標を参照せずに、そのデータセットの行または列式を直接集計します。どちらのアトミック指標も<code>取引明細</code>を使用していますが、<code>平均取引額</code>は数式でほかの指標を参照するため、複合指標です。複合指標には <code>dataset:</code> プロパティがありません。</p>
+<p>モデルの数式では、波括弧のない<code>売上金額</code>は物理SQL列を指します。<code>{純額}</code>は、モデルの計算列の式に展開されます。論理名と物理名が一致する場合も、波括弧で両者を区別できます。</p>
 <p>列マクロは、再利用できる列式や、別のデータセットを参照するルックアップを定義します。指標を使用するクエリごとに結合を書くことなく、指標から属性を利用できます。ルックアップの引数は、参照先データセットの完全キーで決まります。<a href="#2-source-relations-lookups-and-metric-composition">ソースリレーションとルックアップ</a>を参照してください。</p>
 <p>Model Query では、<code>AGG(...)</code> を使って指標を参照します。モデルの数式では、<code>SUM</code> や <code>COUNT</code> などの集計関数を直接使用します。<code>AGG</code> はクエリから指標を参照するためのインターフェースであり、モデルの数式内の <code>SUM</code> を置き換えるものではありません。</p>
 <p>一時的に使う指標は、まずクエリファイル内の<a href="reference--model-query-sql.ja.html#312-inline-measures--dml--">インラインDMLブロック</a>に定義できます。試す前に共有モデルを変更する必要はありません。有用な定義を共有指標に昇格させる前に、その内容を確認してください。</p>
@@ -74,7 +77,7 @@ avg_transaction_value:
 </tr>
 <tr>
 <td>イベントの日付に有効な属性を取得する</td>
-<td><code>[id, 'range(valid_from, valid_to)']</code> を対象とする <code>pk(id, event_date)</code></td>
+<td><code>[売上明細番号, 'range(valid_from, valid_to)']</code> を対象とする <code>pk(売上明細番号, dt_date)</code></td>
 <td>検証対象の有限区間は <code>[start,end)</code> に従います。同じ id の区間どうしが重なってはいけません。</td>
 </tr>
 <tr>
@@ -121,7 +124,7 @@ avg_transaction_value:
 <td>評価ディメンションとして使用できる候補。各内側のリストが1つの候補を表します。</td>
 </tr>
 </tbody></table>
-<p>粒度は、あるコンテキストで1行が何を表すかを示します。たとえば、<code>[transaction_id]</code> はトランザクションを識別し、<code>[region, dt_month]</code> はレポートを地域と月でグループ化します。レポートの1つのグループには多数のソース行が含まれることがあるため、グループでソースキーを置き換えることはできません。</p>
+<p>粒度は、あるコンテキストで1行が何を表すかを示します。たとえば、<code>[取引番号]</code> はトランザクションを識別し、<code>[地域, dt_month]</code> はレポートを地域と月でグループ化します。レポートの1つのグループには多数のソース行が含まれることがあるため、グループでソースキーを置き換えることはできません。</p>
 <p>修飾子 <code>dimension: []</code> は、総計を求めるために評価ディメンションを空にします。この修飾子は、データセットの行を識別するキーを宣言するものではありません。<code>+d</code> は中間計算用のフィールドを追加します。数式でより粗い粒度の結果が必要な場合は、外側に明示した集計で中間値をまとめます。</p>
 <p>コンパイラは、宣言されたソースキーが正しいことを前提とします。<code>pk(...)</code> の参照先に同じキー値を持つ行が複数あると、コンパイルに成功しても行が増えることがあります。実データでの検証では、実際に存在するキー値が一意かどうかを確認します。結果の比較では、クエリが意図した答えを返すかどうかを確認します。</p>
 <p><a href="explanation--dimensions.ja.html">ディメンションの意味</a>では、これらの役割とその影響を詳しく説明します。</p>

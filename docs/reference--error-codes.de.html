@@ -202,7 +202,7 @@
 <li><strong>Code</strong>: VALIDATION_ERROR. Prüfen Sie den Problemtyp in <code>data.issues</code>.</li>
 <li><strong>Häufige Ursachen</strong>: Die vollständige Kombination der Dimensionswerte des Datensatzes kommt mehrfach vor oder eine bereichsbasierte Suche kann mehrere Quellzeilen mit überlappenden Bereichen finden.</li>
 <li><strong>Lösungsvorschläge</strong>: Korrigieren Sie den Quellschlüssel, die Feldliste unter <code>dimension:</code> im Datensatz, die überlappenden Bereiche oder die Quelldaten. Führen Sie anschließend <code>--validate</code> erneut aus. Weder <code>DISTINCT</code>/<code>GROUP BY</code> im kompilierten SQL noch <code>DISTINCTCOUNT</code>-Kennzahlen beheben eine nicht eindeutige Suche mit <code>pk(...)</code>.</li>
-<li><strong>Beispiel</strong>: <code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+<li><strong>Beispiel</strong>: <code>Declared DML dataset dimension is not unique in dataset 'Bestellposition' on this connection at validation time.</code></li>
 </ul>
 <p><a id="validation_query_failed"></a></p>
 <h4 id="execution_error-1">EXECUTION_ERROR</h4>

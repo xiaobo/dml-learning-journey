@@ -15,13 +15,13 @@
 <p>Schreiben Sie die vorgesehenen Klauseln <code>SELECT</code>, <code>WHERE</code> und <code>GROUP BY</code>, bevor Sie Berechnungen hinzufügen. Verwenden Sie nach Möglichkeit bestehende fachliche Bezeichnungen.</p>
 <pre><code class="language-sql">SELECT
 	dt_month,
-	渠道,
-	AGG(销售额),
-	AGG({销售额: yoy}) AS 销售额_yoy,
-	AGG(同店销售额)
+	Vertriebskanal,
+	AGG(Umsatz),
+	AGG({Umsatz: yoy}) AS UmsatzZumVorjahr,
+	AGG(Filialvergleichsumsatz)
 FROM MODEL
 WHERE dt_month = '2025-03-01'
-GROUP BY dt_month, 渠道
+GROUP BY dt_month, Vertriebskanal
 </code></pre>
 <p>Lassen Sie die Berichtsgruppierung, Zeitfenster und die Auswahl von Kanälen in der Abfrage. Hinterlegen Sie wiederverwendbare Definitionen im Modell, etwa die Kriterien für die Einbeziehung in den Vergleich derselben Filialen. Fügen Sie eine Sortierung oder eine Zeilenbegrenzung hinzu, wenn das gewünschte Ergebnis davon abhängt. Die Reihenfolge der Prädikate hat keinen Einfluss darauf, ob die Grammatik die Abfrage zulässt.</p>
 <p>Verwenden Sie für jede Referenz auf eine Berechnung mit Modifikator einen eigenen Alias. Prüfen Sie die Spalten der erzeugten Ausgabe. Der Compiler kann ihre Reihenfolge ändern oder bei einer Abfragestruktur mit bekanntem Fehler ein angefordertes Zeitfeld weglassen.</p>
@@ -45,7 +45,7 @@ GROUP BY dt_month, 渠道
 <li>Definieren Sie zusammengesetzte Verhältniskennzahlen aus den benötigten Komponenten.</li>
 <li>Ergänzen Sie Beschreibungen, die die Grundgesamtheit, die Ebene, auf der Zeilen oder Summen definiert sind, und den Umgang mit NULL angeben.</li>
 </ol>
-<p>Testen Sie Berechnungen mit eingeschränkten Auswertungsdimensionen anhand von Abfragen, die die erforderlichen Felder enthalten. Ein Filter auf <code>dt_month</code> allein erfüllt die Vorgabe der geschlossenen Auswertungsdimension <code>[customer, dt_month]</code> nicht.</p>
+<p>Testen Sie Berechnungen mit eingeschränkten Auswertungsdimensionen anhand von Abfragen, die die erforderlichen Felder enthalten. Ein Filter auf <code>dt_month</code> allein erfüllt die Vorgabe der geschlossenen Auswertungsdimension <code>[Kunde, dt_month]</code> nicht.</p>
 <p>Beispiele für Modellierungsmuster finden Sie unter <a href="reference--measures.de.html">Berechnungen</a>. Folgen Sie für Beschreibungen und Namen der Anleitung <a href="how-to--write-model-metadata.de.html">Modellmetadaten schreiben</a>.</p>
 <h2 id="phase-5-validate-the-model-and-query">Phase 5: Modell und Abfrage validieren <a class="section-link" aria-label="Link zum Abschnitt" href="#phase-5-validate-the-model-and-query">#</a></h2>
 <p>Wenn das Verhalten unklar ist, ist die ausgewählte <code>dmlc.exe</code> maßgeblich. Halten Sie ihren Pfad, ihre Version, ihren Build-Zeitstempel und ihren Dialekt fest.</p>

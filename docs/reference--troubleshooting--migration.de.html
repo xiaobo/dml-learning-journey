@@ -11,10 +11,10 @@
 <p><strong>Fehler</strong>: Allein aus der erfolgreichen Kompilierung schließen, dass die Ausgabe von <code>-c</code> korrekt ist. <strong>Korrektur</strong>: Führen Sie sowohl das ursprüngliche SQL als auch das kompilierte SQL aus und vergleichen Sie die Ergebnismengen.</p>
 <p><a id="p6"></a></p>
 <h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. Eigene Kennzahlen für einzelne Filter oder Kombinationen von Abfragedimensionen anlegen <a class="section-link" aria-label="Link zum Abschnitt" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
-<p><strong>Fehler</strong>: <code>sales_north</code>, <code>sales_south</code> und <code>sales_east</code> anlegen oder <code>sales_north</code> anlegen, obwohl <code>WHERE region = 'North'</code> ausreicht. <strong>Korrektur</strong>: Definieren Sie eine allgemeine Kennzahl <code>sales</code> und verwenden Sie <code>WHERE region = 'North'</code> in den Abfragen.</p>
+<p><strong>Fehler</strong>: <code>sales_north</code>, <code>sales_south</code> und <code>sales_east</code> anlegen oder <code>sales_north</code> anlegen, obwohl <code>WHERE Region = 'North'</code> ausreicht. <strong>Korrektur</strong>: Definieren Sie eine allgemeine Kennzahl <code>Umsatz</code> und verwenden Sie <code>WHERE Region = 'North'</code> in den Abfragen.</p>
 <p><a id="p7"></a></p>
 <h2 id="p7-duplicating-aggregation-formulas">P7. Aggregationsformeln mehrfach definieren <a class="section-link" aria-label="Link zum Abschnitt" href="#p7-duplicating-aggregation-formulas">#</a></h2>
-<p><strong>Fehler</strong>: <code>revenue: SUM({amount})</code> und <code>total_revenue: SUM({amount})</code> definieren. <strong>Korrektur</strong>: Definieren Sie eine einzige atomare Kennzahl und referenzieren Sie sie überall.</p>
+<p><strong>Fehler</strong>: <code>Erlös: SUM({Verkaufsbetrag})</code> und <code>total_revenue: SUM({Verkaufsbetrag})</code> definieren. <strong>Korrektur</strong>: Definieren Sie eine einzige atomare Kennzahl und referenzieren Sie sie überall.</p>
 <hr>
 <h2 id="category-model-query-sql">Kategorie: Model Query SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#category-model-query-sql">#</a></h2>
 <h2 id="sql-accepted-by-draft-conversion">SQL, für das sich Entwürfe erzeugen lassen <a class="section-link" aria-label="Link zum Abschnitt" href="#sql-accepted-by-draft-conversion">#</a></h2>
@@ -31,8 +31,8 @@
 <td>Verwenden Sie <code>CAST(sale_date AS date) AS d</code> oder <code>CAST('2025-01-01' AS date)</code>.</td>
 </tr>
 <tr>
-<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
-<td>Verwenden Sie <code>SUM(CASE WHEN paid THEN amount END)</code>.</td>
+<td><code>SUM(Verkaufsbetrag) FILTER (WHERE paid)</code></td>
+<td>Verwenden Sie <code>SUM(CASE WHEN paid THEN Verkaufsbetrag END)</code>.</td>
 </tr>
 <tr>
 <td><code>QUALIFY ROW_NUMBER() ... = 1</code> oder <code>DISTINCT ON</code></td>

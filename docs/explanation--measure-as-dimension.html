@@ -7,8 +7,8 @@
   type: query
   columns:
     dimension:
-      - sales_bucket: &#39;{sales: {+d: customer}}&#39;
-    total_sales: &#39;SUM({sales: {+d: customer}})&#39;
+      - sales_bucket: '{sales: {+d: customer}}'
+    total_sales: 'SUM({sales: {+d: customer}})'
 </code></pre>
 <p>The explicit outer <code>SUM</code> adds the sales of customers with the same label. This example uses the sales value itself as the label. A business bucket requires its own classifier definition and verification.</p>
 <p>The classification use site requires an explicit key. A bare <code>{measure}</code> is rejected. A finer stage inside the measure definition or a sibling metric does not supply the missing key.</p>
@@ -17,7 +17,7 @@
 <p>Classification scope, entity membership, and report scope are separate decisions. <code>-d</code> retains time filters, so removing time grouping does not imply lifetime classification. A NULL label can be a valid bucket. It does not prove that an entity is absent, and classification does not create inactive entities.</p>
 <p>Multiple labels need compatible complete entity keys and independent definitions. Additive amounts can be summed from entity grain. Ratios, averages, and distinct counts need components that preserve their definitions across reaggregation.</p>
 <h2 id="label-channel-filters">Label-channel filters <a class="section-link" aria-label="Link to section" href="#label-channel-filters">#</a></h2>
-<p>A filter over a classifier label or sibling measures at label grain belongs after classification. DML queries can express such a predicate under <code>filters:</code>, for example <code>&quot;{首购月} is not null OR {销售额} &gt; 0&quot;:</code>.</p>
+<p>A filter over a classifier label or sibling measures at label grain belongs after classification. DML queries can express such a predicate under <code>filters:</code>, for example <code>"{首购月} is not null OR {sales} &gt; 0":</code>.</p>
 <p>Model Query can represent a measure predicate as <code>HAVING</code>. The semantic stage matters more than that keyword: compiled SQL commonly uses <code>WHERE</code> on the relation produced by classification. Moving the predicate before classification changes the population used to calculate the label.</p>
 <p><a id="build-evidence-and-limitations"></a></p>
 <h2 id="limitations">Limitations <a class="section-link" aria-label="Link to section" href="#limitations">#</a></h2>

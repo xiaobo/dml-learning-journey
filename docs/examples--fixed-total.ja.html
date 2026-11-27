@@ -27,57 +27,61 @@
 <td align="right">30</td>
 </tr>
 </tbody></table>
-<p>したがって、地域 a の割合は、業務上の定義に応じて10/10または10/30になります。月フィルターがない場合、どちらの地域も合計は30です。地域 a の1月と2月の行の売上は、それぞれ10と20のままです。</p>
+<p>したがって、地域 a の割合は、業務上の定義に応じて10/10または10/30になります。月を絞り込まない場合、地域 a の分母はどちらの計算でも30です。地域 a の売上は1月が10、2月が20です。</p>
 <h2 id="save-both-definitions-then-change-the-query">両方の定義を保存してからクエリを変更する <a class="section-link" aria-label="この節へのリンク" href="#save-both-definitions-then-change-the-query">#</a></h2>
-<p>モデルでは<code>region_selected: '{sales: {-d: month}}'</code>と<code>region_all_months: '{sales: {-df: month}}'</code>を定義します。ここでの<code>month</code>はISO形式の通常の文字列であり、自動時間コンテキストの<code>dim_dt</code>ではありません。</p>
+<p>モデルでは<code>地域別選択月売上額: '{売上額: {-d: dt_month}}'</code>と<code>地域別全月売上額: '{売上額: {-df: dt_month}}'</code>を定義します。時間ディメンション<code>dt_month</code>はテーブルの列<code>month</code>から日付を読み取ります。</p>
 <details><summary>ファイル全体: fixed/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+売上明細:
   type: dataset
   table: FACT
-  dimension: [id]
+  dimension: [番号]
   columns:
-    id:
-    region:
-    month:
-    amount:
+    番号:
+      abbr: id
+    地域:
+      abbr: region
+    dt_month:
+      abbr: month
+    注文金額:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-region_selected:
+    売上額: SUM({注文金額})
+地域別選択月売上額:
   type: measure
-  formula: '{sales: {-d: month}}'
-region_all_months:
+  formula: '{売上額: {-d: dt_month}}'
+地域別全月売上額:
   type: measure
-  formula: '{sales: {-df: month}}'
-running_sales:
+  formula: '{売上額: {-df: dt_month}}'
+累計売上額:
   type: measure
-  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  formula: 'SUM({売上額}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
 </details>
 <details><summary>ファイル全体: fixed/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
+<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month DATE,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
 </code></pre>
 </details>
 <details><summary>ファイル全体: fixed/january.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE month='2024-01-01' GROUP BY region,month ORDER BY region,month
+<pre><code class="language-sql">SELECT 地域, dt_month, AGG(売上額), AGG(地域別選択月売上額), AGG(地域別全月売上額) FROM MODEL WHERE dt_month='2024-01-01' GROUP BY 地域,dt_month ORDER BY 地域,dt_month
 </code></pre>
 </details>
 <details><summary>ファイル全体: fixed/unfiltered.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, month ORDER BY region,month
+<pre><code class="language-sql">SELECT 地域, dt_month, AGG(売上額), AGG(地域別選択月売上額), AGG(地域別全月売上額) FROM MODEL GROUP BY 地域, dt_month ORDER BY 地域,dt_month
 </code></pre>
 </details>
 
 <p>クエリはモデルを変更せずに、表示する月を選びます。検証では、すべての列と行の集合全体を比較し、<code>-df</code>によって2月の行が出力に戻らないことを確認します。</p>
 <h2 id="keep-the-demonstrated-boundary">この例の適用範囲を守る <a class="section-link" aria-label="この節へのリンク" href="#keep-the-demonstrated-boundary">#</a></h2>
-<p>この例では、地域と月による既知のグループ化を使用します。動的なピボット軸や自動小計のAPIは使用しません。通常のフィールドでの動作を確認しても、<code>dim_dt</code>の時間集計レベルが解除されることの検証にはなりません。時間を扱うクエリでフィールドを置き換える前に、<a href="examples--time-context.ja.html">累積KPIコンテキスト</a>を参照してください。</p>
+<p>この例では地域と月でグループ化します。動的なピボット軸や小計の自動計算用APIは扱いません。期間を指定して集計する方法は<a href="examples--time-context.ja.html">累計KPIの例</a>を参照してください。</p>
 <p><a hreflang="zh" href="examples--fixed-total-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
 <h2 id="run-and-interpret-the-checks">検証を実行して結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">プロジェクトをダウンロード</a>して、READMEの手順に従い、PowerShellで<code>verify.ps1</code>を実行します。dmlcにパスを通してください。新しい出力フォルダーに演習用データベースを作成し、結果と診断情報を保存します。</p>
-<p>この例は DuckDB 上で dmlc 0.3.16（ビルド 2026-11-13）を使って確認しました。実行ファイルのフィンガープリントと各検証ケースのステータスは、ダウンロードに含まれる <code>verification-summary.json</code> に記載されています。データベースでの検証とその後の実行は独立した処理です。両方が同じスナップショットを使用する保証はありません。他のデータベースエンジンでは個別に確認してください。</p>
+<p><a href="task-examples.ja.zip">プロジェクトをダウンロード</a>して、READMEの手順に従い、PowerShellで<code>verify.ps1</code>を実行します。dmlcにパスを通してください。新しい出力フォルダーに演習用データベースを作成し、結果と診断情報を保存します。</p>
+<p>この例は DuckDB 上で dmlc 0.3.16（ビルド 2026-11-27）を使って確認しました。実行ファイルのフィンガープリントと各検証ケースのステータスは、ダウンロードに含まれる <code>verification-summary.json</code> に記載されています。データベースでの検証とその後の実行は独立した処理です。両方が同じスナップショットを使用する保証はありません。他のデータベースエンジンでは個別に確認してください。</p>
 </main></body></html>

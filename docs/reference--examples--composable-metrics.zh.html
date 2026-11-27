@@ -6,55 +6,60 @@
 <p>逻辑数据集为 FACT_PROFITABILITY，其物理数据源为 TABLE_PROFITABILITY。源字段名与度量名称不同，以确保引用无歧义。源数据的完整键为 [id]。在物理表中，将 revenue_amount 和 cost_amount 定义为十进制数值类型。CSV 不包含 SQL 列类型信息，而整数除法会丢失利润率的小数部分。</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_PROFITABILITY:
+销售收入与成本:
   type: dataset
   table: TABLE_PROFITABILITY
-  dimension: [id]
+  dimension: [销售明细编号]
   columns:
-    id:
-    region:
+    销售明细编号:
+      abbr: id
+    地区:
+      abbr: region
     dt_month:
-    revenue_amount:
-    cost_amount:
+      abbr: dt_month
+    收入金额:
+      abbr: revenue_amount
+    成本金额:
+      abbr: cost_amount
   measures:
-    net_revenue: SUM({revenue_amount})
-    sales_cost: SUM({cost_amount})
+    净收入: SUM({收入金额})
+    销售成本: SUM({成本金额})
 
-gross_profit:
+毛利:
   type: measure
-  formula: '{net_revenue} - {sales_cost}'
+  formula: '{净收入} - {销售成本}'
 
-gross_margin:
+毛利率:
   type: measure
-  formula: 'DIVIDE({gross_profit}, {net_revenue})'
+  formula: 'DIVIDE({毛利}, {净收入})'
 
-gross_margin_ytd:
+本年累计毛利率:
   type: measure
-  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+  formula: 'DIVIDE({净收入: ytd} - {销售成本: ytd}, {净收入: ytd})'
 
-gross_margin_prior_ytd:
+上年同期累计毛利率:
   type: measure
-  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+  formula: 'DIVIDE({净收入: {ytd, ya}} - {销售成本: {ytd, ya}}, {净收入: {ytd, ya}})'
 
-margin_change_pp:
+毛利率变动百分点:
   type: measure
-  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
+  formula: '100 * ({本年累计毛利率} - {上年同期累计毛利率})'
 </code></pre>
 <p><a href="profitability-model.dml">下载 model.dml</a>，也可下载<a href="TABLE_PROFITABILITY.csv">CSV 格式的源数据</a>或<a href="profitability-data.json">JSON 格式的源数据</a>。</p>
 <h2 id="change-the-context">更改计算上下文 <a class="section-link" aria-label="本节链接" href="#change-the-context">#</a></h2>
 <p>2025 年 2 月，North 的收入为 300，成本为 240，利润率为 20%。1 月的收入为 100，成本为 60，利润率为 40%。年初至今的累计收入为 400，累计成本为 300，因此累计利润率为 25%，而非各月利润率的简单平均值 30%。</p>
-<p>将时间修饰符直接应用于已命名的比率：<code>formula: '{gross_margin: ytd}'</code>。这样会根据毛利率所依赖的收入和成本，重新计算整个累计期间的毛利率。各月的百分比既不相加，也不取平均值。上年同期的 YTD 使用 <code>'{gross_margin: {ytd, ya}}'</code>。</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+<p>下载包中的模型分别对净收入和销售成本使用 <code>ytd</code>。它先用累计净收入减去累计成本，再除以累计净收入。计算上年同期时，两项金额都使用 <code>{ytd, ya}</code>。</p>
+<pre><code class="language-sql">SELECT 地区, dt_month, AGG(本年累计毛利率)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY 地区, dt_month
 </code></pre>
 <h2 id="compare-the-same-period">比较同期数据 <a class="section-link" aria-label="本节链接" href="#compare-the-same-period">#</a></h2>
 <p>2024 年 1 至 2 月，North 的收入为 200，成本为 160，累计利润率为 20%。当前累计利润率为 25%，比上年同期<strong>高 5 个百分点</strong>。相对增长率为 25%。它采用不同的计算方式，并非界面显示的差值。</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+<pre><code class="language-sql">SELECT 地区, dt_month, AGG(本年累计毛利率), AGG(上年同期累计毛利率), AGG(毛利率变动百分点)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY 地区, dt_month
 </code></pre>
 <p>下载<a href="profitability-monthly.sql">月度查询</a>、<a href="profitability-cumulative.sql">累计查询</a>或<a href="profitability-comparison.sql">对比查询</a>。标准时间计算还要求在目标连接上提供编译器的 DML_CALENDAR。</p>
 <h2 id="inspect-the-evidence">查看验证记录 <a class="section-link" aria-label="本节链接" href="#inspect-the-evidence">#</a></h2>

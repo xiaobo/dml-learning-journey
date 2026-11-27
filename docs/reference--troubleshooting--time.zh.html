@@ -11,10 +11,10 @@
 <p><strong>错误</strong>：<code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>。<strong>修正</strong>：<code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>。排除尚未结束的当月。</p>
 <p><a id="p32"></a></p>
 <h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. 在按完整期间执行 GROUP BY 时使用 ytd 修饰符 <a class="section-link" aria-label="本节链接" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
-<p><strong>错误</strong>：<code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>：<code>ytd</code> 返回累计值。以 <code>dt_date</code> 为分组层级：<code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>。</p>
+<p><strong>错误</strong>：<code>SELECT dt_year, AGG(销售额, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>：<code>ytd</code> 返回累计值。以 <code>dt_date</code> 为分组层级：<code>SELECT dt_date, AGG(销售额, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>。</p>
 <p><a id="p33"></a></p>
 <h2 id="p33-period-to-date-with-date-range">P33. 计算期初至今累计值时指定了日期范围 <a class="section-link" aria-label="本节链接" href="#p33-period-to-date-with-date-range">#</a></h2>
-<p><strong>错误</strong>：计算 YTD 时使用 <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code>。<strong>修正</strong>：将 <code>WHERE dt_date = date(current_date)</code> 与 <code>AGG(sales, 'ytd')</code> 搭配使用。日期范围由修饰符确定。</p>
+<p><strong>错误</strong>：计算 YTD 时使用 <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code>。<strong>修正</strong>：将 <code>WHERE dt_date = date(current_date)</code> 与 <code>AGG(销售额, 'ytd')</code> 搭配使用。日期范围由修饰符确定。</p>
 <hr>
 <h2 id="category-compilation-and-validation">类别：编译与验证 <a class="section-link" aria-label="本节链接" href="#category-compilation-and-validation">#</a></h2>
 <p><a id="p59"></a></p>
@@ -22,15 +22,15 @@
 <p><strong>错误</strong>：在 <code>去年同期出厂价金额</code> 的合计为零时使用 <code>AGG(销售额, 'yoy')</code>。<strong>修正</strong>：在承诺提供同比解读之前，先通过明细查询检查 <code>SUM(去年同期出厂价金额)</code>。</p>
 <h2 id="extra-month-after-the-latest-source-data">结果多出源数据最后一个月之后的月份 <a class="section-link" aria-label="本节链接" href="#extra-month-after-the-latest-source-data">#</a></h2>
 <p>比较期间时，请明确指定报表的月份范围。全外连接可以保留任一期间中存在的分组。当 12 月的销售额作为上期销售额与 1 月对齐时，未限制日期范围的查询可能会包含 1 月，即使该月不在报表范围内。</p>
-<p>此示例使用 2024 年 1 月至 2025 年 12 月的数据，每个月的五个类别都有销售额。模型定义了 <code>revenue: SUM({amount})</code>、名为 <code>dt_month</code> 的月份维度，以及 <code>revenue_mom: '{revenue: pop}'</code>。</p>
-<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+<p>此示例使用 2024 年 1 月至 2025 年 12 月的数据，每个月的五个类别都有销售额。模型定义了 <code>收入: SUM({销售金额})</code>、名为 <code>dt_month</code> 的月份维度，以及 <code>revenue_mom: '{收入: pop}'</code>。</p>
+<pre><code class="language-sql">SELECT dt_month, 类别, AGG(收入), AGG(revenue_mom)
 FROM MODEL
 WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
-GROUP BY dt_month, category
+GROUP BY dt_month, 类别
 </code></pre>
 <p>在示例数据上，此查询返回 120 行，结果与手写的 SQL 一致。去掉日期筛选条件后，验证的查询返回 125 行。多出的五行属于 2026 年 1 月。这些分组只有 12 月的销售额参与计算，因此本期收入和增长率均为 NULL。</p>
 <h3 id="reconcile-both-periods-by-category">按类别核对两个期间的收入 <a class="section-link" aria-label="本节链接" href="#reconcile-both-periods-by-category">#</a></h3>
-<p>如果报表用于比较两个期间的总收入，请保留在报表月份范围内任一期间有收入的类别。要查看两个期间的收入，请将 <code>AGG({revenue: pp}) AS previous_revenue</code> 添加到 SELECT 列表中。</p>
+<p>如果报表用于比较两个期间的总收入，请保留在报表月份范围内任一期间有收入的类别。要查看两个期间的收入，请将 <code>AGG({收入: pp}) AS previous_revenue</code> 添加到 SELECT 列表中。</p>
 <table>
 <thead>
 <tr>

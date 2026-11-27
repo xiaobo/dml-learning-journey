@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指标修饰符 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页介绍修饰符的参数、筛选效果以及修饰符的组合方式。引用和内置函数见表达式和函数。细粒度聚合示例展示了完整的处理阶段。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="指标修饰符 · DML"><meta property="og:description" content="本页介绍修饰符的参数、筛选效果以及修饰符的组合方式。引用和内置函数见表达式和函数。细粒度聚合示例展示了完整的处理阶段。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--modifiers.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--modifiers.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--modifiers.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--modifiers.html">English</a></header><main><h1 id="measure-modifiers">指标修饰符</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#payload-structure">修饰符参数结构</a></li><li><a href="#time-modifiers">时间修饰符</a></li><li><a href="#function-modifiers">函数修饰符</a></li><li><a href="#dimension-modifiers">维度修饰符</a></li><li><a href="#quick-glossary-avoid-ambiguity">简明术语表（避免歧义）</a></li><li><a href="#same-dimension-modifier-conflicts">同一维度字段上的修饰符冲突</a></li><li><a href="#-df--combined--d-and--f"><code>-df</code>：兼具 <code>-d</code> 和 <code>-f</code> 的作用</a></li><li><a href="#-d-on-composite-measures-with-full-outer-join">在使用 FULL OUTER JOIN 的复合指标中使用 <code>{-d:}</code></a></li><li><a href="#combining-modifiers">组合修饰符</a></li><li><a href="#modifier-stacking">串联修饰符</a></li><li><a href="#修饰符速查">修饰符速查</a></li><li><a href="#time-modifiers-on-composite-ratios">复合比率的时间修饰符</a></li><li><a href="#fixed-axis-totals-and-output-membership">固定轴汇总与输出行范围</a></li></ul></details>
 <p>本页介绍修饰符的参数、筛选效果以及修饰符的组合方式。引用和内置函数见<a href="reference--expressions.zh.html">表达式和函数</a>。<a href="reference--examples--aggregation.zh.html">细粒度聚合示例</a>展示了完整的处理阶段。</p>
 <h2 id="payload-structure">修饰符参数结构 <a class="section-link" aria-label="本节链接" href="#payload-structure">#</a></h2>
-<p>在 <code>{measure: {modifier_a: value, modifier_b: value}}</code> 中，外层对象有且仅有一个表示目标指标的键。内层修饰符映射可以包含多个键，但必须遵守<a href="reference--semantics.zh.html#44-modifier-schema-constraints">修饰符约束</a>。</p>
+<p>在 <code>{measure: {modifier_a: 数值, modifier_b: 数值}}</code> 中，外层对象有且仅有一个表示目标指标的键。内层修饰符映射可以包含多个键，但必须遵守<a href="reference--semantics.zh.html#44-modifier-schema-constraints">修饰符约束</a>。</p>
 <table>
 <thead>
 <tr>
@@ -11,7 +11,7 @@
 </thead>
 <tbody><tr>
 <td><code>dim_dt</code></td>
-<td>公式字符串，或包含 <code>value</code> 和 <code>range</code> 字段的对象</td>
+<td>公式字符串，或包含 <code>数值</code> 和 <code>range</code> 字段的对象</td>
 </tr>
 <tr>
 <td><code>dim_dt as date</code>, <code>dim_dt as week</code>, <code>dim_dt as month</code>, <code>dim_dt as quarter</code>, <code>dim_dt as year</code>, <code>dim_dt as hour</code></td>
@@ -19,7 +19,7 @@
 </tr>
 <tr>
 <td><code>+f</code></td>
-<td>筛选器名称字符串、筛选器名称列表，或 <code>{column: value}</code> 之类的内联对象</td>
+<td>筛选器名称字符串、筛选器名称列表，或 <code>{column: 数值}</code> 之类的内联对象</td>
 </tr>
 <tr>
 <td><code>-f</code></td>
@@ -53,11 +53,11 @@
 <td><code>pop</code>, <code>yoy</code>, <code>mom</code></td>
 </tr>
 </tbody></table>
-<p><strong>叠加</strong>。修饰符可以叠加使用。<code>AGG(sales, 'ytd', 'ya')</code> 返回上一年年初至上一年对应日期这一期间的指标值。完整的叠加规则见<a href="reference--modifiers.zh.html#25-modifier-stacking">修饰符叠加</a>。</p>
+<p><strong>叠加</strong>。修饰符可以叠加使用。<code>AGG(销售额, 'ytd', 'ya')</code> 返回上一年年初至上一年对应日期这一期间的指标值。完整的叠加规则见<a href="reference--modifiers.zh.html#25-modifier-stacking">修饰符叠加</a>。</p>
 <p><strong>时间上下文</strong>。时间修饰符要求 <code>dim_dt</code> 可解析，并且必须满足相应宏的前置条件。按时间字段分组是最明确的方式，时间筛选器也可以提供上下文。参见 <a href="reference--model-query-sql.zh.html#35-group-by-rules">Model Query 时间规则</a>。</p>
 <p>使用 <code>dim_dt</code> 进行<strong>周期转换</strong></p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({销售额: {dim_dt as quarter: pp}}) as 上季销售额
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p>即使查询按年份和季度分组，<code>dim_dt as quarter</code> 也会让 <code>pp</code> 按季度粒度计算。</p>
@@ -95,30 +95,30 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 <tr>
 <td>原子指标 + 源列谓词</td>
-<td>支持。例如，<code>{sales: {+f: "status = 1"}}</code> 会生成带条件的 SUM。</td>
+<td>支持。例如，<code>{销售额: {+f: "订单状态 = 1"}}</code> 会生成带条件的 SUM。</td>
 </tr>
 <tr>
 <td>简单复合指标 + 源列谓词</td>
-<td>筛选条件会传递给该指标所依赖的原子指标。已用 <code>divide({sales}, {cnt})</code> 验证。仅当所有依赖项都应应用该筛选条件时使用。</td>
+<td>筛选条件会传递给该指标所依赖的原子指标。已用 <code>divide({销售额}, {销售笔数})</code> 验证。仅当所有依赖项都应应用该筛选条件时使用。</td>
 </tr>
 <tr>
 <td>带有 <code>+d</code> 和源列 <code>+f</code> 的原子指标</td>
 <td>在已检查的 AVG 上卷聚合中受支持。请检查筛选是否先于细粒度聚合。</td>
 </tr>
 <tr>
-<td>引用聚合指标的谓词，例如 <code>"{cnt} &gt; 3"</code></td>
+<td>引用聚合指标的谓词，例如 <code>"{销售笔数} &gt; 3"</code></td>
 <td>会被拒绝，并返回 <code>cannot use +f modifier with measure(s)</code>。请采用<a href="reference--examples--aggregation.zh.html#26a-fine-grain-filter-then-d-roll-up">细粒度筛选示例</a>中的做法。</td>
 </tr>
 </tbody></table>
 <p>单独使用带筛选条件的原子指标引用时，按当前查询粒度求值。需要计算每个实体的值时，请保留 <code>+d</code> 和显式的外层聚合，尤其是使用 AVG、MIN、MAX、COUNT 时。没有符合条件的输入时，条件式 SUM 返回 NULL。显式指定 <code>ELSE 0</code> 的语义不同。按条件筛选聚合输入时，仅含未通过筛选的行的分组仍可能保留。</p>
 <p><strong>窗口函数 fn 宏</strong>会在编译生成的 SQL 中生成 <code>rank() over (...)</code>。在 Model Query SQL 中，可使用 <code>AGG(measure, 'rank')</code> 或 <code>AGG({measure: rank})</code> 形式。完整列表和公式见 <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a>。</p>
 <p><code>.dml</code> 中的<strong>筛选修饰符</strong>（以列为目标）</p>
-<pre><code class="language-yaml">completed_sales:
+<pre><code class="language-yaml">已完成订单销售额:
     type: measure
-    formula: "{amount: {+f: {status: 'completed'}}}"
+    formula: "{销售金额: {+f: {订单状态: 'completed'}}}"
 </code></pre>
 <p>Model Query SQL 中的<strong>筛选修饰符</strong></p>
-<pre><code class="language-sql">SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+<pre><code class="language-sql">SELECT AGG(销售额, '+f', 地区 = 'North') FROM MODEL
 </code></pre>
 <p><a id="23-dimension-modifiers"></a></p>
 <h2 id="dimension-modifiers">维度修饰符 <a class="section-link" aria-label="本节链接" href="#dimension-modifiers">#</a></h2>
@@ -224,12 +224,12 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 </tbody></table>
 <p><strong>示例：各门店内的品牌销售额占比</strong>。分子保留所选品牌，分母包含所有品牌。</p>
-<pre><code class="language-yaml">brand_share:
+<pre><code class="language-yaml">品牌销售占比:
     type: measure
-    formula: 'divide({sales} * 100.0, {sales: {-df: brand_id}})'
+    formula: 'divide({销售额} * 100.0, {销售额: {-df: brand_id}})'
 </code></pre>
-<p>在查询粒度为 <code>[store_id, brand_id]</code> 时，<code>brand_id</code> 上的查询筛选条件应用于分子。分母移除该字段及其筛选条件，同时保留门店上下文。</p>
-<p><strong>依赖关系追踪</strong>。编译器会追踪 <code>pk()</code> 链上的依赖关系。对 <code>store_id</code> 应用 <code>-df</code> 时，<code>客户标准名称</code>（<code>pk({store_id}).MDM_STORE(store_id).store_name</code>）上的筛选条件会被阻止，因为该列依赖于 <code>store_id</code>。</p>
+<p>在查询粒度为 <code>[门店编号, brand_id]</code> 时，<code>brand_id</code> 上的查询筛选条件应用于分子。分母移除该字段及其筛选条件，同时保留门店上下文。</p>
+<p><strong>依赖关系追踪</strong>。编译器会追踪 <code>pk()</code> 链上的依赖关系。对 <code>门店编号</code> 应用 <code>-df</code> 时，<code>客户标准名称</code>（<code>pk({门店编号}).MDM_STORE(门店编号).门店名称</code>）上的筛选条件会被阻止，因为该列依赖于 <code>门店编号</code>。</p>
 <p><strong>其他系统中的对应做法</strong></p>
 <table>
 <thead>
@@ -260,16 +260,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <td>使用带筛选条件的指标（在指标上设置 <code>filters:</code>）。</td>
 </tr>
 </tbody></table>
-<pre><code class="language-sql">-- Product share within category
-SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
-FROM MODEL GROUP BY category, product
+<pre><code class="language-sql">-- Product 占比 within 类别
+SELECT 类别, 商品,
+       AGG(销售额) as 商品销售额,
+       AGG({销售额: {dimension: [类别]}}) as 品类销售总额
+FROM MODEL GROUP BY 类别, 商品
 </code></pre>
 <pre><code class="language-sql">-- Remove time grouping while retaining the selected time filter
-SELECT region, AGG({sales: {-d: dim_dt}}) as selected_period_sales
+SELECT 地区, AGG({销售额: {-d: dim_dt}}) as 所选期间销售额
 FROM MODEL WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region
+GROUP BY 地区
 </code></pre>
 <p><a id="23b--d-on-composite-measures-with-full-outer-join"></a></p>
 <h2 id="-d-on-composite-measures-with-full-outer-join">在使用 FULL OUTER JOIN 的复合指标中使用 <code>{-d:}</code> <a class="section-link" aria-label="本节链接" href="#-d-on-composite-measures-with-full-outer-join">#</a></h2>
@@ -279,33 +279,33 @@ GROUP BY region
 <h2 id="combining-modifiers">组合修饰符 <a class="section-link" aria-label="本节链接" href="#combining-modifiers">#</a></h2>
 <p>可在同一个引用中组合多个修饰符，但必须遵守<a href="reference--modifiers.zh.html#same-dimension-d-with--d--df--illegal">同一维度中的冲突规则</a>和<a href="reference--semantics.zh.html#44-modifier-schema-constraints">修饰符约束</a>：</p>
 <pre><code class="language-yaml"># Filter + dimension (outer SUM rolls +d back to query grain)
-formula: 'SUM({sales: {+d: customer, +f: {region: "North"}}})'
+formula: 'SUM({销售额: {+d: 客户, +f: {地区: "North"}}})'
 
 # Legal: +d and -d on DIFFERENT fields
-formula: 'SUM({sales: {+d: customer, -d: brand}})'
+formula: 'SUM({销售额: {+d: 客户, -d: 品牌}})'
 
 # Rejected: the same field cannot appear in +d and -d or -df in one modifier object:
 # formula: 'SUM({sales: {+d: store_id, -d: store_id}})'
 # formula: '{sales: {+d: store_id, -df: store_id}}'
 
 # Time + dimension
-formula: '{sales: {+d: customer}, yoy}'
+formula: '{销售额: {+d: 客户}, yoy}'
 
 # Dimension + rank
-formula: '{sales: {-d: dim_dt, rank}}'
+formula: '{销售额: {-d: dim_dt, rank}}'
 
 # Dimension + filter removal (ratio with deferred filters)
-formula: 'divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})'
+formula: 'divide({销售额: {-df: brand_id}} * 100.0, {销售额: {-df: [门店编号, brand_id]}})'
 
 # Filter + absolute grain (e.g., ratio numerator/denominator at different grains)
-formula: 'DIVIDE({sales: {+f: "status = 1", dimension: [prod_id]}}, {sales: {+f: "status = 1", dimension: [prod_id, store_id]}})'
+formula: 'DIVIDE({销售额: {+f: "订单状态 = 1", dimension: [商品编号]}}, {销售额: {+f: "订单状态 = 1", dimension: [商品编号, 门店编号]}})'
 </code></pre>
 <p>在 Model Query SQL 中：</p>
-<pre><code class="language-sql">SELECT product,
-       AGG({sales: {-d: dt_date, rank}}) as all_time_rank
+<pre><code class="language-sql">SELECT 商品,
+       AGG({销售额: {-d: dt_date, rank}}) as 历年排名
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
 <p><a id="25-modifier-stacking"></a></p>
 <h2 id="modifier-stacking">串联修饰符 <a class="section-link" aria-label="本节链接" href="#modifier-stacking">#</a></h2>
@@ -318,17 +318,17 @@ GROUP BY product
 #     type: measure
 #     formula: '{sales: yoy}'
 #   ...then: {sales_yoy: rank}
-q_col: '{sales: {yoy, rank}}'
+q_col: '{销售额: {yoy, rank}}'
 </code></pre>
-<p><strong>时间修饰符与多路径函数：</strong> 在已验证的构建版本中，编译器将 <code>ytd</code> 应用于 <code>yoy</code> 的当前期间分支和比较期间分支。在记录的月度验证中，<code>{sales: {yoy, ytd}}</code> 和 <code>{sales: {ytd, yoy}}</code> 生成了完全相同的 SQL：用 YTD 销售额除以上一年的 YTD 销售额，再减去 1。该结果不是各月增长率之和。请勿按类别对修饰符排序，也不要仅凭自动生成的中间指标名称推断出不同的含义。</p>
-<p><code>firstday</code> 等宏会改变定义行或汇总值时所用的层级，在多路径计算中还受额外约束。使用前，请编译实际要用的组合并检查编译结果。编写含 YAML 指示符的 <code>+f</code> 表达式时，请用引号括起表达式，例如 <code>{sales: {+f: "amount &gt; 5", yoy}}</code>。</p>
+<p><strong>时间修饰符与多路径函数：</strong> 在已验证的构建版本中，编译器将 <code>ytd</code> 应用于 <code>yoy</code> 的当前期间分支和比较期间分支。在记录的月度验证中，<code>{销售额: {yoy, ytd}}</code> 和 <code>{销售额: {ytd, yoy}}</code> 生成了完全相同的 SQL：用 YTD 销售额除以上一年的 YTD 销售额，再减去 1。该结果不是各月增长率之和。请勿按类别对修饰符排序，也不要仅凭自动生成的中间指标名称推断出不同的含义。</p>
+<p><code>firstday</code> 等宏会改变定义行或汇总值时所用的层级，在多路径计算中还受额外约束。使用前，请编译实际要用的组合并检查编译结果。编写含 YAML 指示符的 <code>+f</code> 表达式时，请用引号括起表达式，例如 <code>{销售额: {+f: "销售金额 &gt; 5", yoy}}</code>。</p>
 <p><strong>复用中间指标。</strong> 创建新的中间指标前，编译器会在现有指标中查找公式相同的指标，匹配时会考虑展开式、简写形式或映射形式。如果用户定义的指标或先前生成的指标匹配，编译器就会复用它。这样可以避免创建重复的中间指标，也便于用户自行指定中间指标的名称。</p>
-<p><strong>处理名称冲突。</strong> 如果自动生成的中间指标名称（如 <code>sales_yoy</code>）与某个现有指标同名，但公式<em>不同</em>，编译器会追加数字后缀，得到 <code>sales_yoy__2</code>、<code>sales_yoy__3</code> 等名称。</p>
+<p><strong>处理名称冲突。</strong> 如果自动生成的中间指标名称（如 <code>销售额同比</code>）与某个现有指标同名，但公式<em>不同</em>，编译器会追加数字后缀，得到 <code>sales_yoy__2</code>、<code>sales_yoy__3</code> 等名称。</p>
 <p><strong>兼容性：</strong> 宏的前置条件、时间上下文、允许使用的维度、键是否重复以及重新聚合都会影响串联是否有效。请在目标构建版本上编译实际要用的组合。同时使用两个范围宏或重复使用宏键，并不是通用的组合方式。如果显式写出各个阶段后仍有错误，请保留诊断信息和复现用例。仅为中间指标手动命名，无法证明两种写法等价。</p>
 <h2 id="修饰符速查">修饰符速查 <a class="section-link" aria-label="本节链接" href="#修饰符速查">#</a></h2>
-<p>修饰符只调整本次指标引用。用 <code>{sales: {+f: {status: completed}}}</code> 限定该指标的输入。用 <code>+d</code> 增加计算分组，再用外层聚合回到报表分组。用 <code>-d</code> 移除分组维度，用 <code>-df</code> 同时移除该维度上的相关筛选。期间修饰符 <code>pp</code> 取上期，<code>pop</code> 算环比，<code>ytd</code> 算年初至今。多个修饰符按声明顺序应用。</p>
+<p>修饰符只调整本次指标引用。用 <code>{销售额: {+f: {订单状态: completed}}}</code> 限定该指标的输入。用 <code>+d</code> 增加计算分组，再用外层聚合回到报表分组。用 <code>-d</code> 移除分组维度，用 <code>-df</code> 同时移除该维度上的相关筛选。期间修饰符 <code>pp</code> 取上期，<code>pop</code> 算环比，<code>ytd</code> 算年初至今。多个修饰符按声明顺序应用。</p>
 <h2 id="time-modifiers-on-composite-ratios">复合比率的时间修饰符 <a class="section-link" aria-label="本节链接" href="#time-modifiers-on-composite-ratios">#</a></h2>
-<p>时间修饰符可直接应用于具名的复合指标。例如，用 <code>formula: '{gross_margin: ytd}'</code> 定义 <code>gross_margin_ytd</code>，其中 <code>gross_margin</code> 用毛利润除以营业收入。在累计期间内，系统先重新计算所依赖的指标，再计算比率，不会把各月的百分比相加。参见<a href="reference--examples--composable-metrics.zh.html">完整的盈利能力示例</a>。这个经过验证的比率示例并不保证任意非可加公式都能在不检查其计算含义的情况下向上汇总。</p>
+<p>时间修饰符可直接应用于具名的复合指标。例如，用 <code>formula: '{毛利率: ytd}'</code> 定义 <code>本年累计毛利率</code>，其中 <code>毛利率</code> 用毛利润除以营业收入。在累计期间内，系统先重新计算所依赖的指标，再计算比率，不会把各月的百分比相加。参见<a href="reference--examples--composable-metrics.zh.html">完整的盈利能力示例</a>。这个经过验证的比率示例并不保证任意非可加公式都能在不检查其计算含义的情况下向上汇总。</p>
 <h2 id="fixed-axis-totals-and-output-membership">固定轴汇总与输出行范围 <a class="section-link" aria-label="本节链接" href="#fixed-axis-totals-and-output-membership">#</a></h2>
-<p><a href="examples--fixed-total-zh.html">固定汇总示例</a>使用普通的 <code>month</code> 字段，查询按地区和月份分组。选中一月时，<code>-d: month</code> 的分母仍只计入一月，而 <code>-df: month</code> 的分母计入测试数据中的两个月。两个查询仍然只输出一月的行。这个测试用例无法验证动态透视轴、小计级谓词或任意情况下移除 <code>dim_dt</code> 的行为。</p>
+<p><a href="examples--fixed-total-zh.html">固定汇总示例</a>使用日期字段 <code>dt_month</code>，查询按地区和月份分组。选中一月时，<code>-d: dt_month</code> 的分母仍只计入一月，而 <code>-df: dt_month</code> 的分母计入测试数据中的两个月。两个查询仍然只输出一月的行。这个测试用例无法验证动态透视轴、小计级谓词或任意情况下移除 <code>dim_dt</code> 的行为。</p>
 </main></body></html>

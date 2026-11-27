@@ -71,15 +71,15 @@
 <p><code>FROM</code> 句には拡張子 <code>.dml</code> を付けないでください。<code>queries/</code> 配下にディレクトリが入れ子になっている場合は、<code>.dml</code> ファイルを SQL ファイルと同じディレクトリに置くか、<code>--model=</code> でモデルファイルがあるディレクトリを指定します。</p>
 <p><code>setup</code>（<code>dmlc -s</code>）には<strong><code>.dml</code> ファイル</strong>を渡します。ディレクトリは指定できません。</p>
 <pre><code class="language-sql">-- Query SQL using model.dml
-SELECT product, dt_month, AGG(sales)
+SELECT 商品, dt_month, AGG(売上高)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month', '-1 month')
-GROUP BY product, dt_month
+GROUP BY 商品, dt_month
 
 -- Query SQL using acme.dml (dmlc --model=acme.dml …  or  --model=&lt;dir containing acme.dml&gt;)
-SELECT product, dt_month, AGG(sales)
+SELECT 商品, dt_month, AGG(売上高)
 FROM acme
-GROUP BY product, dt_month
+GROUP BY 商品, dt_month
 </code></pre>
 <blockquote>
 <p>IDE でモデルがピン留めされている場合、ナビゲーション機能が <code>FROM MODEL</code> をそのモデルへの参照として扱うことがあります。CLI では、<code>FROM</code> の後の名前を、使用するファイルまたは <code>--model=&lt;dir&gt;</code> 配下で見つかる <code>.dml</code> ファイルに合わせます。</p>
@@ -87,8 +87,8 @@ GROUP BY product, dt_month
 <h3 id="detail-queries">明細クエリ <a class="section-link" aria-label="この節へのリンク" href="#detail-queries">#</a></h3>
 <p>データセットの行を取得するには <code>FROM &lt;model&gt;.&lt;dataset&gt;</code> を使います。<code>GROUP BY</code> を直接指定すると拒否されます。グループごとの指標を取得するには、再利用可能な指標を定義し、モデルにクエリを実行します。モデルの集計クエリでは <code>AGG()</code> を使います。</p>
 <pre><code class="language-sql">-- Query SQL using model.dml
-SELECT dt_date, transaction_id, raw_amount
-FROM MODEL.transactions
+SELECT dt_date, 取引番号, 元金額
+FROM MODEL.取引明細
 WHERE dt_month = date(current_date, 'start of month')
 
 -- Query SQL using acme.dml
@@ -127,7 +127,7 @@ FROM acme.Claim
 <tr>
 <td>列名に直接付ける <code>{...}</code></td>
 <td>波かっこは <code>.dml</code> 専用です。ここで使うと通知なしで取り除かれます。</td>
-<td><code>SELECT product, AGG(sales)</code> のように、名前をそのまま指定します。</td>
+<td><code>SELECT 商品, AGG(売上高)</code> のように、名前をそのまま指定します。</td>
 </tr>
 </tbody></table>
 <p>利用側のクエリに適用されるこれらの制約は、DML 全体で SQL の使用を禁止するものではありません。データセットの <code>sql:</code> では、サポートされている結合、UNION、サブクエリを使ってリレーションを用意できます。宣言済みのデータセットは <code>{DATASET}</code> として参照し、物理テーブルの所有関係に従ってください。そのリレーションには正しいキーを明示する必要があります。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセットリファレンス</a>では、検査対象となる派生リレーションの検証方法を説明します。データセットの SQL に組み込んだフィルターは、引き続きデータセットに含まれる行を決める条件になります。SQL をモデルに移しても、すべてのルールが利用側のコンテキストに自動で対応するわけではありません。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセット定義</a>を参照してください。</p>
@@ -139,10 +139,10 @@ FROM acme.Claim
 <li><strong>明細</strong>では、すべての列を名前で直接指定します。重複のない値の一覧を取得するには <code>DISTINCT</code> を追加します。</li>
 </ul>
 <pre><code class="language-sql">-- Aggregation
-SELECT product, dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy FROM MODEL GROUP BY product, dt_month
+SELECT 商品, dt_month, AGG(売上高), AGG({売上高: yoy}) AS 売上高前年同期比 FROM MODEL GROUP BY 商品, dt_month
 
 -- Detail
-SELECT DISTINCT product FROM MODEL.transactions
+SELECT DISTINCT 商品 FROM MODEL.取引明細
 </code></pre>
 <p><a id="33-alias-rules"></a></p>
 <h3 id="alias-rules">エイリアスのルール <a class="section-link" aria-label="この節へのリンク" href="#alias-rules">#</a></h3>
@@ -154,33 +154,33 @@ SELECT DISTINCT product FROM MODEL.transactions
 </tr>
 </thead>
 <tbody><tr>
-<td><code>AGG(sales)</code></td>
-<td>不要です。自動で <code>sales</code> がエイリアスになります。</td>
+<td><code>AGG(売上高)</code></td>
+<td>不要です。自動で <code>売上高</code> がエイリアスになります。</td>
 </tr>
 <tr>
-<td><code>AGG(sales) AS sales</code></td>
+<td><code>AGG(売上高) AS 売上高</code></td>
 <td>使用できますが冗長です（そのまま出力されます）。</td>
 </tr>
 <tr>
-<td><code>AGG({sales: yoy})</code></td>
-<td><strong>必要</strong>です。<code>AS sales_yoy</code> を使います。</td>
+<td><code>AGG({売上高: yoy})</code></td>
+<td><strong>必要</strong>です。<code>AS 売上高前年同期比</code> を使います。</td>
 </tr>
 <tr>
-<td><code>AGG(sales, 'pop') AS sales</code></td>
+<td><code>AGG(売上高, 'pop') AS 売上高</code></td>
 <td><strong>誤り</strong>です。循環参照になるため、<code>AS sales_mom</code> を使います。</td>
 </tr>
 <tr>
-<td><code>AGG({sales: yoy}) AS sales</code></td>
-<td><strong>誤り</strong>です。循環参照になるため、<code>AS sales_yoy</code> を使います。</td>
+<td><code>AGG({売上高: yoy}) AS 売上高</code></td>
+<td><strong>誤り</strong>です。循環参照になるため、<code>AS 売上高前年同期比</code> を使います。</td>
 </tr>
 </tbody></table>
-<p>選択リストの前の項目で定義したエイリアスは、指標ではなく<strong>SQL の結果列</strong>を表します。<code>AGG(sales) AS current_value</code> の後に <code>AGG(current_value)</code> と記述する場合のように、後続の式でその名前を使うと、先に定義した結果列が参照されます。無関係な同名の DML 指標に解決されることはありません。</p>
-<p>修飾子付きの指標参照に、その指標自体の名前をエイリアスとして付けると（例 <code>AGG(sales, 'pop') AS sales</code>）、コンパイラーがエイリアスを指標の再定義として扱うため、循環参照になります。<code>AS sales_mom</code> のように別の名前を使います。修飾子のない <code>AGG(sales) AS sales</code> は冗長ですが、値をそのまま返す指定として受け付けられます。</p>
-<p><code>AGG</code> の第1引数には指標名を指定します。通常の値を取得するには <code>AGG(sales)</code> を、この参照を修飾するには <code>AGG({sales: yoy})</code> を使います。モデルクエリの SQL では、それ以外の箇所で列名をそのまま指定します。</p>
+<p>選択リストの前の項目で定義したエイリアスは、指標ではなく<strong>SQL の結果列</strong>を表します。<code>AGG(売上高) AS current_value</code> の後に <code>AGG(current_value)</code> と記述する場合のように、後続の式でその名前を使うと、先に定義した結果列が参照されます。無関係な同名の DML 指標に解決されることはありません。</p>
+<p>修飾子付きの指標参照に、その指標自体の名前をエイリアスとして付けると（例 <code>AGG(売上高, 'pop') AS 売上高</code>）、コンパイラーがエイリアスを指標の再定義として扱うため、循環参照になります。<code>AS sales_mom</code> のように別の名前を使います。修飾子のない <code>AGG(売上高) AS 売上高</code> は冗長ですが、値をそのまま返す指定として受け付けられます。</p>
+<p><code>AGG</code> の第1引数には指標名を指定します。通常の値を取得するには <code>AGG(売上高)</code> を、この参照を修飾するには <code>AGG({売上高: yoy})</code> を使います。モデルクエリの SQL では、それ以外の箇所で列名をそのまま指定します。</p>
 <p><a id="34-where-rules"></a></p>
 <h3 id="where-rules">WHERE のルール <a class="section-link" aria-label="この節へのリンク" href="#where-rules">#</a></h3>
 <ul>
-<li><code>WHERE customer = 'John Doe'</code> のように、列名をそのまま指定します。</li>
+<li><code>WHERE 顧客 = 'John Doe'</code> のように、列名をそのまま指定します。</li>
 <li>述語の順序に構文上の制約はありません。</li>
 <li>期間の初日を指定する形式で時間フィルターを記述します。例 <code>dt_month = '2024-01-01'</code>。</li>
 <li>単一期間の指定には、<code>BETWEEN</code> よりも <code>=</code> を優先します。</li>
@@ -194,12 +194,12 @@ SELECT DISTINCT product FROM MODEL.transactions
 <li>時間修飾子には、解決済みの時間コンテキストが必要です。グループ化に使う時間フィールド、または時間フィルターでそのコンテキストを指定できます。複数期間のレポートでは、時間で明示的にグループ化する方法を優先してください。単一期間に絞るフィルターで、出力に現れない時間コンテキストを指定することもできます。</li>
 </ul>
 <pre><code class="language-sql">-- Correct: time modifier + matching time field in GROUP BY
-SELECT dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy
+SELECT dt_month, AGG(売上高), AGG({売上高: yoy}) AS 売上高前年同期比
 FROM MODEL
 GROUP BY dt_month
 
 -- Wrong: yoy with neither a grouped time field nor a time filter
-SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
+SELECT 商品, AGG(売上高), AGG({売上高: yoy}) FROM MODEL GROUP BY 商品
 </code></pre>
 <p><a id="36-order-by--limit"></a></p>
 <h3 id="order-by--limit">ORDER BY / LIMIT <a class="section-link" aria-label="この節へのリンク" href="#order-by--limit">#</a></h3>
@@ -225,18 +225,18 @@ SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
 <p><code>dt_year</code> と <code>dt_month</code> の両方を指定した検証対象のクエリは、生成された出力に <code>dt_year</code> がないため、コンパイル時に拒否されます。この組み合わせで 2 フィールドのレポートが正常に作成できるとは見なさないでください。年が表示ラベルとしてのみ必要な場合は、必要な月単位でクエリを実行し、その後で月のキーからラベルを生成してください。結果の各行がどの単位で定義されているかは別途確認してください。この結果から、複数の時間フィールドを含むすべてのクエリがサポート対象外だとは判断できません。</p>
 <p><a id="39-having"></a></p>
 <h3 id="having">HAVING <a class="section-link" aria-label="この節へのリンク" href="#having">#</a></h3>
-<pre><code class="language-sql">-- Customers with outstanding balance
-SELECT customer, AGG(outstanding)
+<pre><code class="language-sql">-- Customers with 未払額 balance
+SELECT 顧客, AGG(未払額)
 FROM MODEL
-GROUP BY customer
-HAVING AGG(outstanding) &gt; 0
+GROUP BY 顧客
+HAVING AGG(未払額) &gt; 0
 
 -- Products selling less than last month
-SELECT product, AGG(sales) as this_month, AGG(sales, 'pp') as last_month
+SELECT 商品, AGG(売上高) as 当月売上高, AGG(売上高, 'pp') as 前月売上高
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-HAVING AGG(sales) &lt; AGG(sales, 'pp')
+GROUP BY 商品
+HAVING AGG(売上高) &lt; AGG(売上高, 'pp')
 </code></pre>
 <p><strong>指標をディメンションとして使う場合の注意:</strong> 分類ラベル、またはラベルと同じ粒度の別の指標、あるいはその両方に対する述語は、<strong>ラベル生成後</strong>のフィルターです。Model Query の記述には <code>HAVING</code> が現れることがありますが、意味上、フィルターはラベルが生成された後に適用されます。コンパイルされた SQL では、多くの場合、ラベル生成後の CTE に対する <code>WHERE</code> として適用されます。ドキュメントに <code>HAVING</code> と記載されていても、分類前にフィルタリングできると解釈しないでください。<a href="explanation--measure-as-dimension.ja.html#label-channel-filters">分類ラベルのフィルター</a>を参照してください。</p>
 <p><a id="310-quick-reference"></a></p>
@@ -250,39 +250,39 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </thead>
 <tbody><tr>
 <td>合計</td>
-<td><code>SELECT AGG(sales) FROM MODEL</code></td>
+<td><code>SELECT AGG(売上高) FROM MODEL</code></td>
 </tr>
 <tr>
 <td>ディメンション別</td>
-<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT 商品, AGG(売上高) FROM MODEL GROUP BY 商品</code></td>
 </tr>
 <tr>
 <td>フィルターあり</td>
-<td><code>SELECT AGG(sales) FROM MODEL WHERE region = 'North'</code></td>
+<td><code>SELECT AGG(売上高) FROM MODEL WHERE 地域 = 'North'</code></td>
 </tr>
 <tr>
 <td>上位 N 件</td>
-<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product ORDER BY AGG(sales) DESC LIMIT 10</code></td>
+<td><code>SELECT 商品, AGG(売上高) FROM MODEL GROUP BY 商品 ORDER BY AGG(売上高) DESC LIMIT 10</code></td>
 </tr>
 <tr>
 <td>成長率</td>
-<td><code>SELECT dt_month, AGG(sales, 'yoy') AS sales_yoy FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(売上高, 'yoy') AS 売上高前年同期比 FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>期間比較</td>
-<td><code>SELECT dt_month, AGG(sales), AGG(sales, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(売上高), AGG(売上高, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>合計に占める割合</td>
-<td><code>SELECT product, AGG({sales: pot}) AS sales_share FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT 商品, AGG({売上高: pot}) AS sales_share FROM MODEL GROUP BY 商品</code></td>
 </tr>
 <tr>
 <td>順位付け</td>
-<td><code>SELECT product, AGG(sales, 'rank') AS sales_rank FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT 商品, AGG(売上高, 'rank') AS 売上順位 FROM MODEL GROUP BY 商品</code></td>
 </tr>
 <tr>
 <td>複数レベルの集計</td>
-<td><code>SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand</code>（<code>.dml</code> またはインラインの <code>/** dml ... **/</code> で定義した <code>+d</code> 指標が必要）</td>
+<td><code>SELECT ブランド, AGG(顧客売上高合計) FROM MODEL GROUP BY ブランド</code>（<code>.dml</code> またはインラインの <code>/** dml ... **/</code> で定義した <code>+d</code> 指標が必要）</td>
 </tr>
 <tr>
 <td>インライン指標</td>
@@ -290,7 +290,7 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </tr>
 <tr>
 <td>フィルター付き指標</td>
-<td><code>SELECT AGG(sales, '+f', region = 'North') FROM MODEL</code></td>
+<td><code>SELECT AGG(売上高, '+f', 地域 = 'North') FROM MODEL</code></td>
 </tr>
 </tbody></table>
 <p>検証したビルドでは、期間比較の構文を使うと、キーの和集合に基づく結合について厳格な診断が出ることがあります。これらの例はクエリの記述形式を示しています。実行前に診断メッセージを読み、生成された結合を確認してください。</p>
@@ -312,13 +312,13 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </tr>
 <tr>
 <td>元の列の合計</td>
-<td><code>SUM(出厂价金额)</code></td>
-<td><code>销售额: SUM({出厂价金额})</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(销售额)</code> を使う</td>
+<td><code>SUM(出荷金額)</code></td>
+<td><code>売上高: SUM({出荷金額})</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(売上高)</code> を使う</td>
 </tr>
 <tr>
 <td>元の列の平均</td>
 <td><code>AVG(销售数量)</code></td>
-<td><code>均价: DIVIDE(SUM({出厂价金额}), NULLIF(SUM({销售数量}),0))</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(均价)</code> を使う</td>
+<td><code>均价: DIVIDE(SUM({出荷金額}), NULLIF(SUM({销售数量}),0))</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(均价)</code> を使う</td>
 </tr>
 <tr>
 <td>ディメンションのスカラー MIN/MAX</td>
@@ -336,14 +336,14 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 <h3 id="inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>） <a class="section-link" aria-label="この節へのリンク" href="#inline-measures--dml--">#</a></h3>
 <p><code>.dml</code> ファイルを編集せずに、Model Query SQL 内で一時的な指標を直接定義できます。コンパイラは、<code>FROM</code> で指定された <code>.dml</code> ファイル（<code>FROM MODEL</code> → <code>model.dml</code>、<code>FROM acme</code> → <code>acme.dml</code>）を読み込み、インライン定義を統合してからクエリをコンパイルします。</p>
 <pre><code class="language-sql">/** dml
-temp_sales:
+一時売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
 **/
-SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
+SELECT 商品, AGG(一時売上高) FROM MODEL GROUP BY 商品
 </code></pre>
-<p>試算の業務上の意味が関係者間で定まったら、同じ式を固定の名前で <code>.dml</code> モデルに移してください。利用者は式を繰り返し記述せずに、引き続きその指標を名前で参照できます。複数の要素から算出する利益率は、<code>DIVIDE({net_revenue} - {sales_cost}, {net_revenue})</code> としてインラインまたはモデル内で定義できます。その指標に <code>ytd</code> を適用すると、累計対象の範囲で各要素が再計算されます。表示された月次比率の平均は取りません。</p>
+<p>試算の業務上の意味が関係者間で定まったら、同じ式を固定の名前で <code>.dml</code> モデルに移してください。利用者は式を繰り返し記述せずに、引き続きその指標を名前で参照できます。複数の要素から算出する利益率は、<code>DIVIDE({純売上高} - {売上原価}, {純売上高})</code> としてインラインまたはモデル内で定義できます。その指標に <code>ytd</code> を適用すると、累計対象の範囲で各要素が再計算されます。表示された月次比率の平均は取りません。</p>
 <p><strong>使用例</strong>:</p>
 <ul>
 <li><code>.dml</code> を変更せずにその場で集計する（<a href="#311-aggregation-lookup-table">指標を使う要件</a>を満たす）</li>
@@ -381,5 +381,5 @@ SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
 <h2 id="a-time-filter-also-scopes-sibling-measures">時間フィルターは同じクエリ内の他の指標にも適用される <a class="section-link" aria-label="この節へのリンク" href="#a-time-filter-also-scopes-sibling-measures">#</a></h2>
 <p>クエリレベルの月フィルターは、YTD 指標の基準時点を指定できます。このフィルターは、同じクエリ内の通常の指標にも適用されます。<a href="examples--time-context.ja.html">単一の KPI を使う例</a>では、2 月の YTD マージンには 1 月と 2 月のデータが使われますが、通常の売上高には 2 月のデータだけが使われます。基準時点のないクエリは失敗します。カレンダー上の期間でグループ化したクエリでは、累計値はあるものの、その月の売上高がない月が結果に含まれることがあります。どの行を出力するかと、どのデータを指標の計算に使うかは別の問題です。今日の日付やファクトデータの最新日付を暗黙に基準時点として選択しないでください。</p>
 <h2 id="model-query-sql-速查">Model Query SQL クイックリファレンス <a class="section-link" aria-label="この節へのリンク" href="#model-query-sql-速查">#</a></h2>
-<p><code>FROM MODEL</code> は <code>model.dml</code> をバインドします。<code>AGG(sales)</code> で指標を参照し、<code>GROUP BY region</code> で地域ごとに 1 行を出力するよう指定します。<code>WHERE</code> でクエリの対象範囲を限定し、<code>HAVING AGG(sales) &gt; 0</code> で集計後のグループを絞り込みます。出力列名は <code>AS</code> で指定します。</p>
+<p><code>FROM MODEL</code> は <code>model.dml</code> をバインドします。<code>AGG(売上高)</code> で指標を参照し、<code>GROUP BY 地域</code> で地域ごとに 1 行を出力するよう指定します。<code>WHERE</code> でクエリの対象範囲を限定し、<code>HAVING AGG(売上高) &gt; 0</code> で集計後のグループを絞り込みます。出力列名は <code>AS</code> で指定します。</p>
 </main></body></html>

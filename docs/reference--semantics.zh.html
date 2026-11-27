@@ -176,7 +176,7 @@
 <p><strong>设计目标</strong>：在度量公式中使用 <code>dim_dt</code> 代替具体字段 <code>dt_date</code>、<code>dt_month</code> 或 <code>dt_quarter</code>，使度量无需改写公式即可用于任意时间粒度。</p>
 <p><strong>周期转换</strong>：使用 <code>dim_dt as quarter</code> 后，即使查询按年份和季度分组，<code>pp</code> 也会按季度粒度运行：</p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({销售额: {dim_dt as quarter: pp}}) as 上季销售额
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p><a id="25-standard-time-dimension-fields"></a></p>
@@ -228,14 +228,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p>如果同一个派生字段可以从多个显式时间来源导出，且无法唯一确定来源，工具必须拒绝解析，不得任意选择一个定义。</p>
 <p><a id="26-calendar-dataset"></a></p>
 <h3 id="calendar-dataset">日历数据集 <a class="section-link" aria-label="本节链接" href="#calendar-dataset">#</a></h3>
-<p>系统提供 <code>Dim Calendar</code> 数据集，用于跨时间粒度查找时间值：</p>
-<pre><code class="language-yaml">Dim Calendar:
+<p>系统提供 <code>日历</code> 数据集，用于跨时间粒度查找时间值：</p>
+<pre><code class="language-yaml">日历:
     type: dataset
     table: DML_CALENDAR
     dimension: [dt_date]
     columns:
         dt_date:
+            abbr: dt_date
         dt_week:
+            abbr: dt_week
         dt_month:
             source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
         dt_quarter:
@@ -272,7 +274,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tbody></table>
 <p>源数据上的 <code>WHERE</code> 与不满足条件时返回 NULL 的度量条件通常不能互换。前者会让仅包含不符合条件的行的分组消失，后者则可能保留这些分组。在这些层之间移动条件之前，请验证分组是否存在、同一查询中其他指标的结果、去重、联接和窗口操作的行为，以及 NULL 的语义。</p>
 <p><strong>下推规则</strong>：查询中通过 <code>filters:</code> 指定的筛选条件会在聚合前下推到数据集的 <code>WHERE</code> 子句。当 <code>-d</code> 生成粒度更粗的临时表时，筛选条件仍会生效，因此比率的分母可能变小。使用 <code>-df</code> 可阻止特定维度字段的筛选条件下推。</p>
-<p><strong>依赖关系追踪</strong>：编译器会追踪列的派生链。对 <code>store_id</code> 指定 <code>-df</code> 后，<code>store_name</code>（<code>pk({store_id}).MDM_STORE(store_id).store_name</code>）上的筛选条件不会下推，因为该列仅由 <code>store_id</code> 派生。</p>
+<p><strong>依赖关系追踪</strong>：编译器会追踪列的派生链。对 <code>门店编号</code> 指定 <code>-df</code> 后，<code>门店名称</code>（<code>pk({门店编号}).MDM_STORE(门店编号).门店名称</code>）上的筛选条件不会下推，因为该列仅由 <code>门店编号</code> 派生。</p>
 <hr>
 <p><a id="3--grain-system"></a></p>
 <h2 id="grain-system">粒度体系 <a class="section-link" aria-label="本节链接" href="#grain-system">#</a></h2>
@@ -360,13 +362,13 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 分销SKU数:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+        DISTINCTCOUNTIF({商品编号}, {销售量: {+d: 商品编号}} &gt; 0)
 
 # Distribution store count: how many stores have sales &gt; 0?
 分销客户数:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+        DISTINCTCOUNTIF({门店编号}, {销售量: {+d: 门店编号}} &gt; 0)
 
 # Average sales per store (selling power)
 卖力:
@@ -374,15 +376,15 @@ FROM MODEL GROUP BY dt_year, dt_quarter
     formula: |-
         divide({销售额}, {分销客户数})
 </code></pre>
-<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
--- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
-SELECT dt_quarter, brand,
+<pre><code class="language-sql">-- Query at 品牌 × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at 商品编号 / 门店编号 grain, then rolls up.
+SELECT dt_quarter, 品牌,
        AGG(销售额),
        AGG(分销SKU数),
        AGG(分销客户数),
        AGG(卖力)
 FROM MODEL
-GROUP BY dt_quarter, brand
+GROUP BY dt_quarter, 品牌
 </code></pre>
 <p>如果 <code>+d</code> 出现在<strong>查询维度</strong>的绑定中，而不是出现在带有显式外层聚合的指标公式中，这属于<strong>将指标用作维度</strong>（<a href="#37-measure-as-dimension">将指标用作维度</a>），而不是上述两步模式。</p>
 <p><a id="34-cross-dataset-auto-join"></a></p>
@@ -395,7 +397,7 @@ GROUP BY dt_quarter, brand
 <h3 id="grain-safety-enforcement-existing-compiler-behavior">粒度安全检查（编译器现有行为） <a class="section-link" aria-label="本节链接" href="#grain-safety-enforcement-existing-compiler-behavior">#</a></h3>
 <p>编译器在编译时检查粒度是否安全：</p>
 <ol>
-<li><p><strong>违反指标的维度约束</strong>：如果指标允许的维度为 <code>dimensions: [[customer_id]]</code>，而引用该指标的查询维度还包含 <code>dt_date</code>，编译器会拒绝该查询并给出以下消息：</p>
+<li><p><strong>违反指标的维度约束</strong>：如果指标允许的维度为 <code>dimensions: [[客户编号]]</code>，而引用该指标的查询维度还包含 <code>dt_date</code>，编译器会拒绝该查询并给出以下消息：</p>
 <pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
 </code></pre>
 <p>编译器现在会给出提示（Hint），说明 <code>...</code> 允许额外的维度字段，但列出的字段仍为必需字段，并建议使用 <code>+d</code> 添加缺少的必需字段。使用 <code>...</code> 可允许额外的维度字段，列出的字段仍为必需字段。</p>
@@ -435,27 +437,27 @@ GROUP BY dt_quarter, brand
 </thead>
 <tbody><tr>
 <td>命名指标加显式 <code>+d</code></td>
-<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
-<td>将 <code>store_id</code> 加入指标的求值维度后对指标求值，并将结果用作查询维度字段。</td>
+<td><code>- 首次购买月份: '{首次购买月份: {+d: 门店编号}}'</code></td>
+<td>将 <code>门店编号</code> 加入指标的求值维度后对指标求值，并将结果用作查询维度字段。</td>
 </tr>
 <tr>
 <td>仅使用指标名称</td>
-<td><code>- first_purchase_month</code></td>
+<td><code>- 首次购买月份</code></td>
 <td>此写法不适用于从指标派生的维度。必须在引用处显式声明完整的 <code>+d</code> 键。</td>
 </tr>
 <tr>
 <td>对 <code>{m: {+d: dim}}</code> 应用标量表达式</td>
-<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
+<td><code>- payment_day: 'cast({授权时间: {+d: payment_id}} as date)'</code></td>
 <td>对每个完整键求值一次标量表达式，并将结果用作查询维度字段。</td>
 </tr>
 <tr>
 <td>命名标量指标加查询中的 <code>+d</code></td>
-<td>先在指标中指定 <code>formula: 'cast({authorization_ts} as date)'</code>，再写 <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
+<td>先在指标中指定 <code>formula: 'cast({授权时间} as date)'</code>，再写 <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
 <td>标量表达式可复用时，优先采用这种等价写法</td>
 </tr>
 <tr>
 <td><code>dimension:</code> / <code>rank</code> 标签（无 <code>+d</code>）</td>
-<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
+<td><code>- brand_bucket: 'iif({销售额: {dimension: [品牌], rank}} &lt; 5, {品牌}, ''others'')'</code></td>
 <td>这种查询维度公式通过 <code>dimension:</code> 替换求值维度，或使用 <code>rank</code>，不属于使用 <code>+d</code> 的多轮处理关联模式。</td>
 </tr>
 </tbody></table>
@@ -465,7 +467,7 @@ GROUP BY dt_quarter, brand
 <p>设 <code>M</code> 为将指标用作维度的表达式，<code>K</code> 为其中显式指定的 <code>+d</code> 字段集合，<code>Q</code> 为常规查询维度字段集合。求值和关联的粒度为 <code>G = Q ∪ K</code>，其中不包含从指标派生的标签。内部聚合阶段不会重新定义 <code>K</code>。</p>
 <ol>
 <li><strong>按细粒度求值。</strong> 在 <code>G</code> 粒度下对每个用作维度的指标求值。常规输出指标也在 <code>G</code> 粒度下求值，并保留后续向上汇总所需的状态或组成指标。</li>
-<li><strong>按完整分类键 <code>G</code> 关联。</strong> 分类关系必须为每个完整键提供唯一一个标量值。如果分类关系和使用它的指标不在同一关系中，必须先进行关联，再按分类值对这些指标分组。按门店和月份分类时，连接条件必须同时包含门店和月份，仅使用 <code>+d: store_id</code> 不够。按更粗粒度关联时，使用方必须能取得完整键，或能证明可从已有字段推导出完整键。按更细粒度关联时，必须显式下钻并向上汇总。保留 NULL 键的处理语义以及查询数据范围的语义。</li>
+<li><strong>按完整分类键 <code>G</code> 关联。</strong> 分类关系必须为每个完整键提供唯一一个标量值。如果分类关系和使用它的指标不在同一关系中，必须先进行关联，再按分类值对这些指标分组。按门店和月份分类时，连接条件必须同时包含门店和月份，仅使用 <code>+d: 门店编号</code> 不够。按更粗粒度关联时，使用方必须能取得完整键，或能证明可从已有字段推导出完整键。按更细粒度关联时，必须显式下钻并向上汇总。保留 NULL 键的处理语义以及查询数据范围的语义。</li>
 <li><strong>汇总到查询结果粒度。</strong> 将常规指标聚合到 <code>{ measure-as-dimension fields } ∪ Q</code> 粒度。移除 <code>K</code> 中未同时出现在 <code>Q</code> 中的字段。如果某个常规指标无法安全地改写为先在 <code>G</code> 粒度下求值，再执行此汇总，则编译失败。</li>
 </ol>
 <p>其执行原理与通过 <code>+d</code> 进行多级聚合相同（参见<a href="#33-multi-level-aggregation-via-d">多级聚合</a>）。在这一用法中，下钻后得到的指标结果成为<strong>查询维度字段</strong>，而不只是复合公式的中间输入。</p>
@@ -500,24 +502,24 @@ GROUP BY dt_quarter, brand
 </ol>
 <p><a id="375-example"></a></p>
 <h4 id="example">示例</h4>
-<p>下文的 <code>first_purchase_month</code> 特指求值范围内首个<strong>月度净销售额为正</strong>的月份。<code>purchase_span</code> 显式在实体粒度上对两个端点求值，再对较细粒度的结果进行最终聚合。</p>
-<pre><code class="language-yaml">first_purchase_month:
+<p>下文的 <code>首次购买月份</code> 特指求值范围内首个<strong>月度净销售额为正</strong>的月份。<code>购买间隔</code> 显式在实体粒度上对两个端点求值，再对较细粒度的结果进行最终聚合。</p>
+<pre><code class="language-yaml">首次购买月份:
     type: measure
-    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MINIF({dt_month}, {销售额: {+d: dt_month}} &gt; 0)'
 
 report:
     type: query
     allows: ALL
     columns:
         dimension:
-            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-        sales:
-        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
+            - 首次购买月份: '{首次购买月份: {+d: 门店编号}}'
+        销售额:
+        购买间隔: 'SUM(datediff(day, {首次购买日: {+d: 门店编号}}, {最近购买日: {+d: 门店编号}}))'
 </code></pre>
 <ul>
-<li>查询结果的粒度为 <code>[first_purchase_month]</code>。</li>
-<li>对用作维度的指标和 <code>purchase_span</code> 都应用 <code>{+d: store_id}</code>，以便在更细的粒度上求值。</li>
-<li>最终的 <code>GROUP BY</code> 按 <code>first_purchase_month</code> 分组，并移除 <code>store_id</code>。</li>
+<li>查询结果的粒度为 <code>[首次购买月份]</code>。</li>
+<li>对用作维度的指标和 <code>购买间隔</code> 都应用 <code>{+d: 门店编号}</code>，以便在更细的粒度上求值。</li>
+<li>最终的 <code>GROUP BY</code> 按 <code>首次购买月份</code> 分组，并移除 <code>门店编号</code>。</li>
 </ul>
 <p><a id="44-modifier-schema-constraints"></a></p>
 <h2 id="modifier-schema-constraints">修饰符的架构约束 <a class="section-link" aria-label="本节链接" href="#modifier-schema-constraints">#</a></h2>

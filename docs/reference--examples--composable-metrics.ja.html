@@ -6,55 +6,60 @@
 <p>論理データセットは FACT_PROFITABILITY、その物理ソースは TABLE_PROFITABILITY です。参照先が一意に決まるように、ソースのフィールド名とメジャー名は異なります。ソースの完全なキーは [id] です。物理テーブルでは、revenue_amount と cost_amount に十進数型を使用してください。CSV には SQL の列の型情報が含まれず、整数除算では利益率の小数部分が失われます。</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_PROFITABILITY:
+売上と原価:
   type: dataset
   table: TABLE_PROFITABILITY
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
-    region:
+    売上明細番号:
+      abbr: id
+    地域:
+      abbr: region
     dt_month:
-    revenue_amount:
-    cost_amount:
+      abbr: dt_month
+    売上金額:
+      abbr: revenue_amount
+    原価金額:
+      abbr: cost_amount
   measures:
-    net_revenue: SUM({revenue_amount})
-    sales_cost: SUM({cost_amount})
+    純売上高: SUM({売上金額})
+    売上原価: SUM({原価金額})
 
-gross_profit:
+粗利益:
   type: measure
-  formula: '{net_revenue} - {sales_cost}'
+  formula: '{純売上高} - {売上原価}'
 
-gross_margin:
+粗利率:
   type: measure
-  formula: 'DIVIDE({gross_profit}, {net_revenue})'
+  formula: 'DIVIDE({粗利益}, {純売上高})'
 
-gross_margin_ytd:
+年初来粗利率:
   type: measure
-  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+  formula: 'DIVIDE({純売上高: ytd} - {売上原価: ytd}, {純売上高: ytd})'
 
-gross_margin_prior_ytd:
+前年同期の年初来粗利率:
   type: measure
-  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+  formula: 'DIVIDE({純売上高: {ytd, ya}} - {売上原価: {ytd, ya}}, {純売上高: {ytd, ya}})'
 
-margin_change_pp:
+粗利率の前年差ポイント:
   type: measure
-  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
+  formula: '100 * ({年初来粗利率} - {前年同期の年初来粗利率})'
 </code></pre>
 <p><a href="profitability-model.dml">model.dmlをダウンロード</a>するか、<a href="TABLE_PROFITABILITY.csv">CSV形式のソースデータ</a>または<a href="profitability-data.json">JSON形式のソースデータ</a>をダウンロードできます。</p>
 <h2 id="change-the-context">コンテキストを変える <a class="section-link" aria-label="この節へのリンク" href="#change-the-context">#</a></h2>
 <p>North の 2025 年 2 月の売上高は 300、原価は 240 で、利益率は 20% です。1 月の売上高は 100、原価は 60 で、利益率は 40% です。年初来の売上高は 400、原価は 300 です。累計利益率は 25% で、月別利益率の単純平均である 30% にはなりません。</p>
-<p>名前を付けた比率に時間修飾子を直接適用します。<code>formula: '{gross_margin: ytd}'</code>。これにより、粗利益率は、参照先である売上高と原価をもとに累計期間全体で再計算されます。月別の比率は合計も平均もしません。前年の YTD には <code>'{gross_margin: {ytd, ya}}'</code> を使用します。</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+<p>ダウンロードできるモデルでは、純売上高と売上原価の両方に <code>ytd</code> を適用します。累計の純売上高から累計の売上原価を引き、累計の純売上高で割ります。前年同期を計算するときは両方の金額に <code>{ytd, ya}</code> を適用します。</p>
+<pre><code class="language-sql">SELECT 地域, dt_month, AGG(年初来粗利率)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY 地域, dt_month
 </code></pre>
 <h2 id="compare-the-same-period">同じ期間で比較する <a class="section-link" aria-label="この節へのリンク" href="#compare-the-same-period">#</a></h2>
 <p>North の 2024 年 1～2 月の売上高は 200、原価は 160 で、累計利益率は 20% です。現在の累計利益率は 25% で、前年同期より <strong>5 パーセントポイント高くなっています</strong>。相対的な増加率は 25% になります。これは別の計算であり、表示される差ではありません。</p>
-<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+<pre><code class="language-sql">SELECT 地域, dt_month, AGG(年初来粗利率), AGG(前年同期の年初来粗利率), AGG(粗利率の前年差ポイント)
 FROM MODEL
 WHERE dt_month = '2025-02-01'
-GROUP BY region, dt_month
+GROUP BY 地域, dt_month
 </code></pre>
 <p><a href="profitability-monthly.sql">月次クエリ</a>、<a href="profitability-cumulative.sql">累計クエリ</a>、または<a href="profitability-comparison.sql">比較クエリ</a>をダウンロードできます。標準の時間計算には、対象の接続先にコンパイラの DML_CALENDAR も必要です。</p>
 <h2 id="inspect-the-evidence">検証結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-evidence">#</a></h2>

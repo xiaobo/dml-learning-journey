@@ -7,7 +7,7 @@
     parameters:                         # stored-procedure parameters
         &lt;param&gt;: &lt;column_name&gt;
     filters:                            # materialize-level filters
-        &lt;column&gt;: &lt;value&gt;
+        &lt;column&gt;: &lt;値&gt;
 
     allows: [&lt;materialize_name&gt;]        # allowed materialize tables
 
@@ -18,7 +18,7 @@
 
     measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
 </code></pre>
-<p><strong><code>dimension:</code>と<code>dimension_columns:</code></strong>の違い。<code>dimension:</code>には、マテリアライズのディメンションを指定します。そのディメンションのフィールドが、行の粒度を定め、各行を一意に識別するキーになります。コンパイラはこれらを<code>GROUP BY</code>のキーとして使います。<code>dimension_columns:</code>には、<strong>これらのキーから導出できる</strong>属性列を指定します。たとえば、<code>store_name</code>は<code>store_id</code>に依存し、<code>region_code</code>は<code>store_id</code>に依存します。コンパイラは<code>dimension_columns:</code>に指定された列を<code>GROUP BY</code>の結果に引き継ぎますが、粒度を定めるキーには含めません。導出できる属性を<code>dimension:</code>に指定すると、コンパイルエラーになります（「can be derived from [...], should it be moved to dimension_columns instead?」）。</p>
+<p><strong><code>dimension:</code>と<code>dimension_columns:</code></strong>の違い。<code>dimension:</code>には、マテリアライズのディメンションを指定します。そのディメンションのフィールドが、行の粒度を定め、各行を一意に識別するキーになります。コンパイラはこれらを<code>GROUP BY</code>のキーとして使います。<code>dimension_columns:</code>には、<strong>これらのキーから導出できる</strong>属性列を指定します。たとえば、<code>店舗名</code>は<code>店舗番号</code>に依存し、<code>region_code</code>は<code>店舗番号</code>に依存します。コンパイラは<code>dimension_columns:</code>に指定された列を<code>GROUP BY</code>の結果に引き継ぎますが、粒度を定めるキーには含めません。導出できる属性を<code>dimension:</code>に指定すると、コンパイルエラーになります（「can be derived from [...], should it be moved to dimension_columns instead?」）。</p>
 <p><strong>数式を指定しない場合の継承</strong>。<code>dimension_columns:</code>の項目に<code>formula:</code>を指定しない場合、ソースデータセットから列を継承します。その列はソースデータセットの<code>columns:</code>に存在する必要があります。存在しない場合は「not found from relate dataset(s)」と表示されます。マテリアライズの粒度がソースデータセットのディメンションより<strong>粗い</strong>場合、コンパイラは列を導出できるかどうかを確認します。ソースのより細かい粒度で値が変わる列は、「definition from dataset [...] cannot be derived from dimension [...], please advise」というエラーになります。マテリアライズの粒度がソースデータセットのディメンションと<strong>一致する</strong>場合は、ソースのどの列でも使用できます（行の対応は1:1）。</p>
 <p><strong>数式で参照できる範囲</strong>。<code>dimension_columns:</code>の項目に<code>formula:</code>を指定した場合、数式で参照できるのは、pk() を連ねたルックアップと、マテリアライズのディメンション自体のフィールドだけです。ソースデータセットの列や指標を参照すると、「not defined, did you mean …?」というエラーになります。</p>
 <p><strong>制約</strong>。次のいずれかの形式を指定します。</p>

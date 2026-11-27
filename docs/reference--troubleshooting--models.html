@@ -34,19 +34,19 @@
 <strong>Fix</strong>: <code>sales: SUM({amount})</code> + query: <code>SELECT region, AGG(sales) FROM MODEL GROUP BY region</code></p>
 <p><a id="p28b"></a></p>
 <h2 id="p28b-null-contagion-when-a-joined-row-is-missing">P28b. Null contagion when a joined row is missing <a class="section-link" aria-label="Link to section" href="#p28b-null-contagion-when-a-joined-row-is-missing">#</a></h2>
-<p><strong>Wrong</strong>: <code>profit: &#39;{revenue} - {costs}&#39;</code> — if either side has no row for the slice (FOJ / sparse dt), that input is null and the difference becomes null.</p>
+<p><strong>Wrong</strong>: <code>profit: '{revenue} - {costs}'</code> — if either side has no row for the slice (FOJ / sparse dt), that input is null and the difference becomes null.</p>
 <p><strong>Fix — fill default when row missing</strong> (<a href="reference--measures.html#fill-default-when-row-missing">missing-row fill</a>):</p>
 <ol>
 <li><strong>Activate</strong> sparse inputs with outermost <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code>:</li>
 </ol>
-<pre><code class="language-yaml">revenue: &#39;isnull(SUM({amount}), 0)&#39;   # or wrap the existing measure formula outermost
-costs: &#39;isnull(SUM({cost}), 0)&#39;
-profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
+<pre><code class="language-yaml">revenue: 'isnull(SUM({amount}), 0)' # or wrap the existing measure formula outermost
+costs: 'isnull(SUM({cost}), 0)'
+profit: '{revenue} - {costs}' # use sites of revenue/costs → 0
 </code></pre>
 <ol start="2">
 <li>If the <strong>result column</strong> itself must be non-null when its grain row is missing, activate on the result:</li>
 </ol>
-<pre><code class="language-yaml">profit: &#39;isnull({revenue} - {costs}, 0)&#39;
+<pre><code class="language-yaml">profit: 'isnull({revenue} - {costs}, 0)'
 </code></pre>
 <p><strong>Not enough / not activation:</strong> <code>isnull({a}, {b})</code>, <code>coalesce(a, b, 0)</code>, bare <code>{m: pp}</code>, or expecting an unrelated outer composite to gain an automatic <code>isnull</code> wrap. Embedding an <strong>already-activated</strong> dependency in a composite still expands that dep’s fill at sparse FOJ use sites (see <a href="reference--measures.html#fill-default-when-row-missing"><code>measures.md</code> Fill default</a>).</p>
 <p><a id="p28c"></a></p>
@@ -63,7 +63,7 @@ profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
 <p><a id="p38"></a></p>
 <h2 id="p38-unquoted-yaml-formulas">P38. Unquoted YAML formulas <a class="section-link" aria-label="Link to section" href="#p38-unquoted-yaml-formulas">#</a></h2>
 <p><strong>Wrong</strong>: <code>formula: SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})</code> without quotes when the value contains <code>:</code>, <code>{</code>, or <code>-</code>.
-<strong>Fix</strong>: <code>formula: &#39;SUMIF(...)&#39;</code></p>
+<strong>Fix</strong>: <code>formula: 'SUMIF(...)'</code></p>
 <p><a id="p39"></a></p>
 <h2 id="p39-dataset-on-composite-measures">P39. <code>dataset:</code> on composite measures <a class="section-link" aria-label="Link to section" href="#p39-dataset-on-composite-measures">#</a></h2>
 <p><strong>Wrong</strong>: Composite measure that references other measures still has <code>dataset:</code>.
@@ -71,7 +71,7 @@ profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
 <p><a id="p40"></a></p>
 <h2 id="p40-measure-cannot-be-redefined--duplicate-formula">P40. Measure cannot be redefined / duplicate formula <a class="section-link" aria-label="Link to section" href="#p40-measure-cannot-be-redefined--duplicate-formula">#</a></h2>
 <p><strong>Wrong</strong>: <code>SELECT AGG(sales) AS sales</code> or <code>AGG(x) AS x</code> when <code>sales</code> / <code>x</code> already exist as measures.
-<strong>Fix</strong>: Use <code>SELECT AGG(sales)</code> with no alias, or a neutral alias (<code>AS sales_value</code>). If the compiler says <code>use existing measure &quot;X&quot;</code>, use <code>AGG(X)</code> instead of re-expressing the formula.</p>
+<strong>Fix</strong>: Use <code>SELECT AGG(sales)</code> with no alias, or a neutral alias (<code>AS sales_value</code>). If the compiler says <code>use existing measure "X"</code>, use <code>AGG(X)</code> instead of re-expressing the formula.</p>
 <p><a id="p41"></a></p>
 <h2 id="p41-dml--syntax-in-model-query-sql">P41. DML <code>{...}</code> syntax in Model Query SQL <a class="section-link" aria-label="Link to section" href="#p41-dml--syntax-in-model-query-sql">#</a></h2>
 <p><strong>Wrong</strong>: <code>SELECT {dt_month}, AGG({sales}) FROM MODEL</code> — braces are for <code>.dml</code> formulas only.
@@ -79,7 +79,7 @@ profit: &#39;{revenue} - {costs}&#39;         # use sites of revenue/costs → 0
 <p><a id="p42"></a></p>
 <h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. Bare name vs <code>{col}</code> inside <code>.dml</code> formulas <a class="section-link" aria-label="Link to section" href="#p42-bare-name-vs-col-inside-dml-formulas">#</a></h2>
 <p><strong>Wrong (meaning):</strong> Treating <code>formula: calc_amt * 2</code> as “forgot braces” / a compiler hole. Bare <code>calc_amt</code> binds as a <strong>physical</strong> table column (SQL pass-through).
-<strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: &#39;{calc_amt} * 2&#39;</code>. Leave physical columns bare: <code>net: amount - discount</code>. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
+<strong>Fix:</strong> Brace when the intent is the <strong>calculated</strong> column’s definition: <code>formula: '{calc_amt} * 2'</code>. Leave physical columns bare: <code>net: amount - discount</code>. See <a href="reference--model-structure.html#52-dataset-definition-type-dataset">Dataset definition (<code>type: dataset</code>)</a>.</p>
 <h2 id="模型排错">模型排错 <a class="section-link" aria-label="Link to section" href="#模型排错">#</a></h2>
 <p>先检查入口模型的 <code>dialect:</code>、<code>includes:</code> 路径和名称。确认数据集的 <code>dimension:</code> 能唯一标识源行，并按声明顺序给 <code>pk(...)</code> 传入完整的键。先修复首条明确的缺失引用或冲突，再重新 lint。</p>
 </main></body></html>

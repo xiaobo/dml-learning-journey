@@ -55,7 +55,7 @@ transaction_quantity:
 <h3 id="avg">AVG <a class="section-link" aria-label="Link to section" href="#avg">#</a></h3>
 <pre><code class="language-yaml">avg_invoice_quantity:
     type: measure
-    formula: &#39;AVG({invoice_quantity: {+d: transaction_id}})&#39;
+    formula: 'AVG({invoice_quantity: {+d: transaction_id}})'
 </code></pre>
 <hr>
 <h2 id="filtered-measures">Filtered measures <a class="section-link" aria-label="Link to section" href="#filtered-measures">#</a></h2>
@@ -64,28 +64,28 @@ transaction_quantity:
     type: measure
     dataset: transactions
     formula: |-
-        {debit: {+f: {account_type: [&#39;Expense&#39;, &#39;Other Expense&#39;]}}}
+        {debit: {+f: {account_type: ['Expense', 'Other Expense']}}}
 
 sales:
     type: measure
     description: Sales revenue from income accounts
     formula: |-
-        {credit: {+f: {account_type: [&#39;Income&#39;, &#39;Other Income&#39;]}}}
+        {credit: {+f: {account_type: ['Income', 'Other Income']}}}
 
 food_and_drink_expense:
     type: measure
     formula: |-
-        {expense: {+f: &quot;instr(account, &#39;Food &amp; drink&#39;) &gt; 0&quot;}}
+        {expense: {+f: "instr(account, 'Food &amp; drink') &gt; 0"}}
 
 number_of_credit_card_transactions:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {credit_card : &#39;yes&#39;}}}
+        {number_of_transactions: {+f: {credit_card : 'yes'}}}
 
 number_of_unpaid_invoices:
     type: measure
     formula: |-
-        {number_of_invoices: {+f: &#39;open_balance &gt; 0&#39;}}
+        {number_of_invoices: {+f: 'open_balance &gt; 0'}}
 </code></pre>
 <hr>
 <h2 id="measure-references">Measure references <a class="section-link" aria-label="Link to section" href="#measure-references">#</a></h2>
@@ -108,8 +108,8 @@ debit:
 profit:
     type: measure
     formula: |-
-        {credit: {+f: {transaction_type: [&#39;Income&#39;,&#39;Other Income&#39;,&#39;Expense&#39;,&#39;Other Expense&#39;]}}} -
-        {debit: {+f: {transaction_type: [&#39;Income&#39;,&#39;Other Income&#39;,&#39;Expense&#39;,&#39;Other Expense&#39;]}}}
+        {credit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}} -
+        {debit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}}
 </code></pre>
 <hr>
 <h2 id="measure-aliases">Measure aliases <a class="section-link" aria-label="Link to section" href="#measure-aliases">#</a></h2>
@@ -183,11 +183,14 @@ avg_sales_per_trx:
     table: FACT_SALES
     columns:
         store_id:
+            abbr: store_id
         prod_id:
+            abbr: prod_id
         qty:
-        net_qty: &#39;SUM({qty}) over (partition by {store_id}, {prod_id})&#39;
+            abbr: qty
+        net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
     measures:
-        sum_net_qty: &#39;SUM({net_qty})&#39;
+        sum_net_qty: 'SUM({net_qty})'
 </code></pre>
 <p><strong>Post-aggregation</strong> (grain refs on the composite):</p>
 <pre><code class="language-yaml">total_sales:
@@ -197,10 +200,10 @@ avg_sales_per_trx:
 
 region_rank:
     type: measure
-    formula: &#39;rank() over (partition by {-d: product} order by {total_sales} desc)&#39;
+    formula: 'rank() over (partition by {-d: product} order by {total_sales} desc)'
 </code></pre>
 <p><strong>In Model Query SQL</strong> — prefer fn-macros from <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>rank_asc</code>, <code>pot</code>, <code>grand</code>) when they cover the pattern:</p>
-<pre><code class="language-sql">SELECT product, AGG(sales, &#39;rank&#39;) AS sales_rank
+<pre><code class="language-sql">SELECT product, AGG(sales, 'rank') AS sales_rank
 FROM MODEL GROUP BY product
 
 SELECT product, AGG({sales: pot}) AS share
@@ -229,26 +232,26 @@ all_customer_sales:
 <li><strong>No invented outer wrap:</strong> mentioning a filled measure inside a composite does <strong>not</strong> by itself wrap that composite’s result column. Activate on the result if <em>its</em> column must be non-null when missing.</li>
 <li><strong>Embedding still expands:</strong> when a composite <strong>embeds</strong> an already-activated dependency (or a chain of formula refs into one), sparse FOJ use sites still expand fill at the caller of that embedding — e.g. <code>deep = {q2fp1} * 3</code> with <code>q2fp1 = {q2f} + 1</code> and <code>q2f = isnull(SUM(...), 0)</code> yields <code>(coalesce(dep, 0) + 1) * 3</code> on missing partner rows, not NULL. That is fill of the activated dep, not an automatic <code>isnull(deep, …)</code>.</li>
 </ol>
-<pre><code class="language-yaml">上期:
+<pre><code class="language-yaml">prior_period:
     type: measure
-    formula: &#39;isnull({销售额: pp}, 0)&#39;   # activate
+    formula: 'isnull({sales: pp}, 0)' # activate
 
-上上期:
+two_periods_ago:
     type: measure
-    formula: &#39;{上期: pp}&#39;                # use site → 0
+    formula: '{prior_period: pp}' # use site → 0
 
-本期减上期:
+change_from_prior:
     type: measure
-    formula: &#39;{销售额} - {上期}&#39;         # 上期 use site → 0 (no contagion)
+    formula: '{sales} - {prior_period}' # 上期 use site → 0 (no contagion)
 
-本期减上期_fill:
+change_from_prior_filled:
     type: measure
-    formula: &#39;isnull({销售额} - {上期}, 0)&#39;  # activate on result
+    formula: 'isnull({sales} - {prior_period}, 0)' # activate on result
 
 # Nested embed (activation on q2f; deep expands fill of q2f at FOJ)
-q2f:   { dataset: secondary, formula: &#39;isnull(SUM({q2}), 0)&#39; }
-q2fp1: { formula: &#39;{q2f} + 1&#39; }
-deep:  { formula: &#39;{q2fp1} * 3&#39; }
+q2f:   { dataset: secondary, formula: 'isnull(SUM({q2}), 0)' }
+q2fp1: { formula: '{q2f} + 1' }
+deep:  { formula: '{q2fp1} * 3' }
 </code></pre>
 <p><strong>Not activation</strong> (still may be null when the row is missing):</p>
 <table>
@@ -259,7 +262,7 @@ deep:  { formula: &#39;{q2fp1} * 3&#39; }
 </tr>
 </thead>
 <tbody><tr>
-<td>Bare <code>{销售额: pp}</code></td>
+<td>Bare <code>{sales: pp}</code></td>
 <td>Not activated</td>
 </tr>
 <tr>

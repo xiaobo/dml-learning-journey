@@ -21,11 +21,11 @@
 <td align="right">30%</td>
 </tr>
 </tbody></table>
-<p>在 DMX 中，d 表示 dimension（维度），f 表示 filter（筛选）。引用 {sales: {-d: region}} 移除地区分组，保留相关筛选；{sales: {-df: region}} 还会移除该字段的相关筛选。设置只作用于这次引用，不修改度量原定义、源键或报表的 GROUP BY。</p>
+<p>在 DMX 中，d 表示 dimension（维度），f 表示 filter（筛选）。引用 {销售额: {-d: 地区}} 移除地区分组，保留相关筛选；{销售额: {-df: 地区}} 还会移除该字段的相关筛选。设置只作用于这次引用，不修改度量原定义、源键或报表的 GROUP BY。</p>
 <h2 id="亲手切换两种分母">亲手切换两种分母 <a class="section-link" aria-label="本节链接" href="#亲手切换两种分母">#</a></h2>
 <p>打开<a href="journey.zh.html#shares">分母练习</a>，保持 North 选中，从 -d 切换到 -df。分母由 30 变为 100，占比由 100% 变为 30%；二月条件保持不变。若没有相关地区筛选，本例中两者的分母相同。</p>
 <h2 id="先确定业务含义">先确定业务含义 <a class="section-link" aria-label="本节链接" href="#先确定业务含义">#</a></h2>
 <p>“占全部地区销售额的比例”需要从分母移除相关地区筛选；“在当前所选范围内的占比”则保留它。没有普遍正确的一种分母，报表必须说明整体的范围；其他筛选不会因此全部移除。</p>
-<p>浏览器在本地计算虚构示例数据，并非执行数据库。可<a href="lesson-files.zip">下载原课程项目</a>查看模型与真实编译 findings，或查阅<a href="reference--modifiers.zh.html">修饰符完整规则</a>。</p>
+<p>浏览器在本地计算虚构示例数据，并非执行数据库。可<a href="lesson-files.zh.zip">下载原课程项目</a>查看模型与真实编译 findings，或查阅<a href="reference--modifiers.zh.html">修饰符完整规则</a>。</p>
 <p><a hreflang="en" href="guide--share-denominator-en.html">English</a> · <a href="journey.zh.html#shares">进入互动教程</a></p>
 </main></body></html>

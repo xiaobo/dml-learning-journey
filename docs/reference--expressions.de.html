@@ -14,12 +14,12 @@
 <tbody><tr>
 <td>Spalte</td>
 <td><code>{column_name}</code></td>
-<td><code>SUM({amount})</code></td>
+<td><code>SUM({Verkaufsbetrag})</code></td>
 </tr>
 <tr>
 <td>Kennzahl</td>
 <td><code>{measure_name}</code></td>
-<td><code>DIVIDE({sales}, {count})</code></td>
+<td><code>DIVIDE({Umsatz}, {count})</code></td>
 </tr>
 <tr>
 <td>Spalte aus einem anderen Dataset</td>
@@ -29,12 +29,12 @@
 <tr>
 <td>Kennzahl mit Modifikator</td>
 <td><code>{measure: modifier}</code></td>
-<td><code>{sales: yoy}</code></td>
+<td><code>{Umsatz: yoy}</code></td>
 </tr>
 <tr>
 <td>Kennzahl mit verschachtelten Modifikatoren</td>
 <td><code>{measure: {modifier: sub}}</code></td>
-<td><code>{sales: {+d: customer}}</code></td>
+<td><code>{Umsatz: {+d: Kunde}}</code></td>
 </tr>
 </tbody></table>
 <h3 id="in-model-query-sql">In Model Query SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#in-model-query-sql">#</a></h3>
@@ -49,22 +49,22 @@
 <tbody><tr>
 <td>Spalte (Dimension)</td>
 <td>Nur der Name</td>
-<td><code>SELECT product, dt_month</code></td>
+<td><code>SELECT Produkt, dt_month</code></td>
 </tr>
 <tr>
 <td>Kennzahl</td>
 <td><code>AGG(measure_name)</code></td>
-<td><code>AGG(sales)</code></td>
+<td><code>AGG(Umsatz)</code></td>
 </tr>
 <tr>
 <td>Kennzahl mit Modifikator</td>
 <td><code>AGG({measure: modifier})</code></td>
-<td><code>AGG({sales: yoy})</code></td>
+<td><code>AGG({Umsatz: yoy})</code></td>
 </tr>
 <tr>
 <td>Kennzahl mit Modifikator als Positionsargument</td>
 <td><code>AGG(measure, 'modifier')</code></td>
-<td><code>AGG(sales, 'yoy')</code></td>
+<td><code>AGG(Umsatz, 'yoy')</code></td>
 </tr>
 </tbody></table>
 <p><strong>Grundregel</strong>: Geschweifte Klammern <code>{...}</code> sind <code>.dml</code> vorbehalten. Verwenden Sie in Model Query SQL für Dimensionen den Namen allein und für Kennzahlen <code>AGG(...)</code>. Die einzige Ausnahme ist die Schreibweise mit Modifikator: <code>AGG({measure: modifier})</code>.</p>
@@ -72,7 +72,7 @@
 <p>Lookups unterstützen Einzelschlüssel, zusammengesetzte Schlüssel und Schlüssel mit Gültigkeitszeitraum. Geben Sie den vollständigen Schlüssel des Ziels an, nicht die Gruppierungsfelder der Abfrage, die den Lookup verwendet. Diese Attribut-Lookups unterscheiden sich vom Aufbereiten einer Relation im Dataset-SQL und vom Kombinieren unabhängig aggregierter Kennzahlen. Siehe <a href="explanation--core-concepts.de.html#2-source-relations-lookups-and-metric-composition">Quellrelationen, Lookups und Kombination von Kennzahlen</a>.</p>
 <p>Spalten-Lookups über Dataset-Grenzen hinweg in <code>.dml</code>-Formeln:</p>
 <pre><code class="language-yaml"># Single PK
-formula: 'SUM({amount} * pk(customer_id).{customers}.tier_discount)'
+formula: 'SUM({Verkaufsbetrag} * pk(Kundennummer).{Kundenanzahl}.tier_discount)'
 
 # Composite PK
 formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
@@ -81,14 +81,14 @@ formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
 <h3 id="compound-and-effective-date-keys">Zusammengesetzte Schlüssel und Schlüssel mit Gültigkeitszeitraum <a class="section-link" aria-label="Link zum Abschnitt" href="#compound-and-effective-date-keys">#</a></h3>
 <p>Die Angabe <code>dimension:</code> des Ziels definiert dessen vollständigen Quellschlüssel, nicht die Gruppierung im Bericht. In beiden folgenden Lookup-Mustern stehen die Zielfelder in Deklarationsreihenfolge:</p>
 <pre><code class="language-yaml"># Target with a compound key:
-dimension: [id, region]
+dimension: [VerkaufspositionID, Region]
 # Column in the referring dataset:
-label: 'pk({id}, {region}).{D}.label'
+Bezeichnung: 'pk({VerkaufspositionID}, {Region}).{D}.Bezeichnung'
 </code></pre>
 <pre><code class="language-yaml"># Target with an object key and validity interval:
-dimension: [id, 'range(valid_from, valid_to)']
+dimension: [VerkaufspositionID, 'range(valid_from, valid_to)']
 # Column in the referring dataset:
-label: 'pk({id}, {event_date}).{D}.label'
+Bezeichnung: 'pk({VerkaufspositionID}, {dt_date}).{D}.Bezeichnung'
 </code></pre>
 <p>Lassen Sie <code>'range(valid_from, valid_to)'</code> in Anführungszeichen, damit das Komma Teil desselben YAML-Listeneintrags bleibt. Das Ereignisdatum muss in <code>[valid_from, valid_to)</code> liegen. Der Beginn ist eingeschlossen, das Ende ausgeschlossen. Ein Ereignis am 1. Februar fällt daher in ein Intervall, das am 1. Februar beginnt, nicht in eines, das an diesem Tag endet. Diese Syntax ist von der Datenbankfunktion <code>range()</code> zu unterscheiden, die Arrays erzeugt.</p>
 <p>Dieselbe ID darf in mehreren Regionen vorkommen, wenn der gesamte zusammengesetzte Schlüssel eindeutig ist. Gültigkeitsintervalle für dieselbe ID dürfen sich nicht überschneiden. Doppelte Zielzeilen oder überlappende Intervalle können nach erfolgreicher Kompilierung zusätzliche Abfragezeilen erzeugen. <code>--validate</code> prüft, ob die vorgefundenen Daten die Schlüsselanforderungen erfüllen. Dabei werden die Daten weder repariert noch wird garantiert, dass die anschließende Ausführung denselben Daten-Snapshot verwendet.</p>
@@ -98,7 +98,7 @@ label: 'pk({id}, {event_date}).{D}.label'
 <h2 id="functions">Funktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#functions">#</a></h2>
 <p><a id="31-core-aggregation-functions"></a></p>
 <h3 id="core-aggregation-functions">Grundlegende Aggregatfunktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#core-aggregation-functions">#</a></h3>
-<p>Diese Funktionen sind in <code>.dml</code> und in Model Query SQL gültig. In <code>.dml</code> aggregieren sie Rohspalten (<code>SUM({amount})</code>) oder Kennzahlen auf einer feineren Detailebene (<code>SUM({sales: {+d: product}})</code>). In Model Query SQL aggregieren sie ausschließlich Kennzahlen auf einer feineren Detailebene. Beispielsweise summiert <code>SUM(AGG({sales: {+d: product}}))</code> die Umsätze je Produkt zu einem Gesamtumsatz. Verwenden Sie für eine einfache Kennzahlreferenz nur <code>AGG(measure)</code>.</p>
+<p>Diese Funktionen sind in <code>.dml</code> und in Model Query SQL gültig. In <code>.dml</code> aggregieren sie Rohspalten (<code>SUM({Verkaufsbetrag})</code>) oder Kennzahlen auf einer feineren Detailebene (<code>SUM({Umsatz: {+d: Produkt}})</code>). In Model Query SQL aggregieren sie ausschließlich Kennzahlen auf einer feineren Detailebene. Beispielsweise summiert <code>SUM(AGG({Umsatz: {+d: Produkt}}))</code> die Umsätze je Produkt zu einem Gesamtumsatz. Verwenden Sie für eine einfache Kennzahlreferenz nur <code>AGG(measure)</code>.</p>
 <table>
 <thead>
 <tr>
@@ -207,16 +207,16 @@ label: 'pk({id}, {event_date}).{D}.label'
 </tbody></table>
 <p><strong>Beispiele für bedingte Aggregation</strong>:</p>
 <pre><code class="language-yaml"># In .dml
-completed_sales:
+UmsatzAbgeschlossenerBestellungen:
     type: measure
-    formula: SUMIF({amount}, {status} = 'completed')
+    formula: SUMIF({Verkaufsbetrag}, {Bestellstatus} = 'completed')
 
-high_value_customers:
+AnzahlWertvollerKunden:
     type: measure
-    formula: 'DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)'
+    formula: 'DISTINCTCOUNTIF({Kundennummer}, {Umsatz: {+d: Kundennummer}} &gt; 1000)'
 </code></pre>
 <pre><code class="language-sql">-- In Model Query SQL (modifier form)
-SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+SELECT AGG(Umsatz, '+f', Region = 'North') FROM MODEL
 </code></pre>
 <p><a id="33-conditional-and-utility-functions"></a></p>
 <h3 id="conditional-and-utility-functions">Bedingungs- und Hilfsfunktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#conditional-and-utility-functions">#</a></h3>
@@ -246,9 +246,9 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 </tbody></table>
 <p>Hilfsfunktionen verwenden die SQL-Ausdrucksebene. Sie sind in Formeln zulässig, zählen aber nicht zu den kanonischen intrinsischen Symbolen von DML. Im Funktionskatalog von DML ist diese Einstufung Funktionen vorbehalten, die DML selbst definiert, etwa <code>AGG</code>, <code>DIVIDE</code> und <code>SUMIF</code>.</p>
 <p>Wenn die äußerste Operation einer Kennzahlformel eine NULL-Koaleszenz mit einem Literal als Ersatzwert ist, wird an den Verwendungsstellen dieser Kennzahl das <a href="reference--measures.de.html#fill-default-when-row-missing">Auffüllen fehlender Zeilen</a> aktiviert.</p>
-<pre><code class="language-yaml">daily_sales:
+<pre><code class="language-yaml">Tagesumsatz:
     type: measure
-    formula: SUM(ISNULL({sales: {+d: dt_date}}, 0))
+    formula: SUM(ISNULL({Umsatz: {+d: dt_date}}, 0))
 </code></pre>
 <p><a id="34-date-functions-sqlite-dialect"></a></p>
 <h3 id="date-functions-sqlite-dialect">Datumsfunktionen (SQLite-Dialekt) <a class="section-link" aria-label="Link zum Abschnitt" href="#date-functions-sqlite-dialect">#</a></h3>
@@ -302,15 +302,15 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 <tbody><tr>
 <td>Mit Positionsargument</td>
 <td><code>AGG(measure, 'mod1', 'mod2')</code></td>
-<td><code>AGG(sales, 'yoy')</code></td>
+<td><code>AGG(Umsatz, 'yoy')</code></td>
 </tr>
 <tr>
 <td>Mit geschweiften Klammern</td>
 <td><code>AGG({measure: mod})</code></td>
-<td><code>AGG({sales: yoy})</code></td>
+<td><code>AGG({Umsatz: yoy})</code></td>
 </tr>
 </tbody></table>
-<p><strong>Aliasregeln</strong>: Die maßgebliche Tabelle steht unter <a href="reference--model-query-sql.de.html#33-alias-rules">Aliasregeln für Model Query</a>. <code>AGG(sales)</code> erhält automatisch einen Alias, bei <code>AGG({sales: yoy})</code> ist <code>AS</code> erforderlich.</p>
+<p><strong>Aliasregeln</strong>: Die maßgebliche Tabelle steht unter <a href="reference--model-query-sql.de.html#33-alias-rules">Aliasregeln für Model Query</a>. <code>AGG(Umsatz)</code> erhält automatisch einen Alias, bei <code>AGG({Umsatz: yoy})</code> ist <code>AS</code> erforderlich.</p>
 <hr>
 <h2 id="runtime-variables">Laufzeitvariablen <a class="section-link" aria-label="Link zum Abschnitt" href="#runtime-variables">#</a></h2>
 <p>Diese Variablen sind Platzhalter für den Auswertungskontext und keine vom Aufrufer übergebenen Abfrageparameter. Informationen zur Bindung durch die Anwendung finden Sie unter <a href="reference--model-query-sql.de.html#jdbc-parameters-and-query-kind">JDBC-Parameter und Abfrageart</a>. Eine geprüfte Bindung auf physischer SQL-Ebene stellt keine semantische Bindung in Model Query her.</p>
@@ -342,5 +342,5 @@ SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 <h2 id="database-defined-scalar-functions">In der Datenbank definierte Skalarfunktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#database-defined-scalar-functions">#</a></h2>
 <p>Aufrufe von Skalarfunktionen können im generierten SQL erhalten bleiben, auch innerhalb einer atomaren Kennzahl oder wenn sie auf das Ergebnis einer aggregierten Kennzahl angewendet werden. DML bestimmt den Kontext der Kennzahl. Die Zieldatenbank bestimmt, wie die Funktion implementiert ist und ob sie verfügbar ist. Unter <a href="how-to--define-macros.de.html#calling-a-function-defined-in-your-database">Verifizierte benutzerdefinierte Modifikatoren und Datenbankfunktionen</a> finden Sie ein funktionsfähiges Beispiel sowie Informationen zu den Unterschieden zwischen den Auswertungsphasen und zu den Validierungsanforderungen. Diese Aussage gilt nicht pauschal für aggregierende oder tabellenwertige UDFs.</p>
 <h2 id="complete-lookup-examples">Vollständige Lookup-Beispiele <a class="section-link" aria-label="Link zum Abschnitt" href="#complete-lookup-examples">#</a></h2>
-<p><code>pk()</code> erwartet die Argumente in der Reihenfolge der Dimensionen im Zieldatensatz und ist nicht auf einen einzelnen Schlüssel beschränkt. Das <a href="examples--compound-key.de.html">Beispiel mit zusammengesetztem Schlüssel</a> deklariert <code>[id, region]</code> und prüft mit validate-only, ob Schlüsselkombinationen im Zieldatensatz mehrfach vorkommen. Das <a href="examples--range-lookup.de.html">Bereichsbeispiel</a> verwendet <code>[id, 'range(valid_from, valid_to)']</code> und prüft anhand seiner Testdaten, dass die Untergrenze eingeschlossen und die Obergrenze ausgeschlossen ist und dass überlappende Bereiche abgelehnt werden. Diese Beispiele belegen keine Unterstützung für beliebige Wertverteilungen über Viele-zu-viele-Beziehungen.</p>
+<p><code>pk()</code> erwartet die Argumente in der Reihenfolge der Dimensionen im Zieldatensatz und ist nicht auf einen einzelnen Schlüssel beschränkt. Das <a href="examples--compound-key.de.html">Beispiel mit zusammengesetztem Schlüssel</a> deklariert <code>[VerkaufspositionID, Region]</code> und prüft mit validate-only, ob Schlüsselkombinationen im Zieldatensatz mehrfach vorkommen. Das <a href="examples--range-lookup.de.html">Bereichsbeispiel</a> verwendet <code>[VerkaufspositionID, 'range(valid_from, valid_to)']</code> und prüft anhand seiner Testdaten, dass die Untergrenze eingeschlossen und die Obergrenze ausgeschlossen ist und dass überlappende Bereiche abgelehnt werden. Diese Beispiele belegen keine Unterstützung für beliebige Wertverteilungen über Viele-zu-viele-Beziehungen.</p>
 </main></body></html>

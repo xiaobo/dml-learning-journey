@@ -14,8 +14,8 @@
 <strong>Fix</strong>: Run both the original SQL and compiled SQL; compare result sets.</p>
 <p><a id="p6"></a></p>
 <h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. Creating one-off measures for filters or query-dimension combinations <a class="section-link" aria-label="Link to section" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
-<p><strong>Wrong</strong>: <code>sales_north</code>, <code>sales_south</code>, <code>sales_east</code> — or <code>sales_north</code> when <code>WHERE region = &#39;North&#39;</code> suffices.
-<strong>Fix</strong>: One generic measure <code>sales</code>; use <code>WHERE region = &#39;North&#39;</code> in queries.</p>
+<p><strong>Wrong</strong>: <code>sales_north</code>, <code>sales_south</code>, <code>sales_east</code> — or <code>sales_north</code> when <code>WHERE region = 'North'</code> suffices.
+<strong>Fix</strong>: One generic measure <code>sales</code>; use <code>WHERE region = 'North'</code> in queries.</p>
 <p><a id="p7"></a></p>
 <h2 id="p7-duplicating-aggregation-formulas">P7. Duplicating aggregation formulas <a class="section-link" aria-label="Link to section" href="#p7-duplicating-aggregation-formulas">#</a></h2>
 <p><strong>Wrong</strong>: <code>revenue: SUM({amount})</code> and <code>total_revenue: SUM({amount})</code>.
@@ -32,8 +32,8 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>sale_date::date AS d</code>, <code>DATE &#39;2025-01-01&#39;</code></td>
-<td>Use <code>CAST(sale_date AS date) AS d</code> or <code>CAST(&#39;2025-01-01&#39; AS date)</code>.</td>
+<td><code>sale_date::date AS d</code>, <code>DATE '2025-01-01'</code></td>
+<td>Use <code>CAST(sale_date AS date) AS d</code> or <code>CAST('2025-01-01' AS date)</code>.</td>
 </tr>
 <tr>
 <td><code>SUM(amount) FILTER (WHERE paid)</code></td>
@@ -48,7 +48,7 @@
 <td>Use a single-quoted string, doubling embedded single quotes.</td>
 </tr>
 <tr>
-<td><code>INTERVAL &#39;1 day&#39;</code>, <code>LATERAL</code>, <code>STRING_AGG(... ORDER BY ...)</code>, or JSON <code>-&gt;&gt;</code></td>
+<td><code>INTERVAL '1 day'</code>, <code>LATERAL</code>, <code>STRING_AGG(... ORDER BY ...)</code>, or JSON <code>-&gt;&gt;</code></td>
 <td>Normalize the expression for the intended parser and dialect or project it from a source view. Verify ordering, NULL behavior and row membership before converting.</td>
 </tr>
 </tbody></table>

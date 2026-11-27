@@ -53,7 +53,7 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p>Ersetzen Sie <code>default</code> durch die vorgesehene Verbindung. Prüfen Sie den Exitcode, den Validierungsstatus, die geprüften Datensätze und die gemeldeten Probleme. Im JSON-Bericht der CLI finden Sie die Validierungsdetails unter <code>data</code>.</p>
 <p>Die Validierung prüft für jeden deklarierten Datensatzschlüssel, den die Abfrage verwendet, ob pro Schlüsselwert höchstens eine Quellzeile vorhanden ist. Sie prüft außerdem mit <code>EXPLAIN</code>, ob die Datenbank einen Ausführungsplan für die Abfrage erstellen kann. Prüfen Sie die fachlichen Summen anhand eines unabhängig ermittelten SQL-Ergebnisses.</p>
-<p>Angenommen, zwei verschiedene Buchungseinträge haben denselben Schlüssel <code>(account, invoice, party)</code> und die Beträge 10 und 20. Wenn diese Kombination im Datensatz als <code>dimension:</code> deklariert ist, meldet die Validierung den Schlüssel und die beiden zugehörigen Zeilen. Mit <code>--with-validation</code> wird die Abfrage vor der Ausführung abgebrochen. Deklarieren Sie die ID des Buchungseintrags als Datensatzschlüssel und gruppieren Sie die Abfrage dann nach account, invoice und party, um die Summe 30 zu erhalten. Wenn die beiden Zeilen eine unbeabsichtigte Dublette bilden, korrigieren Sie die Quelldaten oder den Join, der die Dublette erzeugt hat.</p>
+<p>Angenommen, zwei verschiedene Buchungseinträge haben denselben Schlüssel <code>(Konto, Rechnung, party)</code> und die Beträge 10 und 20. Wenn diese Kombination im Datensatz als <code>dimension:</code> deklariert ist, meldet die Validierung den Schlüssel und die beiden zugehörigen Zeilen. Mit <code>--with-validation</code> wird die Abfrage vor der Ausführung abgebrochen. Deklarieren Sie die ID des Buchungseintrags als Datensatzschlüssel und gruppieren Sie die Abfrage dann nach account, invoice und party, um die Summe 30 zu erhalten. Wenn die beiden Zeilen eine unbeabsichtigte Dublette bilden, korrigieren Sie die Quelldaten oder den Join, der die Dublette erzeugt hat.</p>
 <p>Wiederholen Sie die Validierung, wenn sich das Modell, die Anforderungen an die Abfrage, die Verbindung oder relevante Quelldaten ändern. Fehlt eine Voraussetzung, erfassen Sie die Prüfung als <code>not run</code> und geben Sie an, welche Voraussetzung fehlt.</p>
 <h2 id="5-execute-and-compare-results">5. Abfrage ausführen und Ergebnisse vergleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#5-execute-and-compare-results">#</a></h2>
 <p>Führen Sie die Abfrage mit <code>--with-validation</code> über die Zielverbindung aus. Ohne diese Option prüft das Programm bei der Ausführung weder die Datensatzschlüssel anhand der aktuellen Daten noch, ob die Datenbank einen Ausführungsplan erstellen kann.</p>
@@ -68,8 +68,34 @@ process.exitCode = result.status ?? 1;
 <h2 id="practice-a-modeldata-contract-repair">Die Korrektur von Abweichungen zwischen Modell und Daten üben <a class="section-link" aria-label="Link zum Abschnitt" href="#practice-a-modeldata-contract-repair">#</a></h2>
 <p>Führen Sie die Beispiele zum <a href="examples--compound-key.de.html">zusammengesetzten Schlüssel</a> und zum <a href="examples--range-lookup.de.html">Gültigkeitsbereich</a> aus. Verfolgen Sie die reguläre Validierung, einen absichtlich herbeigeführten Fehler durch eine Dublette oder Überlappung und die Validierung nach der Korrektur mit anschließendem Ergebnisvergleich. So erkennen Sie Abweichungen zwischen dem deklarierten Schlüssel und den tatsächlichen Daten, bevor Sie sich auf ein Nachschlageergebnis verlassen. Validierung und Abfrageausführung sind getrennte Vorgänge. Eine erfolgreiche Prüfung garantiert weder, dass beide denselben Datenstand verwenden, noch, dass die Schlüsselwerte künftig eindeutig bleiben.</p>
 <h2 id="inspect-a-change-or-recover-an-existing-query">Eine Änderung untersuchen oder eine bestehende Abfrage wiederherstellen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-a-change-or-recover-an-existing-query">#</a></h2>
-<p>Geben Sie bei <code>--explain-change</code> die Kennzahl, den Vergleichszeitraum und den aktuellen Zeitraum an. Im folgenden Beispiel dient die Vorperiode als Vergleich. Die erforderlichen Angaben finden Sie unter <code>dmlc --advanced-help</code>. Für ein Modell mit <code>net_revenue</code>, <code>dt_month</code> und <code>region</code> wurde folgender Aufruf geprüft:</p>
-<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+<p>Geben Sie bei <code>--explain-change</code> die Kennzahl, den Vergleichszeitraum und den aktuellen Zeitraum an. Im folgenden Beispiel dient die Vorperiode als Vergleich. Die erforderlichen Angaben finden Sie unter <code>dmlc --advanced-help</code>. Für ein Modell mit <code>Nettoumsatz</code>, <code>dt_month</code> und <code>Region</code> wurde folgender Aufruf geprüft:</p>
+<p>Legen Sie in einer leeren DuckDB-Datenbank die folgenden vier Verkäufe an. Bei jedem Betrag sind Erstattungen bereits abgezogen. Speichern Sie die Anweisungen unter <code>monthly-sales.sql</code> und führen Sie <code>dmlc -q monthly-sales.sql</code> über die DuckDB-Verbindung aus.</p>
+<pre><code class="language-sql">CREATE TABLE monthly_sales (id INTEGER, dt_month DATE, region VARCHAR, net_amount INTEGER);
+INSERT INTO monthly_sales VALUES
+  (1, DATE '2025-01-01', 'North', 100),
+  (2, DATE '2025-01-01', 'South', 200),
+  (3, DATE '2025-02-01', 'North', 300),
+  (4, DATE '2025-02-01', 'South', 100);
+</code></pre>
+<p>Speichern Sie das folgende Modell im Beispielverzeichnis als <code>model.dml</code>. Vergleichen Sie anschließend Februar mit Januar.</p>
+<pre><code class="language-yaml">dialect: duckdb
+Transaktionen:
+    type: dataset
+    table: monthly_sales
+    dimension: [VerkaufspositionID]
+    columns:
+        VerkaufspositionID:
+            abbr: id
+        dt_month:
+            abbr: dt_month
+        Region:
+            abbr: region
+        Nettobetrag:
+            abbr: net_amount
+    measures:
+        Nettoumsatz: SUM({Nettobetrag})
+</code></pre>
+<pre><code class="language-powershell">dmlc --explain-change --measure=Nettoumsatz --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=Region --model=model.dml
 </code></pre>
 <p>Die Testdaten für den Vergleich enthalten den Referenzwert 300, den aktuellen Wert 400 und regionale Beiträge von +200 und -100. Diese Werte gelten für diesen Testfall und können in anderen Beispielen auf dieser Website abweichen. Prüfen Sie den Referenzwert und den aktuellen Wert, bevor Sie die Rangfolge der Dimensionen interpretieren. Beiträge und Überraschungswerte helfen bei der Auswahl eines Untersuchungsansatzes. Sie belegen keine Ursachen und schließen keine Störfaktoren aus.</p>
 <p>Aus einer bestehenden SQL-Abfrage kann <code>--to-dml</code> einen Entwurf für ein Modell und eine Abfrage erzeugen.</p>

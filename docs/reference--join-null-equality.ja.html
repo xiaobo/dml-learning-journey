@@ -23,11 +23,11 @@
 <td>構造キーが一致する場合は、キーの構成要素が NULL でも属性を付加できます。</td>
 </tr>
 </tbody></table>
-<p>NULL セーフな等価比較には、方言に応じて <code>&lt;=&gt;</code>、<code>IS NOT DISTINCT FROM</code>、または両方の値が NULL の場合を明示的に扱う分岐を含む等価比較を使用できます。SQL の述語を <code>a.region = b.region</code> のように明示した場合は、データベースの通常の等価比較ルールが適用されます。明細行の結合では、その結合に使うキー固有の等価性ルールが適用されます。</p>
+<p>NULL セーフな等価比較には、方言に応じて <code>&lt;=&gt;</code>、<code>IS NOT DISTINCT FROM</code>、または両方の値が NULL の場合を明示的に扱う分岐を含む等価比較を使用できます。SQL の述語を <code>a.地域 = b.地域</code> のように明示した場合は、データベースの通常の等価比較ルールが適用されます。明細行の結合では、その結合に使うキー固有の等価性ルールが適用されます。</p>
 <h2 id="output-with-null-alignment-keys">対応付けに使うキーに NULL が含まれる場合の出力 <a class="section-link" aria-label="この節へのリンク" href="#output-with-null-alignment-keys">#</a></h2>
-<p>未分類の地域について、売上の合計が 50、返金の合計が 8 だとします。<code>region</code> でグループ化すると、両方の指標を含む 1 行 <code>(NULL, 50, 8)</code> が返されます。この行はレポート上のグループを表します。元の売上レコードと返金レコードは、それぞれ個別のレコードとして識別されます。両方の指標値が NULL の場合も、グループは対応付けられます。</p>
-<p><code>(region, channel)</code> のような複合キーでは、<code>(NULL, 'online')</code> と <code>(NULL, 'online')</code> が対応付けられます。<code>(NULL, 'retail')</code> は別のグループのままです。期間計算では、時間以外のグループ化キーに同じルールを適用し、時間の照合には従来どおりのルールを適用します。</p>
-<p>レポートでラベル付きのグループが必要な場合は、<code>coalesce(region, 'UNKNOWN')</code> のようなグループ化式を明示します。この式では、データに実際に含まれる <code>'UNKNOWN'</code> 値も同じグループに入ります。</p>
+<p>未分類の地域について、売上の合計が 50、返金の合計が 8 だとします。<code>地域</code> でグループ化すると、両方の指標を含む 1 行 <code>(NULL, 50, 8)</code> が返されます。この行はレポート上のグループを表します。元の売上レコードと返金レコードは、それぞれ個別のレコードとして識別されます。両方の指標値が NULL の場合も、グループは対応付けられます。</p>
+<p><code>(地域, channel)</code> のような複合キーでは、<code>(NULL, 'online')</code> と <code>(NULL, 'online')</code> が対応付けられます。<code>(NULL, 'retail')</code> は別のグループのままです。期間計算では、時間以外のグループ化キーに同じルールを適用し、時間の照合には従来どおりのルールを適用します。</p>
+<p>レポートでラベル付きのグループが必要な場合は、<code>coalesce(地域, 'UNKNOWN')</code> のようなグループ化式を明示します。この式では、データに実際に含まれる <code>'UNKNOWN'</code> 値も同じグループに入ります。</p>
 <h2 id="population-fill-and-densification">母集団、補完、行の密化 <a class="section-link" aria-label="この節へのリンク" href="#population-fill-and-densification">#</a></h2>
 <p>グループの有無を示す未補完の指標でフィルタリングすると、レポートを指定したソースのグループに限定できます。欠損値を許容する業務指標は、対応するグループがソースに存在していても NULL になることがあります。</p>
 <p>欠落行の補完では、指標に代替値を設定します。密化では、欠落しているエンティティ行やカレンダー行を追加します。どちらの処理によっても、ソースの母集団への所属は確定しません。</p>

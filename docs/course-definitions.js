@@ -40,7 +40,31 @@
  document.body.append(panel,tooltip);
  const rendered = new WeakMap();
  let opener, previewed, delay, hideDelay, scheduled = false, restoringFocus = false;
+ function columnSnippet(sample, dataset, field) {
+  const name=sample.terms[field]||field, table=sample.terms[dataset]||dataset;
+  const block=sample.model.split('\n\n').find(value=>value.startsWith(table+':\n'));
+  if (!block) return;
+  const lines=block.split('\n'), index=lines.findIndex(line=>line.startsWith('    '+name+':'));
+  if (index<0) return;
+  const definition=[lines[index].slice(4)];
+  if (lines[index+1]?.startsWith('      abbr: ')) definition.push(lines[index+1].slice(4));
+  return definition.join('\n');
+ }
+ function modelExcerpt(source,sample) {
+  if (!sample || !source.includes('  columns:')) return source;
+  const dataset=source.startsWith('DIM_REGION:')?'DIM_REGION':'FACT_SALES';
+  return source.replace(/^    (\w+):$/gm,(line,field)=>{
+   const snippet=columnSnippet(sample,dataset,field);
+   if (!snippet) return line;
+   const name=sample.terms[field]||field;
+   if (snippet.includes('\n')) return line+'\n      abbr: '+field;
+   const ref=snippet.match(/: '\{([^}]+)\}'$/)?.[1];
+   return ref?'    '+ref+':\n      abbr: '+field+'\n    '+field+snippet.slice(name.length):line;
+  });
+ }
+ function localized(value) { return i18n.names(value); }
  function symbol(key,text=key) {
+  text=localized(text);
   const button = document.createElement('button'); button.type = 'button'; button.className = 'query-symbol'; button.dataset.definition = key; button.textContent = text;
   button.setAttribute('aria-label',t('definitionOpen',{name:text})); button.setAttribute('aria-controls',panel.id); button.setAttribute('aria-expanded','false');
   return button;
@@ -64,10 +88,13 @@
    (trigger.closest('pre,.formula,table') || trigger).after(panel);
   }
   const header = document.createElement('div'); header.className = 'definition-header';
-  const title = document.createElement('h3'); title.id = 'query-definition-title'; title.tabIndex = -1; title.textContent = key;
+  const title = document.createElement('h3'); title.id = 'query-definition-title'; title.tabIndex = -1; title.textContent = localized(key);
   const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.className = 'definition-close'; dismiss.textContent = '×'; dismiss.setAttribute('aria-label',t('definitionClose')); dismiss.addEventListener('click',()=>close(true)); header.append(title,dismiss);
-  const location = document.createElement('p'); location.className = 'definition-location'; location.textContent = t(entry.kind)+' · '+entry.scope;
-  const code = document.createElement('code'); code.textContent = entry.code; const pre = document.createElement('pre'); pre.append(code);
+  const location = document.createElement('p'); location.className = 'definition-location'; location.textContent = t(entry.kind)+' · '+localized(entry.scope);
+  const code = document.createElement('code'); const sample=window.DMLLearningSamples?.[i18n.locale];
+  const field=key.split('.').pop(), dataset=entry.scope.split('.')[0];
+  const exact=sample&&entry.kind==='definitionColumn'&&columnSnippet(sample,dataset,field);
+  code.textContent=exact||localized(entry.code).replace(/pk\([^)]+\)/g,'pk(region)'); const pre = document.createElement('pre'); pre.append(code);
   const description = document.createElement('p'); description.textContent = t(entry.description);
   panel.replaceChildren(header,location,pre,description);
   if (entry.references.length) {
@@ -94,9 +121,17 @@
   scheduled = false;
   for (const node of document.querySelectorAll('main .chapter pre code, main .chapter .formula > code, main .chapter th')) {
    if (node.closest('.query-definition,.compiler-observation,.chapter-check')) continue;
-   const text = node.textContent, prior = rendered.get(node);
+   const shown = node.textContent, prior = rendered.get(node);
+   if (prior?.display===shown && prior.locale===i18n.locale && (!prior.hasSymbols || node.querySelector('[data-definition]'))) continue;
+   const source=prior?.display===shown ? prior.source : shown;
+   const sample=window.DMLLearningSamples?.[i18n.locale];
+   const text=modelExcerpt(source,sample);
+   if (sample && (node.id==='full-model' || node.id==='final-full-model')) {
+    node.textContent=sample.model;
+    rendered.set(node,{source,display:sample.model,locale:i18n.locale}); continue;
+   }
    if (node.tagName === 'TH' && !/^[A-Za-z_]\w*(?: \(%\))?$/.test(text)) continue;
-   if (prior?.text === text && prior.locale === i18n.locale && node.querySelector('[data-definition]')) continue;
+
    const fragment = document.createDocumentFragment(); let at = 0;
    for (const match of text.matchAll(tokens)) {
     const name = match[0]; let key = name;
@@ -105,10 +140,10 @@
     if (['region','manager'].includes(name) && text.startsWith('DIM_REGION:\n') && (directoryEnd < 0 || match.index < directoryEnd)) key = 'DIM_REGION.'+name;
     if (['region','manager'].includes(name) && node.closest('#lookup-directory')) key = 'DIM_REGION.'+name;
     if (name === 'manager' && text.slice(0,match.index).endsWith('{DIM_REGION}.')) key = 'DIM_REGION.manager';
-    if (!definitions[key]) continue;
+    if (!definitions[key] || /(?:abbr: |pk\()$/.test(text.slice(0,match.index))) continue;
     fragment.append(document.createTextNode(text.slice(at,match.index)),symbol(key,name)); at = match.index+name.length;
    }
-   fragment.append(document.createTextNode(text.slice(at))); node.replaceChildren(fragment); rendered.set(node,{text,locale:i18n.locale});
+   fragment.append(document.createTextNode(text.slice(at))); node.replaceChildren(fragment); rendered.set(node,{source,display:node.textContent,locale:i18n.locale,hasSymbols:!!node.querySelector('[data-definition]')});
   }
   const query = document.getElementById('query-code');
   let hint = document.getElementById('definition-hint');

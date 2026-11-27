@@ -5,57 +5,57 @@
 <p>Mit <code>+d</code> ist eine <strong>zweistufige Aggregation</strong> möglich. Definieren Sie eine Kennzahl auf einer Zwischenebene und aggregieren Sie sie dann auf die Ebene der Abfrage. Der Compiler erzeugt eine CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
 <p><strong>Muster</strong>: Kennzahl mit eingeschränkter Dimension → Kennzahl für die Zusammenfassung → Abfrage</p>
 <pre><code class="language-yaml"># Step 1: require customer_id during evaluation
-customer_sales:
+Kundenumsatz:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: Transaktionen
+    formula: SUM({Verkaufsbetrag})
     dimensions:
-        - [customer_id, ...]  # customer required; additional query fields allowed
+        - [Kundennummer, ...]  # customer required; additional query fields allowed
 
 # Step 2: evaluate with dimension [customer_id], then roll up to the query dimension
-total_customer_sales:
+Kundengesamtumsatz:
     type: measure
-    formula: SUM({customer_sales: {+d: customer_id}})
+    formula: SUM({Kundenumsatz: {+d: Kundennummer}})
 </code></pre>
-<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([brand], [region], total, etc.)
-SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand
+<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([Marke], [Region], Summe, etc.)
+SELECT Marke, AGG(Kundengesamtumsatz) FROM MODEL GROUP BY Marke
 </code></pre>
 <p><strong>RFM-Analyse</strong> – vollständiges Beispiel mit <code>+d</code> und fn-Makros:</p>
 <pre><code class="language-yaml"># .dml: customer-grain measures for RFM
-last_purchase_month:
+LetzterKaufmonat:
     type: measure
-    formula: 'MAXIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MAXIF({dt_month}, {Umsatz: {+d: dt_month}} &gt; 0)'
     dimensions:
-        - [customer_id]
+        - [Kundennummer]
 
-purchase_months:
+Kaufmonate:
     type: measure
-    dataset: transactions
-    formula: 'COUNT(DISTINCT CASE WHEN {amount} &gt; 0 THEN {dt_month} ELSE NULL END)'
+    dataset: Transaktionen
+    formula: 'COUNT(DISTINCT CASE WHEN {Verkaufsbetrag} &gt; 0 THEN {dt_month} ELSE NULL END)'
     dimensions:
-        - [customer_id]
+        - [Kundennummer]
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: RFM with ranks
-SELECT AGG(sales) AS M, AGG(sales, 'rank') AS M_rank,
-       AGG(purchase_months) AS F, AGG(purchase_months, 'rank') AS F_rank,
-       AGG(last_purchase_month) AS R, AGG(last_purchase_month, 'rank_asc') AS R_rank
-FROM MODEL GROUP BY customer_id
+SELECT AGG(Umsatz) AS M, AGG(Umsatz, 'rank') AS M_rank,
+       AGG(Kaufmonate) AS F, AGG(Kaufmonate, 'rank') AS F_rank,
+       AGG(LetzterKaufmonat) AS R, AGG(LetzterKaufmonat, 'rank_asc') AS R_rank
+FROM MODEL GROUP BY Kundennummer
 </code></pre>
 <p><strong>Inline-Kennzahlen</strong> – Definieren Sie temporäre Kennzahlen direkt im SQL der Modellabfrage, indem Sie <code>/** dml ... **/</code>-Kommentarblöcke verwenden. Dazu müssen Sie <code>.dml</code> nicht ändern. Die vollständige Syntax und alle Regeln finden Sie unter <a href="reference--model-query-sql.de.html#312-inline-measures--dml--">Inline-Kennzahlen (<code>/** dml ... **/</code>)</a>.</p>
 <pre><code class="language-sql">/** dml
-temp_customer_sales:
+KundenumsatzZwischenwert:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: Transaktionen
+    formula: SUM({Verkaufsbetrag})
     dimensions:
-        - [customer_id, ...]
+        - [Kundennummer, ...]
 
-temp_avg_customer_sales:
+KundendurchschnittZwischenwert:
     type: measure
-    formula: 'AVG({temp_customer_sales: {+d: customer_id}})'
+    formula: 'AVG({KundenumsatzZwischenwert: {+d: Kundennummer}})'
 **/
-SELECT brand, AGG(temp_avg_customer_sales) AS avg_customer_sales
-FROM MODEL GROUP BY brand
+SELECT Marke, AGG(KundendurchschnittZwischenwert) AS DurchschnittProKunde
+FROM MODEL GROUP BY Marke
 </code></pre>
 <p><a id="26a-fine-grain-filter-then-d-roll-up"></a></p>
 <h3 id="fine-grain-filter-then-d-roll-up">Auf feiner Ebene filtern, dann mit <code>+d</code> zusammenfassen <a class="section-link" aria-label="Link zum Abschnitt" href="#fine-grain-filter-then-d-roll-up">#</a></h3>
@@ -75,28 +75,30 @@ HAVING SUM(total) &gt; 500      -- report-level HAVING
     type: dataset
     table: FACT
     columns:
-        product:
-        region:
+        Produkt:
+            abbr: product
+        Region:
+            abbr: region
     measures:
-        total: SUM(amount)
-        cnt: COUNT(1)
+        Summe: SUM(Verkaufsbetrag)
+        Verkaufsanzahl: COUNT(1)
 
-grand_total:
+Gesamtsumme:
     type: measure
     formula: |-
-        SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+        SUMIF({Summe: {+d: Region}}, {Verkaufsanzahl: {+d: Region}} &gt; 3)
     # No qualifying fine rows -&gt; NULL. Use an explicit fill only if required.
 
 report:
     type: query
     filters:
-        "{grand_total} &gt; 500":
+        "{Gesamtsumme} &gt; 500":
     columns:
         dimension:
-            - product
-        grand_total:
+            - Produkt
+        Gesamtsumme:
 </code></pre>
-<p><strong>So funktioniert das Beispiel:</strong> <code>{cnt: {+d: region}}</code> und <code>{total: {+d: region}}</code> werden auf <strong>derselben</strong> feinen Ebene <code>(product, region)</code> ausgewertet. <code>iif</code> bzw. <code>SUMIF</code> bestimmt, welche Zeilen dieser Ebene in das äußere <code>SUM</code> eingehen. Die Abfragedimension bleibt <code>product</code>.</p>
+<p><strong>So funktioniert das Beispiel:</strong> <code>{Verkaufsanzahl: {+d: Region}}</code> und <code>{Summe: {+d: Region}}</code> werden auf <strong>derselben</strong> feinen Ebene <code>(Produkt, Region)</code> ausgewertet. <code>iif</code> bzw. <code>SUMIF</code> bestimmt, welche Zeilen dieser Ebene in das äußere <code>SUM</code> eingehen. Die Abfragedimension bleibt <code>Produkt</code>.</p>
 <table>
 <thead>
 <tr>
@@ -105,53 +107,53 @@ report:
 </tr>
 </thead>
 <tbody><tr>
-<td>Eine Abfrage mit <code>filters: "cnt &gt; 3"</code> ausführen und in <code>columns.dimension</code> nur <code>product</code> angeben</td>
-<td><code>cnt</code> wird außerhalb der Ebene verwendet, auf der die Kennzahl definiert ist. Beim Kompilieren oder Zusammenführen kann daraus fälschlicherweise <code>HAVING COUNT(1) &gt; 3</code> auf Produktebene werden.</td>
+<td>Eine Abfrage mit <code>filters: "Verkaufsanzahl &gt; 3"</code> ausführen und in <code>columns.dimension</code> nur <code>Produkt</code> angeben</td>
+<td><code>Verkaufsanzahl</code> wird außerhalb der Ebene verwendet, auf der die Kennzahl definiert ist. Beim Kompilieren oder Zusammenführen kann daraus fälschlicherweise <code>HAVING COUNT(1) &gt; 3</code> auf Produktebene werden.</td>
 </tr>
 <tr>
-<td><code>filters: "{cnt: {+d: region}} &gt; 3"</code></td>
+<td><code>filters: "{Verkaufsanzahl: {+d: Region}} &gt; 3"</code></td>
 <td>Das lässt sich manchmal kompilieren, kehrt aber die erwartete Logik um. Der Wechsel auf die feinere Ebene steckt im Berichtsfilter.</td>
 </tr>
 <tr>
-<td><code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code></td>
+<td><code>SUM({Summe: {+d: Region, +f: '{Verkaufsanzahl} &gt; 3'}})</code></td>
 <td>Die Bedingung verweist auf eine aggregierte Kennzahl. <code>+f</code> erwartet eine Filterbedingung für Eingabezeilen.</td>
 </tr>
 </tbody></table>
-<p>Wenn Sie die Schritte genau wie in SQL abbilden möchten, können Sie als Ausweichlösung die Abfrage auf feiner Ebene beibehalten (<code>dimension: [product, region]</code>, <code>filters: "cnt &gt; 3"</code>) und in der Darstellung unter <code>after:</code> erneut aggregieren. Für die Modellpflege ist die oben gezeigte Kennzahl vorzuziehen.</p>
+<p>Wenn Sie die Schritte genau wie in SQL abbilden möchten, können Sie als Ausweichlösung die Abfrage auf feiner Ebene beibehalten (<code>dimension: [Produkt, Region]</code>, <code>filters: "Verkaufsanzahl &gt; 3"</code>) und in der Darstellung unter <code>after:</code> erneut aggregieren. Für die Modellpflege ist die oben gezeigte Kennzahl vorzuziehen.</p>
 <p>Siehe auch <a href="how-to--design-measures.de.html">Kennzahlen entwerfen</a> und den Fallstrick <a href="reference--troubleshooting--grain-and-joins.de.html#p69">P69</a>.</p>
 <p><strong>Einschränkungen von <code>+d</code></strong>:</p>
 <ul>
-<li><code>+d</code> allein führt keine zwei unabhängigen Aliasse für dieselbe Dimension ein. Für eine vollständige N×N-Matrix des gemeinsamen Auftretens können Sie stattdessen einen Datensatz mit <code>sql:</code> verwenden. Verknüpfen Sie eine deklarierte Quelle über den Kunden mit sich selbst, wählen Sie die eindeutigen Kombinationen <code>(customer, brand_from, brand_to)</code> aus, deklarieren Sie diese Feldkombination als vollständigen Schlüssel und zählen Sie dann die Kunden gruppiert nach den beiden Markenfeldern. Der geprüfte Testdatensatz mit zwei Marken lässt sich kompilieren und validieren und liefert A–A: 2, A–B: 1, B–A: 1, B–B: 1. Dazu ist eine explizite Relation für Markenpaare erforderlich. <code>+d</code> führt diese Transformation nicht automatisch aus.</li>
+<li><code>+d</code> allein führt keine zwei unabhängigen Aliasse für dieselbe Dimension ein. Für eine vollständige N×N-Matrix des gemeinsamen Auftretens können Sie stattdessen einen Datensatz mit <code>sql:</code> verwenden. Verknüpfen Sie eine deklarierte Quelle über den Kunden mit sich selbst, wählen Sie die eindeutigen Kombinationen <code>(Kunde, brand_from, brand_to)</code> aus, deklarieren Sie diese Feldkombination als vollständigen Schlüssel und zählen Sie dann die Kunden gruppiert nach den beiden Markenfeldern. Der geprüfte Testdatensatz mit zwei Marken lässt sich kompilieren und validieren und liefert A–A: 2, A–B: 1, B–A: 1, B–B: 1. Dazu ist eine explizite Relation für Markenpaare erforderlich. <code>+d</code> führt diese Transformation nicht automatisch aus.</li>
 </ul>
 <p>Steht <code>+d</code> in einer <strong>Dimensionsbindung der Abfrage</strong> (<code>columns.dimension: - name: '{m: {+d: K}}'</code>), handelt es sich um eine <strong>Kennzahl als Dimension</strong> und nicht um das obige Muster zur Zusammenfassung. Siehe <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>.</p>
 <p><strong>Analyse gemeinsam gekaufter Marken (1×N-Muster)</strong> – Zählen Sie für jede andere Marke die Kunden, die sowohl die Zielmarke als auch diese Marke gekauft haben. Verwenden Sie dazu <code>+d</code>, <code>-d</code> und <code>+f</code>:</p>
 <pre><code class="language-sql">/** dml
-target_brand_customers:
+Zielmarkenkunden:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: customer_id, -d: brand, +f: {brand: ''BrandA''}}} &gt; 0)'
+    formula: 'MAXIF(1, {Umsatz: {+d: Kundennummer, -d: Marke, +f: {Marke: ''BrandA''}}} &gt; 0)'
     dimensions:
-        - [..., customer_id]
+        - [..., Kundennummer]
 
-current_brand_customers:
+KundenDerAktuellenMarke:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: [brand, customer_id]}} &gt; 0)'
+    formula: 'MAXIF(1, {Umsatz: {+d: [Marke, Kundennummer]}} &gt; 0)'
     dimensions:
-        - [brand, customer_id]
+        - [Marke, Kundennummer]
 
-co_occurrence:
+GemeinsameVorkommen:
     type: measure
-    formula: 'SUM({current_brand_customers: {+d: [brand, customer_id]}} * {target_brand_customers: {+d: customer_id}})'
+    formula: 'SUM({KundenDerAktuellenMarke: {+d: [Marke, Kundennummer]}} * {Zielmarkenkunden: {+d: Kundennummer}})'
 **/
-SELECT brand, AGG(co_occurrence) AS overlap_with_brandA
-FROM MODEL GROUP BY brand ORDER BY AGG(co_occurrence) DESC
+SELECT Marke, AGG(GemeinsameVorkommen) AS GemeinsameKundenMitMarkeA
+FROM MODEL GROUP BY Marke ORDER BY AGG(GemeinsameVorkommen) DESC
 </code></pre>
-<p>Entscheidend ist, dass <code>-d: brand</code> das Dimensionsfeld <code>brand</code> aus der Auswertungsdimension der Zielkennzahl entfernt. Es bleibt nur <code>[customer]</code>. <code>+f</code> filtert auf die Zielmarke, und das Produkt der beiden Indikatorwerte zählt die Kunden, die beide Marken gekauft haben.</p>
+<p>Entscheidend ist, dass <code>-d: Marke</code> das Dimensionsfeld <code>Marke</code> aus der Auswertungsdimension der Zielkennzahl entfernt. Es bleibt nur <code>[Kunde]</code>. <code>+f</code> filtert auf die Zielmarke, und das Produkt der beiden Indikatorwerte zählt die Kunden, die beide Marken gekauft haben.</p>
 <p><code>dimensions:</code> ist bei einer Kennzahl immer ein Array aus Arrays. Jede innere Liste definiert eine zulässige Dimension. Die äußere Liste enthält die Alternativen:</p>
-<pre><code class="language-yaml">month_active_flag:
+<pre><code class="language-yaml">MonatlichAktiv:
     type: measure
-    formula: 'ISNULL(MAXIF(1, {month_qty: {+d: [prod_id, dt_month]}} &gt; 0), 0)'
+    formula: 'ISNULL(MAXIF(1, {Monatsmenge: {+d: [Artikelnummer, dt_month]}} &gt; 0), 0)'
     dimensions:
-      - [store_id, dt_month, ...]
+      - [Filialnummer, dt_month, ...]
 </code></pre>
 <p><code>...</code> (Auslassungspunkte) lässt innerhalb einer zulässigen Dimension weitere Dimensionsfelder zu. Die aufgeführten Felder bleiben in der Auswertungsdimension der Kennzahlreferenz erforderlich.</p>
 </main></body></html>

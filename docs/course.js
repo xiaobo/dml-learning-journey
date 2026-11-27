@@ -13,7 +13,7 @@
 	}
 	clearRetiredAnalytics();
 	const data = window.SmallJourneyCourse;
-	const snapshots = window.SmallJourneyObservations;
+	const records = () => window.DMLLearningSamples?.[i18n.locale]?.evidence || window.SmallJourneyObservations;
 	const $ = id => document.getElementById(id);
 	const i18n = window.SmallJourneyI18n, t = i18n.t;
 	const chapterIds = [...data.quizzes.map(q => q.chapter),'capstone'];
@@ -333,16 +333,20 @@
 		const link = document.createElement('a'); link.href = url; link.download = 'query.sql'; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
 	});
 	for (const element of document.querySelectorAll('.compiler-observation')) {
-		const item = snapshots.cases.find(c => c.name === element.dataset.probe);
+		const getCase=() => records().cases.find(c=>c.name===element.dataset.probe);
+  const item=getCase();
 		if (!item) { element.textContent = t('evidenceMissing'); continue; }
 		const label = document.createElement('p');
 		const details = document.createElement('details'), summary = document.createElement('summary');
-		function translateEvidence() {
+		const pre=document.createElement('pre');
+  function translateEvidence() {
+   const snapshots=records(),item=getCase();
+   pre.textContent=item.query+'\n\n'+item.diagnostics.map(d=>d.severity+': '+d.message).join('\n')+'\n\n'+item.sql;
 			label.textContent = t('evidenceRecord',{version:snapshots.version.split('\n')[0].replace('dmlc version ',''),status:item.status,exit:item.exit,note:t(item.status === 'findings' ? 'strictRemaining' : 'strictSucceeded')});
 			summary.textContent = t(item.status === 'findings' ? 'evidenceFindings' : 'evidencePass',{exit:item.exit});
 		}
 		translateEvidence(); document.addEventListener('course-language-change',translateEvidence);
-		const pre = document.createElement('pre'); pre.textContent = item.query+'\n\n'+item.diagnostics.map(d => d.severity+': '+d.message).join('\n')+'\n\n'+item.sql;
+
 		details.append(summary,label,pre); element.append(details);
 	}
 	function contentChanged(chapter) { document.dispatchEvent(new CustomEvent('course-content-change',{detail:{chapter}})); }

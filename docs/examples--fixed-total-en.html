@@ -27,9 +27,9 @@
 <td align="right">30</td>
 </tr>
 </tbody></table>
-<p>Region a&#39;s share can therefore be 10/10 or 10/30, depending on the business definition. Without a month filter both region totals are 30; a&#39;s January and February rows retain sales 10 and 20 respectively.</p>
+<p>Region a&#39;s share can therefore be 10/10 or 10/30, depending on the business definition. Without a month filter both calculations for region a use the same denominator of 30; a&#39;s January and February rows retain sales 10 and 20 respectively.</p>
 <h2 id="save-both-definitions-then-change-the-query">Save both definitions, then change the query <a class="section-link" aria-label="Link to section" href="#save-both-definitions-then-change-the-query">#</a></h2>
-<p>The model defines <code>region_selected: &#39;{sales: {-d: month}}&#39;</code> and <code>region_all_months: &#39;{sales: {-df: month}}&#39;</code>. Here <code>month</code> is an ordinary ISO-formatted string, not the automatic time context <code>dim_dt</code>.</p>
+<p>The model defines <code>region_selected: &#39;{sales: {-d: dt_month}}&#39;</code> and <code>region_all_months: &#39;{sales: {-df: dt_month}}&#39;</code>. The time dimension <code>dt_month</code> reads the date from the table column <code>month</code>.</p>
 <details><summary>完整文件 / Complete file: fixed/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
@@ -39,45 +39,49 @@ F:
   dimension: [id]
   columns:
     id:
+      abbr: id
     region:
-    month:
+      abbr: region
+    dt_month:
+      abbr: month
     amount:
+      abbr: amount
   measures:
     sales: SUM({amount})
 region_selected:
   type: measure
-  formula: &#39;{sales: {-d: month}}&#39;
+  formula: '{sales: {-d: dt_month}}'
 region_all_months:
   type: measure
-  formula: &#39;{sales: {-df: month}}&#39;
+  formula: '{sales: {-df: dt_month}}'
 running_sales:
   type: measure
-  formula: &#39;SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)&#39;
+  formula: 'SUM({sales}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,&#39;a&#39;,&#39;2024-01-01&#39;,10),(2,&#39;a&#39;,&#39;2024-02-01&#39;,20),(3,&#39;b&#39;,&#39;2024-01-01&#39;,30);
+<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month DATE,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/january.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE month=&#39;2024-01-01&#39; GROUP BY region,month ORDER BY region,month
+<pre><code class="language-sql">SELECT region, dt_month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE dt_month='2024-01-01' GROUP BY region,dt_month ORDER BY region,dt_month
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/unfiltered.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, month ORDER BY region,month
+<pre><code class="language-sql">SELECT region, dt_month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, dt_month ORDER BY region,dt_month
 </code></pre>
 </details>
 
 <p>The query chooses which months to display without changing the model. The verifier compares every column and the full row set, checking that <code>-df</code> does not restore February output rows.</p>
 <h2 id="keep-the-demonstrated-boundary">Keep the demonstrated boundary <a class="section-link" aria-label="Link to section" href="#keep-the-demonstrated-boundary">#</a></h2>
-<p>This example uses known region/month groupings, not dynamic pivot axes or an automatic subtotal API. Ordinary-field behavior does not verify removal of a <code>dim_dt</code> time grain. For time queries, read the <a href="examples--time-context-en.html">cumulative KPI context</a> before substituting fields.</p>
+<p>This example uses known region/month groupings, not dynamic pivot axes or an automatic subtotal API. For time queries, read the <a href="examples--time-context-en.html">cumulative KPI context</a> before substituting fields.</p>
 <p><a hreflang="zh" href="examples--fixed-total-zh.html">中文</a> · <a href="examples--index-en.html">Task examples</a> · <a href="how-to--compile-and-validate.html">Compile and validate</a></p>
 <h2 id="run-and-interpret-the-checks">Run and interpret the checks <a class="section-link" aria-label="Link to section" href="#run-and-interpret-the-checks">#</a></h2>
 <p><a href="task-examples.zip">Download the complete project</a> and run <code>verify.ps1</code> as described in its README. Run it in PowerShell with dmlc on your path. The script creates a practice database only in the new output directory you specify. The shared verifier records results and diagnostics there.</p>
-<p>This example was checked on DuckDB with dmlc 0.3.16, build 2026-11-13. The executable fingerprint and case statuses are in <code>verification-summary.json</code> in the download. Database validation and subsequent execution are independent operations; they do not guarantee a shared snapshot. Verify other engines separately.</p>
+<p>This example was checked on DuckDB with dmlc 0.3.16, build 2026-11-27. The executable fingerprint and case statuses are in <code>verification-summary.json</code> in the download. Database validation and subsequent execution are independent operations; they do not guarantee a shared snapshot. Verify other engines separately.</p>
 </main></body></html>

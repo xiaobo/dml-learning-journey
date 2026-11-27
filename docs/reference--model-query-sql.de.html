@@ -71,15 +71,15 @@
 <p>Geben Sie die Endung <code>.dml</code> in der <code>FROM</code>-Klausel nicht an. Legen Sie bei verschachtelten <code>queries/</code>-Verzeichnissen die <code>.dml</code>-Datei neben die SQL-Datei oder geben Sie mit <code>--model=</code> das Verzeichnis an, in dem die Modelldatei liegt.</p>
 <p><code>setup</code> (<code>dmlc -s</code>) erwartet eine <strong><code>.dml</code>-Datei</strong>. Ein Verzeichnis ist unzulässig.</p>
 <pre><code class="language-sql">-- Query SQL using model.dml
-SELECT product, dt_month, AGG(sales)
+SELECT Produkt, dt_month, AGG(Umsatz)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month', '-1 month')
-GROUP BY product, dt_month
+GROUP BY Produkt, dt_month
 
 -- Query SQL using acme.dml (dmlc --model=acme.dml …  or  --model=&lt;dir containing acme.dml&gt;)
-SELECT product, dt_month, AGG(sales)
+SELECT Produkt, dt_month, AGG(Umsatz)
 FROM acme
-GROUP BY product, dt_month
+GROUP BY Produkt, dt_month
 </code></pre>
 <blockquote>
 <p>Wenn in der IDE ein Modell angeheftet ist, kann die Navigation <code>FROM MODEL</code> weiterhin als Verweis auf dieses Modell auflösen. Stimmen Sie in der CLI den Namen nach <code>FROM</code> auf die verwendete Datei ab oder auf die <code>.dml</code>-Datei, die unter <code>--model=&lt;dir&gt;</code> gefunden wird.</p>
@@ -87,8 +87,8 @@ GROUP BY product, dt_month
 <h3 id="detail-queries">Detailabfragen <a class="section-link" aria-label="Link zum Abschnitt" href="#detail-queries">#</a></h3>
 <p>Rufen Sie Datensatzzeilen mit <code>FROM &lt;model&gt;.&lt;dataset&gt;</code> ab. Ein direktes <code>GROUP BY</code> ist unzulässig. Definieren Sie für gruppierte Kennzahlen wiederverwendbare Kennzahlen und fragen Sie das Modell ab. Verwenden Sie in Aggregationsabfragen auf dem Modell <code>AGG()</code>.</p>
 <pre><code class="language-sql">-- Query SQL using model.dml
-SELECT dt_date, transaction_id, raw_amount
-FROM MODEL.transactions
+SELECT dt_date, TransaktionsID, Ursprungsbetrag
+FROM MODEL.Transaktionen
 WHERE dt_month = date(current_date, 'start of month')
 
 -- Query SQL using acme.dml
@@ -127,7 +127,7 @@ FROM acme.Claim
 <tr>
 <td><code>{...}</code> um bloße Spaltennamen</td>
 <td>Geschweifte Klammern sind ausschließlich für <code>.dml</code> vorgesehen. Hier werden sie ohne Meldung entfernt.</td>
-<td>Geben Sie die Namen direkt an, etwa in <code>SELECT product, AGG(sales)</code>.</td>
+<td>Geben Sie die Namen direkt an, etwa in <code>SELECT Produkt, AGG(Umsatz)</code>.</td>
 </tr>
 </tbody></table>
 <p>Diese Einschränkungen für Abfragen auf dem Modell schließen den Einsatz von SQL in anderen Teilen von DML nicht aus. Im Datensatzfeld <code>sql:</code> können Sie unterstützte Joins, Vereinigungen und Unterabfragen vorbereiten. Referenzieren Sie deklarierte Datensätze als <code>{DATASET}</code> und beachten Sie die Zuständigkeit für physische Tabellen. Die Relation muss einen explizit definierten, korrekten Schlüssel haben. Die <a href="reference--model-structure.de.html#52-dataset-definition-type-dataset">Datensatzreferenz</a> beschreibt, wie die abgeleiteten Relationen validiert werden, die der Prüfung unterliegen. In den SQL-Code eingebaute Filter bestimmen weiterhin mit, welche Zeilen zum Datensatz gehören. Wenn Sie SQL in das Modell verlagern, passen sich die Regeln dadurch nicht automatisch alle an den jeweiligen Abfragekontext an. Siehe <a href="reference--model-structure.de.html#52-dataset-definition-type-dataset">Datensatzdefinitionen</a>.</p>
@@ -139,10 +139,10 @@ FROM acme.Claim
 <li><strong>Detailabfrage</strong>. Geben Sie alle Spalten direkt mit ihrem Namen an. Fügen Sie <code>DISTINCT</code> hinzu, wenn Sie Werte ohne Duplikate auflisten möchten.</li>
 </ul>
 <pre><code class="language-sql">-- Aggregation
-SELECT product, dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy FROM MODEL GROUP BY product, dt_month
+SELECT Produkt, dt_month, AGG(Umsatz), AGG({Umsatz: yoy}) AS UmsatzZumVorjahr FROM MODEL GROUP BY Produkt, dt_month
 
 -- Detail
-SELECT DISTINCT product FROM MODEL.transactions
+SELECT DISTINCT Produkt FROM MODEL.Transaktionen
 </code></pre>
 <p><a id="33-alias-rules"></a></p>
 <h3 id="alias-rules">Aliasregeln <a class="section-link" aria-label="Link zum Abschnitt" href="#alias-rules">#</a></h3>
@@ -154,33 +154,33 @@ SELECT DISTINCT product FROM MODEL.transactions
 </tr>
 </thead>
 <tbody><tr>
-<td><code>AGG(sales)</code></td>
-<td>Nein. Der Alias <code>sales</code> wird automatisch vergeben.</td>
+<td><code>AGG(Umsatz)</code></td>
+<td>Nein. Der Alias <code>Umsatz</code> wird automatisch vergeben.</td>
 </tr>
 <tr>
-<td><code>AGG(sales) AS sales</code></td>
+<td><code>AGG(Umsatz) AS Umsatz</code></td>
 <td>Zulässig, aber redundant (unveränderte Durchleitung)</td>
 </tr>
 <tr>
-<td><code>AGG({sales: yoy})</code></td>
-<td><strong>Ja</strong>, mit <code>AS sales_yoy</code>.</td>
+<td><code>AGG({Umsatz: yoy})</code></td>
+<td><strong>Ja</strong>, mit <code>AS UmsatzZumVorjahr</code>.</td>
 </tr>
 <tr>
-<td><code>AGG(sales, 'pop') AS sales</code></td>
+<td><code>AGG(Umsatz, 'pop') AS Umsatz</code></td>
 <td><strong>Falsch</strong>. Es entsteht ein Zirkelbezug. Verwenden Sie <code>AS sales_mom</code>.</td>
 </tr>
 <tr>
-<td><code>AGG({sales: yoy}) AS sales</code></td>
-<td><strong>Falsch</strong>. Es entsteht ein Zirkelbezug. Verwenden Sie <code>AS sales_yoy</code>.</td>
+<td><code>AGG({Umsatz: yoy}) AS Umsatz</code></td>
+<td><strong>Falsch</strong>. Es entsteht ein Zirkelbezug. Verwenden Sie <code>AS UmsatzZumVorjahr</code>.</td>
 </tr>
 </tbody></table>
-<p>Ein zuvor in der Auswahlliste vergebener Alias bezeichnet eine <strong>SQL-Ergebnisspalte</strong>, keine Kennzahl. Wenn ein späterer Ausdruck diesen Namen verwendet, etwa <code>AGG(current_value)</code> nach <code>AGG(sales) AS current_value</code>, verweist der Name auf die zuvor definierte Ergebnisspalte. Der Name wird nicht ersatzweise als Verweis auf eine andere, gleichnamige DML-Kennzahl aufgelöst.</p>
-<p>Wenn Sie einer Kennzahlreferenz mit Modifikator den Namen der Kennzahl selbst als Alias geben, etwa mit <code>AGG(sales, 'pop') AS sales</code>, entsteht ein Zirkelbezug. Der Compiler behandelt den Alias als Neudefinition der Kennzahl. Verwenden Sie einen anderen Alias, etwa <code>AS sales_mom</code>. Ohne Modifikator ist <code>AGG(sales) AS sales</code> als redundante Durchleitung zulässig.</p>
-<p>Das erste Argument von <code>AGG</code> gibt den Namen der Kennzahl an. Verwenden Sie <code>AGG(sales)</code> für den unveränderten Wert oder <code>AGG({sales: yoy})</code>, um diese Referenz zu modifizieren. Geben Sie an anderen Stellen einer Modellabfrage in SQL die Spaltennamen direkt an.</p>
+<p>Ein zuvor in der Auswahlliste vergebener Alias bezeichnet eine <strong>SQL-Ergebnisspalte</strong>, keine Kennzahl. Wenn ein späterer Ausdruck diesen Namen verwendet, etwa <code>AGG(current_value)</code> nach <code>AGG(Umsatz) AS current_value</code>, verweist der Name auf die zuvor definierte Ergebnisspalte. Der Name wird nicht ersatzweise als Verweis auf eine andere, gleichnamige DML-Kennzahl aufgelöst.</p>
+<p>Wenn Sie einer Kennzahlreferenz mit Modifikator den Namen der Kennzahl selbst als Alias geben, etwa mit <code>AGG(Umsatz, 'pop') AS Umsatz</code>, entsteht ein Zirkelbezug. Der Compiler behandelt den Alias als Neudefinition der Kennzahl. Verwenden Sie einen anderen Alias, etwa <code>AS sales_mom</code>. Ohne Modifikator ist <code>AGG(Umsatz) AS Umsatz</code> als redundante Durchleitung zulässig.</p>
+<p>Das erste Argument von <code>AGG</code> gibt den Namen der Kennzahl an. Verwenden Sie <code>AGG(Umsatz)</code> für den unveränderten Wert oder <code>AGG({Umsatz: yoy})</code>, um diese Referenz zu modifizieren. Geben Sie an anderen Stellen einer Modellabfrage in SQL die Spaltennamen direkt an.</p>
 <p><a id="34-where-rules"></a></p>
 <h3 id="where-rules">Regeln für WHERE <a class="section-link" aria-label="Link zum Abschnitt" href="#where-rules">#</a></h3>
 <ul>
-<li>Geben Sie Spaltennamen direkt an, etwa in <code>WHERE customer = 'John Doe'</code>.</li>
+<li>Geben Sie Spaltennamen direkt an, etwa in <code>WHERE Kunde = 'John Doe'</code>.</li>
 <li>Die Syntax schreibt keine Reihenfolge für Prädikate vor.</li>
 <li>Geben Sie in Zeitfiltern den ersten Tag des Zeitraums an, etwa in <code>dt_month = '2024-01-01'</code>.</li>
 <li>Verwenden Sie für einzelne Zeiträume vorzugsweise <code>=</code> statt <code>BETWEEN</code>.</li>
@@ -194,12 +194,12 @@ SELECT DISTINCT product FROM MODEL.transactions
 <li>Für Zeitmodifikatoren muss der Zeitkontext aufgelöst sein. Ein Zeitfeld, nach dem gruppiert wird, oder ein Zeitfilter kann diesen Kontext liefern. Gruppieren Sie Berichte über mehrere Zeiträume vorzugsweise explizit nach einem Zeitfeld. Ein Filter für einen einzelnen Zeitraum kann einen verborgenen Zeitkontext liefern.</li>
 </ul>
 <pre><code class="language-sql">-- Correct: time modifier + matching time field in GROUP BY
-SELECT dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy
+SELECT dt_month, AGG(Umsatz), AGG({Umsatz: yoy}) AS UmsatzZumVorjahr
 FROM MODEL
 GROUP BY dt_month
 
 -- Wrong: yoy with neither a grouped time field nor a time filter
-SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
+SELECT Produkt, AGG(Umsatz), AGG({Umsatz: yoy}) FROM MODEL GROUP BY Produkt
 </code></pre>
 <p><a id="36-order-by--limit"></a></p>
 <h3 id="order-by--limit">ORDER BY / LIMIT <a class="section-link" aria-label="Link zum Abschnitt" href="#order-by--limit">#</a></h3>
@@ -225,18 +225,18 @@ SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
 <p>Der Compiler lehnt die geprüfte Abfrage mit <code>dt_year</code> und <code>dt_month</code> ab, weil <code>dt_year</code> in der generierten Ausgabe fehlt. Diese Kombination nicht als funktionsfähigen Bericht mit zwei Feldern behandeln. Wenn das Jahr nur als Anzeigebeschriftung benötigt wird, auf der erforderlichen Monatsebene abfragen und die Beschriftung anschließend aus dem Monatsschlüssel ableiten. Separat prüfen, auf welcher Ebene die Ergebniszeilen definiert sind. Daraus folgt nicht, dass alle Abfragen mit mehreren Zeitfeldern nicht unterstützt werden.</p>
 <p><a id="39-having"></a></p>
 <h3 id="having">HAVING <a class="section-link" aria-label="Link zum Abschnitt" href="#having">#</a></h3>
-<pre><code class="language-sql">-- Customers with outstanding balance
-SELECT customer, AGG(outstanding)
+<pre><code class="language-sql">-- Customers with OffenerBetrag balance
+SELECT Kunde, AGG(OffenerBetrag)
 FROM MODEL
-GROUP BY customer
-HAVING AGG(outstanding) &gt; 0
+GROUP BY Kunde
+HAVING AGG(OffenerBetrag) &gt; 0
 
 -- Products selling less than last month
-SELECT product, AGG(sales) as this_month, AGG(sales, 'pp') as last_month
+SELECT Produkt, AGG(Umsatz) as UmsatzDiesenMonat, AGG(Umsatz, 'pp') as UmsatzImVormonat
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-HAVING AGG(sales) &lt; AGG(sales, 'pp')
+GROUP BY Produkt
+HAVING AGG(Umsatz) &lt; AGG(Umsatz, 'pp')
 </code></pre>
 <p><strong>Hinweis zur Verwendung einer Kennzahl als Dimension:</strong> Eine Bedingung für das Klassifizierungslabel, für andere Kennzahlen auf der Ebene des Labels oder für beides ist ein Filter für die <strong>Phase nach der Labelbildung</strong>. Im Text der Model Query kann <code>HAVING</code> stehen. Semantisch greift der Filter erst, sobald das Label vorliegt. Im kompilierten SQL wird der Filter häufig als <code>WHERE</code> auf die CTE nach der Labelbildung angewendet. Ein in der Dokumentation gezeigtes <code>HAVING</code> erlaubt keine Filterung vor der Klassifizierung. Siehe <a href="explanation--measure-as-dimension.de.html#label-channel-filters">Filter für Klassifizierungslabels</a>.</p>
 <p><a id="310-quick-reference"></a></p>
@@ -250,39 +250,39 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </thead>
 <tbody><tr>
 <td>Gesamtwert</td>
-<td><code>SELECT AGG(sales) FROM MODEL</code></td>
+<td><code>SELECT AGG(Umsatz) FROM MODEL</code></td>
 </tr>
 <tr>
 <td>Nach Dimension</td>
-<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT Produkt, AGG(Umsatz) FROM MODEL GROUP BY Produkt</code></td>
 </tr>
 <tr>
 <td>Mit Filter</td>
-<td><code>SELECT AGG(sales) FROM MODEL WHERE region = 'North'</code></td>
+<td><code>SELECT AGG(Umsatz) FROM MODEL WHERE Region = 'North'</code></td>
 </tr>
 <tr>
 <td>Top N</td>
-<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product ORDER BY AGG(sales) DESC LIMIT 10</code></td>
+<td><code>SELECT Produkt, AGG(Umsatz) FROM MODEL GROUP BY Produkt ORDER BY AGG(Umsatz) DESC LIMIT 10</code></td>
 </tr>
 <tr>
 <td>Wachstumsrate</td>
-<td><code>SELECT dt_month, AGG(sales, 'yoy') AS sales_yoy FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(Umsatz, 'yoy') AS UmsatzZumVorjahr FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>Zeitraumvergleich</td>
-<td><code>SELECT dt_month, AGG(sales), AGG(sales, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
+<td><code>SELECT dt_month, AGG(Umsatz), AGG(Umsatz, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
 </tr>
 <tr>
 <td>Anteil am Gesamtwert</td>
-<td><code>SELECT product, AGG({sales: pot}) AS sales_share FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT Produkt, AGG({Umsatz: pot}) AS sales_share FROM MODEL GROUP BY Produkt</code></td>
 </tr>
 <tr>
 <td>Rangfolge</td>
-<td><code>SELECT product, AGG(sales, 'rank') AS sales_rank FROM MODEL GROUP BY product</code></td>
+<td><code>SELECT Produkt, AGG(Umsatz, 'rank') AS Umsatzrang FROM MODEL GROUP BY Produkt</code></td>
 </tr>
 <tr>
 <td>Aggregation über mehrere Ebenen</td>
-<td><code>SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand</code> (erfordert eine Kennzahl mit <code>+d</code> in <code>.dml</code> oder in einem Inline-Block <code>/** dml ... **/</code>)</td>
+<td><code>SELECT Marke, AGG(Kundengesamtumsatz) FROM MODEL GROUP BY Marke</code> (erfordert eine Kennzahl mit <code>+d</code> in <code>.dml</code> oder in einem Inline-Block <code>/** dml ... **/</code>)</td>
 </tr>
 <tr>
 <td>Inline-Kennzahl</td>
@@ -290,7 +290,7 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </tr>
 <tr>
 <td>Gefilterte Kennzahl</td>
-<td><code>SELECT AGG(sales, '+f', region = 'North') FROM MODEL</code></td>
+<td><code>SELECT AGG(Umsatz, '+f', Region = 'North') FROM MODEL</code></td>
 </tr>
 </tbody></table>
 <p>Die Syntax für Zeitvergleiche kann im geprüften Build strenge Diagnosemeldungen zu Joins auslösen, die auf der Vereinigung der Schlüssel beruhen. Die Beispiele zeigen mögliche Abfrageformen. Vor der Ausführung die Diagnosemeldungen lesen und die generierten Joins prüfen.</p>
@@ -312,13 +312,13 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 </tr>
 <tr>
 <td>Summe einer Rohspalte</td>
-<td><code>SUM(出厂价金额)</code></td>
-<td><code>销售额: SUM({出厂价金额})</code> in <code>model.dml</code> oder inline definieren, dann <code>AGG(销售额)</code> verwenden</td>
+<td><code>SUM(Abgabepreisbetrag)</code></td>
+<td><code>Umsatz: SUM({Abgabepreisbetrag})</code> in <code>model.dml</code> oder inline definieren, dann <code>AGG(Umsatz)</code> verwenden</td>
 </tr>
 <tr>
 <td>Durchschnitt einer Rohspalte</td>
 <td><code>AVG(销售数量)</code></td>
-<td><code>均价: DIVIDE(SUM({出厂价金额}), NULLIF(SUM({销售数量}),0))</code> in <code>model.dml</code> oder inline definieren, dann <code>AGG(均价)</code> verwenden</td>
+<td><code>均价: DIVIDE(SUM({Abgabepreisbetrag}), NULLIF(SUM({销售数量}),0))</code> in <code>model.dml</code> oder inline definieren, dann <code>AGG(均价)</code> verwenden</td>
 </tr>
 <tr>
 <td>Skalares MIN/MAX einer Dimension</td>
@@ -336,14 +336,14 @@ HAVING AGG(sales) &lt; AGG(sales, 'pp')
 <h3 id="inline-measures--dml--">Inline-Kennzahlen (<code>/** dml ... **/</code>) <a class="section-link" aria-label="Link zum Abschnitt" href="#inline-measures--dml--">#</a></h3>
 <p>Temporäre Kennzahlen direkt in Model Query SQL definieren, ohne <code>.dml</code>-Dateien zu ändern. Der Compiler lädt die mit <code>FROM</code> angegebene <code>.dml</code>-Datei (<code>FROM MODEL</code> → <code>model.dml</code>, <code>FROM acme</code> → <code>acme.dml</code>), führt die Inline-Definitionen mit dem Modell zusammen und kompiliert dann die Abfrage.</p>
 <pre><code class="language-sql">/** dml
-temp_sales:
+Zwischenumsatz:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: Transaktionen
+    formula: SUM({Verkaufsbetrag})
 **/
-SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
+SELECT Produkt, AGG(Zwischenumsatz) FROM MODEL GROUP BY Produkt
 </code></pre>
-<p>Sobald die explorative Berechnung eine gemeinsame fachliche Bedeutung hat, dieselbe Formel unter einem festen Namen in das <code>.dml</code>-Modell übernehmen. Anwender können die Kennzahl weiterhin über ihren Namen referenzieren, ohne die Formel zu wiederholen. Eine Marge aus mehreren Komponenten lässt sich inline oder im Modell als <code>DIVIDE({net_revenue} - {sales_cost}, {net_revenue})</code> definieren. Wird <code>ytd</code> auf diese Kennzahl angewendet, werden ihre Komponenten über den kumulierten Zeitraum neu berechnet. Die angezeigten Monatsquoten werden dabei nicht gemittelt.</p>
+<p>Sobald die explorative Berechnung eine gemeinsame fachliche Bedeutung hat, dieselbe Formel unter einem festen Namen in das <code>.dml</code>-Modell übernehmen. Anwender können die Kennzahl weiterhin über ihren Namen referenzieren, ohne die Formel zu wiederholen. Eine Marge aus mehreren Komponenten lässt sich inline oder im Modell als <code>DIVIDE({Nettoerlös} - {Umsatzkosten}, {Nettoerlös})</code> definieren. Wird <code>ytd</code> auf diese Kennzahl angewendet, werden ihre Komponenten über den kumulierten Zeitraum neu berechnet. Die angezeigten Monatsquoten werden dabei nicht gemittelt.</p>
 <p><strong>Anwendungsfälle</strong>:</p>
 <ul>
 <li>Ad-hoc-Aggregation ohne Änderung an <code>.dml</code> (erfüllt die <a href="#311-aggregation-lookup-table">Anforderung, eine Kennzahl zu verwenden</a>)</li>
@@ -381,5 +381,5 @@ SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
 <h2 id="a-time-filter-also-scopes-sibling-measures">Ein Zeitfilter schränkt auch andere Kennzahlen derselben Abfrage ein <a class="section-link" aria-label="Link zum Abschnitt" href="#a-time-filter-also-scopes-sibling-measures">#</a></h2>
 <p>Ein Monatsfilter auf Abfrageebene kann den zeitlichen Bezugspunkt für eine YTD-Kennzahl liefern. Er schränkt zugleich die regulären Kennzahlen derselben Abfrage ein. Im <a href="examples--time-context.de.html">Beispiel mit einem einzelnen KPI</a> fließen Januar und Februar in die YTD-Marge für Februar ein, während der reguläre Umsatz nur den Februar umfasst. Eine Abfrage ohne zeitlichen Bezugspunkt schlägt fehl. Nach Kalenderzeiträumen gruppierte Abfragen können Monate mit einem kumulierten Wert, aber ohne Umsatz in der jeweiligen Periode ausgeben. Welche Zeilen ausgegeben werden und welche Daten in eine Kennzahl einfließen, sind getrennte Fragen. Verwenden Sie weder das heutige Datum noch das jüngste Datum in den Faktendaten stillschweigend als Bezugspunkt.</p>
 <h2 id="model-query-sql-速查">Kurzreferenz zu Model Query SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#model-query-sql-速查">#</a></h2>
-<p><code>FROM MODEL</code> bindet <code>model.dml</code> ein. Mit <code>AGG(sales)</code> referenzieren Sie eine Kennzahl, und mit <code>GROUP BY region</code> legen Sie eine Zeile pro Region fest. Mit <code>WHERE</code> grenzen Sie den Abfragebereich ein, und mit <code>HAVING AGG(sales) &gt; 0</code> filtern Sie die Gruppen nach der Aggregation. Den Namen einer Ausgabespalte legen Sie mit <code>AS</code> fest.</p>
+<p><code>FROM MODEL</code> bindet <code>model.dml</code> ein. Mit <code>AGG(Umsatz)</code> referenzieren Sie eine Kennzahl, und mit <code>GROUP BY Region</code> legen Sie eine Zeile pro Region fest. Mit <code>WHERE</code> grenzen Sie den Abfragebereich ein, und mit <code>HAVING AGG(Umsatz) &gt; 0</code> filtern Sie die Gruppen nach der Aggregation. Den Namen einer Ausgabespalte legen Sie mit <code>AS</code> fest.</p>
 </main></body></html>

@@ -27,35 +27,39 @@
 </tbody></table>
 <p>生成された SQL を確認し、各ウィンドウがどの段階で評価されるかを確かめてください。コンパイル、データベースでの実行、結果の比較は、それぞれ別の検証項目です。</p>
 <h2 id="detail-window">明細ウィンドウ <a class="section-link" aria-label="この節へのリンク" href="#detail-window">#</a></h2>
-<pre><code class="language-yaml">fact:
+<pre><code class="language-yaml">取引記録:
   type: dataset
   table: FACT_SALES
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
-    customer:
-    region:
-    amount:
-    customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
+    売上明細番号:
+      abbr: id
+    顧客:
+      abbr: customer
+    地域:
+      abbr: region
+    売上金額:
+      abbr: amount
+    顧客別取引額: 'SUM({売上金額}) OVER (PARTITION BY {顧客})'
   measures:
-    repeated_customer_amount: 'SUM({customer_amount})'
+    明細行別顧客取引額: 'SUM({顧客別取引額})'
 </code></pre>
 <p>このウィンドウは、顧客ごとの合計を、その顧客のすべての明細行に表示します。計算列を合計すると、同じ顧客の合計がソース行ごとに1回ずつ加算されます。結果は顧客ごとの合計を重複排除したものではありません。この例はウィンドウの配置を示すためのもので、推奨される売上指標ではありません。</p>
 <p>行の順序に依存するウィンドウの結果は、並べ替え順、ウィンドウフレーム、同順位を解消するキー、対象となるソース行の集合にも左右されます。フィルターを適用する段階を変えると、パーティション内のすべてのウィンドウ結果が変わることがあります。</p>
-<p>明細ウィンドウでは、集計前に最後の観測値を選ぶこともできます。<code>dt_month</code> と <code>revenue_amount</code> があるソースでは、検証済みのパターンで次の列と指標を追加します。</p>
+<p>明細ウィンドウでは、集計前に最後の観測値を選ぶこともできます。<code>dt_month</code> と <code>売上金額</code> があるソースでは、検証済みのパターンで次の列と指標を追加します。</p>
 <pre><code class="language-yaml"># Under the dataset's columns:
-is_last_month: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
+前月フラグ: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
 # Under the same dataset's measures:
-last_month_revenue: 'SUM({revenue_amount} * {is_last_month})'
+前月収益: 'SUM({売上金額} * {前月フラグ})'
 </code></pre>
 <p><code>MAX(...) OVER ()</code> は、明細ウィンドウの入力から最新の月を1つ選びます。指標は、その月の金額だけを合計します。エンティティ単位のパーティションはありません。あるエンティティにその月の観測値がなければ、そのエンティティの直近の残高は繰り越されません。在庫や口座残高に式を採用する前に、「最後」をエンティティごとに決めるのか全体で決めるのか、観測値がない場合にどう扱うのか、どのフィルターでウィンドウの対象を絞るのかを定義してください。</p>
 <h2 id="post-aggregation-window">集計後のウィンドウ <a class="section-link" aria-label="この節へのリンク" href="#post-aggregation-window">#</a></h2>
-<p>アトミック指標 <code>sales: SUM({amount})</code> をもとに、この複合式は集計後の売上額に順位を付けます。</p>
-<pre><code class="language-yaml">customer_rank:
+<p>アトミック指標 <code>売上高: SUM({売上金額})</code> をもとに、この複合式は集計後の売上額に順位を付けます。</p>
+<pre><code class="language-yaml">顧客順位:
   type: measure
-  formula: 'rank() over (partition by {-d: customer} order by {sales} desc)'
+  formula: 'rank() over (partition by {-d: 顧客} order by {売上高} desc)'
 </code></pre>
-<p>クエリの行を <code>[region, customer]</code> の粒度で定義すると、パーティション式にはクエリのほかのフィールド（ここでは <code>region</code>）が残ります。検証した SQL は、地域と顧客でグループ化した後、地域ごとに <code>SUM(amount)</code> に順位を付けます。ファクトデータの物理行は、順位付けの入力にはなりません。</p>
+<p>クエリの行を <code>[地域, 顧客]</code> の粒度で定義すると、パーティション式にはクエリのほかのフィールド（ここでは <code>地域</code>）が残ります。検証した SQL は、地域と顧客でグループ化した後、地域ごとに <code>SUM(amount)</code> に順位を付けます。ファクトデータの物理行は、順位付けの入力にはなりません。</p>
 <p><code>+d</code> により、より細かい粒度で集計する段階が設けられます。これによってグループ化された値が明細ウィンドウの属性に変わることはありません。ソースのフィルター、ウィンドウ結果に対するフィルター、最終レポートのフィルターでは、選択される行の集合が異なることがあります。</p>
 <p>Model Query は、検証済みのウィンドウ式を直接記述する形式も受け付けます。利用できるクエリのインターフェースについては、<a href="reference--model-query-sql.ja.html">クエリリファレンス</a>を参照してください。ある形式が受け付けられても、任意のウィンドウフレームや方言がサポートされるとは限りません。</p>
 <h2 id="row-windows-and-calendar-periods">行ベースのウィンドウと暦上の期間 <a class="section-link" aria-label="この節へのリンク" href="#row-windows-and-calendar-periods">#</a></h2>

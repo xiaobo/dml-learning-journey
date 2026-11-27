@@ -15,13 +15,13 @@
 <p>メジャーを追加する前に、予定している <code>SELECT</code>、<code>WHERE</code>、<code>GROUP BY</code> を記述します。可能な限り既存の業務用語を名前に使います。</p>
 <pre><code class="language-sql">SELECT
 	dt_month,
-	渠道,
-	AGG(销售额),
-	AGG({销售额: yoy}) AS 销售额_yoy,
-	AGG(同店销售额)
+	販売経路,
+	AGG(売上高),
+	AGG({売上高: yoy}) AS 売上高前年同期比,
+	AGG(既存店売上高)
 FROM MODEL
 WHERE dt_month = '2025-03-01'
-GROUP BY dt_month, 渠道
+GROUP BY dt_month, 販売経路
 </code></pre>
 <p>レポートのグループ化、時間ウィンドウ、チャネルによる絞り込みはクエリに記述します。既存店比較の対象条件など、再利用可能な定義はモデルに記述します。必要な結果が並び順や行数の上限に依存する場合は、並べ替えや行数制限を追加します。述語の順序は、文法上受け付けられるかどうかに影響しません。</p>
 <p>修飾子付きのメジャー参照ごとに、異なるエイリアスを使用します。生成された出力列を確認してください。コンパイラが列の順序を変更することがあります。また、既知の不具合があるクエリ形式では、指定した時間フィールドが省略されることがあります。</p>
@@ -45,7 +45,7 @@ GROUP BY dt_month, 渠道
 <li>必要な構成要素を使って複合比率を定義します。</li>
 <li>対象範囲、粒度（行や集計値を定義するレベル）、NULLの扱いを説明に記載します。</li>
 </ol>
-<p>評価ディメンションに制約があるメジャーは、必須フィールドを含むクエリでテストします。<code>dt_month</code> にフィルターをかけるだけでは、閉じた評価ディメンション <code>[customer, dt_month]</code> の要件を満たしません。</p>
+<p>評価ディメンションに制約があるメジャーは、必須フィールドを含むクエリでテストします。<code>dt_month</code> にフィルターをかけるだけでは、閉じた評価ディメンション <code>[顧客, dt_month]</code> の要件を満たしません。</p>
 <p>モデルのパターンについては<a href="reference--measures.ja.html">メジャー</a>を参照してください。説明と名前については、<a href="how-to--write-model-metadata.ja.html">モデルのメタデータを記述する</a>の手順に従ってください。</p>
 <h2 id="phase-5-validate-the-model-and-query">フェーズ 5：モデルとクエリを検証する <a class="section-link" aria-label="この節へのリンク" href="#phase-5-validate-the-model-and-query">#</a></h2>
 <p>挙動が不明な場合は、選択した <code>dmlc.exe</code> の挙動を判断基準にします。そのパス、バージョン、ビルド日時、方言を記録します。</p>

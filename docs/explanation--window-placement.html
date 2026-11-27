@@ -33,27 +33,31 @@
   dimension: [id]
   columns:
     id:
+      abbr: id
     customer:
+      abbr: customer
     region:
+      abbr: region
     amount:
-    customer_amount: &#39;SUM({amount}) OVER (PARTITION BY {customer})&#39;
+      abbr: amount
+    customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
   measures:
-    repeated_customer_amount: &#39;SUM({customer_amount})&#39;
+    repeated_customer_amount: 'SUM({customer_amount})'
 </code></pre>
 <p>The window repeats a customer&#39;s total on every detail row for that customer. Summing the calculated column counts the repeated total once per source row. The result is not a deduplicated customer total, so this example illustrates placement rather than a recommended sales metric.</p>
 <p>A row-order-sensitive window also depends on its ordering, frame, tie-break key, and source population. Changing a filter&#39;s stage can change every window result in a partition.</p>
 <p>A detail window can also select a last observation before aggregation. For a source with <code>dt_month</code> and <code>revenue_amount</code>, the checked pattern adds this column and measure:</p>
-<pre><code class="language-yaml"># Under the dataset&#39;s columns:
-is_last_month: &#39;IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)&#39;
-# Under the same dataset&#39;s measures:
-last_month_revenue: &#39;SUM({revenue_amount} * {is_last_month})&#39;
+<pre><code class="language-yaml"># Under the dataset's columns:
+is_last_month: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
+# Under the same dataset's measures:
+last_month_revenue: 'SUM({revenue_amount} * {is_last_month})'
 </code></pre>
 <p><code>MAX(...) OVER ()</code> chooses one latest month in the detail-window input. The measure sums only amounts from that month. There is no entity partition: if one entity has no observation in that month, this does not carry forward its last known balance. For inventory or account balances, define whether “last” is per entity or global, how missing observations behave, and which filters scope the window before adopting a formula.</p>
 <h2 id="post-aggregation-window">Post-aggregation window <a class="section-link" aria-label="Link to section" href="#post-aggregation-window">#</a></h2>
 <p>Given atomic <code>sales: SUM({amount})</code>, this composite formula ranks aggregated sales.</p>
 <pre><code class="language-yaml">customer_rank:
   type: measure
-  formula: &#39;rank() over (partition by {-d: customer} order by {sales} desc)&#39;
+  formula: 'rank() over (partition by {-d: customer} order by {sales} desc)'
 </code></pre>
 <p>At query grain <code>[region, customer]</code>, the partition expression retains the other query fields, here <code>region</code>. The checked SQL groups by region and customer, then ranks <code>SUM(amount)</code> within each region. Physical fact rows are not the ranking input.</p>
 <p><code>+d</code> establishes a finer aggregation stage. It does not turn a grouped value into a detail-window attribute. Source filters, filters on window results, and final report filters can select different populations.</p>

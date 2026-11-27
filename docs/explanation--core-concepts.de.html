@@ -35,25 +35,28 @@
 <p>DML ist ein eigenständiger Compiler für eine semantische Schicht. Er verarbeitet Modelldateien und erzeugt SQL, das die Datenbank ausführt. Datenbankberechtigungen und die Autorisierung in der Anwendung regeln den Zugriff. Dashboards und die zeitgesteuerte Ausführung sind Aufgaben des umgebenden Systems. Ein Modellfilter allein ist keine Zugriffskontrollrichtlinie.</p>
 <p>DML prüft die Struktur von Deklarationen und die analytische Kompatibilität, etwa im Hinblick auf die Ebene, auf der Zeilen oder Summen definiert sind, und auf den Zeitkontext. Der Compiler bietet keine vollständige statische Typprüfung für SQL-Ausdrücke. Die physischen Werttypen liegen in der Zuständigkeit der Datenbank, und das bei der Prüfung verwendete Modellschema weist <code>type:</code>-Deklarationen für Spalten zurück. Eine fehlerhafte Typkonvertierung oder ein ungültiges Funktionsargument kann daher die Kompilierung passieren und erst in der Datenbank zu einem Fehler führen. Siehe <a href="reference--model-structure.de.html#column-metadata-is-not-a-sql-type-declaration">Spaltenmetadaten und Werttypen</a>.</p>
 <p>Ein Datensatz bindet Spalten an eine physische Tabelle oder eine SQL-Relation. Seine Deklaration <code>dimension:</code> legt den vollständigen Schlüssel der Quellzeilen fest.</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">Transaktionen:
   type: dataset
   table: fact_transactions
-  dimension: [transaction_id]
+  dimension: [TransaktionsID]
   columns:
-    transaction_id:
-    amount:
-    discount:
-    net_amount: amount - discount
+    TransaktionsID:
+      abbr: transaction_id
+    Verkaufsbetrag:
+      abbr: amount
+    Rabattbetrag:
+      abbr: discount
+    Nettobetrag: Verkaufsbetrag - Rabattbetrag
   measures:
-    sales: SUM({net_amount})
-    number_of_transactions: COUNT(1)
+    Umsatz: SUM({Nettobetrag})
+    Transaktionsanzahl: COUNT(1)
 
-avg_transaction_value:
+DurchschnittlicherTransaktionswert:
   type: measure
-  formula: 'DIVIDE({sales}, {number_of_transactions})'
+  formula: 'DIVIDE({Umsatz}, {Transaktionsanzahl})'
 </code></pre>
-<p><code>sales</code> und <code>number_of_transactions</code> sind atomare Kennzahlen. Sie übernehmen den Datensatz, in dem sie definiert sind, und aggregieren dessen Zeilen oder Spaltenausdrücke direkt, ohne auf andere Kennzahlen zu verweisen. <code>avg_transaction_value</code> ist eine zusammengesetzte Kennzahl, weil ihre Formel auf andere Kennzahlen verweist, obwohl beide atomaren Kennzahlen <code>transactions</code> verwenden. Eine zusammengesetzte Kennzahl hat keine Eigenschaft <code>dataset:</code>.</p>
-<p>In einer Modellformel bezeichnet <code>amount</code> ohne geschweifte Klammern eine physische SQL-Spalte. <code>{net_amount}</code> wird durch den Ausdruck der berechneten Modellspalte ersetzt. Die geschweiften Klammern machen den Unterschied auch dann deutlich, wenn der logische und der physische Name übereinstimmen.</p>
+<p><code>Umsatz</code> und <code>Transaktionsanzahl</code> sind atomare Kennzahlen. Sie übernehmen den Datensatz, in dem sie definiert sind, und aggregieren dessen Zeilen oder Spaltenausdrücke direkt, ohne auf andere Kennzahlen zu verweisen. <code>DurchschnittlicherTransaktionswert</code> ist eine zusammengesetzte Kennzahl, weil ihre Formel auf andere Kennzahlen verweist, obwohl beide atomaren Kennzahlen <code>Transaktionen</code> verwenden. Eine zusammengesetzte Kennzahl hat keine Eigenschaft <code>dataset:</code>.</p>
+<p>In einer Modellformel bezeichnet <code>Verkaufsbetrag</code> ohne geschweifte Klammern eine physische SQL-Spalte. <code>{Nettobetrag}</code> wird durch den Ausdruck der berechneten Modellspalte ersetzt. Die geschweiften Klammern machen den Unterschied auch dann deutlich, wenn der logische und der physische Name übereinstimmen.</p>
 <p>Spaltenmakros definieren wiederverwendbare Spaltenausdrücke oder Suchzugriffe auf andere Datensätze. So können sie Attribute für Kennzahlen bereitstellen, ohne dass jede Abfrage, die diese Kennzahlen verwendet, einen Join enthalten muss. Der vollständige Schlüssel des Zieldatensatzes bestimmt die Suchargumente. Siehe <a href="#2-source-relations-lookups-and-metric-composition">Quellrelationen und Suchzugriffe</a>.</p>
 <p>Model Query verweist über <code>AGG(...)</code> auf Kennzahlen. Modellformeln verwenden Aggregatfunktionen wie <code>SUM</code> und <code>COUNT</code> direkt. <code>AGG</code> ist die Abfrageschnittstelle für eine Kennzahl und ersetzt <code>SUM</code> innerhalb einer Modellformel nicht.</p>
 <p>Eine einmalig benötigte Kennzahl kann zunächst in einem <a href="reference--model-query-sql.de.html#312-inline-measures--dml--">eingebetteten DML-Block</a> in der Abfragedatei definiert werden. Zum Ausprobieren muss das gemeinsame Modell nicht zuerst geändert werden. Prüfen Sie brauchbare Definitionen, bevor Sie sie als gemeinsame Kennzahlen übernehmen.</p>
@@ -74,7 +77,7 @@ avg_transaction_value:
 </tr>
 <tr>
 <td>Das am Ereignisdatum gültige Attribut ermitteln</td>
-<td><code>pk(id, event_date)</code> mit <code>[id, 'range(valid_from, valid_to)']</code> als Zielschlüssel</td>
+<td><code>pk(VerkaufspositionID, dt_date)</code> mit <code>[VerkaufspositionID, 'range(valid_from, valid_to)']</code> als Zielschlüssel</td>
 <td>Die geprüften endlichen Intervalle entsprechen <code>[start,end)</code>. Intervalle für dieselbe id dürfen sich nicht überschneiden.</td>
 </tr>
 <tr>
@@ -121,7 +124,7 @@ avg_transaction_value:
 <td>Zulässige Alternativen für die Auswertungsdimension, eine pro innerer Liste</td>
 </tr>
 </tbody></table>
-<p>Die Granularität beschreibt, wofür eine Zeile im jeweiligen Kontext steht. Beispielsweise identifiziert <code>[transaction_id]</code> eine Transaktion, während <code>[region, dt_month]</code> einen Bericht nach Region und Monat gruppiert. Eine Berichtsgruppe kann viele Quellzeilen enthalten und daher den Quellschlüssel nicht ersetzen.</p>
+<p>Die Granularität beschreibt, wofür eine Zeile im jeweiligen Kontext steht. Beispielsweise identifiziert <code>[TransaktionsID]</code> eine Transaktion, während <code>[Region, dt_month]</code> einen Bericht nach Region und Monat gruppiert. Eine Berichtsgruppe kann viele Quellzeilen enthalten und daher den Quellschlüssel nicht ersetzen.</p>
 <p>Der Modifikator <code>dimension: []</code> leert die Auswertungsdimension, um einen Gesamtwert ohne Gruppierung zu berechnen. Er deklariert keinen Schlüssel zur Identifikation von Dataset-Zeilen. <code>+d</code> fügt Felder für eine Zwischenberechnung hinzu. Wenn eine Formel ein Ergebnis auf einer gröberen Ebene benötigt, fasst eine explizite äußere Aggregation diese Zwischenwerte zusammen.</p>
 <p>Der Compiler verlässt sich auf den deklarierten Quellschlüssel. Gibt es im Ziel einer <code>pk(...)</code>-Referenz mehrere Zeilen mit demselben Schlüssel, können sich Zeilen auch bei erfolgreicher Kompilierung vervielfachen. Die Validierung anhand der tatsächlichen Daten prüft, ob die vorhandenen Schlüsselwerte eindeutig sind. Ergebnisvergleiche zeigen, ob die Abfrage das beabsichtigte Ergebnis liefert.</p>
 <p><a href="explanation--dimensions.de.html">Semantik von Dimensionen</a> erläutert diese Rollen und ihre Auswirkungen genauer.</p>

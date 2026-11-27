@@ -3,47 +3,53 @@
 <h2 id="dimension-modifiers">Dimensionsmodifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#dimension-modifiers">#</a></h2>
 <p><strong>Fachliche Frage</strong>: Welchen Anteil hat jedes Produkt innerhalb seiner Kategorie?</p>
 <h3 id="product-share-within-category">Produktanteil innerhalb der Kategorie <a class="section-link" aria-label="Link zum Abschnitt" href="#product-share-within-category">#</a></h3>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: {dimension: [category]}}) as category_total
+<pre><code class="language-sql">SELECT Kategorie, Produkt,
+       AGG(Umsatz) as Artikelumsatz,
+       AGG({Umsatz: {dimension: [Kategorie]}}) as Kategoriesumme
 FROM MODEL
-GROUP BY category, product
+GROUP BY Kategorie, Produkt
 </code></pre>
-<p>Hier entfernt <code>{sales: {dimension: [category]}}</code> die Dimensionen <code>product</code> und <code>region</code>. Dadurch wird <code>sales</code> allein auf Kategorieebene ausgewertet.</p>
+<p>Hier entfernt <code>{Umsatz: {dimension: [Kategorie]}}</code> die Dimensionen <code>Produkt</code> und <code>Region</code>. Dadurch wird <code>Umsatz</code> allein auf Kategorieebene ausgewertet.</p>
 <h3 id="using-pot-percentage-of-total"><code>pot</code> verwenden (Prozentanteil an der Gesamtsumme) <a class="section-link" aria-label="Link zum Abschnitt" href="#using-pot-percentage-of-total">#</a></h3>
 <p><code>pot</code> entfernt <strong>alle</strong> Dimensionen und liefert so für jede Zeile den Anteil an der Gesamtsumme:</p>
-<pre><code class="language-sql">SELECT category, product,
-       AGG(sales) as product_sales,
-       AGG({sales: pot}) as share_of_grand_total
+<pre><code class="language-sql">SELECT Kategorie, Produkt,
+       AGG(Umsatz) as Artikelumsatz,
+       AGG({Umsatz: pot}) as AnteilAnGesamtsumme
 FROM MODEL
-GROUP BY category, product
+GROUP BY Kategorie, Produkt
 </code></pre>
 <p>Für den Anteil innerhalb einer übergeordneten Dimension (z. B. Produktwert geteilt durch die Kategoriesumme) verwenden Sie stattdessen den Modifikator <code>dimension</code>:</p>
-<pre><code class="language-sql">-- Share of category (product / category total)
-SELECT category, product,
-       AGG(sales) as product_sales,
-       DIVIDE(AGG(sales), AGG({sales: {dimension: [category]}})) as category_share
+<pre><code class="language-sql">-- Share of Kategorie (Produkt / Kategorie Summe)
+SELECT Kategorie, Produkt,
+       AGG(Umsatz) as Artikelumsatz,
+       DIVIDE(AGG(Umsatz), AGG({Umsatz: {dimension: [Kategorie]}})) as Kategorieanteil
 FROM MODEL
-GROUP BY category, product
+GROUP BY Kategorie, Produkt
 </code></pre>
 <h3 id="hidden-dimension-fields">Ausgeblendete Dimensionsfelder <a class="section-link" aria-label="Link zum Abschnitt" href="#hidden-dimension-fields">#</a></h3>
 <p>Ein Datensatz kann Dimensionen enthalten, die für interne Berechnungen erforderlich sind, aber für Endnutzer ausgeblendet werden sollen.</p>
-<pre><code class="language-yaml">transactions:
+<pre><code class="language-yaml">Transaktionen:
     type: dataset
+    table: fact_transactions
     dimension:
         - dt_date
-        - product
-        - region
+        - Produkt
+        - Region
     columns:
         dt_date:
-        product:
-        region:
-        transaction_id:          # internal dimension, not for analysis
-        amount:
+            abbr: dt_date
+        Produkt:
+            abbr: product
+        Region:
+            abbr: region
+        TransaktionsID:          # internal dimension, not for analysis
+            abbr: transaction_id
+        Verkaufsbetrag:
+            abbr: amount
 </code></pre>
-<p><code>transaction_id</code> lässt sich weiterhin in <code>+d</code>-Modifikatoren verwenden, ohne in der Tabelle MODEL angezeigt zu werden.</p>
+<p><code>TransaktionsID</code> lässt sich weiterhin in <code>+d</code>-Modifikatoren verwenden, ohne in der Tabelle MODEL angezeigt zu werden.</p>
 <h3 id="moving-annual-total-mat">Gleitende Jahressumme (MAT) <a class="section-link" aria-label="Link zum Abschnitt" href="#moving-annual-total-mat">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+<pre><code class="language-sql">SELECT dt_month, AGG(Umsatz), AGG({Umsatz: mat})
 FROM MODEL
 WHERE dt_month BETWEEN date(current_date, 'start of month', '-12 months')
                    AND date(current_date, 'start of month', '-1 month')
@@ -55,33 +61,34 @@ GROUP BY dt_month
 <h2 id="combo-columns">Kombinierte Spalten <a class="section-link" aria-label="Link zum Abschnitt" href="#combo-columns">#</a></h2>
 <p><strong>Fachliche Frage</strong>: Welche kleinste in Rechnung gestellte Menge ergibt sich je Produkt, wenn nur bezahlte Rechnungen berücksichtigt werden?</p>
 <h3 id="conditional-aggregation">Bedingte Aggregation <a class="section-link" aria-label="Link zum Abschnitt" href="#conditional-aggregation">#</a></h3>
-<pre><code class="language-yaml">min_paid_qty:
+<pre><code class="language-yaml">KleinsteBezahlteMenge:
     type: measure
-    dataset: transactions
-    formula: MINIF({quantity}, {is_paid} = 1)
+    dataset: Transaktionen
+    formula: MINIF({Anzahl}, {Bezahlt} = 1)
 </code></pre>
-<pre><code class="language-sql">SELECT product, AGG(min_paid_qty)
+<pre><code class="language-sql">SELECT Produkt, AGG(KleinsteBezahlteMenge)
 FROM MODEL
-GROUP BY product
+GROUP BY Produkt
 </code></pre>
 <h3 id="calendar-densification-vs-fill-default">Kalenderdaten vervollständigen oder Standardwerte einsetzen <a class="section-link" aria-label="Link zum Abschnitt" href="#calendar-densification-vs-fill-default">#</a></h3>
-<p><strong>Kalenderdaten vervollständigen</strong> (jedes Datum erscheint): Stellen Sie sicher, dass die gewünschte Zeitebene im Kalender oder in einer lückenlosen Datumsreihe vorhanden ist, etwa über ein Flag auf <code>Dim Calendar</code>. Fragen Sie anschließend auf dieser Ebene ab.</p>
-<pre><code class="language-yaml">Dim Calendar:
+<p><strong>Kalenderdaten vervollständigen</strong> (jedes Datum erscheint): Stellen Sie sicher, dass die gewünschte Zeitebene im Kalender oder in einer lückenlosen Datumsreihe vorhanden ist, etwa über ein Flag auf <code>Kalender</code>. Fragen Sie anschließend auf dieser Ebene ab.</p>
+<pre><code class="language-yaml">Kalender:
     type: dataset
     table: DML_CALENDAR
     dimension:
         - dt_date
     columns:
         dt_date:
-        has_data:
+            abbr: dt_date
+        DatenVorhanden:
             source: '1'
 </code></pre>
 <p><strong>Fehlende Zeile mit einem Standardwert auffüllen</strong> (Weitergabe von NULL-Werten nach einem Join / FOJ verhindern): Aktivieren Sie das Auffüllen mit <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code> als äußerster Funktion. Das Auffüllen greift nur an den <strong>Verwendungsstellen</strong> dieser Kennzahl. Siehe <a href="reference--measures.de.html#fill-default-when-row-missing">Auffüllen fehlender Zeilen</a>.</p>
-<pre><code class="language-yaml">daily_sales:
+<pre><code class="language-yaml">Tagesumsatz:
     type: measure
-    formula: 'isnull(SUM({sales: {+d: dt_date}}), 0)'   # activate
+    formula: 'isnull(SUM({Umsatz: {+d: dt_date}}), 0)' # activate
 </code></pre>
-<p>Verlassen Sie sich bei späteren zusammengesetzten Berechnungen nicht allein auf <code>SUM(isnull({sales: {+d: dt_date}}, 0))</code>, um <strong>nach dem Join fehlende Zeilen</strong> auszugleichen. Aktivieren Sie das Auffüllen für die Kennzahl, auf die Sie verweisen werden, oder für das Ergebnis der zusammengesetzten Berechnung.</p>
+<p>Verlassen Sie sich bei späteren zusammengesetzten Berechnungen nicht allein auf <code>SUM(isnull({Umsatz: {+d: dt_date}}, 0))</code>, um <strong>nach dem Join fehlende Zeilen</strong> auszugleichen. Aktivieren Sie das Auffüllen für die Kennzahl, auf die Sie verweisen werden, oder für das Ergebnis der zusammengesetzten Berechnung.</p>
 <p><strong>Das Wichtigste</strong>: Verwenden Sie <code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> für bedingte Aggregationen, die einen einzelnen Wert liefern. Fehlende <strong>Datumswerte</strong> → Datumsreihe vervollständigen. Fehlende <strong>Kennzahlzeilen nach dem Join</strong> → Standardwerte an den Verwendungsstellen einsetzen (P28b).</p>
 <h3 id="allows-all-for-materialization-selection"><code>allows: ALL</code> zur Auswahl von Materialisierungen <a class="section-link" aria-label="Link zum Abschnitt" href="#allows-all-for-materialization-selection">#</a></h3>
 <p>Syntax und Beispiel finden Sie unter <a href="reference--query-yaml.de.html#411-allows-all"><code>allows: ALL</code></a>. Mit <code>allows: ALL</code> kommen kompatible Materialisierungen infrage. Die Anforderungen an die Granularität der Kennzahlen gelten weiterhin.</p>
@@ -90,18 +97,18 @@ GROUP BY product
 <p><strong>Fachliche Frage</strong>: Ein Dashboard fragt stündlich die monatlichen Umsätze, das Wachstum gegenüber dem jeweiligen Vorjahresmonat und MAT für die vergangenen 24 Monate ab. Der zugrunde liegende Datensatz ist sehr groß.</p>
 <h3 id="solution-materialize">Lösung: Materialisieren <a class="section-link" aria-label="Link zum Abschnitt" href="#solution-materialize">#</a></h3>
 <p>Definieren Sie zunächst die Kennzahlen und anschließend ein Materialisierungsobjekt, das diese auf einer festen Granularitätsebene voraggregiert:</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">Umsatz:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: Transaktionen
+    formula: SUM({Verkaufsbetrag})
 
-sales_yoy:
+UmsatzZumVorjahr:
     type: measure
-    formula: '{sales: yoy}'
+    formula: '{Umsatz: yoy}'
 
-sales_mat:
+Umsatzübersicht:
     type: measure
-    formula: '{sales: mat}'
+    formula: '{Umsatz: mat}'
 
 DWS_SALES_DATE_PRODUCT:
     type: materialize
@@ -109,11 +116,11 @@ DWS_SALES_DATE_PRODUCT:
         dt_date: date
     dimension:
         - dt_date
-        - product
+        - Produkt
     measures:
-        - sales
-        - sales_yoy
-        - sales_mat
+        - Umsatz
+        - UmsatzZumVorjahr
+        - Umsatzübersicht
 </code></pre>
 <p>Ein Datensatz kann seine Materialisierung auch direkt in seiner Definition deklarieren (mit <code>materialize: &lt;name&gt;</code> am Datensatz). Siehe <a href="reference--model-structure.de.html#52-dataset-definition-type-dataset">Datensatzdefinition (<code>type: dataset</code>)</a>. Die Variante mit einem eigenständigen Objekt ist unter <a href="reference--materialization.de.html">Materialisierungsdeklarationen</a> beschrieben.</p>
 <blockquote>
@@ -126,12 +133,12 @@ DWS_SALES_DATE_PRODUCT:
 <li>Die Materialisierung wird über ihre gespeicherte Prozedur (<code>parameters:</code>) aktualisiert. Die Aktualisierung erfolgt nicht in Echtzeit.</li>
 </ol>
 <h3 id="query-with-non-materialized-filter">Abfrage mit einem Filter auf einer nicht materialisierten Dimension <a class="section-link" aria-label="Link zum Abschnitt" href="#query-with-non-materialized-filter">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
+<pre><code class="language-sql">SELECT dt_month, Produkt, Region, AGG(Umsatz)
 FROM MODEL
-WHERE region = 'North'
-GROUP BY dt_month, product, region
+WHERE Region = 'North'
+GROUP BY dt_month, Produkt, Region
 </code></pre>
-<p>Wenn die Materialisierung auf der Ebene <code>dt_date + product</code> definiert ist (ohne <code>region</code>), kann sie diese Abfrage nicht bedienen. Ziehen Sie bei Bedarf Materialisierungen auf mehreren Granularitätsebenen in Betracht.</p>
+<p>Wenn die Materialisierung auf der Ebene <code>dt_date + Produkt</code> definiert ist (ohne <code>Region</code>), kann sie diese Abfrage nicht bedienen. Ziehen Sie bei Bedarf Materialisierungen auf mehreren Granularitätsebenen in Betracht.</p>
 <h3 id="when-to-materialize">Wann sich eine Materialisierung lohnt <a class="section-link" aria-label="Link zum Abschnitt" href="#when-to-materialize">#</a></h3>
 <table>
 <thead>
@@ -161,50 +168,59 @@ GROUP BY dt_month, product, region
 <td>Ja</td>
 </tr>
 </tbody></table>
-<p><strong>Das Wichtigste</strong>: Die Materialisierung wird mit einem Objekt vom Typ <code>type: materialize</code> deklariert (Granularität über <code>dimension:</code>, Kennzahlen über <code>measures:</code>). Eine Deklaration direkt an der Kennzahl ist nicht zulässig. Materialisierte Kennzahlen werden in Abfragen wie gewohnt referenziert (<code>AGG(sales)</code>). Siehe <a href="reference--materialization.de.html#55-materialize-definition-type-materialize">Definition einer Materialisierung (<code>type: materialize</code>)</a> und <a href="how-to--design-materializations.de.html">Materialisierungen entwerfen</a>.</p>
+<p><strong>Das Wichtigste</strong>: Die Materialisierung wird mit einem Objekt vom Typ <code>type: materialize</code> deklariert (Granularität über <code>dimension:</code>, Kennzahlen über <code>measures:</code>). Eine Deklaration direkt an der Kennzahl ist nicht zulässig. Materialisierte Kennzahlen werden in Abfragen wie gewohnt referenziert (<code>AGG(Umsatz)</code>). Siehe <a href="reference--materialization.de.html#55-materialize-definition-type-materialize">Definition einer Materialisierung (<code>type: materialize</code>)</a> und <a href="how-to--design-materializations.de.html">Materialisierungen entwerfen</a>.</p>
 <h3 id="materialize-as-etl-replacement">Materialisierung als Ersatz für ETL <a class="section-link" aria-label="Link zum Abschnitt" href="#materialize-as-etl-replacement">#</a></h3>
 <p><strong>Fachliche Frage</strong>: Eine gespeicherte Prozedur erstellt eine Faktentabelle (<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>). Anschließend greift ein Bericht auf <code>RPT_X</code> zu. Lässt sich die gespeicherte Prozedur durch DML ersetzen?</p>
 <h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">Lösung: Die ETL-Pipeline als Materialisierungsobjekt modellieren <a class="section-link" aria-label="Link zum Abschnitt" href="#solution-model-the-etl-pipeline-as-a-materialize-object">#</a></h3>
 <p>Modellieren Sie <code>RPT_X</code> nicht als extern erstellten Datensatz mit <code>table:</code>, sondern bilden Sie die <strong>gesamte Pipeline</strong> ab: die Rohdatenquelle als Datensatz mit <code>table:</code>, die Datenanreicherung über Ketten von <code>pk()</code>-Aufrufen und <code>RPT_X</code> als Objekt vom Typ <code>type: materialize</code>, das die angereicherte Quelle voraggregiert.</p>
 <pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure's #temp tables)
-Dim Customer:
+Kundenverzeichnis:
     type: dataset
     table: MDM_STORE
-    dimension: [store_id]
+    dimension: [Filialnummer]
     columns:
-        store_id:
-        store_name:
-        hq_id:
+        Filialnummer:
+            abbr: store_id
+        Filialname:
+            abbr: store_name
+        ZentralenID:
+            abbr: hq_id
 
-Dim Org:
+Organisationsverzeichnis:
     type: dataset
     table: MDM_ORG
-    dimension: [org_id]
+    dimension: [Organisationsnummer]
     columns:
-        org_id:
-        emp_name:
+        Organisationsnummer:
+            abbr: org_id
+        Mitarbeitername:
+            abbr: emp_name
 
 # 2. Source fact dataset with pk() chain enrichment
 #    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
-raw_sales:
+Verkaufsrohdaten:
     type: dataset
     table: RAW_SALES
-    dimension: [dt_month, store_id, prod_id]
+    dimension: [dt_month, Filialnummer, Artikelnummer]
     columns:
         dt_month:
-        store_id:
-        prod_id:
-        amt:
+            abbr: dt_month
+        Filialnummer:
+            abbr: store_id
+        Artikelnummer:
+            abbr: prod_id
+        Betrag:
+            abbr: amt
         # pk() chain enrichment replaces LEFT JOINs
-        store_name: pk({store_id}).{Dim Customer}.store_name
-        hq_id: pk({store_id}).{Dim Customer}.hq_id
+        Filialname: pk({Filialnummer}).{Kundenverzeichnis}.Filialname
+        ZentralenID: pk({Filialnummer}).{Kundenverzeichnis}.ZentralenID
         # nested pk() chain: hq_id → Dim Customer → ... (hq_id is itself a pk result)
-        hq_name: pk({hq_id}).{Dim Customer}.store_name
+        NameDerZentrale: pk({ZentralenID}).{Kundenverzeichnis}.Filialname
         # three-hop chain: store → hq_id → org_id → emp_name
-        hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-        hq_emp: pk({hq_org_id}).{Dim Org}.emp_name
+        ZentralenOrganisation: pk({ZentralenID}).{Kundenverzeichnis}.Organisationsnummer
+        MitarbeiterDerZentrale: pk({ZentralenOrganisation}).{Organisationsverzeichnis}.Mitarbeitername
     measures:
-        sales: SUM({amt})
+        Umsatz: SUM({Betrag})
 
 # 3. Materialize replaces INSERT INTO RPT_X
 #    Grain keys (dt_month, store_id, prod_id) go in dimension:.
@@ -216,14 +232,14 @@ RPT_X:
         dt_month: range
     dimension:
         - dt_month
-        - store_id
-        - prod_id
+        - Filialnummer
+        - Artikelnummer
     dimension_columns:
-        store_name:
-        hq_name:
-        hq_emp:
+        Filialname:
+        NameDerZentrale:
+        MitarbeiterDerZentrale:
     measures:
-        - sales
+        - Umsatz
 
 # 4. Report query consumes the materialize
 report:
@@ -233,8 +249,8 @@ report:
     filters:
         dt_month: { range: ['2024-01-01', '2024-03-01'] }
     columns:
-        dimension: [dt_month, store_name]
-        sales: '{sales}'
+        dimension: [dt_month, Filialname]
+        Umsatz: '{Umsatz}'
 </code></pre>
 <p><strong>Wann sich dieses Muster eignet</strong>:</p>
 <ul>
@@ -249,85 +265,94 @@ report:
 </ul>
 <hr>
 <h2 id="uneven-dimensions">Unterschiedliche Dimensionen <a class="section-link" aria-label="Link zum Abschnitt" href="#uneven-dimensions">#</a></h2>
-<p><strong>Fachliche Fragestellung</strong>: Vergleichen Sie die Verkäufe nach Region mit dem Bestand nach Lager. Beide haben <code>dt_date</code> und <code>product</code> gemeinsam. <code>region</code> und <code>warehouse</code> sind keine gemeinsamen Dimensionen.</p>
+<p><strong>Fachliche Fragestellung</strong>: Vergleichen Sie die Verkäufe nach Region mit dem Bestand nach Lager. Beide haben <code>dt_date</code> und <code>Produkt</code> gemeinsam. <code>Region</code> und <code>Lager</code> sind keine gemeinsamen Dimensionen.</p>
 <h3 id="the-challenge">Herausforderung <a class="section-link" aria-label="Link zum Abschnitt" href="#the-challenge">#</a></h3>
 <p>Kennzahlen aus Datensätzen mit völlig unterschiedlichen Dimensionen lassen sich nur dann direkt vergleichen, wenn Sie sie aufeinander abstimmen.</p>
-<pre><code class="language-yaml">sales:
+<pre><code class="language-yaml">Umsatz:
     type: dataset
     table: fact_sales
     dimension:
         - dt_date
-        - product
-        - region
-        - customer
+        - Produkt
+        - Region
+        - Kunde
     columns:
         dt_date:
-        product:
-        region:
-        customer:
-        amount:
+            abbr: dt_date
+        Produkt:
+            abbr: product
+        Region:
+            abbr: region
+        Kunde:
+            abbr: customer
+        Verkaufsbetrag:
+            abbr: amount
 
-inventory:
+Bestand:
     type: dataset
     table: fact_inventory
     dimension:
         - dt_date
-        - product
-        - warehouse
+        - Produkt
+        - Lager
     columns:
         dt_date:
-        product:
-        warehouse:
-        units:
+            abbr: dt_date
+        Produkt:
+            abbr: product
+        Lager:
+            abbr: warehouse
+        Stückzahl:
+            abbr: units
 
-total_sales:
+Gesamtumsatz:
     type: measure
-    dataset: sales
-    formula: SUM({amount})
+    dataset: Umsatz
+    formula: SUM({Verkaufsbetrag})
 
-total_inventory:
+Gesamtbestand:
     type: measure
-    dataset: inventory
-    formula: SUM({units})
+    dataset: Bestand
+    formula: SUM({Stückzahl})
 </code></pre>
 <h3 id="common-grain-by-product-and-date">Gemeinsame Granularität: nach Produkt und Datum <a class="section-link" aria-label="Link zum Abschnitt" href="#common-grain-by-product-and-date">#</a></h3>
-<pre><code class="language-sql">SELECT dt_date, product, AGG(total_sales), AGG(total_inventory)
+<pre><code class="language-sql">SELECT dt_date, Produkt, AGG(Gesamtumsatz), AGG(Gesamtbestand)
 FROM MODEL
 WHERE dt_date = date(current_date)
-GROUP BY dt_date, product
+GROUP BY dt_date, Produkt
 </code></pre>
-<p>Das funktioniert, weil beide Kennzahlen <code>dt_date</code> und <code>product</code> gemeinsam haben. Das Modell berücksichtigt die fehlenden Dimensionen implizit.</p>
+<p>Das funktioniert, weil beide Kennzahlen <code>dt_date</code> und <code>Produkt</code> gemeinsam haben. Das Modell berücksichtigt die fehlenden Dimensionen implizit.</p>
 <h3 id="if-you-need-region--warehouse-in-the-same-query">Wenn Sie Region und Lager in derselben Abfrage benötigen <a class="section-link" aria-label="Link zum Abschnitt" href="#if-you-need-region--warehouse-in-the-same-query">#</a></h3>
-<p>In der Regel ist es <strong>nicht möglich</strong>, gleichzeitig nach <code>region</code> und <code>warehouse</code> zu gruppieren. Der Grund dafür ist, dass <code>total_inventory</code> kein <code>region</code> und <code>total_sales</code> kein <code>warehouse</code> hat.</p>
+<p>In der Regel ist es <strong>nicht möglich</strong>, gleichzeitig nach <code>Region</code> und <code>Lager</code> zu gruppieren. Der Grund dafür ist, dass <code>Gesamtbestand</code> kein <code>Region</code> und <code>Gesamtumsatz</code> kein <code>Lager</code> hat.</p>
 <p><strong>Option 1</strong>: Zwei separate Abfragen</p>
-<pre><code class="language-sql">-- Sales by region
-SELECT dt_date, region, AGG(total_sales) FROM MODEL GROUP BY dt_date, region
+<pre><code class="language-sql">-- Sales by Region
+SELECT dt_date, Region, AGG(Gesamtumsatz) FROM MODEL GROUP BY dt_date, Region
 
--- Inventory by warehouse
-SELECT dt_date, warehouse, AGG(total_inventory) FROM MODEL GROUP BY dt_date, warehouse
+-- Inventory by Lager
+SELECT dt_date, Lager, AGG(Gesamtbestand) FROM MODEL GROUP BY dt_date, Lager
 </code></pre>
 <p><strong>Option 2</strong>: Inkompatible Dimensionen mit Modifikatoren entfernen</p>
-<pre><code class="language-sql">SELECT dt_date, region,
-       AGG(total_sales) as sales,
-       AGG({total_inventory: {-d: warehouse}}) as inventory_dropped_warehouse
+<pre><code class="language-sql">SELECT dt_date, Region,
+       AGG(Gesamtumsatz) as Umsatz,
+       AGG({Gesamtbestand: {-d: Lager}}) as BestandAllerLager
 FROM MODEL
-GROUP BY dt_date, region
+GROUP BY dt_date, Region
 </code></pre>
-<p><code>{-d: warehouse}</code> entfernt <code>warehouse</code> aus der Granularität des Bestands. Dadurch wird der Bestand auf der Ebene <code>dt_date + product</code> berechnet und lässt sich mit den Verkäufen auf der Ebene <code>dt_date + region + product</code> verknüpfen. Das ist fachlich meist fragwürdig. Gehen Sie dabei vorsichtig vor.</p>
+<p><code>{-d: Lager}</code> entfernt <code>Lager</code> aus der Granularität des Bestands. Dadurch wird der Bestand auf der Ebene <code>dt_date + Produkt</code> berechnet und lässt sich mit den Verkäufen auf der Ebene <code>dt_date + Region + Produkt</code> verknüpfen. Das ist fachlich meist fragwürdig. Gehen Sie dabei vorsichtig vor.</p>
 <p><a id="minus-dim_dt-pattern"></a></p>
 <h3 id="selected-period-and-all-history-totals">Summen für den ausgewählten Zeitraum und für die gesamte Historie <a class="section-link" aria-label="Link zum Abschnitt" href="#selected-period-and-all-history-totals">#</a></h3>
 <p><code>-d</code> hebt die Gruppierung auf. Bleibt ein Monatsfilter aktiv, bedeutet das Aufheben der Gruppierung allein noch keine Auswertung der gesamten Historie. Verwenden Sie für diese Modellausschnitte separate Abfragen mit jeweils explizit festgelegtem Geltungsbereich:</p>
 <pre><code class="language-sql">-- Selected month
-SELECT product, region, AGG(total_sales) AS period_sales
+SELECT Produkt, Region, AGG(Gesamtumsatz) AS Periodenumsatz
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product, region
+GROUP BY Produkt, Region
 
 -- All history
-SELECT product, region, AGG(total_sales) AS all_time_sales
+SELECT Produkt, Region, AGG(Gesamtumsatz) AS UmsatzÜberAlleJahre
 FROM MODEL
-GROUP BY product, region
+GROUP BY Produkt, Region
 </code></pre>
-<p>Führen Sie die Anweisungen einzeln mit den auf dieser Seite erforderlichen Modelldefinitionen aus. Einen vollständig ausgeführten Vergleich innerhalb eines einzigen Berichts finden Sie unter <a href="examples--fixed-total.de.html">Nenner mit fester Achse</a>. Das dort verwendete reguläre Gruppierungsfeld <code>month</code> unterscheidet sich vom Zeitkontext <code>dim_dt</code>.</p>
+<p>Führen Sie die Anweisungen einzeln mit den auf dieser Seite erforderlichen Modelldefinitionen aus. Einen vollständig ausgeführten Vergleich innerhalb eines einzigen Berichts finden Sie unter <a href="examples--fixed-total.de.html">Nenner mit fester Achse</a>. Das Beispiel gruppiert Datumswerte nach <code>dt_month</code>.</p>
 <p><strong>Wichtige Punkte</strong>: Kennzahlen aus verschiedenen Datensätzen lassen sich gemeinsam abfragen, wenn sie genügend Dimensionen gemeinsam haben. Wenn die Dimensionen nicht zusammenpassen, verwenden Sie separate Abfragen oder setzen Sie <code>-d</code>-Modifikatoren mit Bedacht ein. Wenn Sie Dimensionen entfernen, um Kompatibilität zu erzwingen, können die Ergebnisse irreführend sein. Dokumentieren Sie, was Sie damit erreichen wollen.</p>
 </main></body></html>

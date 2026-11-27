@@ -11,26 +11,26 @@
 <p><strong>Falsch</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>. <strong>Korrektur</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>. Schließen Sie den laufenden, noch nicht abgeschlossenen Monat aus.</p>
 <p><a id="p32"></a></p>
 <h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. ytd-Modifikator mit GROUP BY auf Ebene der gesamten Periode <a class="section-link" aria-label="Link zum Abschnitt" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
-<p><strong>Falsch</strong>: <code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>. <strong>Korrektur</strong>: <code>ytd</code> liefert einen kumulierten Wert. Verwenden Sie <code>dt_date</code> als Gruppierungsebene: <code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
+<p><strong>Falsch</strong>: <code>SELECT dt_year, AGG(Umsatz, 'ytd') FROM MODEL GROUP BY dt_year</code>. <strong>Korrektur</strong>: <code>ytd</code> liefert einen kumulierten Wert. Verwenden Sie <code>dt_date</code> als Gruppierungsebene: <code>SELECT dt_date, AGG(Umsatz, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
 <p><a id="p33"></a></p>
 <h2 id="p33-period-to-date-with-date-range">P33. Einen Datumsbereich für den kumulierten Wert bis zum Stichtag verwenden <a class="section-link" aria-label="Link zum Abschnitt" href="#p33-period-to-date-with-date-range">#</a></h2>
-<p><strong>Falsch</strong>: <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> für YTD. <strong>Korrektur</strong>: Verwenden Sie <code>WHERE dt_date = date(current_date)</code> mit <code>AGG(sales, 'ytd')</code>. Der Modifikator bestimmt den Datumsbereich.</p>
+<p><strong>Falsch</strong>: <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> für YTD. <strong>Korrektur</strong>: Verwenden Sie <code>WHERE dt_date = date(current_date)</code> mit <code>AGG(Umsatz, 'ytd')</code>. Der Modifikator bestimmt den Datumsbereich.</p>
 <hr>
 <h2 id="category-compilation-and-validation">Kategorie: Kompilierung und Validierung <a class="section-link" aria-label="Link zum Abschnitt" href="#category-compilation-and-validation">#</a></h2>
 <p><a id="p59"></a></p>
 <h2 id="p59-yoy-without-column-probe">P59. Vorjahresvergleich ohne Prüfung der Vergleichsspalte <a class="section-link" aria-label="Link zum Abschnitt" href="#p59-yoy-without-column-probe">#</a></h2>
-<p><strong>Falsch</strong>: <code>AGG(销售额, 'yoy')</code> verwenden, wenn die Summe von <code>去年同期出厂价金额</code> null ergibt. <strong>Korrektur</strong>: Prüfen Sie <code>SUM(去年同期出厂价金额)</code> mit einer Detailabfrage, bevor Sie eine Aussage zur Vorjahresentwicklung in Aussicht stellen.</p>
+<p><strong>Falsch</strong>: <code>AGG(Umsatz, 'yoy')</code> verwenden, wenn die Summe von <code>AbgabepreisbetragVorjahr</code> null ergibt. <strong>Korrektur</strong>: Prüfen Sie <code>SUM(AbgabepreisbetragVorjahr)</code> mit einer Detailabfrage, bevor Sie eine Aussage zur Vorjahresentwicklung in Aussicht stellen.</p>
 <h2 id="extra-month-after-the-latest-source-data">Zusätzlicher Monat nach dem letzten Monat mit Quelldaten <a class="section-link" aria-label="Link zum Abschnitt" href="#extra-month-after-the-latest-source-data">#</a></h2>
 <p>Legen Sie beim Vergleich von Perioden den Monatsbereich des Berichts ausdrücklich fest. Ein Full Outer Join kann auch Gruppen beibehalten, die nur in einer der beiden Perioden vorkommen. Wenn Dezemberumsätze dem Januar als Umsätze der Vorperiode zugeordnet werden, kann eine Abfrage ohne Datumsgrenzen den Januar enthalten, auch wenn er außerhalb des Berichtszeitraums liegt.</p>
-<p>Das Beispiel verwendet Daten von Januar 2024 bis einschließlich Dezember 2025. In jedem Monat gibt es Verkäufe in allen fünf Kategorien. Das Modell definiert <code>revenue: SUM({amount})</code>, eine Monatsdimension namens <code>dt_month</code> und <code>revenue_mom: '{revenue: pop}'</code>.</p>
-<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+<p>Das Beispiel verwendet Daten von Januar 2024 bis einschließlich Dezember 2025. In jedem Monat gibt es Verkäufe in allen fünf Kategorien. Das Modell definiert <code>Erlös: SUM({Verkaufsbetrag})</code>, eine Monatsdimension namens <code>dt_month</code> und <code>revenue_mom: '{Erlös: pop}'</code>.</p>
+<pre><code class="language-sql">SELECT dt_month, Kategorie, AGG(Erlös), AGG(revenue_mom)
 FROM MODEL
 WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
-GROUP BY dt_month, category
+GROUP BY dt_month, Kategorie
 </code></pre>
 <p>Mit den Beispieldaten liefert die Abfrage 120 Zeilen. Das Ergebnis stimmt mit dem von Hand geschriebenen SQL überein. Ohne Datumsfilter liefert die geprüfte Abfrage 125 Zeilen. In den fünf zusätzlichen Zeilen für Januar 2026 haben sowohl der Umsatz der aktuellen Periode als auch das Wachstum den Wert NULL, weil nur Dezemberumsätze in diese Gruppen eingehen.</p>
 <h3 id="reconcile-both-periods-by-category">Beide Perioden nach Kategorie abgleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#reconcile-both-periods-by-category">#</a></h3>
-<p>Wenn der Bericht die Gesamtumsätze zweier Perioden vergleicht, behalten Sie alle Kategorien bei, die innerhalb des Monatsbereichs des Berichts in mindestens einer der beiden Perioden Umsatz haben. Um beide Werte anzuzeigen, fügen Sie <code>AGG({revenue: pp}) AS previous_revenue</code> zur SELECT-Liste hinzu.</p>
+<p>Wenn der Bericht die Gesamtumsätze zweier Perioden vergleicht, behalten Sie alle Kategorien bei, die innerhalb des Monatsbereichs des Berichts in mindestens einer der beiden Perioden Umsatz haben. Um beide Werte anzuzeigen, fügen Sie <code>AGG({Erlös: pp}) AS previous_revenue</code> zur SELECT-Liste hinzu.</p>
 <table>
 <thead>
 <tr>

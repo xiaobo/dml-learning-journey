@@ -9,9 +9,9 @@
 <div class="split">
 <div class="formula">
 <div>原来的公式</div>
-<pre><code>net_revenue: SUM({amount})</code></pre>
+<pre><code>净收入: SUM({订单金额})</code></pre>
 <div>扣除退款</div>
-<pre><code>net_revenue: SUM({amount}) - SUM({refund})</code></pre></div>
+<pre><code>净收入: SUM({订单金额}) - SUM({退款金额})</code></pre></div>
 <div>
 <table>
 <thead><tr><th>报表</th><th>月份或地区</th><th>原来</th><th>扣除退款后</th></tr></thead>
@@ -23,21 +23,35 @@
 <details>
 <summary>查看模型和两条查询</summary>
 <pre><code>dialect: duckdb
-Sales:
+销售订单:
   type: dataset
   table: orders
-  dimension: [order_id]
+  dimension: [订单号]
   columns:
-    order_id:
-    report_month:
-    region:
-    amount:
-    refund:
+    订单号:
+      abbr: order_id
+    dt_month:
+      abbr: report_month
+    地区:
+      abbr: region
+    订单金额:
+      abbr: amount
+    退款金额:
+      abbr: refund
   measures:
-    net_revenue: SUM({amount})</code></pre>
+    净收入: SUM({订单金额})
+
+上月净收入:
+  type: measure
+  formula: '{净收入: pp}'</code></pre>
 <h3>月报</h3>
-<pre><code>SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC</code></pre>
+<pre><code>SELECT dt_month, AGG(净收入) FROM MODEL GROUP BY dt_month ORDER BY dt_month</code></pre>
 <h3>地区报表</h3>
-<pre><code>SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region</code></pre><a href="task-examples.zip" class="">下载可运行的示例</a></details>
+<pre><code>SELECT 地区, AGG(净收入) FROM MODEL GROUP BY 地区 ORDER BY 地区</code></pre><h3>二月的上月净收入是多少？</h3><p>dt_month 对应订单表里的月份列 report_month。按月查询时，pp 取上一个月的净收入。扣除退款后，二月是 200，上月（一月）是 90。</p><pre><code>SELECT AGG(净收入), AGG(上月净收入) FROM MODEL WHERE dt_month='2025-02-01'</code></pre><a href="task-examples.zh.zip" class="">下载可运行的示例</a><p>解压后，进入 net-revenue 文件夹，运行以下命令：</p><pre><code>dmlc -q setup.sql
+dmlc -q --model=model.dml monthly.sql
+dmlc -q --model=model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml monthly.sql
+dmlc -q --model=after-refunds/model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml previous-month.sql</code></pre></details>
 </section></div>
 <nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a><a lang="de" hreflang="de" href="index.de.html">Deutsch</a></nav></main></body></html>

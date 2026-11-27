@@ -63,8 +63,8 @@
 </tr>
 <tr>
 <td>Measure with positional modifier</td>
-<td><code>AGG(measure, &#39;modifier&#39;)</code></td>
-<td><code>AGG(sales, &#39;yoy&#39;)</code></td>
+<td><code>AGG(measure, 'modifier')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
 </tr>
 </tbody></table>
 <p><strong>Key rule</strong>: <code>{...}</code> braces are for <code>.dml</code> only. In Model Query SQL, use bare names for dimensions and <code>AGG(...)</code> for measures. The only exception: <code>AGG({measure: modifier})</code> for modifier form.</p>
@@ -72,10 +72,10 @@
 <p>Lookups support single, compound and effective-date keys. Supply the target&#39;s complete key, not the consumer query&#39;s grouping fields. These attribute lookups differ from preparing a relation in dataset SQL or composing independently aggregated measures; see <a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">source relations, lookups and metric composition</a>.</p>
 <p>Cross-dataset column lookups in <code>.dml</code> formulas:</p>
 <pre><code class="language-yaml"># Single PK
-formula: &#39;SUM({amount} * pk(customer_id).{customers}.tier_discount)&#39;
+formula: 'SUM({amount} * pk(customer_id).{customers}.tier_discount)'
 
 # Composite PK
-formula: &#39;SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)&#39;
+formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
 </code></pre>
 <p>Supply one expression per target dimension field, in declaration order. <code>pk(1, tag_id)</code> has the correct arity for <code>[brand_id, tag_id]</code>; it deliberately fixes <code>brand_id</code> to 1. Whether that lookup is correct depends on the intended key and source uniqueness.</p>
 <h3 id="compound-and-effective-date-keys">Compound and effective-date keys <a class="section-link" aria-label="Link to section" href="#compound-and-effective-date-keys">#</a></h3>
@@ -83,14 +83,14 @@ formula: &#39;SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)&#39;
 <pre><code class="language-yaml"># Target with a compound key:
 dimension: [id, region]
 # Column in the referring dataset:
-label: &#39;pk({id}, {region}).{D}.label&#39;
+label: 'pk({id}, {region}).{D}.label'
 </code></pre>
 <pre><code class="language-yaml"># Target with an object key and validity interval:
-dimension: [id, &#39;range(valid_from, valid_to)&#39;]
+dimension: [id, 'range(valid_from, valid_to)']
 # Column in the referring dataset:
-label: &#39;pk({id}, {event_date}).{D}.label&#39;
+label: 'pk({id}, {event_date}).{D}.label'
 </code></pre>
-<p>Keep <code>&#39;range(valid_from, valid_to)&#39;</code> quoted so the comma stays inside one YAML list item. The event date matches <code>[valid_from, valid_to)</code>: the start is included and the end is excluded. A February 1 event therefore matches an interval starting February 1, not one ending that day. This is not the database&#39;s array-generating <code>range()</code> function.</p>
+<p>Keep <code>'range(valid_from, valid_to)'</code> quoted so the comma stays inside one YAML list item. The event date matches <code>[valid_from, valid_to)</code>: the start is included and the end is excluded. A February 1 event therefore matches an interval starting February 1, not one ending that day. This is not the database&#39;s array-generating <code>range()</code> function.</p>
 <p>Repeated ids across regions are valid when the whole compound key is unique. Effective-date intervals for the same id must not overlap. A duplicate target or overlap can multiply query rows after compilation succeeds. <code>--validate</code> checks the observed key contract; it does not repair the data or guarantee a shared snapshot with subsequent execution.</p>
 <p>The <a href="examples--compound-key-en.html">compound-key</a> and <a href="examples--range-lookup-en.html">effective-date</a> exercises include complete models, boundary dates, deliberate validation failures and repaired results. They demonstrate finite, adjacent intervals, not open-ended bounds or a general many-to-many allocation policy. For a bridge or allocation analysis, define its full key, weights and expected totals separately; a lookup arity error does not settle that task&#39;s expressibility.</p>
 <hr>
@@ -209,14 +209,14 @@ label: &#39;pk({id}, {event_date}).{D}.label&#39;
 <pre><code class="language-yaml"># In .dml
 completed_sales:
     type: measure
-    formula: SUMIF({amount}, {status} = &#39;completed&#39;)
+    formula: SUMIF({amount}, {status} = 'completed')
 
 high_value_customers:
     type: measure
-    formula: &#39;DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)&#39;
+    formula: 'DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)'
 </code></pre>
 <pre><code class="language-sql">-- In Model Query SQL (modifier form)
-SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
+SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 </code></pre>
 <p><a id="33-conditional-and-utility-functions"></a></p>
 <h3 id="conditional-and-utility-functions">Conditional and utility functions <a class="section-link" aria-label="Link to section" href="#conditional-and-utility-functions">#</a></h3>
@@ -266,22 +266,22 @@ SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
 <td>Current date</td>
 </tr>
 <tr>
-<td><code>date(current_date, &#39;start of month&#39;)</code></td>
+<td><code>date(current_date, 'start of month')</code></td>
 <td>—</td>
 <td>First day of current month</td>
 </tr>
 <tr>
-<td><code>date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)</code></td>
+<td><code>date(current_date, 'start of month', '-1 month')</code></td>
 <td>—</td>
 <td>First day of last month</td>
 </tr>
 <tr>
-<td><code>date(current_date, &#39;start of year&#39;)</code></td>
+<td><code>date(current_date, 'start of year')</code></td>
 <td>—</td>
 <td>First day of current year</td>
 </tr>
 <tr>
-<td><code>date(current_date, &#39;-N days&#39;)</code></td>
+<td><code>date(current_date, '-N days')</code></td>
 <td>—</td>
 <td>N days ago</td>
 </tr>
@@ -301,8 +301,8 @@ SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
 </thead>
 <tbody><tr>
 <td>Positional</td>
-<td><code>AGG(measure, &#39;mod1&#39;, &#39;mod2&#39;)</code></td>
-<td><code>AGG(sales, &#39;yoy&#39;)</code></td>
+<td><code>AGG(measure, 'mod1', 'mod2')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
 </tr>
 <tr>
 <td>Brace</td>
@@ -342,5 +342,5 @@ SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
 <h2 id="database-defined-scalar-functions">Database-defined scalar functions <a class="section-link" aria-label="Link to section" href="#database-defined-scalar-functions">#</a></h2>
 <p>Scalar calls can be retained in generated SQL, including inside an atomic measure and around an aggregated measure result. DML owns the measure context; the target database owns the function implementation and availability. See <a href="how-to--define-macros.html#calling-a-function-defined-in-your-database">verified custom modifiers and database functions</a> for a working example, evaluation-stage differences and validation requirements. This is not a blanket claim for aggregate or table-valued UDFs.</p>
 <h2 id="complete-lookup-examples">Complete lookup examples <a class="section-link" aria-label="Link to section" href="#complete-lookup-examples">#</a></h2>
-<p><code>pk()</code> takes arguments in the target dataset dimension order; it is not restricted to a single key. The <a href="examples--compound-key-en.html">compound-key example</a> declares <code>[id, region]</code> and checks duplicate target combinations with validate-only. The <a href="examples--range-lookup-en.html">range example</a> uses <code>[id, &#39;range(valid_from, valid_to)&#39;]</code> and verifies inclusive starts, exclusive ends and overlapping-range rejection on its fixture. These examples do not establish arbitrary many-to-many allocation support.</p>
+<p><code>pk()</code> takes arguments in the target dataset dimension order; it is not restricted to a single key. The <a href="examples--compound-key-en.html">compound-key example</a> declares <code>[id, region]</code> and checks duplicate target combinations with validate-only. The <a href="examples--range-lookup-en.html">range example</a> uses <code>[id, 'range(valid_from, valid_to)']</code> and verifies inclusive starts, exclusive ends and overlapping-range rejection on its fixture. These examples do not establish arbitrary many-to-many allocation support.</p>
 </main></body></html>

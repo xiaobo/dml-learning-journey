@@ -5,57 +5,57 @@
 <p><code>+d</code> 支持<strong>两阶段聚合</strong>：先在中间粒度上定义指标，再汇总到查询粒度。编译器会生成 CTE（<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>）。</p>
 <p><strong>模式</strong>：限定维度的指标 → 汇总指标 → 查询</p>
 <pre><code class="language-yaml"># Step 1: require customer_id during evaluation
-customer_sales:
+客户销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
     dimensions:
-        - [customer_id, ...]  # customer required; additional query fields allowed
+        - [客户编号, ...]  # customer required; additional query fields allowed
 
 # Step 2: evaluate with dimension [customer_id], then roll up to the query dimension
-total_customer_sales:
+客户销售总额:
     type: measure
-    formula: SUM({customer_sales: {+d: customer_id}})
+    formula: SUM({客户销售额: {+d: 客户编号}})
 </code></pre>
-<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([brand], [region], total, etc.)
-SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand
+<pre><code class="language-sql">-- Step 3: use any compatible query dimension ([品牌], [地区], 合计, etc.)
+SELECT 品牌, AGG(客户销售总额) FROM MODEL GROUP BY 品牌
 </code></pre>
 <p><strong>RFM 分析</strong>：结合使用 <code>+d</code> 和 fn 宏的完整示例：</p>
 <pre><code class="language-yaml"># .dml: customer-grain measures for RFM
-last_purchase_month:
+最近购买月份:
     type: measure
-    formula: 'MAXIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MAXIF({dt_month}, {销售额: {+d: dt_month}} &gt; 0)'
     dimensions:
-        - [customer_id]
+        - [客户编号]
 
-purchase_months:
+购买月数:
     type: measure
-    dataset: transactions
-    formula: 'COUNT(DISTINCT CASE WHEN {amount} &gt; 0 THEN {dt_month} ELSE NULL END)'
+    dataset: 交易明细
+    formula: 'COUNT(DISTINCT CASE WHEN {销售金额} &gt; 0 THEN {dt_month} ELSE NULL END)'
     dimensions:
-        - [customer_id]
+        - [客户编号]
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: RFM with ranks
-SELECT AGG(sales) AS M, AGG(sales, 'rank') AS M_rank,
-       AGG(purchase_months) AS F, AGG(purchase_months, 'rank') AS F_rank,
-       AGG(last_purchase_month) AS R, AGG(last_purchase_month, 'rank_asc') AS R_rank
-FROM MODEL GROUP BY customer_id
+SELECT AGG(销售额) AS M, AGG(销售额, 'rank') AS M_rank,
+       AGG(购买月数) AS F, AGG(购买月数, 'rank') AS F_rank,
+       AGG(最近购买月份) AS R, AGG(最近购买月份, 'rank_asc') AS R_rank
+FROM MODEL GROUP BY 客户编号
 </code></pre>
 <p><strong>内联指标</strong>：通过 <code>/** dml ... **/</code> 注释块直接在模型查询的 SQL 中定义临时指标，无需修改 <code>.dml</code>。完整语法和规则见<a href="reference--model-query-sql.zh.html#312-inline-measures--dml--">内联指标（<code>/** dml ... **/</code>）</a>。</p>
 <pre><code class="language-sql">/** dml
-temp_customer_sales:
+客户销售额中间值:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
     dimensions:
-        - [customer_id, ...]
+        - [客户编号, ...]
 
-temp_avg_customer_sales:
+客户平均销售额中间值:
     type: measure
-    formula: 'AVG({temp_customer_sales: {+d: customer_id}})'
+    formula: 'AVG({客户销售额中间值: {+d: 客户编号}})'
 **/
-SELECT brand, AGG(temp_avg_customer_sales) AS avg_customer_sales
-FROM MODEL GROUP BY brand
+SELECT 品牌, AGG(客户平均销售额中间值) AS 客户平均销售额
+FROM MODEL GROUP BY 品牌
 </code></pre>
 <p><a id="26a-fine-grain-filter-then-d-roll-up"></a></p>
 <h3 id="fine-grain-filter-then-d-roll-up">先在细粒度上筛选，再用 <code>+d</code> 汇总 <a class="section-link" aria-label="本节链接" href="#fine-grain-filter-then-d-roll-up">#</a></h3>
@@ -75,28 +75,30 @@ HAVING SUM(total) &gt; 500      -- report-level HAVING
     type: dataset
     table: FACT
     columns:
-        product:
-        region:
+        商品:
+            abbr: product
+        地区:
+            abbr: region
     measures:
-        total: SUM(amount)
-        cnt: COUNT(1)
+        合计: SUM(销售金额)
+        销售笔数: COUNT(1)
 
-grand_total:
+总计:
     type: measure
     formula: |-
-        SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+        SUMIF({合计: {+d: 地区}}, {销售笔数: {+d: 地区}} &gt; 3)
     # No qualifying fine rows -&gt; NULL. Use an explicit fill only if required.
 
 report:
     type: query
     filters:
-        "{grand_total} &gt; 500":
+        "{总计} &gt; 500":
     columns:
         dimension:
-            - product
-        grand_total:
+            - 商品
+        总计:
 </code></pre>
-<p><strong>理解这个示例：</strong><code>{cnt: {+d: region}}</code> 和 <code>{total: {+d: region}}</code> 都在<strong>相同的</strong>细粒度 <code>(product, region)</code> 上计算。<code>iif</code> 或 <code>SUMIF</code> 决定该粒度下哪些行参与外层的 <code>SUM</code> 聚合。查询维度仍为 <code>product</code>。</p>
+<p><strong>理解这个示例：</strong><code>{销售笔数: {+d: 地区}}</code> 和 <code>{合计: {+d: 地区}}</code> 都在<strong>相同的</strong>细粒度 <code>(商品, 地区)</code> 上计算。<code>iif</code> 或 <code>SUMIF</code> 决定该粒度下哪些行参与外层的 <code>SUM</code> 聚合。查询维度仍为 <code>商品</code>。</p>
 <table>
 <thead>
 <tr>
@@ -105,53 +107,53 @@ report:
 </tr>
 </thead>
 <tbody><tr>
-<td>在 <code>columns.dimension</code> 中只指定 <code>product</code>，并使用 <code>filters: "cnt &gt; 3"</code> 查询</td>
-<td><code>cnt</code> 脱离了其定义粒度。编译或合并时，条件可能被错误地改写为产品级的 <code>HAVING COUNT(1) &gt; 3</code>。</td>
+<td>在 <code>columns.dimension</code> 中只指定 <code>商品</code>，并使用 <code>filters: "销售笔数 &gt; 3"</code> 查询</td>
+<td><code>销售笔数</code> 脱离了其定义粒度。编译或合并时，条件可能被错误地改写为产品级的 <code>HAVING COUNT(1) &gt; 3</code>。</td>
 </tr>
 <tr>
-<td><code>filters: "{cnt: {+d: region}} &gt; 3"</code></td>
+<td><code>filters: "{销售笔数: {+d: 地区}} &gt; 3"</code></td>
 <td>有时可以编译，但这种写法颠倒了理解查询的逻辑，把下钻到细粒度的操作藏在了报表筛选条件里。</td>
 </tr>
 <tr>
-<td><code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code></td>
+<td><code>SUM({合计: {+d: 地区, +f: '{销售笔数} &gt; 3'}})</code></td>
 <td>该条件引用了聚合指标，而 <code>+f</code> 要求对输入行进行筛选。</td>
 </tr>
 </tbody></table>
-<p>如果希望按 SQL 的步骤逐步编写，可以采用以下备选方案：保留细粒度查询（<code>dimension: [product, region]</code>、<code>filters: "cnt &gt; 3"</code>），再在展示层的 <code>after:</code> 中重新聚合。整理和维护模型时，优先采用上文的指标写法。</p>
+<p>如果希望按 SQL 的步骤逐步编写，可以采用以下备选方案：保留细粒度查询（<code>dimension: [商品, 地区]</code>、<code>filters: "销售笔数 &gt; 3"</code>），再在展示层的 <code>after:</code> 中重新聚合。整理和维护模型时，优先采用上文的指标写法。</p>
 <p>另请参阅<a href="how-to--design-measures.zh.html">指标设计</a>和常见陷阱 <a href="reference--troubleshooting--grain-and-joins.zh.html#p69">P69</a>。</p>
 <p><strong><code>+d</code> 的限制</strong>：</p>
 <ul>
-<li>仅靠 <code>+d</code> 无法为同一个维度引入两个独立的别名。要构建完整的 N×N 共现矩阵，可以改用带 <code>sql:</code> 的数据集。按客户对已声明的数据源执行自连接，选取去重后的 <code>(customer, brand_from, brand_to)</code> 组合，将这组字段整体声明为键，再按两个品牌字段分组统计客户数。经检查，包含两个品牌的测试数据可通过编译和验证，并返回 A–A: 2、A–B: 1、B–A: 1、B–B: 1。这种写法要求显式定义表示品牌配对的关系，<code>+d</code> 不会自动完成这一转换。</li>
+<li>仅靠 <code>+d</code> 无法为同一个维度引入两个独立的别名。要构建完整的 N×N 共现矩阵，可以改用带 <code>sql:</code> 的数据集。按客户对已声明的数据源执行自连接，选取去重后的 <code>(客户, brand_from, brand_to)</code> 组合，将这组字段整体声明为键，再按两个品牌字段分组统计客户数。经检查，包含两个品牌的测试数据可通过编译和验证，并返回 A–A: 2、A–B: 1、B–A: 1、B–B: 1。这种写法要求显式定义表示品牌配对的关系，<code>+d</code> 不会自动完成这一转换。</li>
 </ul>
 <p>当 <code>+d</code> 出现在<strong>查询的维度绑定</strong>（<code>columns.dimension: - name: '{m: {+d: K}}'</code>）中时，这是<strong>将指标用作维度</strong>，并非上述汇总模式。参见<a href="explanation--measure-as-dimension.zh.html">将指标用作维度</a>。</p>
 <p><strong>共现分析（1×N 模式）</strong>：结合使用 <code>+d</code>、<code>-d</code> 和 <code>+f</code>，逐一统计同时购买目标品牌与各个其他品牌的客户数：</p>
 <pre><code class="language-sql">/** dml
-target_brand_customers:
+目标品牌客户数:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: customer_id, -d: brand, +f: {brand: ''BrandA''}}} &gt; 0)'
+    formula: 'MAXIF(1, {销售额: {+d: 客户编号, -d: 品牌, +f: {品牌: ''BrandA''}}} &gt; 0)'
     dimensions:
-        - [..., customer_id]
+        - [..., 客户编号]
 
-current_brand_customers:
+当前品牌客户数:
     type: measure
-    formula: 'MAXIF(1, {sales: {+d: [brand, customer_id]}} &gt; 0)'
+    formula: 'MAXIF(1, {销售额: {+d: [品牌, 客户编号]}} &gt; 0)'
     dimensions:
-        - [brand, customer_id]
+        - [品牌, 客户编号]
 
-co_occurrence:
+共同出现次数:
     type: measure
-    formula: 'SUM({current_brand_customers: {+d: [brand, customer_id]}} * {target_brand_customers: {+d: customer_id}})'
+    formula: 'SUM({当前品牌客户数: {+d: [品牌, 客户编号]}} * {目标品牌客户数: {+d: 客户编号}})'
 **/
-SELECT brand, AGG(co_occurrence) AS overlap_with_brandA
-FROM MODEL GROUP BY brand ORDER BY AGG(co_occurrence) DESC
+SELECT 品牌, AGG(共同出现次数) AS 与品牌A重合的客户数
+FROM MODEL GROUP BY 品牌 ORDER BY AGG(共同出现次数) DESC
 </code></pre>
-<p><code>-d: brand</code> 从目标指标的计算维度中移除维度字段 <code>brand</code>，只保留 <code>[customer]</code>。<code>+f</code> 将数据筛选到目标品牌，两个标志值的乘积用于统计同时购买两种品牌的客户。</p>
+<p><code>-d: 品牌</code> 从目标指标的计算维度中移除维度字段 <code>品牌</code>，只保留 <code>[客户]</code>。<code>+f</code> 将数据筛选到目标品牌，两个标志值的乘积用于统计同时购买两种品牌的客户。</p>
 <p>指标的 <code>dimensions:</code> 始终是一个由数组组成的数组。每个内层列表定义一个允许的维度，外层列表包含这些备选维度：</p>
-<pre><code class="language-yaml">month_active_flag:
+<pre><code class="language-yaml">当月活跃标记:
     type: measure
-    formula: 'ISNULL(MAXIF(1, {month_qty: {+d: [prod_id, dt_month]}} &gt; 0), 0)'
+    formula: 'ISNULL(MAXIF(1, {当月数量: {+d: [商品编号, dt_month]}} &gt; 0), 0)'
     dimensions:
-      - [store_id, dt_month, ...]
+      - [门店编号, dt_month, ...]
 </code></pre>
 <p>在允许的维度中，<code>...</code>（省略号）允许包含未列出的其他维度字段，但引用该指标时，计算维度仍必须包含所有列出的字段。</p>
 </main></body></html>

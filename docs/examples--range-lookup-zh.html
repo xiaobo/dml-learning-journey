@@ -1,5 +1,5 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>怎样取得交易发生时有效的价格或等级？ · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="用事件日期匹配有效期，并保持同一对象的区间不重叠。 本例使用 [valid_from, valid_to)：包含起点，不包含终点。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="怎样取得交易发生时有效的价格或等级？ · DML"><meta property="og:description" content="用事件日期匹配有效期，并保持同一对象的区间不重叠。 本例使用 [valid_from, valid_to)：包含起点，不包含终点。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="examples--range-lookup.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="examples--range-lookup.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--range-lookup-en.html">English</a></header><main><h1 id="怎样取得交易发生时有效的价格或等级">怎样取得交易发生时有效的价格或等级？</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#交界点应该匹配哪一条">交界点应该匹配哪一条？</a></li><li><a href="#把查找规则放进模型">把查找规则放进模型</a></li><li><a href="#验证重叠再修复">验证重叠，再修复</a></li><li><a href="#运行与验证范围">运行与验证范围</a></li></ul></details>
-<p><strong>用事件日期匹配有效期，并保持同一对象的区间不重叠。</strong> 本例使用 <code>[valid_from, valid_to)</code>：包含起点，不包含终点。</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>怎样取得交易发生时有效的价格或等级？ · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="用事件日期匹配有效期，并保持同一对象的区间不重叠。 本例使用 [生效日期, 失效日期)：包含起点，不包含终点。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="怎样取得交易发生时有效的价格或等级？ · DML"><meta property="og:description" content="用事件日期匹配有效期，并保持同一对象的区间不重叠。 本例使用 [生效日期, 失效日期)：包含起点，不包含终点。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="examples--range-lookup.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="examples--range-lookup.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--range-lookup-en.html">English</a></header><main><h1 id="怎样取得交易发生时有效的价格或等级">怎样取得交易发生时有效的价格或等级？</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#交界点应该匹配哪一条">交界点应该匹配哪一条？</a></li><li><a href="#把查找规则放进模型">把查找规则放进模型</a></li><li><a href="#验证重叠再修复">验证重叠，再修复</a></li><li><a href="#运行与验证范围">运行与验证范围</a></li></ul></details>
+<p><strong>用事件日期匹配有效期，并保持同一对象的区间不重叠。</strong> 本例使用 <code>[生效日期, 失效日期)</code>：包含起点，不包含终点。</p>
 <h2 id="交界点应该匹配哪一条">交界点应该匹配哪一条？ <a class="section-link" aria-label="本节链接" href="#交界点应该匹配哪一条">#</a></h2>
 <table>
 <thead>
@@ -25,41 +25,49 @@
 </tbody></table>
 <p>2月1日已离开 Jan 区间，属于 Feb。查询返回 Feb 20、Jan 10，各事件只匹配一次。</p>
 <h2 id="把查找规则放进模型">把查找规则放进模型 <a class="section-link" aria-label="本节链接" href="#把查找规则放进模型">#</a></h2>
-<p>目标数据集声明 <code>dimension: [id, &#39;range(valid_from, valid_to)&#39;]</code>。事实中的 <code>pk({id}, {event_date}).{D}.label</code> 同时提供对象编号和发生日期。</p>
+<p>目标数据集声明 <code>dimension: [编号, &#39;range(生效日期, 失效日期)&#39;]</code>。事实中的 <code>pk({编号}, {dt_date}).{对照表}.名称</code> 同时提供对象编号和发生日期。</p>
 <details><summary>完整文件 / Complete file: range/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-D:
+对照表:
   type: dataset
   table: DIM
-  dimension: [id, &#39;range(valid_from, valid_to)&#39;]
+  dimension: [编号, 'range(生效日期, 失效日期)']
   columns:
-    id:
-    valid_from:
-    valid_to:
-    label:
-F:
+    编号:
+      abbr: id
+    生效日期:
+      abbr: valid_from
+    失效日期:
+      abbr: valid_to
+    名称:
+      abbr: label
+销售记录:
   type: dataset
   table: FACT
-  dimension: [fid]
+  dimension: [销售记录号]
   columns:
-    fid:
-    id:
-    event_date:
-    amount:
-    label: &#39;pk({id}, {event_date}).{D}.label&#39;
+    销售记录号:
+      abbr: fid
+    编号:
+      abbr: id
+    dt_date:
+      abbr: event_date
+    订单金额:
+      abbr: amount
+    名称: 'pk({编号}, {dt_date}).{对照表}.名称'
   measures:
-    sales: SUM({amount})
+    销售额: SUM({订单金额})
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: range/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, valid_from DATE,valid_to DATE,label VARCHAR); INSERT INTO DIM VALUES (1,&#39;2024-01-01&#39;,&#39;2024-02-01&#39;,&#39;Jan&#39;),(1,&#39;2024-02-01&#39;,&#39;2024-03-01&#39;,&#39;Feb&#39;); CREATE TABLE FACT(fid INTEGER,id INTEGER,event_date DATE,amount INTEGER); INSERT INTO FACT VALUES (1,1,&#39;2024-01-01&#39;,10),(2,1,&#39;2024-02-01&#39;,20);
+<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, valid_from DATE,valid_to DATE,label VARCHAR); INSERT INTO DIM VALUES (1,'2024-01-01','2024-02-01','Jan'),(1,'2024-02-01','2024-03-01','Feb'); CREATE TABLE FACT(fid INTEGER,id INTEGER,event_date DATE,amount INTEGER); INSERT INTO FACT VALUES (1,1,'2024-01-01',10),(2,1,'2024-02-01',20);
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: range/normal.sql</summary>
 
-<pre><code class="language-sql">SELECT label, AGG(sales) FROM MODEL GROUP BY label ORDER BY label
+<pre><code class="language-sql">SELECT 名称, AGG(销售额) FROM MODEL GROUP BY 名称 ORDER BY 名称
 </code></pre>
 </details>
 
@@ -68,8 +76,8 @@ F:
 <p>脚本将 Jan 的终点改为2月2日，使2月1日同时落入两个区间。<code>--validate</code> 检出 <code>VALIDATION_ERROR</code>。恢复2月1日终点后，验证和两行结果重新通过。</p>
 <p>正确修复应来自业务有效期规则，不能任意保留其中一条匹配记录来掩盖冲突。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
-<p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
+<p><a href="task-examples.zh.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p>本例在 dmlc 0.3.16、2026-11-27 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--range-lookup-en.html">English</a></p>
 </main></body></html>

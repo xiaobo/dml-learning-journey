@@ -7,7 +7,7 @@
     parameters:                         # stored-procedure parameters
         &lt;param&gt;: &lt;column_name&gt;
     filters:                            # materialize-level filters
-        &lt;column&gt;: &lt;value&gt;
+        &lt;column&gt;: &lt;数值&gt;
 
     allows: [&lt;materialize_name&gt;]        # allowed materialize tables
 
@@ -18,7 +18,7 @@
 
     measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
 </code></pre>
-<p><strong><code>dimension:</code>与<code>dimension_columns:</code></strong>的区别。<code>dimension:</code>包含物化维度。维度字段是确定行粒度的键，能够唯一标识每一行，编译器将这些字段用作 <code>GROUP BY</code> 的键。<code>dimension_columns:</code>列出<strong>可从这些键推导出的</strong>属性列。例如，<code>store_name</code>依赖于<code>store_id</code>，<code>region_code</code>依赖于<code>store_id</code>。编译器在 <code>GROUP BY</code> 处理后保留 <code>dimension_columns:</code> 中的列，但这些列不参与确定粒度。将可推导的属性放入 <code>dimension:</code> 会导致编译错误（“can be derived from [...], should it be moved to dimension_columns instead?”）。</p>
+<p><strong><code>dimension:</code>与<code>dimension_columns:</code></strong>的区别。<code>dimension:</code>包含物化维度。维度字段是确定行粒度的键，能够唯一标识每一行，编译器将这些字段用作 <code>GROUP BY</code> 的键。<code>dimension_columns:</code>列出<strong>可从这些键推导出的</strong>属性列。例如，<code>门店名称</code>依赖于<code>门店编号</code>，<code>region_code</code>依赖于<code>门店编号</code>。编译器在 <code>GROUP BY</code> 处理后保留 <code>dimension_columns:</code> 中的列，但这些列不参与确定粒度。将可推导的属性放入 <code>dimension:</code> 会导致编译错误（“can be derived from [...], should it be moved to dimension_columns instead?”）。</p>
 <p><strong>未指定公式时的继承</strong>。<code>dimension_columns:</code>中的条目如果未指定 <code>formula:</code>，就会从源数据集继承该列。该列必须存在于源数据集的 <code>columns:</code> 中，否则会报错“not found from relate dataset(s)”。如果物化粒度比源数据集维度的粒度<strong>更粗</strong>，编译器会检查该列能否推导出来。如果列值在源数据集较细的粒度上有变化，则会报错“definition from dataset [...] cannot be derived from dimension [...], please advise”。如果物化粒度与源数据集的维度<strong>一致</strong>，则允许使用源数据集中的任意列（行按 1:1 映射）。</p>
 <p><strong>公式的引用范围</strong>。当 <code>dimension_columns:</code> 中的条目指定了 <code>formula:</code> 时，公式只能引用 pk() 链式查找和物化维度自身的字段。引用源数据集的列或指标会报错“not defined, did you mean …?”。</p>
 <p><strong>约束</strong>。必须使用以下任一形式：</p>

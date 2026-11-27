@@ -131,7 +131,7 @@
 <li><strong>Code</strong>: EXECUTION_ERROR</li>
 <li><strong>Common Causes</strong>: Query execution failed due to SQL error, data issue, database problem, or stale materialize cache after model changes</li>
 <li><strong>Suggested Fixes</strong>: Check query syntax, data types, and database connectivity. If the message mentions obsolete materialize semver or <code>pls re-setup related model</code>, run <code>dmlc -s &lt;model.dml&gt; --connection=&lt;id&gt;</code> then retry the query with the same <code>--model</code>.</li>
-<li><strong>Example</strong>: <code>Execution failed: Column &#39;invalid_column&#39; does not exist</code></li>
+<li><strong>Example</strong>: <code>Execution failed: Column 'invalid_column' does not exist</code></li>
 <li><strong>Example (materialize obsolete)</strong>: <code>materialize abort: procedure PROC_M__CACHED_SALES is obsolete since semver (...) is different from expect: ..., pls re-setup related model</code></li>
 </ul>
 <h4 id="execution_interrupted">EXECUTION_INTERRUPTED</h4>
@@ -183,7 +183,7 @@
 <li><strong>Code</strong>: MODEL_RESOLUTION_ERROR</li>
 <li><strong>Common Causes</strong>: Cannot find <code>&lt;FROM&gt;.dml</code> beside the SQL / under <code>--model=&lt;dir&gt;</code> / on the model path; or <code>--model=acme.dml</code> was used with <code>FROM MODEL</code> (file/FROM mismatch — exit 65); or a file-only operation was given a directory</li>
 <li><strong>Suggested Fixes</strong>: For query, compile and validate commands, pass a directory containing the matching <code>.dml</code> file, or pass a file whose name matches <code>FROM</code>. For setup, pass a <code>.dml</code> file.</li>
-<li><strong>Example</strong>: <code>model file &quot;acme.dml&quot; does not match FROM &quot;MODEL&quot; (expected &quot;MODEL.dml&quot;).</code></li>
+<li><strong>Example</strong>: <code>model file "acme.dml" does not match FROM "MODEL" (expected "MODEL.dml").</code></li>
 </ul>
 <h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
 <ul>
@@ -191,7 +191,7 @@
 <li><strong>Code</strong>: FILTER_VALIDATION_ERROR</li>
 <li><strong>Common Causes</strong>: Filter syntax error or invalid field name</li>
 <li><strong>Suggested Fixes</strong>: Fix filter field name or syntax</li>
-<li><strong>Example</strong>: <code>Filter validation failed: invalid field &#39;dt_invalid&#39;</code></li>
+<li><strong>Example</strong>: <code>Filter validation failed: invalid field 'dt_invalid'</code></li>
 </ul>
 <h3 id="dimension-validation-errors">Dimension Validation Errors <a class="section-link" aria-label="Link to section" href="#dimension-validation-errors">#</a></h3>
 <p><a id="dimension-not-unique"></a>
@@ -202,7 +202,7 @@
 <li><strong>Code</strong>: VALIDATION_ERROR; inspect the issue kind in <code>data.issues</code></li>
 <li><strong>Common Causes</strong>: The complete dataset dimension value combination occurs more than once, or a range-based lookup can match overlapping source rows</li>
 <li><strong>Suggested Fixes</strong>: Fix the source key, dataset <code>dimension:</code> field list, overlapping ranges, or source data, then rerun <code>--validate</code>. <code>DISTINCT</code>/<code>GROUP BY</code> in compiled SQL and <code>DISTINCTCOUNT</code> measures do not repair a non-unique <code>pk(...)</code> lookup</li>
-<li><strong>Example</strong>: <code>Declared DML dataset dimension is not unique in dataset &#39;Order Line&#39; on this connection at validation time.</code></li>
+<li><strong>Example</strong>: <code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
 </ul>
 <p><a id="validation_query_failed"></a></p>
 <h4 id="execution_error-1">EXECUTION_ERROR</h4>
@@ -228,7 +228,7 @@
 <li><strong>Code</strong>: INVALID_PARAMS</li>
 <li><strong>Common Causes</strong>: Invalid parameter name or value</li>
 <li><strong>Suggested Fixes</strong>: Fix parameter name or value, check valid options for the parameter</li>
-<li><strong>Example</strong>: <code>Invalid parameter: &#39;invalid_param&#39;. Valid options: [&#39;param1&#39;, &#39;param2&#39;]</code></li>
+<li><strong>Example</strong>: <code>Invalid parameter: 'invalid_param'. Valid options: ['param1', 'param2']</code></li>
 </ul>
 <h4 id="file_export_error">FILE_EXPORT_ERROR</h4>
 <ul>

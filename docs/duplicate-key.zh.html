@@ -13,7 +13,17 @@ GROUP BY id, region
 HAVING COUNT(*) &gt; 1;</code></pre>
 <table>
 <thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
-<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table><details><summary>查看 DML 怎样定义这组查找键</summary><pre><code>对照表:
+  type: dataset
+  table: DIM
+  dimension: [编号, 地区]
+  columns:
+    编号:
+      abbr: id
+    地区:
+      abbr: region
+    名称:
+      abbr: label</code></pre></details>
 </section>
 <section>
 <h2>这会怎样影响报表？</h2>

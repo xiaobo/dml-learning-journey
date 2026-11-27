@@ -25,7 +25,7 @@
 </tr>
 <tr>
 <td>クエリフィルターで <code>referred column {DATASET}.col is undefined</code> が発生する</td>
-<td>文字列形式：<code>"{DATASET}.col = value":</code></td>
+<td>文字列形式：<code>"{DATASET}.col = 値":</code></td>
 </tr>
 <tr>
 <td>2 要素のリスト <code>dt_date: ['2024-01-01', '2025-12-31']</code> で返されるのは 2 日分だけ</td>
@@ -39,16 +39,16 @@
 <h3 id="alternative-lookup-eligibility-can-strengthen-joins">代替のルックアップを使う判定条件で結合が厳しくなることがある <a class="section-link" aria-label="この節へのリンク" href="#alternative-lookup-eligibility-can-strengthen-joins">#</a></h3>
 <p>「対象ディメンションに一致する、<strong>または</strong>、一致しなければ間接ディメンションに一致する」という判定ルールでは、2 つのオプションのリレーションを使います。導出したフラグをクエリの <code>filters:</code> に置くと、コンパイルされた SQL で一方のルックアップが必須（<code>INNER JOIN</code>）になったり、<code>AND</code>/<code>OR</code> の式が変換され、代替先を使う条件が保たれなくなったりすることがあります。</p>
 <p>次の構成を推奨します。</p>
-<pre><code class="language-yaml">target_state: pk({snapshot_month}, {customer_id}).{TARGET_CUSTOMER}.state
-customer_is_eligible: |-
-  iif({target_state} = 1, 1,
-    iif(pk({customer_id}).{INDIRECT_CUSTOMER}.customer_id is not null, 1, 0))
-included_amount: iif({customer_is_eligible} = 1, {amount}, null)
+<pre><code class="language-yaml">対象状態: pk({dt_month}, {顧客番号}).{TARGET_CUSTOMER}.state
+対象顧客フラグ: |-
+  iif({対象状態} = 1, 1,
+    iif(pk({顧客番号}).{INDIRECT_CUSTOMER}.顧客番号 is not null, 1, 0))
+対象金額: iif({対象顧客フラグ} = 1, {売上金額}, null)
 
 measures:
-  amount: SUM({included_amount})
+  売上金額: SUM({対象金額})
 </code></pre>
-<p>次に、生成された SQL を確認します。両方のルックアップが <code>LEFT JOIN</code> のままであり、代替先を使うロジックが <code>CASE</code> の中に残っている必要があります。出力グループに条件を設ける場合は、結果に余分な非表示列が入り込まないように、選択済みの主メジャーを再利用します（<code>HAVING AGG(amount) is not null</code>）。一意でないキーや対象ディメンションと間接ディメンションの重複は、診断の手がかりとして扱います。DML のリレーションが意図しない行の増殖を暗黙のうちに再現することは避けてください。</p>
+<p>次に、生成された SQL を確認します。両方のルックアップが <code>LEFT JOIN</code> のままであり、代替先を使うロジックが <code>CASE</code> の中に残っている必要があります。出力グループに条件を設ける場合は、結果に余分な非表示列が入り込まないように、選択済みの主メジャーを再利用します（<code>HAVING AGG(売上金額) is not null</code>）。一意でないキーや対象ディメンションと間接ディメンションの重複は、診断の手がかりとして扱います。DML のリレーションが意図しない行の増殖を暗黙のうちに再現することは避けてください。</p>
 <p><a id="p43"></a></p>
 <h2 id="p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> と <code>{-d: dim_dt}</code> の比較（SQL の構造が異なる） <a class="section-link" aria-label="この節へのリンク" href="#p43-dimension--vs--d-dim_dt-different-sql-shape">#</a></h2>
 <p><strong>誤り</strong>：参照 SQL がより粗い粒度で別の GROUP BY の CTE を使っているのに、<code>{-d: dim_dt}</code> を使うこと。<strong>対処</strong>：参照と構造をそろえます。<code>{dimension: [cols]}</code> は集計用の独立した CTE を生成します。<code>{-d: dim_dt}</code> はウィンドウ式 <code>OVER (PARTITION BY …)</code> を使います。<a href="#p44">P44</a>と<a href="reference--troubleshooting--queries.ja.html#p45">P45</a>を参照してください。</p>
@@ -59,20 +59,20 @@ measures:
 <p>Model Query SQL と同等です。ここでは YAML 固有の落とし穴を扱います。ルールの全体は<a href="reference--query-yaml.ja.html">YAML クエリ宣言</a>を参照してください。</p>
 <p><a id="p62"></a></p>
 <h2 id="p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">P62. メジャーの <code>dimensions:</code> をデータセットの行識別やクエリのグループ化に使う <a class="section-link" aria-label="この節へのリンク" href="#p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">#</a></h2>
-<p><strong>症状</strong>：データセットの <code>dimension:</code> と同じように、クエリの出力が <code>region</code> でグループ化されると考えて、メジャーに <code>dimensions: [[region]]</code> を記述します。実際には、そのグループ化なしでコンパイルされるか、別のクエリディメンションを指定すると失敗します。<strong>誤った理解</strong>：メジャーの <code>dimensions:</code> でデータセットの行の識別方法やクエリのグループ化を指定できる。<strong>正しい理解</strong>：メジャーの <code>dimensions:</code> には<strong>使用可能なディメンション</strong>を指定します。内側のリストはそれぞれ 1 つのディメンションを表し、外側のリストは選択肢を列挙します。行の識別方法はデータセットの <code>dimension:</code> で指定します。グループ化はクエリの <code>GROUP BY</code> または <code>columns.dimension:</code> で指定します。<strong>対処</strong>：その指標で使用可能なディメンションを実際に限定する必要がある場合を除き、メジャーの <code>dimensions:</code> を削除します。結果のグループ化はクエリで指定します（<code>GROUP BY</code> / <code>columns.dimension:</code>）。</p>
+<p><strong>症状</strong>：データセットの <code>dimension:</code> と同じように、クエリの出力が <code>地域</code> でグループ化されると考えて、メジャーに <code>dimensions: [[地域]]</code> を記述します。実際には、そのグループ化なしでコンパイルされるか、別のクエリディメンションを指定すると失敗します。<strong>誤った理解</strong>：メジャーの <code>dimensions:</code> でデータセットの行の識別方法やクエリのグループ化を指定できる。<strong>正しい理解</strong>：メジャーの <code>dimensions:</code> には<strong>使用可能なディメンション</strong>を指定します。内側のリストはそれぞれ 1 つのディメンションを表し、外側のリストは選択肢を列挙します。行の識別方法はデータセットの <code>dimension:</code> で指定します。グループ化はクエリの <code>GROUP BY</code> または <code>columns.dimension:</code> で指定します。<strong>対処</strong>：その指標で使用可能なディメンションを実際に限定する必要がある場合を除き、メジャーの <code>dimensions:</code> を削除します。結果のグループ化はクエリで指定します（<code>GROUP BY</code> / <code>columns.dimension:</code>）。</p>
 <pre><code class="language-yaml"># Wrong: expecting dimensions: to produce GROUP BY region
-sales:
+売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
     dimensions:
-        - [region]
+        - [地域]
 
 # Right: no dimensions: lock; grouping lives in the query
-sales:
+売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
 # SELECT region, AGG(sales) FROM MODEL GROUP BY region
 </code></pre>
 <p>各役割の仕様については、<a href="explanation--dimensions.ja.html">ディメンションの役割</a>を参照してください。</p>
@@ -80,10 +80,10 @@ sales:
 <h2 id="p64-materialize-true-on-a-measure">P64. メジャーに <code>materialize: true</code> を指定する <a class="section-link" aria-label="この節へのリンク" href="#p64-materialize-true-on-a-measure">#</a></h2>
 <p><strong>症状</strong>：コンパイル時に <code>ERROR error during processing [ref null]: undefined modifier 'materialize'</code> が表示され、メジャーは暗黙のうちに除外されます（<code>0 measure(s) processed</code>）。<strong>誤り</strong>：コンパイラーが事前集計すると考えて、メジャーの定義に <code>materialize: true</code> を追加すること。メジャーレベルのマテリアライズ用フラグはありません（dmlc 0.3.16 で <code>dmlc -c</code> を実行して確認済み）。<strong>対処</strong>：マテリアライズは、トップレベルの <code>type: materialize</code> オブジェクト（<code>parameters:</code> + <code>dimension:</code> + <code>measures:</code>）、またはデータセットレベルの <code>materialize: &lt;name&gt;</code> で宣言します。メジャーには指定しないでください。<a href="reference--materialization.ja.html#55-materialize-definition-type-materialize">マテリアライズの定義（<code>type: materialize</code>）</a>と<a href="reference--examples--models.ja.html#materialize">マテリアライズの例</a>を参照してください。</p>
 <pre><code class="language-yaml"># Wrong
-sales:
+売上高:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 取引明細
+    formula: SUM({売上金額})
     materialize: true   # ← undefined modifier 'materialize'
 
 # Right
@@ -91,8 +91,8 @@ DWS_SALES:
     type: materialize
     parameters:
         dt_date: date
-    dimension: [dt_date, product]
-    measures: [sales]
+    dimension: [dt_date, 商品]
+    measures: [売上高]
 </code></pre>
 <p><a id="p66"></a></p>
 <h2 id="p66-measure-as-dimension-without-an-explicit-entity-key">P66. 明示的なエンティティキーなしでメジャーをディメンションとして使う <a class="section-link" aria-label="この節へのリンク" href="#p66-measure-as-dimension-without-an-explicit-entity-key">#</a></h2>
@@ -103,28 +103,28 @@ dimension:
 
 # Right, inline scalar
 dimension:
-    - payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'
+    - payment_day: 'cast({承認日時: {+d: payment_id}} as date)'
 </code></pre>
 <p><a id="p67"></a></p>
 <h2 id="p67-incompatible-or-dependent-measure-derived-dimensions">P67. 指標から派生したディメンションの非互換性や依存関係 <a class="section-link" aria-label="この節へのリンク" href="#p67-incompatible-or-dependent-measure-derived-dimensions">#</a></h2>
-<p><strong>症状</strong>: コンパイル時に、分類キーに互換性がないか、ラベル間に依存関係があると報告されます。<strong>誤り</strong>: あるラベルが <code>{+d: store_id}</code> を使い、別のラベルが <code>{+d: customer_id}</code> を使っています。または、あるラベルが同じクエリで宣言された別のラベルを参照しています。<strong>修正</strong>: 独立したラベルには、同じ完全なエンティティキーを使います。キー項目の順序は異なっていてもかまいません。ラベルが実際に異なる粒度で定義される場合は、別のリレーションまたは再利用可能な業務指標としてモデル化します。</p>
+<p><strong>症状</strong>: コンパイル時に、分類キーに互換性がないか、ラベル間に依存関係があると報告されます。<strong>誤り</strong>: あるラベルが <code>{+d: 店舗番号}</code> を使い、別のラベルが <code>{+d: 顧客番号}</code> を使っています。または、あるラベルが同じクエリで宣言された別のラベルを参照しています。<strong>修正</strong>: 独立したラベルには、同じ完全なエンティティキーを使います。キー項目の順序は異なっていてもかまいません。ラベルが実際に異なる粒度で定義される場合は、別のリレーションまたは再利用可能な業務指標としてモデル化します。</p>
 <p><a id="p68"></a></p>
 <h2 id="p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">P68. 出力指標を分類の粒度から上位の粒度に集計できない <a class="section-link" aria-label="この節へのリンク" href="#p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">#</a></h2>
-<p><strong>症状</strong>: コンパイル時に、集計が指定されていないか、再集計できないと報告されます。<strong>誤り</strong>: <code>{sales: {+d: store_id}}</code> をそのまま出力する、計算済みの重複を除いた件数を合計する、または意図した重み付けを定義せずに比率の平均を取ることです。<strong>修正</strong>: <code>SUM({sales: {+d: store_id}})</code> のように、細かい粒度の参照を目的の集計関数で囲みます。比率の場合は、構成要素を上位の粒度に集計してから比率を再計算します。重複を除いた件数、中央値、パーセンタイルなどの指標では、適切な入力や集計状態を保持するか、サポートされる別の指標を定義します。いずれも行わない場合は、コンパイルエラーを許容します。</p>
+<p><strong>症状</strong>: コンパイル時に、集計が指定されていないか、再集計できないと報告されます。<strong>誤り</strong>: <code>{売上高: {+d: 店舗番号}}</code> をそのまま出力する、計算済みの重複を除いた件数を合計する、または意図した重み付けを定義せずに比率の平均を取ることです。<strong>修正</strong>: <code>SUM({売上高: {+d: 店舗番号}})</code> のように、細かい粒度の参照を目的の集計関数で囲みます。比率の場合は、構成要素を上位の粒度に集計してから比率を再計算します。重複を除いた件数、中央値、パーセンタイルなどの指標では、適切な入力や集計状態を保持するか、サポートされる別の指標を定義します。いずれも行わない場合は、コンパイルエラーを許容します。</p>
 <p><a id="p69"></a></p>
 <h2 id="p69-fine-grain-where-hung-on-coarse-query-filters">P69. 細かい粒度の <code>WHERE</code> を粗い粒度のクエリの <code>filters:</code> に指定 <a class="section-link" aria-label="この節へのリンク" href="#p69-fine-grain-where-hung-on-coarse-query-filters">#</a></h2>
-<p><strong>症状</strong>: CTE は粒度 (G)（例: 商品×地域）で集計し、絞り込み（<code>cnt &gt; 3</code>）を行ってから、<code>SUM</code> で粒度 (Q)（例: 商品）まで集計します。ドラフトまたは <code>--to-dml</code> は、<code>filters: "cnt &gt; 3"</code> と <code>SUM({total: {+d: region}})</code> を含むものの、クエリのディメンションとしては (Q) だけを出力します。コンパイルやクエリの統合により、これが商品レベルの <code>HAVING COUNT(1) &gt; 3</code> に変わり、集計対象が意図と異なることがあります。</p>
+<p><strong>症状</strong>: CTE は粒度 (G)（例: 商品×地域）で集計し、絞り込み（<code>売上件数 &gt; 3</code>）を行ってから、<code>SUM</code> で粒度 (Q)（例: 商品）まで集計します。ドラフトまたは <code>--to-dml</code> は、<code>filters: "売上件数 &gt; 3"</code> と <code>SUM({合計: {+d: 地域}})</code> を含むものの、クエリのディメンションとしては (Q) だけを出力します。コンパイルやクエリの統合により、これが商品レベルの <code>HAVING COUNT(1) &gt; 3</code> に変わり、集計対象が意図と異なることがあります。</p>
 <p><strong>誤り</strong>:</p>
 <pre><code class="language-yaml">filters:
-  "cnt &gt; 3":                 # cnt is not defined at product-only grain
+  "売上件数 &gt; 3":                 # cnt is not defined at product-only grain
 columns:
-  dimension: [product]
-  grand_total: 'SUM({total: {+d: region}})'
+  dimension: [商品]
+  総計: 'SUM({合計: {+d: 地域}})'
 </code></pre>
-<p><strong>これも誤り</strong>: <code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code> は入力の述語で集計指標を使っています。診断メッセージが指しているのはこの述語です。指標参照への <code>+f</code> の適用全般を禁止するものではありません。<a href="reference--modifiers.ja.html#22-function-modifiers">対応機能一覧</a>を参照してください。</p>
+<p><strong>これも誤り</strong>: <code>SUM({合計: {+d: 地域, +f: '{売上件数} &gt; 3'}})</code> は入力の述語で集計指標を使っています。診断メッセージが指しているのはこの述語です。指標参照への <code>+f</code> の適用全般を禁止するものではありません。<a href="reference--modifiers.ja.html#22-function-modifiers">対応機能一覧</a>を参照してください。</p>
 <p><strong>修正</strong>: 上位の粒度への集計の中で、共通の細かい粒度で絞り込みます。</p>
-<pre><code class="language-yaml">grand_total: |-
-  SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+<pre><code class="language-yaml">総計: |-
+  SUMIF({合計: {+d: 地域}}, {売上件数: {+d: 地域}} &gt; 3)
 # No accepted fine rows -&gt; NULL; ELSE 0 would change that result.
 </code></pre>
 <p>クエリの <code>filters:</code> は、レポートまたは <code>HAVING</code> の範囲に限って使います。<a href="reference--examples--aggregation.ja.html#26-multi-level-aggregation-with-d"><code>+d</code> を使った多段集計</a>a を参照してください。</p>
@@ -133,22 +133,22 @@ columns:
 <p><strong>症状</strong>: <code>window functions are not allowed in atomic measures</code> が表示されます。古いバイナリでは、パーティション列が欠けた無効な <code>SUM(…) OVER (…) … GROUP BY</code> を生成し、終了コード 0 で終了する場合があります。</p>
 <p><strong>誤り</strong>:</p>
 <pre><code class="language-yaml">measures:
-  净购进量: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+  純仕入数量: 'SUM({数量}) over (partition by {店舗番号}, {商品番号})'
 </code></pre>
 <p><strong>修正</strong>: <strong>ウィンドウ関数の配置</strong>では、明細行に対する OVER を <code>columns:</code> の下に置き、その後でアトミック集計を行います。</p>
 <pre><code class="language-yaml">columns:
-  net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+  純数量: 'SUM({数量}) over (partition by {店舗番号}, {商品番号})'
 measures:
-  sum_net_qty: 'SUM({net_qty})'
+  純数量合計: 'SUM({純数量})'
 </code></pre>
 <p><code>GROUP-BY</code> 後の順位や構成比は、<code>{-d:}</code> または <code>{-df:}</code> を使う<strong>複合指標</strong>のままです（<code>dataset:</code> は指定しません）。仕様は<a href="explanation--window-placement.ja.html">ウィンドウ関数の配置</a>を参照してください。</p>
 <p><a id="p71"></a></p>
 <h2 id="p71-bare-col-in-measure-partition-by">P71. 指標の <code>PARTITION BY</code> での <code>{col}</code> の直接参照 <a class="section-link" aria-label="この節へのリンク" href="#p71-bare-col-in-measure-partition-by">#</a></h2>
 <p><strong>症状</strong>: <code>… reference is not allowed in PARTITION BY</code> が表示されるか、<code>{dimension:}</code> または <code>{-d:}</code> に関するヒントが表示されます。</p>
-<p><strong>誤り</strong>（指標での指定）: <code>SUM({total}) over (partition by {product})</code>。<strong>修正</strong>:</p>
+<p><strong>誤り</strong>（指標での指定）: <code>SUM({合計}) over (partition by {商品})</code>。<strong>修正</strong>:</p>
 <ul>
-<li>明細行に対するウィンドウ関数は <code>columns:</code> に移し、そこで引き続き <code>{product}</code> を直接参照します。</li>
-<li>集計後に適用するウィンドウ関数では、複合指標で <code>partition by {-d: region}</code> または <code>{dimension: product}</code> を使います。</li>
+<li>明細行に対するウィンドウ関数は <code>columns:</code> に移し、そこで引き続き <code>{商品}</code> を直接参照します。</li>
+<li>集計後に適用するウィンドウ関数では、複合指標で <code>partition by {-d: 地域}</code> または <code>{dimension: 商品}</code> を使います。</li>
 </ul>
 <p>明細行に対するウィンドウ関数では、データセットの <code>columns:</code> の下に <code>{-d:}</code> を置かないでください。ここでは列を直接参照します。</p>
 <hr>
@@ -156,19 +156,19 @@ measures:
 <p><a id="p72"></a></p>
 <h2 id="p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. 粒度を定義する 2 つのフィールドが同じ列を参照すると、データセット間の上位集計で誤ったキーが結合に使われる <a class="section-link" aria-label="この節へのリンク" href="#p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">#</a></h2>
 <p><strong>症状</strong>: 厳格モードでコンパイルに成功し、診断メッセージも出ませんが、比率が誤っています。たとえば、リフトの分母が本来の <code>left_count * right_count</code> ではなく <code>left_count * left_count</code> になります。</p>
-<p><strong>誤り</strong>: データセットは、1 つの物理列に基づく 2 つのフィールド（<code>left_product_id: '{product_id}'</code>、<code>right_product_id: '{product_id}'</code>）を公開しています。2 番目の役割の上位集計 <code>{sold_baskets: {-df: [left_product_id]}}</code>（または <code>{dimension: [month, store, right_product_id]}</code>）は、<code>right_product_id</code> で結合される想定です。コンパイラは、粒度を粗くした一時結果のキーに別名を付け直し、<strong>最初</strong>の役割のキーで結合します（<code>support.product = pair.left_product_id</code>）。</p>
-<p><strong>修正</strong>: 各役割を <code>pk()</code> で <code>sql:</code> データセットから参照します。このデータセットでは、ソースを <code>(shared dims, product_id)</code> の粒度でグループ化し、<code>dimension:</code> を宣言します（P77）。<code>pk()</code> のキーは明示的に指定され、位置で対応付けられるため、左右のキーが同一のキーとして扱われることはありません。または、<code>-df</code> による上位集計を、別名の衝突が起きない粒度に限定します。生成された SQL に、<code>… product_id = t.left_product_id</code> と <code>… product_id = t.right_product_id</code> の 2 つの結合が個別にあることを確認してください。</p>
+<p><strong>誤り</strong>: データセットは、1 つの物理列に基づく 2 つのフィールド（<code>left_product_id: '{商品番号}'</code>、<code>right_product_id: '{商品番号}'</code>）を公開しています。2 番目の役割の上位集計 <code>{sold_baskets: {-df: [left_product_id]}}</code>（または <code>{dimension: [month, store, right_product_id]}</code>）は、<code>right_product_id</code> で結合される想定です。コンパイラは、粒度を粗くした一時結果のキーに別名を付け直し、<strong>最初</strong>の役割のキーで結合します（<code>support.商品 = pair.left_product_id</code>）。</p>
+<p><strong>修正</strong>: 各役割を <code>pk()</code> で <code>sql:</code> データセットから参照します。このデータセットでは、ソースを <code>(shared dims, 商品番号)</code> の粒度でグループ化し、<code>dimension:</code> を宣言します（P77）。<code>pk()</code> のキーは明示的に指定され、位置で対応付けられるため、左右のキーが同一のキーとして扱われることはありません。または、<code>-df</code> による上位集計を、別名の衝突が起きない粒度に限定します。生成された SQL に、<code>… 商品番号 = t.left_product_id</code> と <code>… 商品番号 = t.right_product_id</code> の 2 つの結合が個別にあることを確認してください。</p>
 <p><a id="p73"></a></p>
 <h2 id="p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. <code>-df</code> で上位集計する複合指標は、結合相手にしかない行を出力し、欠けているキーに値を補って出力することがある <a class="section-link" aria-label="この節へのリンク" href="#p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">#</a></h2>
-<p><strong>症状</strong>: 別のデータセットから上位の粒度に集計した指標は、コンパイル時に <code>FULL OUTER JOIN</code> を使う複合指標になります。集計された結合相手にしか存在しない行も出力されます。結合相手の一時結果では、粒度を定義するフィールドのうち、持っていないものを <code>max(&lt;col&gt;)</code> で補う場合があります。その結果、対応する行がない <code>(month, store, product)</code> 行が <code>left = right = product</code> として現れることがあります。単に NULL が出るだけでなく、同じ商品同士のペアが作られます。</p>
+<p><strong>症状</strong>: 別のデータセットから上位の粒度に集計した指標は、コンパイル時に <code>FULL OUTER JOIN</code> を使う複合指標になります。集計された結合相手にしか存在しない行も出力されます。結合相手の一時結果では、粒度を定義するフィールドのうち、持っていないものを <code>max(&lt;col&gt;)</code> で補う場合があります。その結果、対応する行がない <code>(month, store, 商品)</code> 行が <code>left = right = 商品</code> として現れることがあります。単に NULL が出るだけでなく、同じ商品同士のペアが作られます。</p>
 <p><strong>修正</strong>: 結合相手にしか存在しない行で NULL になる主指標を出力項目に残し、式をキーにしたフィルターでクエリを絞り込みます。</p>
 <pre><code class="language-yaml">filters:
-    '{pair_basket_count} is not null':      # formula as key, empty value
+    '{同時購入注文数} is not null':      # formula as key, empty value
 </code></pre>
 <p>コンパイルすると、結合し直す箇所に <code>WHERE &lt;primary&gt; IS NOT NULL</code> が生成されます。主指標に値があると確認できるため、生成される <code>FULL OUTER JOIN</code> も <code>LEFT JOIN</code> に簡略化されます。最終的な結合タイプは、複合指標のテンプレートではなく、生成された SQL で確認してください。まず前提を確認してください。有効な主グループでは、主指標が NULL になることはありません。このフィルターが有効なのは、結合相手にしか存在しない行に主指標の値がない場合に限ります。（<a href="reference--modifiers.ja.html#23-dimension-modifiers">ディメンション修飾子</a>b の補足です。）</p>
 <p><a id="p74"></a></p>
 <h2 id="p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">P74. 1 つの物理テーブルを使う 2 つの <code>table:</code> データセット：マージ時の挙動と、警告なしに失われる <code>-df</code> の粒度 <a class="section-link" aria-label="この節へのリンク" href="#p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">#</a></h2>
-<p><strong>症状</strong>：<code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code>。続いて、2 つのデータセットの列構成が異なる場合は <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code> が出力され、ロールアップは追加の通知なしに<strong>より粗い</strong>粒度で集計します（例：<code>pk(store_id, left_id)</code> ではなく <code>pk(store_id)</code>）。</p>
+<p><strong>症状</strong>：<code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code>。続いて、2 つのデータセットの列構成が異なる場合は <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code> が出力され、ロールアップは追加の通知なしに<strong>より粗い</strong>粒度で集計します（例：<code>pk(店舗番号, left_id)</code> ではなく <code>pk(店舗番号)</code>）。</p>
 <p><strong>確認済み（dmlc 0.3.16）</strong>：同じテーブルに 2 つの <code>table:</code> データセットがあるだけでは、<strong>クラッシュしません</strong>。最小の対称構成はコンパイルでき、2 つ目のデータセットを別の役割で使う場合も、<code>-df</code> の参照先は正しく決まります（<code>right_id = t1.right_id</code>）。データセットは主キーで自己結合され、1 つの <code>#TEMP</code> にマージされます。ただし、片方にだけ列を追加すると、マージ後の <code>-df</code> の名前解決では、もう片方のデータセットの別名フィールドが対象から外れます。（以前の「<code>table:</code> の重複 → NPE」という報告は原因の特定を誤っていました。クラッシュの原因は P75 のフィルターの記述形式でした。）</p>
 <p><strong>対処</strong>：原則として、物理テーブルごとに 1 つの <code>table:</code> データセットを使い、列に別名を付けます。複数の役割で使う必要がある場合は、列構成を同一にし、出力された SQL でロールアップ用の一時テーブルすべての <code>pk(...)</code> を確認します。ここでの警告は意味上の誤りを示します。</p>
 <p><a id="p75"></a></p>
@@ -197,7 +197,7 @@ measures:
 <p><strong>対処</strong>：意図する評価段階を 1 つ指定します。単純な参照、細かい粒度を明示した参照とその外側での集計、または除外用の修飾子を使います。対象フィールドが異なる場合は、引き続き修飾子を併用できます。今回確認したビルドは、検証した競合を診断メッセージなしで受理し、外側で合計する前に地域別の合計値を繰り返し出力します。これは、競合を拒否するという要件に違反します。<a href="reference--semantics.ja.html#45-modifier-composition">修飾子の組み合わせ</a>を参照してください。</p>
 <p><a id="p80"></a></p>
 <h2 id="p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> により、出力の粒度に含まれないフィールドのクエリフィルターがレポート行に適用されなくなる <a class="section-link" aria-label="この節へのリンク" href="#p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">#</a></h2>
-<p><strong>誤った挙動</strong>：クエリフィルターが <code>{store_id}=1</code> で、指標が <code>{-f: store_id}</code> を使い、<code>store_id</code> が出力の粒度に含まれない場合、フィルターが通知なしに省略され、フィルターが適用されていない側の FOJ の対応行が出力されます。</p>
+<p><strong>誤った挙動</strong>：クエリフィルターが <code>{店舗番号}=1</code> で、指標が <code>{-f: 店舗番号}</code> を使い、<code>店舗番号</code> が出力の粒度に含まれない場合、フィルターが通知なしに省略され、フィルターが適用されていない側の FOJ の対応行が出力されます。</p>
 <p><strong>対処</strong>：<code>-f</code> がフィルターを外すのは<strong>指標の評価</strong>からだけです。クエリフィルターは引き続き対象となる行の集合を定義します。適用が抑止されたフィルターが出力列を参照できない場合は、相関 <code>EXISTS</code> またはセミジョインで行を絞り込みます。<code>-f</code> だけでグループ化を変更しないでください。</p>
 <p><a id="p81"></a></p>
 <h2 id="p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">P81. カレンダーを介した展開なしで <code>dimension:</code> により異なる粒度の時間ディメンションに置き換える場合 <a class="section-link" aria-label="この節へのリンク" href="#p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">#</a></h2>

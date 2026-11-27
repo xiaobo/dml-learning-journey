@@ -176,7 +176,7 @@
 <p><strong>Entwurfsziel</strong>: Verwenden Sie in Maßformeln <code>dim_dt</code> anstelle der konkreten Felder <code>dt_date</code>, <code>dt_month</code> oder <code>dt_quarter</code>. So lässt sich ein Maß ohne Änderung der Formel auf jeder Zeitebene auswerten.</p>
 <p><strong>Umstellung der Periode</strong>: Mit <code>dim_dt as quarter</code> arbeitet <code>pp</code> auf Quartalsebene, auch wenn die Abfrage nach Jahr und Quartal gruppiert:</p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+       AGG({Umsatz: {dim_dt as quarter: pp}}) as Vorquartalsumsatz
 FROM MODEL GROUP BY dt_year, dt_quarter
 </code></pre>
 <p><a id="25-standard-time-dimension-fields"></a></p>
@@ -228,14 +228,16 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p>Wenn sich dasselbe abgeleitete Feld aus mehreren expliziten Zeitquellen ableiten lässt und keine Quelle eindeutig bestimmt werden kann, müssen die Werkzeuge die Auflösung abbrechen, statt eine Definition willkürlich auszuwählen.</p>
 <p><a id="26-calendar-dataset"></a></p>
 <h3 id="calendar-dataset">Kalender-Dataset <a class="section-link" aria-label="Link zum Abschnitt" href="#calendar-dataset">#</a></h3>
-<p>Das System stellt das Dataset <code>Dim Calendar</code> für das Nachschlagen von Zeitwerten über verschiedene Zeitebenen hinweg bereit:</p>
-<pre><code class="language-yaml">Dim Calendar:
+<p>Das System stellt das Dataset <code>Kalender</code> für das Nachschlagen von Zeitwerten über verschiedene Zeitebenen hinweg bereit:</p>
+<pre><code class="language-yaml">Kalender:
     type: dataset
     table: DML_CALENDAR
     dimension: [dt_date]
     columns:
         dt_date:
+            abbr: dt_date
         dt_week:
+            abbr: dt_week
         dt_month:
             source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
         dt_quarter:
@@ -272,7 +274,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tbody></table>
 <p>Ein <code>WHERE</code> auf den Quelldaten und eine Bedingung im Maß, die NULL liefert, sind im Allgemeinen nicht austauschbar. Im ersten Fall verschwinden Gruppen, die ausschließlich ausgeschlossene Zeilen enthalten. Im zweiten Fall können solche Gruppen bestehen bleiben. Prüfen Sie vor einem Wechsel zwischen diesen Ebenen, welche Gruppen bestehen bleiben, wie sich die Änderung auf andere Kennzahlen derselben Abfrage, auf die Deduplizierung, auf Joins und Fensterfunktionen sowie auf die Semantik von NULL auswirkt.</p>
 <p><strong>Pushdown-Regel</strong>: Die unter <code>filters:</code> angegebenen Abfragefilter werden vor der Aggregation an die <code>WHERE</code>-Klausel des Datasets weitergegeben. Erstellt <code>-d</code> eine temporäre Tabelle mit gröberer Granularität, wird der Filter weiterhin angewendet. Dadurch können die Nenner von Verhältniskennzahlen kleiner werden. Mit <code>-df</code> verhindern Sie den Filter-Pushdown für ein bestimmtes Dimensionsfeld.</p>
-<p><strong>Verfolgung von Abhängigkeiten</strong>: Der Compiler verfolgt die Ableitungskette einer Spalte. Ein Filter auf <code>store_name</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) wird nicht weitergegeben, wenn für <code>store_id</code> die Option <code>-df</code> gesetzt ist, da die Spalte ausschließlich aus <code>store_id</code> abgeleitet ist.</p>
+<p><strong>Verfolgung von Abhängigkeiten</strong>: Der Compiler verfolgt die Ableitungskette einer Spalte. Ein Filter auf <code>Filialname</code> (<code>pk({Filialnummer}).MDM_STORE(Filialnummer).Filialname</code>) wird nicht weitergegeben, wenn für <code>Filialnummer</code> die Option <code>-df</code> gesetzt ist, da die Spalte ausschließlich aus <code>Filialnummer</code> abgeleitet ist.</p>
 <hr>
 <p><a id="3--grain-system"></a></p>
 <h2 id="grain-system">Granularitätsregeln <a class="section-link" aria-label="Link zum Abschnitt" href="#grain-system">#</a></h2>
@@ -349,7 +351,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p>Die äußere Aggregationsfunktion (<code>SUM</code>, <code>AVG</code>, <code>MAX</code> usw.) <strong>legt der Autor fest</strong>. Der Compiler ergänzt sie nicht selbst. Bei einer äußeren Aggregation erzeugt der Compiler in der Regel eine CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
 <p><strong>Muster</strong>: atomare Kennzahl → mit <code>+d</code> in einer zusammengesetzten Kennzahl, die die äußere Aggregation vorgibt, auf eine feinere Granularität wechseln → Abfrage auf beliebiger Granularität</p>
 <pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
-销售量:
+Verkaufsmenge:
     type: measure
     dataset: o2o_pos
     formula: SUM(count_qty)
@@ -357,32 +359,32 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 # Distribution SKU count: how many products have sales &gt; 0?
 # {销售量: {+d: prod_id}} drills down to per-product grain,
 # then DISTINCTCOUNTIF counts products with positive sales.
-分销SKU数:
+VertriebeneArtikel:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+        DISTINCTCOUNTIF({Artikelnummer}, {Verkaufsmenge: {+d: Artikelnummer}} &gt; 0)
 
 # Distribution store count: how many stores have sales &gt; 0?
-分销客户数:
+KaufendeFilialen:
     type: measure
     formula: |-
-        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+        DISTINCTCOUNTIF({Filialnummer}, {Verkaufsmenge: {+d: Filialnummer}} &gt; 0)
 
 # Average sales per store (selling power)
-卖力:
+UmsatzJeKaufenderFiliale:
     type: measure
     formula: |-
-        divide({销售额}, {分销客户数})
+        divide({Umsatz}, {KaufendeFilialen})
 </code></pre>
-<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
--- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
-SELECT dt_quarter, brand,
-       AGG(销售额),
-       AGG(分销SKU数),
-       AGG(分销客户数),
-       AGG(卖力)
+<pre><code class="language-sql">-- Query at Marke × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at Artikelnummer / Filialnummer grain, then rolls up.
+SELECT dt_quarter, Marke,
+       AGG(Umsatz),
+       AGG(VertriebeneArtikel),
+       AGG(KaufendeFilialen),
+       AGG(UmsatzJeKaufenderFiliale)
 FROM MODEL
-GROUP BY dt_quarter, brand
+GROUP BY dt_quarter, Marke
 </code></pre>
 <p>Steht <code>+d</code> in der Bindung einer <strong>Abfragedimension</strong> statt in einer Kennzahlenformel mit expliziter äußerer Aggregation, handelt es sich um eine <strong>Kennzahl als Dimension</strong> (<a href="#37-measure-as-dimension">Kennzahl als Dimension</a>) und nicht um das oben beschriebene zweistufige Muster.</p>
 <p><a id="34-cross-dataset-auto-join"></a></p>
@@ -395,7 +397,7 @@ GROUP BY dt_quarter, brand
 <h3 id="grain-safety-enforcement-existing-compiler-behavior">Prüfung der Granularität (bestehendes Compilerverhalten) <a class="section-link" aria-label="Link zum Abschnitt" href="#grain-safety-enforcement-existing-compiler-behavior">#</a></h3>
 <p>Der Compiler prüft die Granularität beim Kompilieren:</p>
 <ol>
-<li><p><strong>Verstoß gegen die Dimensionsbeschränkung einer Kennzahl</strong>: Wird eine Kennzahl mit der zulässigen Dimension <code>dimensions: [[customer_id]]</code> auf einer Abfragedimension referenziert, die auch <code>dt_date</code> enthält, lehnt der Compiler die Abfrage mit folgender Meldung ab:</p>
+<li><p><strong>Verstoß gegen die Dimensionsbeschränkung einer Kennzahl</strong>: Wird eine Kennzahl mit der zulässigen Dimension <code>dimensions: [[Kundennummer]]</code> auf einer Abfragedimension referenziert, die auch <code>dt_date</code> enthält, lehnt der Compiler die Abfrage mit folgender Meldung ab:</p>
 <pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
 </code></pre>
 <p>Der Compiler gibt jetzt einen Hinweis (Hint) aus. Er erklärt, dass <code>...</code> zusätzliche Dimensionsfelder zulässt und die aufgeführten Felder weiterhin erforderlich sind. Zum Ergänzen fehlender Pflichtfelder empfiehlt er <code>+d</code>. Verwenden Sie <code>...</code>, um zusätzliche Dimensionsfelder zuzulassen. Die aufgeführten Felder bleiben erforderlich.</p>
@@ -435,27 +437,27 @@ GROUP BY dt_quarter, brand
 </thead>
 <tbody><tr>
 <td>Benannte Kennzahl mit explizitem <code>+d</code></td>
-<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
-<td>Ergänzen Sie die Auswertungsdimension der Kennzahl um <code>store_id</code>, werten Sie die Kennzahl aus und verwenden Sie das Ergebnis als Feld der Abfragedimension.</td>
+<td><code>- MonatDesErstkaufs: '{MonatDesErstkaufs: {+d: Filialnummer}}'</code></td>
+<td>Ergänzen Sie die Auswertungsdimension der Kennzahl um <code>Filialnummer</code>, werten Sie die Kennzahl aus und verwenden Sie das Ergebnis als Feld der Abfragedimension.</td>
 </tr>
 <tr>
 <td>Kennzahlname ohne weitere Angaben</td>
-<td><code>- first_purchase_month</code></td>
+<td><code>- MonatDesErstkaufs</code></td>
 <td>Für eine aus einer Kennzahl abgeleitete Dimension ist diese Form ungültig. An der Verwendungsstelle muss ein vollständiger <code>+d</code>-Schlüssel explizit angegeben werden.</td>
 </tr>
 <tr>
 <td><code>{m: {+d: dim}}</code> in einem skalaren Ausdruck</td>
-<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
+<td><code>- payment_day: 'cast({Freigabezeit: {+d: payment_id}} as date)'</code></td>
 <td>Werten Sie den skalaren Ausdruck einmal pro vollständigem Schlüssel aus und verwenden Sie das Ergebnis als Feld der Abfragedimension.</td>
 </tr>
 <tr>
 <td>Benannte skalare Kennzahl mit <code>+d</code> in der Abfrage</td>
-<td>Kennzahl mit <code>formula: 'cast({authorization_ts} as date)'</code>, danach <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
+<td>Kennzahl mit <code>formula: 'cast({Freigabezeit} as date)'</code>, danach <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
 <td>Gleichwertige und bevorzugte Schreibweise, wenn der skalare Ausdruck wiederverwendbar ist</td>
 </tr>
 <tr>
 <td>Label mit <code>dimension:</code> / <code>rank</code> (ohne <code>+d</code>)</td>
-<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
+<td><code>- brand_bucket: 'iif({Umsatz: {dimension: [Marke], rank}} &lt; 5, {Marke}, ''others'')'</code></td>
 <td>Formel der Abfragedimension, die die Auswertungsdimension mit <code>dimension:</code> ersetzt bzw. <code>rank</code> verwendet. Sie verwendet nicht das Muster zur Verknüpfung in mehreren Durchläufen mit <code>+d</code>.</td>
 </tr>
 </tbody></table>
@@ -465,7 +467,7 @@ GROUP BY dt_quarter, brand
 <p>Sei <code>M</code> der Ausdruck für die Kennzahl als Dimension, <code>K</code> die Menge der darin explizit angegebenen <code>+d</code>-Felder und <code>Q</code> die Menge der gewöhnlichen Felder der Abfragedimension. Die Granularität für Auswertung und Verknüpfung ist <code>G = Q ∪ K</code>. Aus Kennzahlen abgeleitete Labels sind davon ausgeschlossen. Interne Aggregationsphasen definieren <code>K</code> nicht neu.</p>
 <ol>
 <li><strong>Auswertung auf feiner Granularität.</strong> Werten Sie jede als Dimension verwendete Kennzahl auf Ebene <code>G</code> aus. Werten Sie auch gewöhnliche Ausgabekennzahlen auf Ebene <code>G</code> aus. Behalten Sie dabei die Zustände oder Teilkennzahlen bei, die für die spätere Aggregation auf gröberer Ebene erforderlich sind.</li>
-<li><strong>Über den vollständigen Klassifizierungsschlüssel <code>G</code> verknüpfen.</strong> Die Klassifizierungsrelation muss pro vollständigem Schlüssel genau einen skalaren Wert enthalten. Wenn sie getrennt von den Kennzahlen vorliegt, die sie verwenden, muss sie vor der Gruppierung dieser Kennzahlen nach dem Klassifizierungswert verknüpft werden. Bei der Klassifizierung nach Filiale und Monat muss der Join sowohl die Filiale als auch den Monat einbeziehen. <code>+d: store_id</code> allein reicht nicht aus. Für eine Verknüpfung auf gröberer Ebene muss der vollständige Schlüssel in der verarbeitenden Relation verfügbar oder nachweislich daraus ableitbar sein. Eine Verknüpfung auf feinerer Ebene erfordert einen expliziten Drilldown und eine anschließende Aggregation auf gröberer Ebene. Die Semantik für NULL-Schlüssel und für die Menge der von der Abfrage erfassten Datensätze muss erhalten bleiben.</li>
+<li><strong>Über den vollständigen Klassifizierungsschlüssel <code>G</code> verknüpfen.</strong> Die Klassifizierungsrelation muss pro vollständigem Schlüssel genau einen skalaren Wert enthalten. Wenn sie getrennt von den Kennzahlen vorliegt, die sie verwenden, muss sie vor der Gruppierung dieser Kennzahlen nach dem Klassifizierungswert verknüpft werden. Bei der Klassifizierung nach Filiale und Monat muss der Join sowohl die Filiale als auch den Monat einbeziehen. <code>+d: Filialnummer</code> allein reicht nicht aus. Für eine Verknüpfung auf gröberer Ebene muss der vollständige Schlüssel in der verarbeitenden Relation verfügbar oder nachweislich daraus ableitbar sein. Eine Verknüpfung auf feinerer Ebene erfordert einen expliziten Drilldown und eine anschließende Aggregation auf gröberer Ebene. Die Semantik für NULL-Schlüssel und für die Menge der von der Abfrage erfassten Datensätze muss erhalten bleiben.</li>
 <li><strong>Auf die Granularität des Abfrageergebnisses aggregieren.</strong> Aggregieren Sie gewöhnliche Kennzahlen auf Ebene <code>{ measure-as-dimension fields } ∪ Q</code>. Felder aus <code>K</code> entfallen, sofern sie nicht auch in <code>Q</code> enthalten sind. Lässt sich eine gewöhnliche Kennzahl nicht sicher so umschreiben, dass sie zunächst auf Ebene <code>G</code> ausgewertet und dann wie beschrieben aggregiert wird, schlägt die Kompilierung fehl.</li>
 </ol>
 <p>Das Verfahren beruht auf demselben Ausführungsprinzip wie die Aggregation über mehrere Ebenen mit <code>+d</code> (<a href="#33-multi-level-aggregation-via-d">Mehrstufige Aggregation</a>). In diesem Fall wird das auf der feineren Ebene berechnete Kennzahlergebnis zu einem <strong>Feld der Abfragedimension</strong> und dient nicht nur als Zwischeneingabe für eine zusammengesetzte Formel.</p>
@@ -500,24 +502,24 @@ GROUP BY dt_quarter, brand
 </ol>
 <p><a id="375-example"></a></p>
 <h4 id="example">Beispiel</h4>
-<p><code>first_purchase_month</code> bezeichnet im folgenden Beispiel den ersten Monat im Auswertungsbereich mit <strong>positivem monatlichem Nettoumsatz</strong>. <code>purchase_span</code> wertet beide Endpunkte ausdrücklich auf Entitätsebene aus und wendet die abschließende Aggregation auf das Ergebnis dieser feineren Ebene an.</p>
-<pre><code class="language-yaml">first_purchase_month:
+<p><code>MonatDesErstkaufs</code> bezeichnet im folgenden Beispiel den ersten Monat im Auswertungsbereich mit <strong>positivem monatlichem Nettoumsatz</strong>. <code>Kaufzeitspanne</code> wertet beide Endpunkte ausdrücklich auf Entitätsebene aus und wendet die abschließende Aggregation auf das Ergebnis dieser feineren Ebene an.</p>
+<pre><code class="language-yaml">MonatDesErstkaufs:
     type: measure
-    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MINIF({dt_month}, {Umsatz: {+d: dt_month}} &gt; 0)'
 
 report:
     type: query
     allows: ALL
     columns:
         dimension:
-            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-        sales:
-        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
+            - MonatDesErstkaufs: '{MonatDesErstkaufs: {+d: Filialnummer}}'
+        Umsatz:
+        Kaufzeitspanne: 'SUM(datediff(day, {Erstkaufdatum: {+d: Filialnummer}}, {LetztesKaufdatum: {+d: Filialnummer}}))'
 </code></pre>
 <ul>
-<li>Granularität des Abfrageergebnisses: <code>[first_purchase_month]</code>.</li>
-<li>Die Auswertung auf der feineren Granularität erfolgt, indem <code>{+d: store_id}</code> sowohl auf die als Dimension verwendete Kennzahl als auch auf <code>purchase_span</code> angewendet wird.</li>
-<li>Das abschließende <code>GROUP BY</code> gruppiert nach <code>first_purchase_month</code> und lässt <code>store_id</code> weg.</li>
+<li>Granularität des Abfrageergebnisses: <code>[MonatDesErstkaufs]</code>.</li>
+<li>Die Auswertung auf der feineren Granularität erfolgt, indem <code>{+d: Filialnummer}</code> sowohl auf die als Dimension verwendete Kennzahl als auch auf <code>Kaufzeitspanne</code> angewendet wird.</li>
+<li>Das abschließende <code>GROUP BY</code> gruppiert nach <code>MonatDesErstkaufs</code> und lässt <code>Filialnummer</code> weg.</li>
 </ul>
 <p><a id="44-modifier-schema-constraints"></a></p>
 <h2 id="modifier-schema-constraints">Schemaeinschränkungen für Modifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#modifier-schema-constraints">#</a></h2>

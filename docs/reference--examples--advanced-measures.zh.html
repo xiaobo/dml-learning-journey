@@ -3,207 +3,207 @@
 <h2 id="weighted-distribution-multi-grain-product">加权铺货率（不同粒度指标相乘） <a class="section-link" aria-label="本节链接" href="#weighted-distribution-multi-grain-product">#</a></h2>
 <p>加权铺货率衡量按门店重要程度加权后的品牌销售份额。计算时，需要将按<strong>不同粒度</strong>求得的指标值相乘，再向上汇总。</p>
 <pre><code class="language-yaml"># Store-level sales (restricted to store + category grain)
-store_cat_sales:
+门店品类销售额:
   type: measure
-  formula: 'IIF({sales} &gt; 0, {sales}, 0)'
+  formula: 'IIF({销售额} &gt; 0, {销售额}, 0)'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, 门店编号, 类别]
 
 # Category-level sales (drop store)
-cat_sales:
+品类销售额:
   type: measure
-  formula: 'SUM({store_cat_sales: {+d: store_id}})'
+  formula: 'SUM({门店品类销售额: {+d: 门店编号}})'
   dimensions:
-    - [dim_dt, category]
+    - [dim_dt, 类别]
 
 # Store weight = store sales / category sales (store + category grain)
-store_weight:
+门店权重:
   type: measure
-  formula: 'DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})'
+  formula: 'DIVIDE({门店品类销售额}, {品类销售额: {-d: 门店编号}})'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, 门店编号, 类别]
 
 # Brand distribution flag (store + category + brand grain)
-brand_dist_flag:
+品牌铺货标记:
   type: measure
-  formula: 'IIF({sales} &gt; 0, 1, 0)'
+  formula: 'IIF({销售额} &gt; 0, 1, 0)'
   dimensions:
-    - [dim_dt, store_id, category, brand]
+    - [dim_dt, 门店编号, 类别, 品牌]
 
 # Weighted distribution = SUM(store_weight * brand_flag) at brand grain
-weighted_distribution:
+加权铺货率:
   type: measure
   formula: |-
-    SUM({store_weight: {dimension: [dim_dt, store_id, category]}}
-        * {brand_dist_flag: {dimension: [dim_dt, store_id, category, brand]}})
+    SUM({门店权重: {dimension: [dim_dt, 门店编号, 类别]}}
+        * {品牌铺货标记: {dimension: [dim_dt, 门店编号, 类别, 品牌]}})
   dimensions:
-    - [dim_dt, category, brand]
+    - [dim_dt, 类别, 品牌]
 </code></pre>
 <p><strong>关键技巧</strong>：在 <code>SUM()</code> 内，<code>dimension:</code> 修饰符强制各组成指标按各自所需的粒度求值。编译器为每种粒度生成 CTE，并将它们连接起来。</p>
 <h2 id="product-lifecycle-tracking">跟踪产品生命周期 <a class="section-link" aria-label="本节链接" href="#product-lifecycle-tracking">#</a></h2>
 <p>跟踪产品自首次售出以来的时长，按生命周期阶段对产品分类，并计算考虑新品销售历史较短的移动平均值。</p>
 <pre><code class="language-yaml"># First sale date per product (restricted to product grain)
-first_sale_raw:
+首次销售日期原值:
   type: measure
-  formula: 'MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)'
+  formula: 'MINIF({dt_date}, {销售额: {+d: dt_date}} &gt; 0)'
 
 # First sale date, looking back up to 6 years
-first_sale:
+首次销售日期:
   type: measure
-  formula: '{first_sale_raw: p6y}'
+  formula: '{首次销售日期原值: p6y}'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, 商品]
 
 # Weeks since launch
-weeks_since_launch:
+上市周数:
   type: measure
-  formula: 'datediff(week, {first_sale}, {Dim Calendar}.dt_week)'
+  formula: 'datediff(week, {首次销售日期}, {日历}.dt_week)'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, 商品]
 
 # Flag: product has 2+ years of sales data
-has_2yr_data:
+是否有两年数据:
   type: measure
-  formula: 'IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)'
+  formula: 'IIF(MAX({上市周数: {+d: dt_week}}) &gt; 104, 1, 0)'
   dimensions:
-    - [product]
+    - [商品]
 
 # Total sales in first 2 years
-first_2yr_sales:
+前两年销售额:
   type: measure
   formula: |-
-    SUMIF({sales: {+d: dt_week}},
-          {weeks_since_launch: {+d: dt_week}} &gt;= 0
-          AND {weeks_since_launch: {+d: dt_week}} &lt; 104)
+    SUMIF({销售额: {+d: dt_week}},
+          {上市周数: {+d: dt_week}} &gt;= 0
+          AND {上市周数: {+d: dt_week}} &lt; 104)
   dimensions:
-    - [product]
+    - [商品]
 
 # Rolling 4-week average, adjusted for product age
-weekly_avg_4w:
+近四周周均销售额:
   type: measure
   formula: |-
-    DIVIDE({sales: p4w},
-           IIF({weeks_since_launch: {dimension: [product, dt_week]}} &gt;= 3,
+    DIVIDE({销售额: p4w},
+           IIF({上市周数: {dimension: [商品, dt_week]}} &gt;= 3,
                4,
-               {weeks_since_launch: {dimension: [product, dt_week]}} + 1))
+               {上市周数: {dimension: [商品, dt_week]}} + 1))
 </code></pre>
 <p><strong>关键技巧：</strong></p>
 <ul>
-<li>将 <code>MINIF</code> 与 <code>{+d: dt_date}</code> 结合使用，可在 <code>[dt_week, product]</code> 的限定范围内按日粒度找出首次销售日期。</li>
+<li>将 <code>MINIF</code> 与 <code>{+d: dt_date}</code> 结合使用，可在 <code>[dt_week, 商品]</code> 的限定范围内按日粒度找出首次销售日期。</li>
 <li>自定义 <code>dt-macro</code> <code>p6y</code> 限制回溯时间范围（参见<a href="reference--examples--aggregation.zh.html#26-multi-level-aggregation-with-d">使用 <code>+d</code> 进行多级聚合</a>中的“自定义宏定义”一节）。</li>
-<li>用 <code>datediff</code> 以 <code>{Dim Calendar}.dt_week</code> 为基准计算时间差，根据日历数据集得出产品自首次售出以来的时长。</li>
+<li>用 <code>datediff</code> 以 <code>{日历}.dt_week</code> 为基准计算时间差，根据日历数据集得出产品自首次售出以来的时长。</li>
 <li>将 <code>SUMIF</code> 与 <code>{+d: dt_week}</code> 结合使用，仅保留最初 104 周（2 年）内的各周。</li>
 <li>对于首次售出未满 4 周的产品，计算移动平均值时会调整分母。</li>
 </ul>
 <h2 id="rfm-segmentation-with-percent_rank">使用 percent_rank 进行 RFM 分群 <a class="section-link" aria-label="本节链接" href="#rfm-segmentation-with-percent_rank">#</a></h2>
 <p>完整的 RFM 分群（距最近一次购买的时间、购买频率、购买金额），在指标公式中使用 <code>percent_rank()</code>，并基于 CASE 评分。</p>
 <pre><code class="language-yaml"># Monetary: MAT sales (moving annual total)
-monetary:
+消费金额:
   type: measure
-  formula: '{sales: mat}'
+  formula: '{销售额: mat}'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
 # Recency: last purchase date
-recency:
+距上次购买天数:
   type: measure
-  formula: 'MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'MAXIF({dt_date}, {消费金额: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
 # Frequency: number of active sales days
-frequency:
+购买次数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'DISTINCTCOUNTIF({dt_date}, {消费金额: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
 # Percentile ranks
-recency_pct:
+最近购买天数百分位:
   type: measure
-  formula: 'percent_rank() over (order by {recency} desc)'
+  formula: 'percent_rank() over (order by {距上次购买天数} desc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
-frequency_pct:
+购买次数百分位:
   type: measure
-  formula: 'percent_rank() over (order by {frequency} asc)'
+  formula: 'percent_rank() over (order by {购买次数} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
-monetary_pct:
+消费金额百分位:
   type: measure
-  formula: 'percent_rank() over (order by {monetary} asc)'
+  formula: 'percent_rank() over (order by {消费金额} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
 # Scores (1-5 scale)
-recency_score:
+最近购买得分:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_pct} &gt;= 0.8 THEN 5
-      WHEN {recency_pct} &gt;= 0.6 THEN 4
-      WHEN {recency_pct} &gt;= 0.4 THEN 3
-      WHEN {recency_pct} &gt;= 0.2 THEN 2
+      WHEN {最近购买天数百分位} &gt;= 0.8 THEN 5
+      WHEN {最近购买天数百分位} &gt;= 0.6 THEN 4
+      WHEN {最近购买天数百分位} &gt;= 0.4 THEN 3
+      WHEN {最近购买天数百分位} &gt;= 0.2 THEN 2
       ELSE 1
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 
 # (frequency_score and monetary_score follow the same pattern)
 
 # Segment classification
-rfm_segment:
+客户分群:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN 'Hibernating'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN 'At Risk'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN 'Cannot Lose Them'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN 'About to Sleep'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN 'Need Attention'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN 'Promising'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN 'Loyal Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN 'New Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {最近购买得分} &lt;= 2 AND {购买频率得分} &lt;= 2 THEN 'Hibernating'
+      WHEN {最近购买得分} &lt;= 2 AND {购买频率得分} &lt;= 4 THEN 'At Risk'
+      WHEN {最近购买得分} &lt;= 2 AND {购买频率得分} &lt;= 5 THEN 'Cannot Lose Them'
+      WHEN {最近购买得分} &lt;= 3 AND {购买频率得分} &lt;= 2 THEN 'About to Sleep'
+      WHEN {最近购买得分} &lt;= 3 AND {购买频率得分} &lt;= 3 THEN 'Need Attention'
+      WHEN {最近购买得分} &lt;= 4 AND {购买频率得分} &lt;= 1 THEN 'Promising'
+      WHEN {最近购买得分} &lt;= 4 AND {购买频率得分} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {最近购买得分} &lt;= 4 AND {购买频率得分} &lt;= 5 THEN 'Loyal Customers'
+      WHEN {最近购买得分} &lt;= 5 AND {购买频率得分} &lt;= 1 THEN 'New Customers'
+      WHEN {最近购买得分} &lt;= 5 AND {购买频率得分} &lt;= 3 THEN 'Potential Loyalists'
       ELSE 'Champions'
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 客户编号]
 </code></pre>
 <p><strong>关键技巧：</strong></p>
 <ul>
 <li>可在指标公式中使用 <code>percent_rank() over (...)</code>。<code>.dml</code> 公式支持窗口函数。</li>
-<li>所有 RFM 指标均限定在 <code>[dim_dt, customer_id]</code> 粒度。系统变量 <code>dim_dt</code> 使这些指标可在任意时间粒度下计算。</li>
+<li>所有 RFM 指标均限定在 <code>[dim_dt, 客户编号]</code> 粒度。系统变量 <code>dim_dt</code> 使这些指标可在任意时间粒度下计算。</li>
 <li>将 <code>MAXIF</code> 和 <code>DISTINCTCOUNTIF</code> 与 <code>{+d: dt_date}</code> 结合使用，计算距最近一次购买的时间和购买频率。</li>
 <li>使用 <code>CASE</code> 表达式组合各项评分，并据此将客户归入有明确名称的分群。</li>
 </ul>
 <h2 id="product-power-ranking-with-cumulative-distribution">基于累计分布的产品排名 <a class="section-link" aria-label="本节链接" href="#product-power-ranking-with-cumulative-distribution">#</a></h2>
 <p>使用窗口函数计算累计和，将产品划分为不同层级（前 50%、前 80%、前 95%）。</p>
 <pre><code class="language-yaml"># Product rank by total first-2-year sales
-product_power_rank:
+商品表现排名:
   type: measure
-  formula: 'rank() over (order by {first_2yr_sales} desc)'
+  formula: 'rank() over (order by {前两年销售额} desc)'
   dimensions:
-    - [product]
+    - [商品]
 
 # Tier classification via cumulative distribution
-product_tier:
+商品分级:
   type: measure
   formula: |-
     CASE
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN 'Top 50%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN 'Top 80%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN 'Top 95%'
+      WHEN SUM({前两年销售额}) over (order by {前两年销售额} desc)
+           &lt;= 0.50 * SUM({前两年销售额}) over () THEN 'Top 50%'
+      WHEN SUM({前两年销售额}) over (order by {前两年销售额} desc)
+           &lt;= 0.80 * SUM({前两年销售额}) over () THEN 'Top 80%'
+      WHEN SUM({前两年销售额}) over (order by {前两年销售额} desc)
+           &lt;= 0.95 * SUM({前两年销售额}) over () THEN 'Top 95%'
       ELSE 'Others'
     END
   dimensions:
-    - [product]
+    - [商品]
 </code></pre>
-<p><strong>关键技巧</strong>：<code>SUM() over (order by ... desc)</code> 计算累计和，<code>SUM() over ()</code> 计算总和。累计和与总和的比值得出累计分布，用于帕累托式分类。所有计算均限定在 <code>[product]</code> 粒度。</p>
+<p><strong>关键技巧</strong>：<code>SUM() over (order by ... desc)</code> 计算累计和，<code>SUM() over ()</code> 计算总和。累计和与总和的比值得出累计分布，用于帕累托式分类。所有计算均限定在 <code>[商品]</code> 粒度。</p>
 </main></body></html>

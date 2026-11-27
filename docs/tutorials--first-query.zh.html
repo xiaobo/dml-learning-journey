@@ -5,7 +5,7 @@
 <pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
 </code></pre>
-<p>输出包含版本、构建时间戳和平台。<a href="compiler-observations.json">教程编译器记录</a>注明了验证本教程时使用的构建版本。</p>
+<p>记下这里显示的版本和构建时间，之后可以用来核对生成结果的编译器。</p>
 <p>接下来，新建一个目录来存放本教程的文件。</p>
 <pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
 Set-Location first-query
@@ -15,23 +15,26 @@ Set-Location first-query
 <p>将以下内容保存为 <code>model.dml</code>。</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_SALES:
+销售明细:
   type: dataset
   table: TABLE_SALES
-  dimension: [id]
+  dimension: [销售明细编号]
   columns:
-    id:
-    region:
-    amount:
+    销售明细编号:
+      abbr: id
+    地区:
+      abbr: region
+    销售金额:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-    cnt: COUNT(1)
+    销售额: SUM({销售金额})
+    销售笔数: COUNT(1)
 
-average_sale:
+每笔平均销售额:
   type: measure
-  formula: 'DIVIDE({sales}, {cnt})'
+  formula: 'DIVIDE({销售额}, {销售笔数})'
 </code></pre>
-<p><code>FACT_SALES</code> 声明每个 <code>id</code> 对应一条源数据行。<code>sales</code> 和 <code>cnt</code> 对这些行进行聚合。<code>average_sale</code> 将前者的聚合结果除以后者的聚合结果。</p>
+<p><code>销售明细</code> 声明每个 <code>销售明细编号</code> 对应一条源数据行。<code>销售额</code> 和 <code>销售笔数</code> 对这些行进行聚合。<code>每笔平均销售额</code> 将前者的聚合结果除以后者的聚合结果。</p>
 <p>接下来，对模型运行 lint 检查。</p>
 <pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
 $LASTEXITCODE
@@ -39,9 +42,9 @@ $LASTEXITCODE
 <p>进程以退出码 <code>0</code> 结束。如果 lint 报告了问题，请先将保存的文件与上面的模型进行比较，再继续。</p>
 <h2 id="write-the-query">编写查询 <a class="section-link" aria-label="本节链接" href="#write-the-query">#</a></h2>
 <p>将以下内容保存为 <code>query.sql</code>，并将该文件放在 <code>model.dml</code> 所在的目录中。</p>
-<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+<pre><code class="language-sql">SELECT 地区, AGG(销售额), AGG(每笔平均销售额)
 FROM MODEL
-GROUP BY region
+GROUP BY 地区
 </code></pre>
 <p><code>FROM MODEL</code> 选择 <code>model.dml</code>。结果中的每一行代表一个地区。</p>
 <h2 id="compile-the-query">编译查询 <a class="section-link" aria-label="本节链接" href="#compile-the-query">#</a></h2>
@@ -49,9 +52,9 @@ GROUP BY region
 <pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
 $LASTEXITCODE
 </code></pre>
-<p>JSON 输出报告 <code>status: ok</code> 和 <code>exitCode: 0</code>，且 <code>diagnostics</code> 中没有错误或警告。<code>data.sql</code> 包含 <code>SUM(amount)</code>、<code>COUNT(1)</code> 和 <code>GROUP BY region</code>。最终投影包含 <code>region</code>、<code>sales</code> 和 <code>average_sale</code>。</p>
+<p>JSON 中会显示 <code>status: ok</code> 和 <code>exitCode: 0</code>，<code>diagnostics</code> 中没有错误或警告。在 <code>data.sql</code> 中可以看到查询怎样按地区汇总销售额、计算平均值。输出列为 <code>地区</code>、<code>销售额</code> 和 <code>每笔平均销售额</code>。</p>
 <p>编译器可能会输出信息级诊断消息 <code>DATASET_GRAIN_UNVERIFIED</code>。我们编译了已声明的模型，但没有检查物理表 <code>TABLE_SALES</code>。</p>
 <h2 id="inspect-the-result">检查结果 <a class="section-link" aria-label="本节链接" href="#inspect-the-result">#</a></h2>
-<p>打开生成的 SQL 文件，该文件位于 <code>gen</code> 目录下。找到聚合表达式和按 <code>region</code> 分组的子句。现在，模型和使用该模型的查询都已完整，生成的 SQL 也可供检查。</p>
+<p>打开生成的 SQL 文件，该文件位于 <code>gen</code> 目录下。找到聚合表达式和按 <code>地区</code> 分组的子句。现在，模型和使用该模型的查询都已完整，生成的 SQL 也可供检查。</p>
 <p>要执行查询，请使用能够访问已声明源表的数据库连接。请按照<a href="how-to--compile-and-validate-zh.html">使用 dmlc CLI</a>中的步骤，在连接的数据库上验证键并执行查询。<a href="explanation--core-concepts.zh.html">核心概念</a>介绍了模型层和查询层如何配合。</p>
 </main></body></html>

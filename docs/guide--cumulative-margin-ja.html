@@ -32,49 +32,55 @@
 <p><a href="profitability-data.json">サンプルデータ</a>で計算すると、累計粗利率は (400 − 300) / 400 = <strong>25%</strong> です。40% と 20% の単純平均は 30% です。毎月の売上が等しい場合などは一致しますが、一般には異なります。</p>
 <h2 id="計算の流れを確認する">計算の流れを確認する <a class="section-link" aria-label="この節へのリンク" href="#計算の流れを確認する">#</a></h2>
 <p><a href="learn.ja.html#gross-margin">粗利率のアニメーション</a>で North を選び、4 番目のステップを開きます。月別から年初以降の累計に切り替えると、売上は 300 から 400、原価は 240 から 300、粗利率は 20% から 25% に変わります。</p>
-<p>定義済みの粗利率に <code>formula: &#39;{gross_margin: ytd}&#39;</code> を指定すると、累計額から粗利率を計算し直します。この記法は DuckDB で実行し、独立の SQL と結果を照合済みです。SQL Server についてはコンパイル結果を確認しています。</p>
+<p>モデルでは <code>ytd</code> を使い、年初からの純売上高と売上原価をそれぞれ集計します。累計の純売上高から累計の売上原価を引き、累計の純売上高で割ると、年初来の粗利率が求められます。</p>
 <details><summary>DML モデルの全体を見る</summary>
 
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_PROFITABILITY:
+売上と原価:
   type: dataset
   table: TABLE_PROFITABILITY
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
-    region:
+    売上明細番号:
+      abbr: id
+    元データの地域:
+      abbr: region
+    地域: '{元データの地域}'
     dt_month:
-    revenue_amount:
-    cost_amount:
+      abbr: dt_month
+    売上金額:
+      abbr: revenue_amount
+    原価金額:
+      abbr: cost_amount
   measures:
-    net_revenue: SUM({revenue_amount})
-    sales_cost: SUM({cost_amount})
+    純売上高: SUM({売上金額})
+    売上原価: SUM({原価金額})
 
-gross_profit:
+粗利益:
   type: measure
-  formula: &#39;{net_revenue} - {sales_cost}&#39;
+  formula: '{純売上高} - {売上原価}'
 
-gross_margin:
+粗利率:
   type: measure
-  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+  formula: 'DIVIDE({粗利益}, {純売上高})'
 
-gross_margin_ytd:
+年初来粗利率:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: 'DIVIDE({純売上高: ytd} - {売上原価: ytd}, {純売上高: ytd})'
 
-gross_margin_prior_ytd:
+前年同期の年初来粗利率:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: 'DIVIDE({純売上高: {ytd, ya}} - {売上原価: {ytd, ya}}, {純売上高: {ytd, ya}})'
 
-margin_change_pp:
+粗利率の前年差ポイント:
   type: measure
-  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+  formula: '100 * ({年初来粗利率} - {前年同期の年初来粗利率})'
 </code></pre>
 </details>
 
 <h2 id="パーセントとポイントの違い">パーセントとポイントの違い <a class="section-link" aria-label="この節へのリンク" href="#パーセントとポイントの違い">#</a></h2>
 <p>北部の前年同期の累計粗利率は 20% です。20% から 25% への上昇幅は <strong>5 ポイント</strong>、相対的な増加率は (25% / 20%) − 1 = 25% です。レポートではどちらを示すかを明記してください。</p>
-<p><a href="reference--examples--composable-metrics.ja.html">モデルと計算例</a>、<a href="profitability-comparison.sql">比較用クエリ</a>、<a href="profitability-compiler-observations.json">コンパイル記録</a>も参照してください。記録の対象は厳密モードでのコンパイルと生成された SQL の確認です。元テーブルの金額には小数型を使います。売上が 0 の場合は NULL になり、前年データがなければ欠損のままです。</p>
+<p><a href="reference--examples--composable-metrics.ja.html">モデルと計算例</a>、<a href="profitability-comparison.ja.sql" download="comparison.sql">比較用クエリ</a>、<a href="profitability-compiler-observations.ja.json" download="compiler-observations.json">コンパイル記録</a>も参照してください。記録の対象は厳密モードでのコンパイルと生成された SQL の確認です。元テーブルの金額には小数型を使います。売上が 0 の場合は NULL になり、前年データがなければ欠損のままです。</p>
 <p><a href="journey.ja.html#expressions">定義済みの指標を再利用する</a> · <a href="journey.ja.html#time">期間を切り替える</a></p>
-</main></body></html>
+<p><a data-profit-download href="profitability-example.ja.zip">粗利率のサンプルをダウンロード</a></p></main></body></html>

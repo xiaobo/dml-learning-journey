@@ -3,207 +3,207 @@
 <h2 id="weighted-distribution-multi-grain-product">Gewichtete Distribution (Multiplikation auf mehreren Granularitätsebenen) <a class="section-link" aria-label="Link zum Abschnitt" href="#weighted-distribution-multi-grain-product">#</a></h2>
 <p>Die gewichtete Distribution misst den nach Bedeutung der Verkaufsstellen gewichteten Umsatzanteil einer Marke. Dazu müssen Kennzahlen auf <strong>unterschiedlichen Granularitätsebenen</strong> berechnet und miteinander multipliziert werden. Anschließend wird das Ergebnis auf einer höheren Ebene aggregiert.</p>
 <pre><code class="language-yaml"># Store-level sales (restricted to store + category grain)
-store_cat_sales:
+KategorieumsatzJeFiliale:
   type: measure
-  formula: 'IIF({sales} &gt; 0, {sales}, 0)'
+  formula: 'IIF({Umsatz} &gt; 0, {Umsatz}, 0)'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, Filialnummer, Kategorie]
 
 # Category-level sales (drop store)
-cat_sales:
+Kategorieumsatz:
   type: measure
-  formula: 'SUM({store_cat_sales: {+d: store_id}})'
+  formula: 'SUM({KategorieumsatzJeFiliale: {+d: Filialnummer}})'
   dimensions:
-    - [dim_dt, category]
+    - [dim_dt, Kategorie]
 
 # Store weight = store sales / category sales (store + category grain)
-store_weight:
+Filialgewicht:
   type: measure
-  formula: 'DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})'
+  formula: 'DIVIDE({KategorieumsatzJeFiliale}, {Kategorieumsatz: {-d: Filialnummer}})'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, Filialnummer, Kategorie]
 
 # Brand distribution flag (store + category + brand grain)
-brand_dist_flag:
+MarkenvertriebAktiv:
   type: measure
-  formula: 'IIF({sales} &gt; 0, 1, 0)'
+  formula: 'IIF({Umsatz} &gt; 0, 1, 0)'
   dimensions:
-    - [dim_dt, store_id, category, brand]
+    - [dim_dt, Filialnummer, Kategorie, Marke]
 
 # Weighted distribution = SUM(store_weight * brand_flag) at brand grain
-weighted_distribution:
+GewichteterDistributionsgrad:
   type: measure
   formula: |-
-    SUM({store_weight: {dimension: [dim_dt, store_id, category]}}
-        * {brand_dist_flag: {dimension: [dim_dt, store_id, category, brand]}})
+    SUM({Filialgewicht: {dimension: [dim_dt, Filialnummer, Kategorie]}}
+        * {MarkenvertriebAktiv: {dimension: [dim_dt, Filialnummer, Kategorie, Marke]}})
   dimensions:
-    - [dim_dt, category, brand]
+    - [dim_dt, Kategorie, Marke]
 </code></pre>
 <p><strong>Zentrale Technik</strong>: Der Modifikator <code>dimension:</code> erzwingt, dass jede Teilkennzahl innerhalb von <code>SUM()</code> auf der jeweils erforderlichen Granularitätsebene berechnet wird. Der Compiler erzeugt für jede Ebene CTEs und verknüpft sie per Join.</p>
 <h2 id="product-lifecycle-tracking">Produktlebenszyklus verfolgen <a class="section-link" aria-label="Link zum Abschnitt" href="#product-lifecycle-tracking">#</a></h2>
 <p>Bestimmen Sie das Produktalter seit dem ersten Verkauf, ordnen Sie Produkte einer Lebenszyklusphase zu und berechnen Sie gleitende Durchschnitte, die das kürzere Verkaufsalter neuer Produkte berücksichtigen.</p>
 <pre><code class="language-yaml"># First sale date per product (restricted to product grain)
-first_sale_raw:
+ErsterVerkaufRohwert:
   type: measure
-  formula: 'MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)'
+  formula: 'MINIF({dt_date}, {Umsatz: {+d: dt_date}} &gt; 0)'
 
 # First sale date, looking back up to 6 years
-first_sale:
+ErstesVerkaufsdatum:
   type: measure
-  formula: '{first_sale_raw: p6y}'
+  formula: '{ErsterVerkaufRohwert: p6y}'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, Produkt]
 
 # Weeks since launch
-weeks_since_launch:
+WochenSeitEinführung:
   type: measure
-  formula: 'datediff(week, {first_sale}, {Dim Calendar}.dt_week)'
+  formula: 'datediff(week, {ErstesVerkaufsdatum}, {Kalender}.dt_week)'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, Produkt]
 
 # Flag: product has 2+ years of sales data
-has_2yr_data:
+ZweiJahreVorhanden:
   type: measure
-  formula: 'IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)'
+  formula: 'IIF(MAX({WochenSeitEinführung: {+d: dt_week}}) &gt; 104, 1, 0)'
   dimensions:
-    - [product]
+    - [Produkt]
 
 # Total sales in first 2 years
-first_2yr_sales:
+UmsatzDerErstenZweiJahre:
   type: measure
   formula: |-
-    SUMIF({sales: {+d: dt_week}},
-          {weeks_since_launch: {+d: dt_week}} &gt;= 0
-          AND {weeks_since_launch: {+d: dt_week}} &lt; 104)
+    SUMIF({Umsatz: {+d: dt_week}},
+          {WochenSeitEinführung: {+d: dt_week}} &gt;= 0
+          AND {WochenSeitEinführung: {+d: dt_week}} &lt; 104)
   dimensions:
-    - [product]
+    - [Produkt]
 
 # Rolling 4-week average, adjusted for product age
-weekly_avg_4w:
+WochendurchschnittVierWochen:
   type: measure
   formula: |-
-    DIVIDE({sales: p4w},
-           IIF({weeks_since_launch: {dimension: [product, dt_week]}} &gt;= 3,
+    DIVIDE({Umsatz: p4w},
+           IIF({WochenSeitEinführung: {dimension: [Produkt, dt_week]}} &gt;= 3,
                4,
-               {weeks_since_launch: {dimension: [product, dt_week]}} + 1))
+               {WochenSeitEinführung: {dimension: [Produkt, dt_week]}} + 1))
 </code></pre>
 <p><strong>Zentrale Techniken:</strong></p>
 <ul>
-<li><code>MINIF</code> mit <code>{+d: dt_date}</code> ermittelt den ersten Verkauf auf Tagesebene. Die Berechnung ist auf <code>[dt_week, product]</code> beschränkt.</li>
+<li><code>MINIF</code> mit <code>{+d: dt_date}</code> ermittelt den ersten Verkauf auf Tagesebene. Die Berechnung ist auf <code>[dt_week, Produkt]</code> beschränkt.</li>
 <li>Das benutzerdefinierte <code>dt-macro</code> <code>p6y</code> begrenzt den Rückblickzeitraum (siehe <a href="reference--examples--aggregation.de.html#26-multi-level-aggregation-with-d">Mehrstufige Aggregation mit <code>+d</code></a>, Abschnitt „Benutzerdefinierte Makrodefinitionen“).</li>
-<li><code>datediff</code> verwendet <code>{Dim Calendar}.dt_week</code> als Bezugswert, um das Produktalter anhand des Kalenderdatensatzes zu berechnen.</li>
+<li><code>datediff</code> verwendet <code>{Kalender}.dt_week</code> als Bezugswert, um das Produktalter anhand des Kalenderdatensatzes zu berechnen.</li>
 <li><code>SUMIF</code> mit <code>{+d: dt_week}</code> berücksichtigt nur die Wochen innerhalb der ersten 104 Wochen (2 Jahre).</li>
 <li>Der Nenner des gleitenden Durchschnitts wird für Produkte angepasst, deren erster Verkauf weniger als 4 Wochen zurückliegt.</li>
 </ul>
 <h2 id="rfm-segmentation-with-percent_rank">RFM-Segmentierung mit percent_rank <a class="section-link" aria-label="Link zum Abschnitt" href="#rfm-segmentation-with-percent_rank">#</a></h2>
 <p>Vollständige RFM-Segmentierung nach Zeit seit dem letzten Kauf, Kaufhäufigkeit und Kaufbetrag. Die Kennzahlenformeln verwenden <code>percent_rank()</code>, die Bewertung erfolgt mit CASE.</p>
 <pre><code class="language-yaml"># Monetary: MAT sales (moving annual total)
-monetary:
+Kaufbetrag:
   type: measure
-  formula: '{sales: mat}'
+  formula: '{Umsatz: mat}'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
 # Recency: last purchase date
-recency:
+TageSeitLetztemKauf:
   type: measure
-  formula: 'MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'MAXIF({dt_date}, {Kaufbetrag: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
 # Frequency: number of active sales days
-frequency:
+Kaufhäufigkeit:
   type: measure
-  formula: 'DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'DISTINCTCOUNTIF({dt_date}, {Kaufbetrag: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
 # Percentile ranks
-recency_pct:
+PerzentilKaufabstand:
   type: measure
-  formula: 'percent_rank() over (order by {recency} desc)'
+  formula: 'percent_rank() over (order by {TageSeitLetztemKauf} desc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
-frequency_pct:
+PerzentilKaufhäufigkeit:
   type: measure
-  formula: 'percent_rank() over (order by {frequency} asc)'
+  formula: 'percent_rank() over (order by {Kaufhäufigkeit} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
-monetary_pct:
+PerzentilKaufbetrag:
   type: measure
-  formula: 'percent_rank() over (order by {monetary} asc)'
+  formula: 'percent_rank() over (order by {Kaufbetrag} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
 # Scores (1-5 scale)
-recency_score:
+PunkteKaufabstand:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_pct} &gt;= 0.8 THEN 5
-      WHEN {recency_pct} &gt;= 0.6 THEN 4
-      WHEN {recency_pct} &gt;= 0.4 THEN 3
-      WHEN {recency_pct} &gt;= 0.2 THEN 2
+      WHEN {PerzentilKaufabstand} &gt;= 0.8 THEN 5
+      WHEN {PerzentilKaufabstand} &gt;= 0.6 THEN 4
+      WHEN {PerzentilKaufabstand} &gt;= 0.4 THEN 3
+      WHEN {PerzentilKaufabstand} &gt;= 0.2 THEN 2
       ELSE 1
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 
 # (frequency_score and monetary_score follow the same pattern)
 
 # Segment classification
-rfm_segment:
+Kundensegment:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN 'Hibernating'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN 'At Risk'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN 'Cannot Lose Them'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN 'About to Sleep'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN 'Need Attention'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN 'Promising'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN 'Loyal Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN 'New Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {PunkteKaufabstand} &lt;= 2 AND {PunkteKaufhäufigkeit} &lt;= 2 THEN 'Hibernating'
+      WHEN {PunkteKaufabstand} &lt;= 2 AND {PunkteKaufhäufigkeit} &lt;= 4 THEN 'At Risk'
+      WHEN {PunkteKaufabstand} &lt;= 2 AND {PunkteKaufhäufigkeit} &lt;= 5 THEN 'Cannot Lose Them'
+      WHEN {PunkteKaufabstand} &lt;= 3 AND {PunkteKaufhäufigkeit} &lt;= 2 THEN 'About to Sleep'
+      WHEN {PunkteKaufabstand} &lt;= 3 AND {PunkteKaufhäufigkeit} &lt;= 3 THEN 'Need Attention'
+      WHEN {PunkteKaufabstand} &lt;= 4 AND {PunkteKaufhäufigkeit} &lt;= 1 THEN 'Promising'
+      WHEN {PunkteKaufabstand} &lt;= 4 AND {PunkteKaufhäufigkeit} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {PunkteKaufabstand} &lt;= 4 AND {PunkteKaufhäufigkeit} &lt;= 5 THEN 'Loyal Customers'
+      WHEN {PunkteKaufabstand} &lt;= 5 AND {PunkteKaufhäufigkeit} &lt;= 1 THEN 'New Customers'
+      WHEN {PunkteKaufabstand} &lt;= 5 AND {PunkteKaufhäufigkeit} &lt;= 3 THEN 'Potential Loyalists'
       ELSE 'Champions'
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, Kundennummer]
 </code></pre>
 <p><strong>Zentrale Techniken:</strong></p>
 <ul>
 <li><code>percent_rank() over (...)</code> kann in Kennzahlenformeln verwendet werden. Fensterfunktionen sind in <code>.dml</code>-Formeln zulässig.</li>
-<li>Alle RFM-Kennzahlen sind auf die Granularitätsebene <code>[dim_dt, customer_id]</code> beschränkt. Die Systemvariable <code>dim_dt</code> ermöglicht die Berechnung auf jeder zeitlichen Granularitätsebene.</li>
+<li>Alle RFM-Kennzahlen sind auf die Granularitätsebene <code>[dim_dt, Kundennummer]</code> beschränkt. Die Systemvariable <code>dim_dt</code> ermöglicht die Berechnung auf jeder zeitlichen Granularitätsebene.</li>
 <li><code>MAXIF</code> und <code>DISTINCTCOUNTIF</code> werden mit <code>{+d: dt_date}</code> verwendet, um die Zeit seit dem letzten Kauf und die Kaufhäufigkeit zu berechnen.</li>
 <li><code>CASE</code>-Ausdrücke kombinieren die Punktwerte und ordnen Kunden anhand dieser Werte benannten Segmenten zu.</li>
 </ul>
 <h2 id="product-power-ranking-with-cumulative-distribution">Produktrangliste anhand der kumulierten Verteilung <a class="section-link" aria-label="Link zum Abschnitt" href="#product-power-ranking-with-cumulative-distribution">#</a></h2>
 <p>Ordnen Sie Produkte anhand von kumulierten Summen, die mit Fensterfunktionen berechnet werden, in Stufen ein (Top 50%, Top 80%, Top 95%).</p>
 <pre><code class="language-yaml"># Product rank by total first-2-year sales
-product_power_rank:
+Produktleistungsrang:
   type: measure
-  formula: 'rank() over (order by {first_2yr_sales} desc)'
+  formula: 'rank() over (order by {UmsatzDerErstenZweiJahre} desc)'
   dimensions:
-    - [product]
+    - [Produkt]
 
 # Tier classification via cumulative distribution
-product_tier:
+Produktstufe:
   type: measure
   formula: |-
     CASE
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN 'Top 50%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN 'Top 80%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN 'Top 95%'
+      WHEN SUM({UmsatzDerErstenZweiJahre}) over (order by {UmsatzDerErstenZweiJahre} desc)
+           &lt;= 0.50 * SUM({UmsatzDerErstenZweiJahre}) over () THEN 'Top 50%'
+      WHEN SUM({UmsatzDerErstenZweiJahre}) over (order by {UmsatzDerErstenZweiJahre} desc)
+           &lt;= 0.80 * SUM({UmsatzDerErstenZweiJahre}) over () THEN 'Top 80%'
+      WHEN SUM({UmsatzDerErstenZweiJahre}) over (order by {UmsatzDerErstenZweiJahre} desc)
+           &lt;= 0.95 * SUM({UmsatzDerErstenZweiJahre}) over () THEN 'Top 95%'
       ELSE 'Others'
     END
   dimensions:
-    - [product]
+    - [Produkt]
 </code></pre>
-<p><strong>Zentrale Technik</strong>: <code>SUM() over (order by ... desc)</code> berechnet die laufende Summe. <code>SUM() over ()</code> berechnet die Gesamtsumme. Das Verhältnis der laufenden Summe zur Gesamtsumme ergibt die kumulierte Verteilung für die Klassifizierung nach dem Pareto-Prinzip. Alle Berechnungen sind auf die Granularitätsebene <code>[product]</code> beschränkt.</p>
+<p><strong>Zentrale Technik</strong>: <code>SUM() over (order by ... desc)</code> berechnet die laufende Summe. <code>SUM() over ()</code> berechnet die Gesamtsumme. Das Verhältnis der laufenden Summe zur Gesamtsumme ergibt die kumulierte Verteilung für die Klassifizierung nach dem Pareto-Prinzip. Alle Berechnungen sind auf die Granularitätsebene <code>[Produkt]</code> beschränkt.</p>
 </main></body></html>

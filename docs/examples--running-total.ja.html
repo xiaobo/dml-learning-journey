@@ -1,59 +1,63 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>集計順序を定めた売上累計の指標を再利用する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="集計順序を定めた累計を名前付きの指標として定義し、その指標を使用できる集計レベルを指定します。この例で累計するのは売上です。粗利益率や月ごとの重複を除いた顧客数は累計しません。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="集計順序を定めた売上累計の指標を再利用する · DML"><meta property="og:description" content="集計順序を定めた累計を名前付きの指標として定義し、その指標を使用できる集計レベルを指定します。この例で累計するのは売上です。粗利益率や月ごとの重複を除いた顧客数は累計しません。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--running-total.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="examples--running-total.de.html">Deutsch</a> <a lang="en" hreflang="en" href="examples--running-total-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--running-total-zh.html">中文</a></header><main><h1 id="reuse-an-ordered-running-sales-measure">集計順序を定めた売上累計の指標を再利用する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#inspect-the-definition-and-result">定義と結果を確認する</a></li><li><a href="#filtering-before-the-window-changes-its-starting-point">ウィンドウ計算の前にフィルタリングすると累計の開始位置が変わる</a></li><li><a href="#run-and-interpret-the-checks">検証を実行して結果を確認する</a></li></ul></details>
 <p>集計順序を定めた累計を名前付きの指標として定義し、その指標を使用できる集計レベルを指定します。この例で累計するのは売上です。粗利益率や月ごとの重複を除いた顧客数は累計しません。</p>
 <h2 id="inspect-the-definition-and-result">定義と結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-definition-and-result">#</a></h2>
-<p>月別売上は1月が40、2月が20です。<code>running_sales</code>は、1月に40、2月に60を返します。</p>
-<pre><code class="language-yaml">running_sales:
+<p>月別売上は1月が40、2月が20です。<code>累計売上額</code>は、1月に40、2月に60を返します。</p>
+<pre><code class="language-yaml">累計売上額:
   type: measure
-  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  formula: 'SUM({売上額}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
-<p><code>ORDER BY month</code>で時系列順を指定し、<code>ROWS</code>で最初の行から現在の行までを累計します。パーティションがないため、まず全地域の売上を月ごとに合算します。<code>dimensions: [[month]]</code>により、この指標を使用できる集計レベルは月に限定されます。ISO形式の月を表す文字列は、ソートすると時系列順に並びます。</p>
+<p><code>ORDER BY dt_month</code>で月を時系列順に並べ、<code>ROWS</code>で先頭から現在の行まで合計します。パーティションを指定していないため、まず全地域の月別売上額を求めます。<code>dimensions: [[dt_month]]</code>で月単位の集計を指定します。元のテーブルでは月を日付として保存しています。</p>
 <details><summary>ファイル全体: fixed/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+売上明細:
   type: dataset
   table: FACT
-  dimension: [id]
+  dimension: [番号]
   columns:
-    id:
-    region:
-    month:
-    amount:
+    番号:
+      abbr: id
+    地域:
+      abbr: region
+    dt_month:
+      abbr: month
+    注文金額:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-region_selected:
+    売上額: SUM({注文金額})
+地域別選択月売上額:
   type: measure
-  formula: '{sales: {-d: month}}'
-region_all_months:
+  formula: '{売上額: {-d: dt_month}}'
+地域別全月売上額:
   type: measure
-  formula: '{sales: {-df: month}}'
-running_sales:
+  formula: '{売上額: {-df: dt_month}}'
+累計売上額:
   type: measure
-  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  formula: 'SUM({売上額}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
 </details>
 <details><summary>ファイル全体: fixed/running.sql</summary>
 
-<pre><code class="language-sql">SELECT month, AGG(sales), AGG(running_sales) FROM MODEL GROUP BY month ORDER BY month
+<pre><code class="language-sql">SELECT dt_month, AGG(売上額), AGG(累計売上額) FROM MODEL GROUP BY dt_month ORDER BY dt_month
 </code></pre>
 </details>
 
-<p>他のクエリからも同じ指標<code>running_sales</code>を参照できます。地域ごとに売上を累計するには、パーティションと使用可能な集計レベルを定義し、その結果を確認します。クエリに地域を追加するだけでは、地域ごとの累計にはなりません。</p>
+<p>他のクエリからも同じ指標<code>累計売上額</code>を参照できます。地域ごとに売上を累計するには、パーティションと使用可能な集計レベルを定義し、その結果を確認します。クエリに地域を追加するだけでは、地域ごとの累計にはなりません。</p>
 <h2 id="filtering-before-the-window-changes-its-starting-point">ウィンドウ計算の前にフィルタリングすると累計の開始位置が変わる <a class="section-link" aria-label="この節へのリンク" href="#filtering-before-the-window-changes-its-starting-point">#</a></h2>
 <details><summary>ファイル全体: fixed/running_february.sql</summary>
 
-<pre><code class="language-sql">SELECT month, AGG(sales), AGG(running_sales) FROM MODEL WHERE month='2024-02-01' GROUP BY month ORDER BY month
+<pre><code class="language-sql">SELECT dt_month, AGG(売上額), AGG(累計売上額) FROM MODEL WHERE dt_month='2024-02-01' GROUP BY dt_month ORDER BY dt_month
 </code></pre>
 </details>
 
 <p>2月だけを選択すると、売上も売上累計も20になります。1月の40は自動では引き継がれません。累計の対象は、選択された結果の行です。年初から2月末までを累計するには、YTDで対象期間を明示し、計算に含まれる入力データを確認します。詳しくは<a href="examples--time-context.ja.html">累計KPI</a>を参照してください。</p>
-<p>指標値順の累積順位は、時系列順に計算した累計値ではありません。並び順は定義の一部です。<code>{sales: {dimension: []}}</code>のように集計レベルを空にすると、順序に従った累計ではなく、全体の合計が求められます。</p>
+<p>指標値順の累積順位は、時系列順に計算した累計値ではありません。並び順は定義の一部です。<code>{売上額: {dimension: []}}</code>のように集計レベルを空にすると、順序に従った累計ではなく、全体の合計が求められます。</p>
 <p><a hreflang="zh" href="examples--running-total-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
 <h2 id="run-and-interpret-the-checks">検証を実行して結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">プロジェクトをダウンロード</a>して、READMEの手順に従い、PowerShellで<code>verify.ps1</code>を実行します。dmlcにパスを通してください。新しい出力フォルダーに演習用データベースを作成し、結果と診断情報を保存します。</p>
-<p>この例は DuckDB 上で dmlc 0.3.16（ビルド 2026-11-13）を使って確認しました。実行ファイルのフィンガープリントと各検証ケースのステータスは、ダウンロードに含まれる <code>verification-summary.json</code> に記載されています。データベースでの検証とその後の実行は独立した処理です。両方が同じスナップショットを使用する保証はありません。他のデータベースエンジンでは個別に確認してください。</p>
+<p><a href="task-examples.ja.zip">プロジェクトをダウンロード</a>して、READMEの手順に従い、PowerShellで<code>verify.ps1</code>を実行します。dmlcにパスを通してください。新しい出力フォルダーに演習用データベースを作成し、結果と診断情報を保存します。</p>
+<p>この例は DuckDB 上で dmlc 0.3.16（ビルド 2026-11-27）を使って確認しました。実行ファイルのフィンガープリントと各検証ケースのステータスは、ダウンロードに含まれる <code>verification-summary.json</code> に記載されています。データベースでの検証とその後の実行は独立した処理です。両方が同じスナップショットを使用する保証はありません。他のデータベースエンジンでは個別に確認してください。</p>
 </main></body></html>

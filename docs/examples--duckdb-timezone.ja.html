@@ -21,7 +21,7 @@ WHERE ts &gt;= timezone('America/New_York', TIMESTAMP '2024-03-10 00:00:00')
 <h2 id="preserve-distinct-instants-during-a-repeated-local-hour">現地時刻で同じ時間帯が繰り返される場合に異なる時点を区別する <a class="section-link" aria-label="この節へのリンク" href="#preserve-distinct-instants-during-a-repeated-local-hour">#</a></h2>
 <p>2024-11-03 05:30 UTC と 06:30 UTC は、どちらも現地時刻の 01:30 に対応します。この2つは異なる時点です。現地時刻のタイムスタンプだけで重複を除外せず、イベントキーと元の時点を保持します。</p>
 <h2 id="replay-and-adapt-the-recipe">例を再実行して調整する <a class="section-link" aria-label="この節へのリンク" href="#replay-and-adapt-the-recipe">#</a></h2>
-<p><a href="task-examples.zip">プロジェクトをダウンロード</a>し、README に記載されている JDBC の手順に従って <code>jdbc/VerifyJdbc.java</code> を実行します。既存の JDK とインストール済みの対応する JAR ファイルを使い、展開したプロジェクトのディレクトリから次のコマンドを実行します。</p>
+<p><a href="task-examples.ja.zip">プロジェクトをダウンロード</a>し、README に記載されている JDBC の手順に従って <code>jdbc/VerifyJdbc.java</code> を実行します。既存の JDK とインストール済みの対応する JAR ファイルを使い、展開したプロジェクトのディレクトリから次のコマンドを実行します。</p>
 <pre><code class="language-powershell">java -cp "C:/path/to/dmlc-assembly.jar;C:/path/to/duckdb-jdbc.jar" jdbc/VerifyJdbc.java "$PWD/jdbc" C:/path/to/driver-directory
 </code></pre>
 <p>パスを置き換えます。他のシステムでは、クラスパスの区切りにセミコロンではなくコロンを使います。プログラムは、物理クエリとセマンティッククエリのパラメータバインドも検証します。最後に表示される成功メッセージと、プロセスの終了コードを確認します。プログラムがサードパーティのランタイムをダウンロードすることはありません。</p>

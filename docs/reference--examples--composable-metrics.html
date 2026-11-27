@@ -12,48 +12,53 @@ FACT_PROFITABILITY:
   dimension: [id]
   columns:
     id:
+      abbr: id
     region:
+      abbr: region
     dt_month:
+      abbr: dt_month
     revenue_amount:
+      abbr: revenue_amount
     cost_amount:
+      abbr: cost_amount
   measures:
     net_revenue: SUM({revenue_amount})
     sales_cost: SUM({cost_amount})
 
 gross_profit:
   type: measure
-  formula: &#39;{net_revenue} - {sales_cost}&#39;
+  formula: '{net_revenue} - {sales_cost}'
 
 gross_margin:
   type: measure
-  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+  formula: 'DIVIDE({gross_profit}, {net_revenue})'
 
 gross_margin_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
 
 gross_margin_prior_ytd:
   type: measure
-  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
 
 margin_change_pp:
   type: measure
-  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
 </code></pre>
 <p><a href="profitability-model.dml">Download model.dml</a>, <a href="TABLE_PROFITABILITY.csv">source CSV</a>, or <a href="profitability-data.json">source data as JSON</a>.</p>
 <h2 id="change-the-context">Change the context <a class="section-link" aria-label="Link to section" href="#change-the-context">#</a></h2>
 <p>For North in February 2025, revenue is 300 and cost is 240, giving a 20% margin. January revenue is 100 and cost is 60, giving a 40% margin. Year-to-date revenue is 400 and cost is 300: the cumulative margin is 25%, not the 30% simple average of monthly margins.</p>
-<p>Apply the time modifier directly to the named ratio: <code>formula: &#39;{gross_margin: ytd}&#39;</code>. This recalculates gross margin over the cumulative period from its revenue and cost dependencies; it does not sum or average monthly percentages. Prior-year YTD uses <code>&#39;{gross_margin: {ytd, ya}}&#39;</code>.</p>
+<p>The downloadable model applies <code>ytd</code> to both net revenue and sales cost. It subtracts cumulative cost from cumulative revenue, then divides by cumulative revenue. For the previous year it applies <code>{ytd, ya}</code> to both amounts.</p>
 <pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
 FROM MODEL
-WHERE dt_month = &#39;2025-02-01&#39;
+WHERE dt_month = '2025-02-01'
 GROUP BY region, dt_month
 </code></pre>
 <h2 id="compare-the-same-period">Compare the same period <a class="section-link" aria-label="Link to section" href="#compare-the-same-period">#</a></h2>
 <p>North&#39;s January–February 2024 revenue is 200 and cost is 160, giving a 20% cumulative margin. The current cumulative margin of 25% is <strong>5 percentage points higher</strong>. Relative growth would be 25%; it is a different calculation and is not the displayed difference.</p>
 <pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
 FROM MODEL
-WHERE dt_month = &#39;2025-02-01&#39;
+WHERE dt_month = '2025-02-01'
 GROUP BY region, dt_month
 </code></pre>
 <p><a href="profitability-monthly.sql">Download the monthly query</a>, <a href="profitability-cumulative.sql">cumulative query</a>, or <a href="profitability-comparison.sql">comparison query</a>. Standard time calculations also require the compiler&#39;s DML_CALENDAR on the target connection.</p>

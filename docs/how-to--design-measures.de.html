@@ -3,28 +3,28 @@
 <h2 id="metric-eligibility-predicates-in-intermediate-columns">Bedingungen in Zwischenspalten für die Auswahl der Zeilen einer Kennzahl <a class="section-link" aria-label="Link zum Abschnitt" href="#metric-eligibility-predicates-in-intermediate-columns">#</a></h2>
 <p>Verwenden Sie eine Zwischenspalte, wenn eine Bedingung bestimmt, welche Zeilen zu einer einzelnen Kennzahl beitragen, und die Zeilenmenge des Datasets weiterhin fachlich sinnvoll ist. Ordnen Sie Bedingungen nicht anhand von Namen wie <code>state</code> oder <code>delete_time</code> ein. Eine gleich aussehende Bedingung kann auch dauerhaft festlegen, welche Zeilen zur Quelle gehören.</p>
 <pre><code class="language-yaml">columns:
-    valid_amount:
+    GültigerBetrag:
         description: Row-level amount gated by validity checks
         formula: 'iif(state = 1 and delete_time is null, prod_amount, null)'
 measures:
-    total: SUM({valid_amount})
+    Summe: SUM({GültigerBetrag})
 </code></pre>
-<p><code>SUM</code> ignoriert NULL. Daher entspricht der aggregierte Wert in Gruppen mit mindestens einer berücksichtigten Zeile der gefilterten Summe. Die Bedingung in der Zwischenspalte ist <strong>im Allgemeinen nicht gleichwertig</strong> mit einem <code>WHERE</code> auf Quellenebene. Eine Gruppe mit ausschließlich ausgeschlossenen Zeilen entfällt bei <code>WHERE</code>, kann aber mit der Bedingung in der Zwischenspalte als Zeile mit <code>total = NULL</code> erhalten bleiben. Auch Zählungen für andere Kennzahlen, Joins, Fensterberechnungen und nachgelagerte Filter können sich ändern.</p>
+<p><code>SUM</code> ignoriert NULL. Daher entspricht der aggregierte Wert in Gruppen mit mindestens einer berücksichtigten Zeile der gefilterten Summe. Die Bedingung in der Zwischenspalte ist <strong>im Allgemeinen nicht gleichwertig</strong> mit einem <code>WHERE</code> auf Quellenebene. Eine Gruppe mit ausschließlich ausgeschlossenen Zeilen entfällt bei <code>WHERE</code>, kann aber mit der Bedingung in der Zwischenspalte als Zeile mit <code>Summe = NULL</code> erhalten bleiben. Auch Zählungen für andere Kennzahlen, Joins, Fensterberechnungen und nachgelagerte Filter können sich ändern.</p>
 <p>Verwenden Sie diese Umschreibung erst, wenn das Verhalten von Gruppen mit ausschließlich ausgeschlossenen Zeilen, die Bedingungen für andere Kennzahlen derselben Abfrage und die Zeilenmengen für Distinct-Operationen, Joins und Fensterberechnungen nachgewiesen sind. Weisen Sie auch nach, dass eine fehlende Zeile und eine vorhandene Zeile mit NULL gleichwertig sind. Andernfalls behalten Sie eine Bedingung bei, die Zeilen auf Abfrage- oder Beziehungsebene entfernt, oder verwenden für eine dauerhaft geltende Bedingung der Quelle eine minimale, dokumentierte Ausnahmelösung mit <code>sql:</code> im Dataset.</p>
 <p><strong>Beispiel für eine schrittweise Zerlegung:</strong> <code>tax_rate_effective</code> (geltenden Steuersatz bestimmen) → <code>amount_excl_tax</code> (Betrag ohne Steuer berechnen) → <code>eligible_amount</code> (Zeilen für die Kennzahl berücksichtigen) → <code>SUM({eligible_amount})</code> (Measure). Der Compiler setzt diese Zwischenausdrücke direkt in die generierte Abfrage ein. Prüfen Sie das generierte SQL, um zu sehen, wie die Ausdrücke umgesetzt werden und welche Zeilen einfließen.</p>
 <h2 id="derivative-measures">Abgeleitete Measures <a class="section-link" aria-label="Link zum Abschnitt" href="#derivative-measures">#</a></h2>
 <p>Wenden Sie berichtsspezifische Modifikatoren dort an, wo die Measure verwendet wird. Definieren Sie eine abgeleitete Measure in <code>.dml</code> nur, wenn der modifizierte Wert überall wiederverwendet werden muss, etwa weil er in einem Objekt vom Typ <code>type: materialize</code> aufgeführt wird, oder wenn er als benannte fachliche Kennzahl definiert werden soll. Verwenden Sie in Measure-Formeln DMX-Referenzen und <strong>niemals <code>AGG()</code></strong>:</p>
-<pre><code class="language-yaml">sales_last_month:
+<pre><code class="language-yaml">Vormonatsumsatz:
     type: measure
-    formula: '{sales: pp}'
+    formula: '{Umsatz: pp}'
 
-sales_yoy_growth:
+UmsatzwachstumZumVorjahr:
     type: measure
-    formula: '{sales: yoy}'
+    formula: '{Umsatz: yoy}'
 
-sales_by_product:
+Produktumsatz:
     type: measure
-    formula: SUM({sales: {+d: product}})
+    formula: SUM({Umsatz: {+d: Produkt}})
 </code></pre>
 <p>Diese Measures behalten die unter ihrem Namen definierte Transformation bei. Ihre Auswertung hängt weiterhin vom Abfragekontext und von den Regeln für Modifikatoren und Filter ab.</p>
 <hr>
@@ -43,14 +43,14 @@ WITH completed AS (
 SELECT product, SUM(amount) FROM completed GROUP BY product
 </code></pre>
 <pre><code class="language-yaml"># DML approach
-completed_sales:
+UmsatzAbgeschlossenerBestellungen:
     type: measure
-    formula: SUM({amount: {+f: {status: 'completed'}}})
+    formula: SUM({Verkaufsbetrag: {+f: {Bestellstatus: 'completed'}}})
 </code></pre>
 <pre><code class="language-sql">-- Model Query SQL: retain the row-removing population restriction
-SELECT product, AGG(completed_sales) FROM MODEL
-WHERE status = 'completed'
-GROUP BY product
+SELECT Produkt, AGG(UmsatzAbgeschlossenerBestellungen) FROM MODEL
+WHERE Bestellstatus = 'completed'
+GROUP BY Produkt
 </code></pre>
 <h2 id="dimension-constrained-measures">Measures mit Dimensionsbeschränkung <a class="section-link" aria-label="Link zum Abschnitt" href="#dimension-constrained-measures">#</a></h2>
 <blockquote>
@@ -58,51 +58,51 @@ GROUP BY product
 </blockquote>
 <p>Fügen Sie diese Beschränkung nur hinzu, wenn die Kennzahl mit einer bestimmten Dimension ausgewertet werden <strong>muss</strong>:</p>
 <pre><code class="language-yaml"># "Average order value per customer" — customer_id is required during evaluation
-aov_per_customer:
+DurchschnittlicherBestellwertJeKunde:
     type: measure
-    formula: DIVIDE({sales}, {number_of_transactions})
+    formula: DIVIDE({Umsatz}, {Transaktionsanzahl})
     dimensions:
-        - [customer_id]    # ← the only allowed dimension
+        - [Kundennummer]    # ← the only allowed dimension
 </code></pre>
-<p>Andere Formeln, die diese Measure verwenden, müssen sie mit <code>{aov_per_customer: {+d: customer_id}}</code> explizit nach <code>customer_id</code> auswerten und das Ergebnis anschließend auf einer höheren Ebene aggregieren. Dokumentieren Sie die Beschränkung klar. Sie ermöglicht gezielte Berechnungen, kann aber zu unerwarteten Ergebnissen führen.</p>
+<p>Andere Formeln, die diese Measure verwenden, müssen sie mit <code>{DurchschnittlicherBestellwertJeKunde: {+d: Kundennummer}}</code> explizit nach <code>Kundennummer</code> auswerten und das Ergebnis anschließend auf einer höheren Ebene aggregieren. Dokumentieren Sie die Beschränkung klar. Sie ermöglicht gezielte Berechnungen, kann aber zu unerwarteten Ergebnissen führen.</p>
 <h2 id="translate-sql-into-measures">SQL in Measures umsetzen <a class="section-link" aria-label="Link zum Abschnitt" href="#translate-sql-into-measures">#</a></h2>
 <p>Mit dieser Checkliste setzen Sie eine Kennzahlspezifikation oder vorhandenes SQL (CTEs, JOINs) in DML-Measures und einfaches Model Query SQL (<code>FROM MODEL</code> + <code>AGG(...)</code>) um.</p>
 <p><strong>Beginnen Sie mit den Dimensionen, nicht mit dem SQL-Text:</strong></p>
 <ul>
-<li><strong>Welche Dimension hat die endgültige Abfrage?</strong> (z. B. <code>[customer]</code> oder <code>[customer, dt_month]</code>)</li>
-<li><strong>Welche Dimension gilt für die Zwischenauswertung?</strong> (z. B. <code>[customer]</code> für den Erstkauf)</li>
+<li><strong>Welche Dimension hat die endgültige Abfrage?</strong> (z. B. <code>[Kunde]</code> oder <code>[Kunde, dt_month]</code>)</li>
+<li><strong>Welche Dimension gilt für die Zwischenauswertung?</strong> (z. B. <code>[Kunde]</code> für den Erstkauf)</li>
 <li>Wählen Sie die Umsetzung nach Auswertungsdimension: direkt auf der Dataset-Dimension auswerten → atomare Measure, Auswertungsdimension ändern → <code>+d</code> / <code>dimension</code>, die zulässigen Dimensionen beschränken → <strong>Measure mit Dimensionsbeschränkung</strong>. Prüfen Sie, ob die Ebenen, auf denen Zwischenwerte und Ergebnisse gebildet werden, zueinander passen. Wenn die Logik tatsächlich einen JOIN oder eine Unterabfrage erfordert und sich nicht in DML ausdrücken lässt, halten Sie inne und prüfen Sie den Ansatz erneut. Umgehen Sie die Regeln von Model Query SQL nicht.</li>
 </ul>
 <p><strong>Measures mit Dimensionsbeschränkung (Zwischenzeilen wie bei einem CTE abbilden):</strong></p>
 <ul>
-<li>Definieren Sie eine Measure mit genau einer zulässigen Dimension: <code>dimensions: [[customer_id]]</code></li>
-<li>Aggregieren Sie mit <code>SUM({that_measure: {+d: customer_id}})</code> (oder mit <code>AVG</code> usw.) auf einer höheren Ebene.</li>
+<li>Definieren Sie eine Measure mit genau einer zulässigen Dimension: <code>dimensions: [[Kundennummer]]</code></li>
+<li>Aggregieren Sie mit <code>SUM({that_measure: {+d: Kundennummer}})</code> (oder mit <code>AVG</code> usw.) auf einer höheren Ebene.</li>
 <li><strong><code>dimensions:</code></strong> beschränkt, bei welchen Auswertungsdimensionen die Measure gültig ist. Wird die Measure in einer anderen Formel mit <strong><code>+d</code></strong> referenziert, ergänzt der Modifikator ihre Auswertungsdimension um das erforderliche Dimensionsfeld.</li>
 </ul>
-<pre><code class="language-yaml">first_month:
+<pre><code class="language-yaml">ErsterKaufmonat:
     type: measure
     description: first month with sales &gt; 0 (customer grain only)
-    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    formula: 'MINIF({dt_month}, {Umsatz: {+d: dt_month}} &gt; 0)'
     dimensions:
-        - [customer_id]
+        - [Kundennummer]
 
-first_month_sales_by_customer:
+ErstmonatsumsatzJeKunde:
     type: measure
     description: sales in customer's first month (customer grain only)
-    formula: 'SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})'
+    formula: 'SUMIF({Umsatz: {+d: dt_month}}, {dt_month} = {ErsterKaufmonat})'
     dimensions:
-        - [customer_id]
+        - [Kundennummer]
 
-first_month_sales_total:
+ErstmonatsumsatzGesamt:
     type: measure
-    formula: 'SUM({first_month_sales_by_customer: {+d: customer_id}})'
+    formula: 'SUM({ErstmonatsumsatzJeKunde: {+d: Kundennummer}})'
 </code></pre>
-<p>In einer auf die Kundendimension beschränkten Measure liefert <code>{sales: {+d: dt_month}}</code> den Umsatz des jeweiligen Kunden im jeweiligen Monat.</p>
-<p>Wenn Sie <code>first_month</code> als Abfragedimension verwenden möchten, um <strong>einen Bericht danach zu gruppieren</strong>, und zugleich andere Measures derselben Abfrage mit <code>+d: customer_id</code> ausrichten möchten, ist das Measure-Ergebnis die Abfragedimension. Siehe <a href="explanation--measure-as-dimension.de.html">Measure als Dimension</a>.</p>
+<p>In einer auf die Kundendimension beschränkten Measure liefert <code>{Umsatz: {+d: dt_month}}</code> den Umsatz des jeweiligen Kunden im jeweiligen Monat.</p>
+<p>Wenn Sie <code>ErsterKaufmonat</code> als Abfragedimension verwenden möchten, um <strong>einen Bericht danach zu gruppieren</strong>, und zugleich andere Measures derselben Abfrage mit <code>+d: Kundennummer</code> ausrichten möchten, ist das Measure-Ergebnis die Abfragedimension. Siehe <a href="explanation--measure-as-dimension.de.html">Measure als Dimension</a>.</p>
 <p><strong>Prüfen, ob eine Bedingung mindestens einmal erfüllt wurde (Bindung, Wiederholung):</strong></p>
 <ul>
-<li>Flag pro Kunde: <code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code> mit <code>dimensions: [[customer_id]]</code></li>
-<li>Anzahl der Kunden mit gesetztem Flag: <code>SUM({flag: {+d: customer_id}})</code></li>
+<li>Flag pro Kunde: <code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code> mit <code>dimensions: [[Kundennummer]]</code></li>
+<li>Anzahl der Kunden mit gesetztem Flag: <code>SUM({flag: {+d: Kundennummer}})</code></li>
 <li>Anteil: <code>DIVIDE(total_flag, total_customers)</code></li>
 </ul>
 <p><strong>CTEs in eine oder mehrere Measures umsetzen:</strong></p>
@@ -115,7 +115,7 @@ first_month_sales_total:
 </thead>
 <tbody><tr>
 <td>Aggregation je Kunde und Monat</td>
-<td><code>{sales: {+d: [customer, dt_month]}}</code></td>
+<td><code>{Umsatz: {+d: [Kunde, dt_month]}}</code></td>
 </tr>
 <tr>
 <td>Monat des Erstkaufs</td>
@@ -127,7 +127,7 @@ first_month_sales_total:
 </tr>
 <tr>
 <td>Endgültiger KPI</td>
-<td><code>SUM({customer_measure: {+d: customer_id}})</code> und Verhältniswerte</td>
+<td><code>SUM({customer_measure: {+d: Kundennummer}})</code> und Verhältniswerte</td>
 </tr>
 </tbody></table>
 <p>Zielform der Abfrage: <code>SELECT AGG(kpi_1), AGG(kpi_2), ... FROM MODEL</code>.</p>
@@ -135,12 +135,12 @@ first_month_sales_total:
 <p>Wenn Sie Entitäten auf einer Ebene zählen und auf einer anderen Ebene filtern, wenden Sie <code>{+d: dimension_field}</code> in der Bedingung auf die <strong>Measure</strong> an, nicht auf die Spalte.</p>
 <ul>
 <li>Falsch: <code>DISTINCTCOUNTIF({entity: {+d: entity}}, …)</code> ist ungültig. Modifikatoren sind nur bei Kennzahlen zulässig.</li>
-<li>Richtig: <code>DISTINCTCOUNTIF({entity}, {sales: {+d: entity}} &gt; 0 AND …)</code></li>
+<li>Richtig: <code>DISTINCTCOUNTIF({entity}, {Umsatz: {+d: entity}} &gt; 0 AND …)</code></li>
 </ul>
 <p><strong>Kohortenabgrenzung:</strong> Definieren Sie den Erstkauf auf einer ausdrücklich festgelegten Entitätsebene und legen Sie den berücksichtigten Verlauf beziehungsweise den Stichtag fest. Vergleichen Sie den Erstkauf anschließend mit dem Beobachtungszeitraum. Verwenden Sie einen benannten Klassifikator erst wieder, nachdem seine zulässigen Dimensionen und die Ebene geprüft wurden, auf der er zugeordnet wird. Wenn Sie einen fehlschlagenden Ausdruck direkt einbetten, können Sie damit weder seine Semantik bestätigen noch eine inkompatible Granularität umgehen. Geprüfte Ausdrucksformen und Fehler in veröffentlichten Versionen finden Sie unter <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>.</p>
 <h2 id="backward-looking-repurchase-metrics">Rückblickende Kennzahlen für Wiederkäufe <a class="section-link" aria-label="Link zum Abschnitt" href="#backward-looking-repurchase-metrics">#</a></h2>
-<p>Formulieren Sie zuerst die fachliche Definition (wer, Beobachtungsmonat, Zeitfenster). Erstellen Sie dann Flags auf Kundenebene und aggregieren Sie sie mit <code>SUM({flag: {+d: customer_id}})</code> oder <code>DISTINCTCOUNTIF(...)</code>. Stimmen Sie Änderungen an der Semantik vorher mit der fachlich verantwortlichen Person ab.</p>
+<p>Formulieren Sie zuerst die fachliche Definition (wer, Beobachtungsmonat, Zeitfenster). Erstellen Sie dann Flags auf Kundenebene und aggregieren Sie sie mit <code>SUM({flag: {+d: Kundennummer}})</code> oder <code>DISTINCTCOUNTIF(...)</code>. Stimmen Sie Änderungen an der Semantik vorher mit der fachlich verantwortlichen Person ab.</p>
 <h2 id="recompute-distinct-counts-at-the-report-grain">Eindeutige Werte auf Berichtsebene neu zählen <a class="section-link" aria-label="Link zum Abschnitt" href="#recompute-distinct-counts-at-the-report-grain">#</a></h2>
-<p>Ein Käufer, der in zwei Monaten vorkommt, zählt in jedem dieser Monate einmal und im Quartal ebenfalls einmal. Definieren Sie <code>buyers: DISTINCTCOUNT({customer_id})</code> im Faktendatensatz. Wenden Sie <code>AGG(buyers)</code> auf das gesamte Quartal an, ohne nach Monaten zu gruppieren, um jeden Käufer im Quartal genau einmal zu zählen. Gruppieren Sie nach Quartal, um mehrere Quartale getrennt auszuweisen.</p>
-<p><code>SUM({buyers: {+d: dt_month}})</code> addiert die monatlichen Anzahlen eindeutiger Käufer. Im Testlauf ergab das 3,066 Käufer-Monate, während das Quartal 1,248 eindeutige Käufer umfasste. Der geprüfte Build akzeptierte die Summierung ohne strikte Diagnosemeldung. Vergleichen Sie das Ergebnis mit einer direkten Berechnung per <code>COUNT(DISTINCT customer_id)</code> über denselben Zeitraum.</p>
+<p>Ein Käufer, der in zwei Monaten vorkommt, zählt in jedem dieser Monate einmal und im Quartal ebenfalls einmal. Definieren Sie <code>buyers: DISTINCTCOUNT({Kundennummer})</code> im Faktendatensatz. Wenden Sie <code>AGG(buyers)</code> auf das gesamte Quartal an, ohne nach Monaten zu gruppieren, um jeden Käufer im Quartal genau einmal zu zählen. Gruppieren Sie nach Quartal, um mehrere Quartale getrennt auszuweisen.</p>
+<p><code>SUM({buyers: {+d: dt_month}})</code> addiert die monatlichen Anzahlen eindeutiger Käufer. Im Testlauf ergab das 3,066 Käufer-Monate, während das Quartal 1,248 eindeutige Käufer umfasste. Der geprüfte Build akzeptierte die Summierung ohne strikte Diagnosemeldung. Vergleichen Sie das Ergebnis mit einer direkten Berechnung per <code>COUNT(DISTINCT Kundennummer)</code> über denselben Zeitraum.</p>
 </main></body></html>

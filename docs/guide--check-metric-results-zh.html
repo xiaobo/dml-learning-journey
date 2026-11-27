@@ -2,9 +2,9 @@
 <p>下面用三组可重跑的样例，核对累计比率、比较期和查找键。每组都给出可对照的数值或诊断。</p>
 <h2 id="年初至今毛利率是-25">年初至今毛利率是 25% <a class="section-link" aria-label="本节链接" href="#年初至今毛利率是-25">#</a></h2>
 <p>北区一月收入 100、成本 60，二月收入 300、成本 240。两个月的毛利率分别是 40% 和 20%，算术平均是 30%。年初至今的毛利率按累计收入和成本计算，结果是 <strong>(400 − 300) ÷ 400 = 25%</strong>。</p>
-<p>模型用收入和成本定义 <code>gross_margin</code>。<code>{gross_margin: ytd}</code> 把两项都按累计期间汇总，再相除。打开<a href="guide--cumulative-margin-zh.html">累计毛利率指南</a>，对照月度和累计结果并查看模型。指南区分了 DuckDB 执行与 SQL Server 编译的证据。</p>
+<p>模型先汇总年初至今的净收入和销售成本，再用净收入减去成本，除以净收入，得出累计毛利率。打开<a href="guide--cumulative-margin-zh.html">累计毛利率指南</a>，对照月度和累计结果并查看模型。指南区分了 DuckDB 执行与 SQL Server 编译的证据。</p>
 <h2 id="二月报表仍能取到一月销售额">二月报表仍能取到一月销售额 <a class="section-link" aria-label="本节链接" href="#二月报表仍能取到一月销售额">#</a></h2>
-<p>报表只显示二月。北区二月销售额为 <strong>30</strong>，一月为 <strong>20</strong>，环比增长 <strong>50%</strong>。如果 SQL 在计算 <code>LAG</code> 之前就筛掉一月，二月便少了比较值。模型用 <code>{sales: pp}</code> 在二月报表中取到上月销售额。先在<a href="journey.zh.html#time">时间上下文一课</a>切换月份，再用 <a href="checked-exercise.html">DuckDB 销售练习</a>核对上月销售额一列。</p>
+<p>报表只显示二月。北区二月销售额为 <strong>30</strong>，一月为 <strong>20</strong>，环比增长 <strong>50%</strong>。如果 SQL 在计算 <code>LAG</code> 之前就筛掉一月，二月便少了比较值。模型用 <code>{销售额: pp}</code> 在二月报表中取到上月销售额。先在<a href="journey.zh.html#time">时间上下文一课</a>切换月份，再用 <a href="checked-exercise.html">DuckDB 销售练习</a>核对上月销售额一列。</p>
 <p>报表有固定起止月份时，请写明范围。参见<a href="reference--troubleshooting--time.zh.html#extra-month-after-the-latest-source-data">比较期怎样影响报表行</a>。</p>
 <h2 id="查找键重复销售额可能从-30-变成-60">查找键重复，销售额可能从 30 变成 60 <a class="section-link" aria-label="本节链接" href="#查找键重复销售额可能从-30-变成-60">#</a></h2>
 <p>北区两笔销售合计 <strong>30</strong>。地区表里有两行北区时，每笔销售都匹配两次，关联后的合计就成了 <strong>60</strong>。在<a href="guide--duplicate-lookup-zh.html">重复键一课</a>查看多出的行，再用 <a href="examples--compound-key-zh.html">DuckDB 复合键练习</a>跑一遍正常通过、制造重复、修复后再通过的过程。失败报告中会有 <code>VALIDATION_ERROR</code>，在 <code>data.issues</code> 下可查看冲突键。</p>

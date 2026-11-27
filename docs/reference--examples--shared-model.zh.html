@@ -1,24 +1,32 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>查询示例共用的模型 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="入门部分的查询示例把这个模型保存为 model.dml。后面的例子如果还需要其他定义，会单独列出。编译通过后，还要检查源数据的键是否唯一，以及查询结果是否符合预期。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="查询示例共用的模型 · DML"><meta property="og:description" content="入门部分的查询示例把这个模型保存为 model.dml。后面的例子如果还需要其他定义，会单独列出。编译通过后，还要检查源数据的键是否唯一，以及查询结果是否符合预期。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--examples--shared-model.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--examples--shared-model.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--shared-model.html">English</a></header><main><h1 id="shared-model-for-query-examples">查询示例共用的模型</h1><details class="page-toc"><summary>本页目录</summary><ul></ul></details>
 <p>入门部分的<a href="reference--examples--queries.zh.html">查询示例</a>把这个模型保存为 <code>model.dml</code>。后面的例子如果还需要其他定义，会单独列出。编译通过后，还要检查源数据的键是否唯一，以及查询结果是否符合预期。</p>
 <pre><code class="language-yaml"># model.dml (shared)
-transactions:
+交易明细:
     type: dataset
     table: fact_transactions
     dimension:
-        - transaction_id
+        - 交易编号
     columns:
-        transaction_id:
+        交易编号:
+            abbr: transaction_id
         dt_date:
-        product:
-        region:
-        category:
-        amount:
-        quantity:
-        is_paid:
+            abbr: dt_date
+        商品:
+            abbr: product
+        地区:
+            abbr: region
+        类别:
+            abbr: category
+        销售金额:
+            abbr: amount
+        数量:
+            abbr: quantity
+        是否已付款:
+            abbr: is_paid
 
-sales:
+销售额:
     type: measure
-    dataset: transactions
-    formula: SUM({amount})
+    dataset: 交易明细
+    formula: SUM({销售金额})
 </code></pre>
 </main></body></html>

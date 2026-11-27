@@ -40,7 +40,7 @@
 <td><a href="reference--troubleshooting--models.html#p40">P40</a></td>
 </tr>
 <tr>
-<td><code>use existing measure &quot;X&quot; instead of recreating…</code></td>
+<td><code>use existing measure "X" instead of recreating…</code></td>
 <td><code>AGG(X)</code> only</td>
 <td><a href="reference--troubleshooting--models.html#p40">P40</a></td>
 </tr>
@@ -80,7 +80,7 @@
 <td><a href="reference--troubleshooting--grain-and-joins.html#p81">P81</a></td>
 </tr>
 <tr>
-<td>Fine-grain CTE <code>WHERE</code> then outer <code>SUM</code> rewritten as coarse <code>filters: &quot;cnt &gt; 3&quot;</code></td>
+<td>Fine-grain CTE <code>WHERE</code> then outer <code>SUM</code> rewritten as coarse <code>filters: "cnt &gt; 3"</code></td>
 <td><code>SUMIF</code> / <code>SUM(iif)</code> with matching <code>{+d: …}</code> inside the measure</td>
 <td><a href="reference--troubleshooting--grain-and-joins.html#p69">P69</a></td>
 </tr>
@@ -101,7 +101,7 @@
 </tr>
 <tr>
 <td>Extra rows (or fake <code>left = right</code> rows) from a rollup composite</td>
-<td>Cross-dataset <code>-df</code> emits <code>FULL OUTER JOIN</code>; guard with <code>&#39;{primary_measure} is not null&#39;:</code></td>
+<td>Cross-dataset <code>-df</code> emits <code>FULL OUTER JOIN</code>; guard with <code>'{primary_measure} is not null':</code></td>
 <td><a href="reference--troubleshooting--grain-and-joins.html#p73">P73</a></td>
 </tr>
 <tr>

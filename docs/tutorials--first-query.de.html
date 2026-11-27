@@ -5,7 +5,7 @@
 <pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
 </code></pre>
-<p>Die Ausgabe enthält die Version, den Build-Zeitstempel und die Plattform. Der <a href="compiler-observations.json">Compilereintrag für dieses Tutorial</a> gibt an, mit welchem Build das Tutorial überprüft wurde.</p>
+<p>Notieren Sie Version und Build-Zeitpunkt. So können Sie später feststellen, mit welchem Compiler Ihr Ergebnis entstanden ist.</p>
 <p>Erstellen Sie nun ein neues Verzeichnis für die Dateien.</p>
 <pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
 Set-Location first-query
@@ -15,23 +15,26 @@ Set-Location first-query
 <p>Speichern Sie den folgenden Inhalt als <code>model.dml</code>.</p>
 <pre><code class="language-yaml">dialect: mssql
 
-FACT_SALES:
+Verkaufspositionen:
   type: dataset
   table: TABLE_SALES
-  dimension: [id]
+  dimension: [VerkaufspositionID]
   columns:
-    id:
-    region:
-    amount:
+    VerkaufspositionID:
+      abbr: id
+    Region:
+      abbr: region
+    Verkaufsbetrag:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-    cnt: COUNT(1)
+    Umsatz: SUM({Verkaufsbetrag})
+    Verkaufsanzahl: COUNT(1)
 
-average_sale:
+DurchschnittsumsatzJeVerkauf:
   type: measure
-  formula: 'DIVIDE({sales}, {cnt})'
+  formula: 'DIVIDE({Umsatz}, {Verkaufsanzahl})'
 </code></pre>
-<p><code>FACT_SALES</code> definiert pro <code>id</code> genau eine Quellzeile. <code>sales</code> und <code>cnt</code> aggregieren diese Zeilen. <code>average_sale</code> teilt das erste Ergebnis durch das zweite.</p>
+<p><code>Verkaufspositionen</code> definiert pro <code>VerkaufspositionID</code> genau eine Quellzeile. <code>Umsatz</code> und <code>Verkaufsanzahl</code> aggregieren diese Zeilen. <code>DurchschnittsumsatzJeVerkauf</code> teilt das erste Ergebnis durch das zweite.</p>
 <p>Prüfen Sie das Modell nun mit dem Linter.</p>
 <pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
 $LASTEXITCODE
@@ -39,9 +42,9 @@ $LASTEXITCODE
 <p>Der Prozess endet mit dem Exitcode <code>0</code>. Wenn der Linter einen Befund meldet, vergleichen Sie die gespeicherte Datei mit dem Modell oben, bevor Sie fortfahren.</p>
 <h2 id="write-the-query">Abfrage schreiben <a class="section-link" aria-label="Link zum Abschnitt" href="#write-the-query">#</a></h2>
 <p>Speichern Sie den folgenden Inhalt als <code>query.sql</code> im selben Verzeichnis wie <code>model.dml</code>.</p>
-<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+<pre><code class="language-sql">SELECT Region, AGG(Umsatz), AGG(DurchschnittsumsatzJeVerkauf)
 FROM MODEL
-GROUP BY region
+GROUP BY Region
 </code></pre>
 <p><code>FROM MODEL</code> wählt <code>model.dml</code> aus. Jede Ergebniszeile steht für eine Region.</p>
 <h2 id="compile-the-query">Abfrage kompilieren <a class="section-link" aria-label="Link zum Abschnitt" href="#compile-the-query">#</a></h2>
@@ -49,9 +52,9 @@ GROUP BY region
 <pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
 $LASTEXITCODE
 </code></pre>
-<p>Die JSON-Ausgabe meldet <code>status: ok</code> und <code>exitCode: 0</code>. Unter <code>diagnostics</code> stehen weder Fehler noch Warnungen. <code>data.sql</code> enthält <code>SUM(amount)</code>, <code>COUNT(1)</code> und <code>GROUP BY region</code>. Die abschließende Projektion enthält <code>region</code>, <code>sales</code> und <code>average_sale</code>.</p>
+<p>Die JSON-Ausgabe zeigt <code>status: ok</code> und <code>exitCode: 0</code>. Unter <code>diagnostics</code> stehen keine Fehler oder Warnungen. In <code>data.sql</code> sehen Sie, wie die Abfrage die Umsätze nach Region gruppiert und den Durchschnitt berechnet. Die Ergebnisspalten heißen <code>Region</code>, <code>Umsatz</code> und <code>DurchschnittsumsatzJeVerkauf</code>.</p>
 <p>Der Compiler kann die Diagnosemeldung <code>DATASET_GRAIN_UNVERIFIED</code> als Hinweis ausgeben. Wir haben das deklarierte Modell kompiliert, ohne eine physische Tabelle <code>TABLE_SALES</code> zu prüfen.</p>
 <h2 id="inspect-the-result">Ergebnis prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-result">#</a></h2>
-<p>Öffnen Sie die SQL-Datei unter <code>gen</code>. Suchen Sie die Aggregatausdrücke und die Gruppierung nach <code>region</code>. Das Modell und die darauf zugreifende Abfrage sind jetzt vollständig. Den generierten SQL-Code können Sie nun prüfen.</p>
+<p>Öffnen Sie die SQL-Datei unter <code>gen</code>. Suchen Sie die Aggregatausdrücke und die Gruppierung nach <code>Region</code>. Das Modell und die darauf zugreifende Abfrage sind jetzt vollständig. Den generierten SQL-Code können Sie nun prüfen.</p>
 <p>Verwenden Sie zum Ausführen der Abfrage eine Datenbankverbindung, über die die deklarierte Quelltabelle verfügbar ist. Folgen Sie der Anleitung <a href="how-to--compile-and-validate.de.html">dmlc-CLI verwenden</a>, um die Schlüssel an der verbundenen Datenbank zu validieren und die Abfrage auszuführen. Unter <a href="explanation--core-concepts.de.html">Grundkonzepte</a> erfahren Sie, wie Modell- und Abfrageebene zusammenspielen.</p>
 </main></body></html>

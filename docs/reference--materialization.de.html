@@ -7,7 +7,7 @@
     parameters:                         # stored-procedure parameters
         &lt;param&gt;: &lt;column_name&gt;
     filters:                            # materialize-level filters
-        &lt;column&gt;: &lt;value&gt;
+        &lt;column&gt;: &lt;Wert&gt;
 
     allows: [&lt;materialize_name&gt;]        # allowed materialize tables
 
@@ -18,7 +18,7 @@
 
     measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
 </code></pre>
-<p><strong><code>dimension:</code> und <code>dimension_columns:</code></strong>. <code>dimension:</code> enthält die Dimension der Materialisierung. Ihre Dimensionsfelder legen die Granularität fest und identifizieren jede Zeile eindeutig. Der Compiler verwendet sie als Schlüssel für <code>GROUP BY</code>. <code>dimension_columns:</code> führt Attributspalten auf, die sich <strong>aus diesen Schlüsseln ableiten lassen</strong>. Beispielsweise hängt <code>store_name</code> von <code>store_id</code> ab und <code>region_code</code> von <code>store_id</code>. Der Compiler führt die unter <code>dimension_columns:</code> aufgeführten Spalten durch <code>GROUP BY</code> mit, ohne sie als Teil der Granularität zu behandeln. Steht ein ableitbares Attribut in <code>dimension:</code>, meldet der Compiler den Fehler „can be derived from [...], should it be moved to dimension_columns instead?“.</p>
+<p><strong><code>dimension:</code> und <code>dimension_columns:</code></strong>. <code>dimension:</code> enthält die Dimension der Materialisierung. Ihre Dimensionsfelder legen die Granularität fest und identifizieren jede Zeile eindeutig. Der Compiler verwendet sie als Schlüssel für <code>GROUP BY</code>. <code>dimension_columns:</code> führt Attributspalten auf, die sich <strong>aus diesen Schlüsseln ableiten lassen</strong>. Beispielsweise hängt <code>Filialname</code> von <code>Filialnummer</code> ab und <code>region_code</code> von <code>Filialnummer</code>. Der Compiler führt die unter <code>dimension_columns:</code> aufgeführten Spalten durch <code>GROUP BY</code> mit, ohne sie als Teil der Granularität zu behandeln. Steht ein ableitbares Attribut in <code>dimension:</code>, meldet der Compiler den Fehler „can be derived from [...], should it be moved to dimension_columns instead?“.</p>
 <p><strong>Vererbung ohne Formel</strong>. Bei einem Eintrag in <code>dimension_columns:</code> ohne <code>formula:</code> wird die Spalte aus dem Quelldatensatz übernommen. Die Spalte muss in <code>columns:</code> des Quelldatensatzes vorhanden sein. Andernfalls erscheint die Meldung „not found from relate dataset(s)“. Ist die Granularität der Materialisierung <strong>gröber</strong> als die der Dimension des Quelldatensatzes, prüft der Compiler, ob die Spalte ableitbar ist. Variieren ihre Werte auf der feineren Ebene des Quelldatensatzes, meldet der Compiler „definition from dataset [...] cannot be derived from dimension [...], please advise“. <strong>Entspricht</strong> die Granularität der Materialisierung der Dimension des Quelldatensatzes, ist jede Spalte des Quelldatensatzes zulässig (Zeilenzuordnung 1:1).</p>
 <p><strong>Zulässige Referenzen in Formeln</strong>. Wenn ein Eintrag in <code>dimension_columns:</code> eine <code>formula:</code> enthält, darf die Formel nur verkettete Abfragen über pk() und die Felder der Materialisierungsdimension selbst referenzieren. Referenzen auf Spalten oder Kennzahlen des Quelldatensatzes führen zu Fehlern wie „not defined, did you mean …?“.</p>
 <p><strong>Einschränkungen</strong>. Eine der folgenden Formen ist erforderlich:</p>

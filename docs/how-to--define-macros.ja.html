@@ -17,7 +17,7 @@
 <tbody><tr>
 <td><code>dt-macro</code></td>
 <td>時間ウィンドウをずらす、または広げる</td>
-<td><code>value:</code>（単一の時点をずらす）または <code>range:</code> <code>[start, end]</code></td>
+<td><code>値:</code>（単一の時点をずらす）または <code>range:</code> <code>[start, end]</code></td>
 <td>いいえ。時間コンテキストに対して処理を行います。</td>
 </tr>
 <tr>
@@ -27,7 +27,7 @@
 <td>はい。呼び出し元の指標に置き換わります。</td>
 </tr>
 </tbody></table>
-<p>時点をずらすには<code>value:</code>を、時間ウィンドウを指定するには<code>range: [start, end]</code>を使用します。<code>fn-macro</code>は呼び出し元の指標を参照するために<code>{measure}</code>を使い、<code>dt-macro</code>は解決された時間フィールドを参照するために<code>{dim_dt}</code>を使います。オプションの<code>prerequisite:</code>で、評価対象の行や集計値を定義できる粒度を制限できます。</p>
+<p>時点をずらすには<code>値:</code>を、時間ウィンドウを指定するには<code>range: [start, end]</code>を使用します。<code>fn-macro</code>は呼び出し元の指標を参照するために<code>{measure}</code>を使い、<code>dt-macro</code>は解決された時間フィールドを参照するために<code>{dim_dt}</code>を使います。オプションの<code>prerequisite:</code>で、評価対象の行や集計値を定義できる粒度を制限できます。</p>
 <h2 id="choose-the-extension-point">拡張方法を選ぶ <a class="section-link" aria-label="この節へのリンク" href="#choose-the-extension-point">#</a></h2>
 <table>
 <thead>
@@ -67,24 +67,27 @@ INSERT INTO sales VALUES
 S:
   type: dataset
   table: sales
-  dimension: [id]
+  dimension: [売上明細番号]
   columns:
-    id:
+    売上明細番号:
+      abbr: id
     dt_month:
-    amount:
+      abbr: dt_month
+    売上金額:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-double_value:
+    売上高: SUM({売上金額})
+金額の二倍:
   type: fn-macro
   formula: '{measure} * 2'
-prior_month:
+前月:
   type: dt-macro
-  value: date({dim_dt}, '-1 month')
+  値: date({dim_dt}, '-1 month')
 </code></pre>
 <p>1 月の売上が20、2 月の売上が30の場合：</p>
-<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
-       AGG({sales: prior_month}) AS previous,
-       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+<pre><code class="language-sql">SELECT AGG({売上高: 金額の二倍}) AS 二倍値,
+       AGG({売上高: 前月}) AS previous,
+       AGG({売上高: {金額の二倍, 前月}}) AS 前期二倍値
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
@@ -93,23 +96,23 @@ WHERE dt_month = '2025-02-01'
 dmlc --validate query.sql --model=model.dml --connection=default --json
 dmlc query.sql --model=model.dml --connection=default
 </code></pre>
-<p>実行結果は<strong>60、20、40</strong>でした。確認に使用したDuckDB接続では、厳格モードでのコンパイル、validate-only、実行のすべてが成功しました。モデルには、<code>dialect: duckdb</code>、ソースで一意の<code>id</code>、<code>dt_month</code>、<code>sales: SUM({amount})</code>が宣言されていました。</p>
+<p>実行結果は<strong>60、20、40</strong>でした。確認に使用したDuckDB接続では、厳格モードでのコンパイル、validate-only、実行のすべてが成功しました。モデルには、<code>dialect: duckdb</code>、ソースで一意の<code>売上明細番号</code>、<code>dt_month</code>、<code>売上高: SUM({売上金額})</code>が宣言されていました。</p>
 <p>これは、言語レベルで再利用できる組み合わせです。マクロは呼び出し元の指標とその評価コンテキストを受け取ります。任意のコンパイラプラグインを実装するためのAPIではありません。粒度のルール、時間に関する前提条件、修飾子の適用順序は引き続き適用されます。独自の名前を付けても、これらのルールは回避できません。</p>
 <h2 id="calling-a-function-defined-in-your-database">データベースで定義された関数を呼び出す <a class="section-link" aria-label="この節へのリンク" href="#calling-a-function-defined-in-your-database">#</a></h2>
 <p><strong>DMLでは、生成されたSQLにスカラー関数の呼び出しを残すことができます。関数の実装はデータベースが提供します。</strong>たとえば、DMLを実行する前に、練習用のDuckDBデータベースに次の関数をインストールします。</p>
 <pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
 </code></pre>
 <p>DuckDBはこの形式を永続的なSQLスカラーマクロとして実装します。この例で検証するのは、データベースで定義されたスカラー関数の呼び出しです。Python UDFの登録、集約 UDF、テーブル値関数は検証の対象外です。</p>
-<p>集計前に元データの値に対して関数を呼び出すには、<code>S.measures</code>の下で<code>sales</code>と同じ階層に次の項目を追加します。</p>
+<p>集計前に元データの値に対して関数を呼び出すには、<code>S.measures</code>の下で<code>売上高</code>と同じ階層に次の項目を追加します。</p>
 <pre><code class="language-yaml"># Under the sales dataset's measures:
-net_sales: SUM(business_net({amount}))
+純売上高: SUM(business_net({売上金額}))
 </code></pre>
 <p>次に、その指標を、集計結果に対して関数を呼び出した場合と比較します。</p>
-<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+<pre><code class="language-sql">SELECT AGG(純売上高), business_net(AGG(売上高)) AS 純額合計
 FROM MODEL
 WHERE dt_month = '2025-02-01'
 </code></pre>
-<p>2 月の売上が30の場合、どちらも<strong>24</strong>を返しました。生成されたSQLには、<code>SUM(business_net(amount))</code>と<code>business_net(SUM(amount))</code>がそのまま含まれていました。2 つの呼び出しは異なる段階で評価されます。ここで結果が等しいのは、関数が線形だからです。丸め、しきい値による処理、その他の非線形関数では結果が異なる場合があるため、どの段階で評価するかを意識して選んでください。</p>
+<p>2 月の売上が30の場合、どちらも<strong>24</strong>を返しました。生成されたSQLには、<code>SUM(business_net(売上金額))</code>と<code>business_net(SUM(売上金額))</code>がそのまま含まれていました。2 つの呼び出しは異なる段階で評価されます。ここで結果が等しいのは、関数が線形だからです。丸め、しきい値による処理、その他の非線形関数では結果が異なる場合があるため、どの段階で評価するかを意識して選んでください。</p>
 <h3 id="validate-the-function-on-the-intended-connection">使用予定の接続で関数を検証する <a class="section-link" aria-label="この節へのリンク" href="#validate-the-function-on-the-intended-connection">#</a></h3>
 <p>DMLは関数をインストールせず、別のデータベース向けに実装を変換することもありません。関数は実行に使用する接続から参照でき、生成された引数の型を受け付ける必要があります。また、そのデータベースユーザーに関数の実行権限が必要です。関数名、スキーマによる修飾、デプロイ、移植性はデータベースによって異なります。</p>
 <p>意図的に用意しなかった関数の呼び出しは、<strong>厳格モードでのコンパイルに成功</strong>しましたが、その後の validate-only はEXPLAINの段階で失敗しました（終了コード 65）。直接実行しても失敗しました（終了コード 70）。したがって、コンパイルに成功しただけでは、UDFが存在することや呼び出せることは確認できません。<a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a>を行い、その後で実際の結果を比較してください。</p>

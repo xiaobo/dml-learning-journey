@@ -33,11 +33,11 @@
 </tbody></table>
 <p><strong>Zulässige Objektnamen</strong>: Jede Zeichenfolge außer reservierten Schlüsselwörtern (<code>includes</code>, <code>column-macros</code>, <code>datasets</code>, <code>measures</code>, <code>columns</code>, <code>dimensions[dt]</code>, <code>dt-macros</code>, <code>fn-macros</code>, <code>materializes</code>, <code>queries</code>, <code>dialects</code> sowie deren Singularformen).</p>
 <p><strong>Kurzform für Kennzahldefinitionen</strong>: Ist der Wert eines Eintrags auf oberster Ebene eine einfache Zeichenfolge, wird er als Kurzform für eine Kennzahlformel behandelt:</p>
-<pre><code class="language-yaml">sales: SUM({amount})
+<pre><code class="language-yaml">Umsatz: SUM({Verkaufsbetrag})
 # equivalent to:
-sales:
+Umsatz:
     type: measure
-    formula: SUM({amount})
+    formula: SUM({Verkaufsbetrag})
 </code></pre>
 <h3 id="sql-dialect">SQL-Dialekt <a class="section-link" aria-label="Link zum Abschnitt" href="#sql-dialect">#</a></h3>
 <p>Der geprüfte Compiler erkennt <code>adb_mysql</code>, <code>duckdb</code>, <code>mssql</code>, <code>mysql</code>, <code>postgres</code> und <code>sqlite</code>. Der aktuelle Compiler weist das geprüfte Modell zurück, wenn die Dialektangabe fehlt. Geben Sie den Zieldialekt explizit an. Eine konfigurierte DuckDB-Verbindung ändert den Zieldialekt des Modells nicht. Geben Sie für DuckDB als Ziel <code>dialect: duckdb</code> an.</p>
@@ -60,7 +60,7 @@ sales:
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;short&gt;        # abbreviation for display
+            abbr: &lt;source_column&gt; # column name in the source table
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -97,22 +97,22 @@ sales:
 </thead>
 <tbody><tr>
 <td>Direkt</td>
-<td><code>amount:</code> (null)</td>
+<td><code>Verkaufsbetrag:</code> (null)</td>
 <td>Übernimmt die Spalte der zugrunde liegenden Tabelle unverändert</td>
 </tr>
 <tr>
 <td>Berechnet (inline)</td>
-<td><code>net: amount - discount</code> (Zeichenfolge)</td>
+<td><code>net: Verkaufsbetrag - Rabattbetrag</code> (Zeichenfolge)</td>
 <td>Per Ausdruck abgeleitete Spalte</td>
 </tr>
 <tr>
 <td>Berechnet (Block)</td>
-<td><code>net: { formula: amount - discount }</code></td>
+<td><code>net: { formula: Verkaufsbetrag - Rabattbetrag }</code></td>
 <td>Abgeleitete Spalte mit Metadaten</td>
 </tr>
 <tr>
 <td>Mit Verifizierungsformel</td>
-<td><code>net: { source: amount - discount }</code></td>
+<td><code>net: { source: Verkaufsbetrag - Rabattbetrag }</code></td>
 <td>Deklariert eine Formel zur Überprüfung der Datenquelle. Die Kompilierung allein weist nicht nach, dass die Quellwerte übereinstimmen.</td>
 </tr>
 </tbody></table>
@@ -126,14 +126,14 @@ sales:
 </tr>
 </thead>
 <tbody><tr>
-<td><code>amount</code> allein</td>
+<td><code>Verkaufsbetrag</code> allein</td>
 <td><strong>Physische</strong> (native) Tabellenspalte. Der Compiler übernimmt den Namen unverändert in das SQL.</td>
-<td><code>net: amount - discount</code>, wenn beide Spalten als direkt definiert sind</td>
+<td><code>net: Verkaufsbetrag - Rabattbetrag</code>, wenn beide Spalten als direkt definiert sind</td>
 </tr>
 <tr>
 <td><code>{calc_amt}</code></td>
 <td><strong>Berechnete</strong> Spalte (oder Kennzahl bzw. Spaltenmakro). DMX expandiert die Definition.</td>
-<td><code>doubled: '{calc_amt} * 2'</code></td>
+<td><code>VerdoppelterWert: '{calc_amt} * 2'</code></td>
 </tr>
 </tbody></table>
 <p>Ein Name ohne geschweifte Klammern in der Formel einer berechneten Spalte wird als native SQL-Spalte behandelt. Die Reihenfolge der Aliase in SELECT kann den Eindruck erwecken, dass der Verweis funktioniert. Die Definition der berechneten Spalte wird jedoch <strong>nicht</strong> expandiert. Setzen Sie den Namen in geschweifte Klammern, wenn die Formel diese Definition wiederverwenden soll.</p>
@@ -144,7 +144,7 @@ sales:
 <pre><code class="language-yaml">column-macros:
     datasets: [tx, orders]       # scoped datasets
     columns:                     # shared column definitions
-        region: '{stores}.region'  # cross-dataset lookup
+        Region: '{Filialanzahl}.Region' # cross-dataset lookup
     dimensions[dt]:
         dt_month: month
 
@@ -166,7 +166,7 @@ sales:
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>SQL-tauglicher Kurzname ausschließlich für den internen Gebrauch in temporären Tabellen, Joins und der Ausgabe von <code>materialize</code>. Dieser Kurzname erscheint nie als Spaltenalias im endgültigen Abfrageergebnis. Dafür wird der Schlüssel mit dem fachlichen Namen oder ein expliziter <code>AS</code>-Alias verwendet.</td>
+<td>Bei einer Datensatzspalte geben Sie hier den Spaltennamen aus der Quelltabelle an. Für eine Kennzahl können Sie einen kurzen internen Namen vergeben. Das Abfrageergebnis zeigt den fachlichen Namen oder den mit <code>AS</code> angegebenen Alias.</td>
 </tr>
 <tr>
 <td><code>description</code></td>

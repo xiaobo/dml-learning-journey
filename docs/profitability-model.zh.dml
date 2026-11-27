@@ -1,0 +1,41 @@
+dialect: mssql
+
+销售收入与成本:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [销售明细编号]
+  columns:
+    销售明细编号:
+      abbr: id
+    源表地区:
+      abbr: region
+    地区: '{源表地区}'
+    dt_month:
+      abbr: dt_month
+    收入金额:
+      abbr: revenue_amount
+    成本金额:
+      abbr: cost_amount
+  measures:
+    净收入: SUM({收入金额})
+    销售成本: SUM({成本金额})
+
+毛利:
+  type: measure
+  formula: '{净收入} - {销售成本}'
+
+毛利率:
+  type: measure
+  formula: 'DIVIDE({毛利}, {净收入})'
+
+本年累计毛利率:
+  type: measure
+  formula: 'DIVIDE({净收入: ytd} - {销售成本: ytd}, {净收入: ytd})'
+
+上年同期累计毛利率:
+  type: measure
+  formula: 'DIVIDE({净收入: {ytd, ya}} - {销售成本: {ytd, ya}}, {净收入: {ytd, ya}})'
+
+毛利率变动百分点:
+  type: measure
+  formula: '100 * ({本年累计毛利率} - {上年同期累计毛利率})'

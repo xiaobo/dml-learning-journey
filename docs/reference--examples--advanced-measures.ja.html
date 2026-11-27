@@ -3,207 +3,207 @@
 <h2 id="weighted-distribution-multi-grain-product">加重配荷率（異なる粒度の指標の積） <a class="section-link" aria-label="この節へのリンク" href="#weighted-distribution-multi-grain-product">#</a></h2>
 <p>加重配荷率は、店舗の重要度で重み付けしたブランドの売上シェアを測定します。<strong>異なる粒度</strong>で評価した指標を掛け合わせ、その結果を上位の粒度に集計する必要があります。</p>
 <pre><code class="language-yaml"># Store-level sales (restricted to store + category grain)
-store_cat_sales:
+店舗別分類売上高:
   type: measure
-  formula: 'IIF({sales} &gt; 0, {sales}, 0)'
+  formula: 'IIF({売上高} &gt; 0, {売上高}, 0)'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, 店舗番号, 分類]
 
 # Category-level sales (drop store)
-cat_sales:
+分類別売上高:
   type: measure
-  formula: 'SUM({store_cat_sales: {+d: store_id}})'
+  formula: 'SUM({店舗別分類売上高: {+d: 店舗番号}})'
   dimensions:
-    - [dim_dt, category]
+    - [dim_dt, 分類]
 
 # Store weight = store sales / category sales (store + category grain)
-store_weight:
+店舗ウェイト:
   type: measure
-  formula: 'DIVIDE({store_cat_sales}, {cat_sales: {-d: store_id}})'
+  formula: 'DIVIDE({店舗別分類売上高}, {分類別売上高: {-d: 店舗番号}})'
   dimensions:
-    - [dim_dt, store_id, category]
+    - [dim_dt, 店舗番号, 分類]
 
 # Brand distribution flag (store + category + brand grain)
-brand_dist_flag:
+ブランド取扱フラグ:
   type: measure
-  formula: 'IIF({sales} &gt; 0, 1, 0)'
+  formula: 'IIF({売上高} &gt; 0, 1, 0)'
   dimensions:
-    - [dim_dt, store_id, category, brand]
+    - [dim_dt, 店舗番号, 分類, ブランド]
 
 # Weighted distribution = SUM(store_weight * brand_flag) at brand grain
-weighted_distribution:
+加重配荷率:
   type: measure
   formula: |-
-    SUM({store_weight: {dimension: [dim_dt, store_id, category]}}
-        * {brand_dist_flag: {dimension: [dim_dt, store_id, category, brand]}})
+    SUM({店舗ウェイト: {dimension: [dim_dt, 店舗番号, 分類]}}
+        * {ブランド取扱フラグ: {dimension: [dim_dt, 店舗番号, 分類, ブランド]}})
   dimensions:
-    - [dim_dt, category, brand]
+    - [dim_dt, 分類, ブランド]
 </code></pre>
 <p><strong>主な手法</strong>：<code>dimension:</code> 修飾子を使うと、<code>SUM()</code> の中で各構成指標がそれぞれ必要な粒度で評価されます。コンパイラは粒度ごとに CTE を生成し、それらを結合します。</p>
 <h2 id="product-lifecycle-tracking">製品ライフサイクルの追跡 <a class="section-link" aria-label="この節へのリンク" href="#product-lifecycle-tracking">#</a></h2>
 <p>初回販売からの経過期間を追跡し、製品をライフサイクルの段階別に分類して、新製品の販売期間の短さを考慮した移動平均を計算します。</p>
 <pre><code class="language-yaml"># First sale date per product (restricted to product grain)
-first_sale_raw:
+初回販売日元値:
   type: measure
-  formula: 'MINIF({dt_date}, {sales: {+d: dt_date}} &gt; 0)'
+  formula: 'MINIF({dt_date}, {売上高: {+d: dt_date}} &gt; 0)'
 
 # First sale date, looking back up to 6 years
-first_sale:
+初回販売日:
   type: measure
-  formula: '{first_sale_raw: p6y}'
+  formula: '{初回販売日元値: p6y}'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, 商品]
 
 # Weeks since launch
-weeks_since_launch:
+発売後週数:
   type: measure
-  formula: 'datediff(week, {first_sale}, {Dim Calendar}.dt_week)'
+  formula: 'datediff(week, {初回販売日}, {カレンダー}.dt_week)'
   dimensions:
-    - [dt_week, product]
+    - [dt_week, 商品]
 
 # Flag: product has 2+ years of sales data
-has_2yr_data:
+二年分データ有無:
   type: measure
-  formula: 'IIF(MAX({weeks_since_launch: {+d: dt_week}}) &gt; 104, 1, 0)'
+  formula: 'IIF(MAX({発売後週数: {+d: dt_week}}) &gt; 104, 1, 0)'
   dimensions:
-    - [product]
+    - [商品]
 
 # Total sales in first 2 years
-first_2yr_sales:
+最初の二年間の売上高:
   type: measure
   formula: |-
-    SUMIF({sales: {+d: dt_week}},
-          {weeks_since_launch: {+d: dt_week}} &gt;= 0
-          AND {weeks_since_launch: {+d: dt_week}} &lt; 104)
+    SUMIF({売上高: {+d: dt_week}},
+          {発売後週数: {+d: dt_week}} &gt;= 0
+          AND {発売後週数: {+d: dt_week}} &lt; 104)
   dimensions:
-    - [product]
+    - [商品]
 
 # Rolling 4-week average, adjusted for product age
-weekly_avg_4w:
+直近四週平均売上高:
   type: measure
   formula: |-
-    DIVIDE({sales: p4w},
-           IIF({weeks_since_launch: {dimension: [product, dt_week]}} &gt;= 3,
+    DIVIDE({売上高: p4w},
+           IIF({発売後週数: {dimension: [商品, dt_week]}} &gt;= 3,
                4,
-               {weeks_since_launch: {dimension: [product, dt_week]}} + 1))
+               {発売後週数: {dimension: [商品, dt_week]}} + 1))
 </code></pre>
 <p><strong>主な手法：</strong></p>
 <ul>
-<li><code>MINIF</code> に <code>{+d: dt_date}</code> を指定すると、<code>[dt_week, product]</code> に限定したうえで、日単位で初回販売日を求められます。</li>
+<li><code>MINIF</code> に <code>{+d: dt_date}</code> を指定すると、<code>[dt_week, 商品]</code> に限定したうえで、日単位で初回販売日を求められます。</li>
 <li>カスタム <code>dt-macro</code> <code>p6y</code> で、さかのぼる期間を制限します（<a href="reference--examples--aggregation.ja.html#26-multi-level-aggregation-with-d"><code>+d</code> を使った多段階集計</a>の「カスタムマクロの定義」を参照）。</li>
-<li><code>datediff</code> で <code>{Dim Calendar}.dt_week</code> を基準に差を取り、カレンダーデータセットを使って初回販売からの経過期間を計算します。</li>
+<li><code>datediff</code> で <code>{カレンダー}.dt_week</code> を基準に差を取り、カレンダーデータセットを使って初回販売からの経過期間を計算します。</li>
 <li><code>SUMIF</code> に <code>{+d: dt_week}</code> を指定すると、対象が最初の 104 週間（2 年間）に含まれる週に絞られます。</li>
 <li>初回販売から 4 週間未満の製品については、移動平均の分母を調整します。</li>
 </ul>
 <h2 id="rfm-segmentation-with-percent_rank">percent_rank を使った RFM セグメンテーション <a class="section-link" aria-label="この節へのリンク" href="#rfm-segmentation-with-percent_rank">#</a></h2>
 <p>RFM（最終購入からの経過期間、購入頻度、購入金額）のセグメンテーション全体を実装します。指標の式には <code>percent_rank()</code> を使い、CASE でスコアを付けます。</p>
 <pre><code class="language-yaml"># Monetary: MAT sales (moving annual total)
-monetary:
+購入金額:
   type: measure
-  formula: '{sales: mat}'
+  formula: '{売上高: mat}'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
 # Recency: last purchase date
-recency:
+最終購入からの日数:
   type: measure
-  formula: 'MAXIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'MAXIF({dt_date}, {購入金額: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
 # Frequency: number of active sales days
-frequency:
+購入回数:
   type: measure
-  formula: 'DISTINCTCOUNTIF({dt_date}, {monetary: {+d: dt_date}} &gt; 0)'
+  formula: 'DISTINCTCOUNTIF({dt_date}, {購入金額: {+d: dt_date}} &gt; 0)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
 # Percentile ranks
-recency_pct:
+購入経過日数百分位:
   type: measure
-  formula: 'percent_rank() over (order by {recency} desc)'
+  formula: 'percent_rank() over (order by {最終購入からの日数} desc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
-frequency_pct:
+購入回数百分位:
   type: measure
-  formula: 'percent_rank() over (order by {frequency} asc)'
+  formula: 'percent_rank() over (order by {購入回数} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
-monetary_pct:
+購入金額百分位:
   type: measure
-  formula: 'percent_rank() over (order by {monetary} asc)'
+  formula: 'percent_rank() over (order by {購入金額} asc)'
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
 # Scores (1-5 scale)
-recency_score:
+購入経過日数スコア:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_pct} &gt;= 0.8 THEN 5
-      WHEN {recency_pct} &gt;= 0.6 THEN 4
-      WHEN {recency_pct} &gt;= 0.4 THEN 3
-      WHEN {recency_pct} &gt;= 0.2 THEN 2
+      WHEN {購入経過日数百分位} &gt;= 0.8 THEN 5
+      WHEN {購入経過日数百分位} &gt;= 0.6 THEN 4
+      WHEN {購入経過日数百分位} &gt;= 0.4 THEN 3
+      WHEN {購入経過日数百分位} &gt;= 0.2 THEN 2
       ELSE 1
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 
 # (frequency_score and monetary_score follow the same pattern)
 
 # Segment classification
-rfm_segment:
+顧客セグメント:
   type: measure
   formula: |-
     CASE
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 2 THEN 'Hibernating'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 4 THEN 'At Risk'
-      WHEN {recency_score} &lt;= 2 AND {frequency_score} &lt;= 5 THEN 'Cannot Lose Them'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 2 THEN 'About to Sleep'
-      WHEN {recency_score} &lt;= 3 AND {frequency_score} &lt;= 3 THEN 'Need Attention'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 1 THEN 'Promising'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
-      WHEN {recency_score} &lt;= 4 AND {frequency_score} &lt;= 5 THEN 'Loyal Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 1 THEN 'New Customers'
-      WHEN {recency_score} &lt;= 5 AND {frequency_score} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {購入経過日数スコア} &lt;= 2 AND {購入頻度スコア} &lt;= 2 THEN 'Hibernating'
+      WHEN {購入経過日数スコア} &lt;= 2 AND {購入頻度スコア} &lt;= 4 THEN 'At Risk'
+      WHEN {購入経過日数スコア} &lt;= 2 AND {購入頻度スコア} &lt;= 5 THEN 'Cannot Lose Them'
+      WHEN {購入経過日数スコア} &lt;= 3 AND {購入頻度スコア} &lt;= 2 THEN 'About to Sleep'
+      WHEN {購入経過日数スコア} &lt;= 3 AND {購入頻度スコア} &lt;= 3 THEN 'Need Attention'
+      WHEN {購入経過日数スコア} &lt;= 4 AND {購入頻度スコア} &lt;= 1 THEN 'Promising'
+      WHEN {購入経過日数スコア} &lt;= 4 AND {購入頻度スコア} &lt;= 3 THEN 'Potential Loyalists'
+      WHEN {購入経過日数スコア} &lt;= 4 AND {購入頻度スコア} &lt;= 5 THEN 'Loyal Customers'
+      WHEN {購入経過日数スコア} &lt;= 5 AND {購入頻度スコア} &lt;= 1 THEN 'New Customers'
+      WHEN {購入経過日数スコア} &lt;= 5 AND {購入頻度スコア} &lt;= 3 THEN 'Potential Loyalists'
       ELSE 'Champions'
     END
   dimensions:
-    - [dim_dt, customer_id]
+    - [dim_dt, 顧客番号]
 </code></pre>
 <p><strong>主な手法：</strong></p>
 <ul>
 <li>指標の式の中で <code>percent_rank() over (...)</code> を使用できます。<code>.dml</code> の式ではウィンドウ関数が使えます。</li>
-<li>すべての RFM 指標は <code>[dim_dt, customer_id]</code> の粒度に限定されます。システム変数 <code>dim_dt</code> により、任意の時間粒度で計算できます。</li>
+<li>すべての RFM 指標は <code>[dim_dt, 顧客番号]</code> の粒度に限定されます。システム変数 <code>dim_dt</code> により、任意の時間粒度で計算できます。</li>
 <li><code>MAXIF</code> と <code>DISTINCTCOUNTIF</code> に <code>{+d: dt_date}</code> を指定して、最終購入からの経過期間と購入頻度を計算します。</li>
 <li><code>CASE</code> 式でスコアを組み合わせ、名前の付いたセグメントに分類します。</li>
 </ul>
 <h2 id="product-power-ranking-with-cumulative-distribution">累積分布による製品ランキング <a class="section-link" aria-label="この節へのリンク" href="#product-power-ranking-with-cumulative-distribution">#</a></h2>
 <p>ウィンドウ関数で累積和を求め、製品をランク別に分類します（上位 50%、上位 80%、上位 95%）。</p>
 <pre><code class="language-yaml"># Product rank by total first-2-year sales
-product_power_rank:
+商品実績順位:
   type: measure
-  formula: 'rank() over (order by {first_2yr_sales} desc)'
+  formula: 'rank() over (order by {最初の二年間の売上高} desc)'
   dimensions:
-    - [product]
+    - [商品]
 
 # Tier classification via cumulative distribution
-product_tier:
+商品ランク:
   type: measure
   formula: |-
     CASE
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.50 * SUM({first_2yr_sales}) over () THEN 'Top 50%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.80 * SUM({first_2yr_sales}) over () THEN 'Top 80%'
-      WHEN SUM({first_2yr_sales}) over (order by {first_2yr_sales} desc)
-           &lt;= 0.95 * SUM({first_2yr_sales}) over () THEN 'Top 95%'
+      WHEN SUM({最初の二年間の売上高}) over (order by {最初の二年間の売上高} desc)
+           &lt;= 0.50 * SUM({最初の二年間の売上高}) over () THEN 'Top 50%'
+      WHEN SUM({最初の二年間の売上高}) over (order by {最初の二年間の売上高} desc)
+           &lt;= 0.80 * SUM({最初の二年間の売上高}) over () THEN 'Top 80%'
+      WHEN SUM({最初の二年間の売上高}) over (order by {最初の二年間の売上高} desc)
+           &lt;= 0.95 * SUM({最初の二年間の売上高}) over () THEN 'Top 95%'
       ELSE 'Others'
     END
   dimensions:
-    - [product]
+    - [商品]
 </code></pre>
-<p><strong>主な手法</strong>：<code>SUM() over (order by ... desc)</code> で累積和を、<code>SUM() over ()</code> で全体の合計を求めます。累積和を全体の合計で割ると、パレート方式の分類に使う累積分布が得られます。すべての計算は <code>[product]</code> の粒度に限定されます。</p>
+<p><strong>主な手法</strong>：<code>SUM() over (order by ... desc)</code> で累積和を、<code>SUM() over ()</code> で全体の合計を求めます。累積和を全体の合計で割ると、パレート方式の分類に使う累積分布が得られます。すべての計算は <code>[商品]</code> の粒度に限定されます。</p>
 </main></body></html>

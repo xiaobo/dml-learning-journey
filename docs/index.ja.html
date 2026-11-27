@@ -9,9 +9,9 @@
 <div class="split">
 <div class="formula">
 <div>変更前の式</div>
-<pre><code>net_revenue: SUM({amount})</code></pre>
+<pre><code>純売上高: SUM({注文金額})</code></pre>
 <div>返金額を引いた式</div>
-<pre><code>net_revenue: SUM({amount}) - SUM({refund})</code></pre></div>
+<pre><code>純売上高: SUM({注文金額}) - SUM({返金額})</code></pre></div>
 <div>
 <table>
 <thead><tr><th>レポート</th><th>月または地域</th><th>変更前</th><th>返金額の控除後</th></tr></thead>
@@ -23,21 +23,35 @@
 <details>
 <summary>モデルと 2 つのクエリを見る</summary>
 <pre><code>dialect: duckdb
-Sales:
+売上注文:
   type: dataset
   table: orders
-  dimension: [order_id]
+  dimension: [注文番号]
   columns:
-    order_id:
-    report_month:
-    region:
-    amount:
-    refund:
+    注文番号:
+      abbr: order_id
+    dt_month:
+      abbr: report_month
+    地域:
+      abbr: region
+    注文金額:
+      abbr: amount
+    返金額:
+      abbr: refund
   measures:
-    net_revenue: SUM({amount})</code></pre>
+    純売上高: SUM({注文金額})
+
+前月の純売上高:
+  type: measure
+  formula: '{純売上高: pp}'</code></pre>
 <h3>月別レポート</h3>
-<pre><code>SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC</code></pre>
+<pre><code>SELECT dt_month, AGG(純売上高) FROM MODEL GROUP BY dt_month ORDER BY dt_month</code></pre>
 <h3>地域別レポート</h3>
-<pre><code>SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region</code></pre><a href="task-examples.zip" class="">実行できるサンプルをダウンロード</a></details>
+<pre><code>SELECT 地域, AGG(純売上高) FROM MODEL GROUP BY 地域 ORDER BY 地域</code></pre><h3>2月と1月の純売上高を比べる</h3><p>dt_month に2月を指定し、同じ指標に pp を付けると、前月の純売上高が得られます。返金額を差し引いた後の純売上高は2月が200、1月が90です。</p><pre><code>SELECT AGG(純売上高), AGG(前月の純売上高) FROM MODEL WHERE dt_month='2025-02-01'</code></pre><a href="task-examples.ja.zip" class="">実行できるサンプルをダウンロード</a><p>展開したプロジェクトの net-revenue フォルダーで次のコマンドを実行します。</p><pre><code>dmlc -q setup.sql
+dmlc -q --model=model.dml monthly.sql
+dmlc -q --model=model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml monthly.sql
+dmlc -q --model=after-refunds/model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml previous-month.sql</code></pre></details>
 </section></div>
 <nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a><a lang="de" hreflang="de" href="index.de.html">Deutsch</a></nav></main></body></html>

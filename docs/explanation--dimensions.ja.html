@@ -8,10 +8,10 @@
 [order_id, line_id]
 [product_id, dt_month]
 </code></pre>
-<p>上の各行は 1 つのディメンションです。<code>[product_id, dt_month]</code> は、2 つのフィールドを含む 1 つのディメンションです。</p>
+<p>上の各行は 1 つのディメンションです。<code>[商品番号, dt_month]</code> は、2 つのフィールドを含む 1 つのディメンションです。</p>
 <p>指標の <code>dimensions:</code> では、評価に使えるディメンションの候補を複数指定できるため、リストが 1 段深くなります。</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id]
+  - [顧客番号]
   - [account_id, dt_month]
 </code></pre>
 <p>外側のリストには、許可されるディメンションが 2 つ含まれています。内側の各リストが 1 つのディメンションです。</p>
@@ -52,7 +52,7 @@
 <td>指標の評価に使えるディメンションの候補を制限します。ソース行の識別方法やクエリのグループ化は宣言しません。</td>
 </tr>
 </tbody></table>
-<p>これらの役割は互いに代用できません。たとえば、<code>[region]</code> を指標の <code>dimensions:</code> に追加しても、クエリ結果に <code>region</code> は追加されません。クエリには引き続き <code>GROUP BY region</code> または <code>columns.dimension: [region]</code> が必要です。</p>
+<p>これらの役割は互いに代用できません。たとえば、<code>[地域]</code> を指標の <code>dimensions:</code> に追加しても、クエリ結果に <code>地域</code> は追加されません。クエリには引き続き <code>GROUP BY 地域</code> または <code>columns.dimension: [地域]</code> が必要です。</p>
 <h2 id="3-grain-is-derived-from-a-dimension">3. 粒度はディメンションから決まる <a class="section-link" aria-label="この節へのリンク" href="#3-grain-is-derived-from-a-dimension">#</a></h2>
 <p><strong>粒度</strong>とは、あるコンテキストでディメンションを適用したときに、1 行が何を表すかを示すものです。</p>
 <table>
@@ -65,17 +65,17 @@
 </thead>
 <tbody><tr>
 <td>注文明細データセット</td>
-<td><code>[order_id, line_id]</code></td>
+<td><code>[注文番号, 明細番号]</code></td>
 <td>注文明細ごとにソース行が 1 行</td>
 </tr>
 <tr>
 <td>製品別の月次クエリ</td>
-<td><code>[product_id, dt_month]</code></td>
+<td><code>[商品番号, dt_month]</code></td>
 <td>製品と月の組み合わせごとに結果が 1 行</td>
 </tr>
 <tr>
 <td>顧客単位の評価</td>
-<td><code>[customer_id]</code></td>
+<td><code>[顧客番号]</code></td>
 <td>顧客ごとに中間値が 1 つ</td>
 </tr>
 <tr>
@@ -88,17 +88,21 @@
 <p>ディメンションフィールドを追加すると通常は粒度が細かくなり、削除すると通常は粗くなります。この目安だけでは互換性を確認できません。フィールドの導出方法、時間の関係、指標の制約、データセットの境界も関係します。宣言した関係の妥当性はコンパイラで検証してください。</p>
 <h2 id="4-dataset-dimension-source-row-identity">4. データセットディメンションによるソース行の識別 <a class="section-link" aria-label="この節へのリンク" href="#4-dataset-dimension-source-row-identity">#</a></h2>
 <p>データセットディメンションには、物理的なソース行を 1 行ずつ識別するフィールドが含まれます。</p>
-<pre><code class="language-yaml">Order Line:
+<pre><code class="language-yaml">注文明細:
     type: dataset
     table: tabOrderLine
-    dimension: [order_id, line_id]
+    dimension: [注文番号, 明細番号]
     columns:
-        order_id:
-        line_id:
-        product_id:
-        net_amount:
+        注文番号:
+            abbr: order_id
+        明細番号:
+            abbr: line_id
+        商品番号:
+            abbr: product_id
+        純額:
+            abbr: net_amount
 </code></pre>
-<p>一意性が求められるのは、<code>[order_id, line_id]</code> の値の組み合わせ全体です。<code>order_id</code> は複数の明細で、<code>line_id</code> は複数の注文で重複してもかまいません。その場合でも、データセットディメンション全体では一意です。</p>
+<p>一意性が求められるのは、<code>[注文番号, 明細番号]</code> の値の組み合わせ全体です。<code>注文番号</code> は複数の明細で、<code>明細番号</code> は複数の注文で重複してもかまいません。その場合でも、データセットディメンション全体では一意です。</p>
 <p>物理行の識別に、同じ値が繰り返し現れ得る業務上のグループ化を使わないでください。ソースに同じ <code>[account_id, invoice_id]</code> の値を持つ仕訳が複数ある場合、レポートでその組み合わせを使ってグループ化することが多くても、そのリストは有効なデータセットディメンションではありません。物理的な仕訳キーをデータセットディメンションに使い、<code>[account_id, invoice_id]</code> をクエリディメンションまたはマテリアライズディメンションに使います。</p>
 <p><code>pk(...)</code> は、参照先のデータセットディメンションに依存します。</p>
 <ul>
@@ -109,24 +113,24 @@
 <p>コンパイラはこの取り決めが守られていることを前提とし、ルックアップを <code>LEFT JOIN</code> に変換することがあります。そのため、参照先のキーが重複すると、行が増え、指標値が重複して計算に使われる可能性があります。コンパイルされた SQL に <code>DISTINCT</code> や <code>GROUP BY</code> を追加しても、モデルの取り決めに対する違反は解消されません。</p>
 <h2 id="5-query-dimension-result-grouping">5. クエリディメンションによる結果のグループ化 <a class="section-link" aria-label="この節へのリンク" href="#5-query-dimension-result-grouping">#</a></h2>
 <p>Model Query SQL では次のように記述します。</p>
-<pre><code class="language-sql">SELECT dt_month, product_id, AGG(net_sales)
+<pre><code class="language-sql">SELECT dt_month, 商品番号, AGG(純売上高)
 FROM MODEL
-GROUP BY dt_month, product_id
+GROUP BY dt_month, 商品番号
 </code></pre>
-<p>クエリディメンションは <code>[dt_month, product_id]</code> です。結果の各行は、月と製品の値の組み合わせを 1 つ表します。</p>
+<p>クエリディメンションは <code>[dt_month, 商品番号]</code> です。結果の各行は、月と製品の値の組み合わせを 1 つ表します。</p>
 <p>DML 形式のクエリでは、同じ役割を明示します。</p>
-<pre><code class="language-yaml">Monthly Product Sales:
+<pre><code class="language-yaml">商品別月間売上:
     type: query
     columns:
-        dimension: [dt_month, product_id]
-        net_sales: "{net_sales}"
+        dimension: [dt_month, 商品番号]
+        純売上高: "{純売上高}"
 </code></pre>
 <p>グループ化しないクエリにはクエリディメンションがありません。指標が許容する場合は、総計のコンテキストで結果を返します。</p>
 <p>互換性のある指標が異なるデータセットに由来する場合、コンパイラは各指標を個別にクエリの粒度まで集計し、その後、共通のディメンションフィールドを使って結果を結合します。これにより、明細行を先に結合した場合に起こりがちな、集計への重複計上を防ぎます。データセットディメンションは引き続き有効である必要があり、<code>pk(...)</code> の各ルックアップに一致する行は最大 1 行でなければなりません。</p>
 <p>クエリディメンションのフィールドには、<strong>ディメンションとしての指標</strong>も使えます。これは、指標の結果をクエリディメンションのフィールドとして使うもので、多くの場合は <code>{name: {+d: dim}}</code> でバインドします。このフィールドの役割は引き続きクエリディメンションであり、データセットの <code>dimension:</code> によるソース行の識別には使いません。定義方法の規則については、<a href="explanation--measure-as-dimension.ja.html">ディメンションとしての指標</a>を参照してください。</p>
 <h2 id="6-evaluation-dimension-one-measure-reference">6. 個々の指標参照の評価ディメンション <a class="section-link" aria-label="この節へのリンク" href="#6-evaluation-dimension-one-measure-reference">#</a></h2>
 <p>クエリディメンションが指標参照の初期コンテキストになります。式の構造、許可されるディメンション、修飾子によって、実際に使われる評価ディメンションが決まります。</p>
-<p>クエリディメンションが <code>[dt_month, region, brand]</code> の場合：</p>
+<p>クエリディメンションが <code>[dt_month, 地域, ブランド]</code> の場合：</p>
 <table>
 <thead>
 <tr>
@@ -136,27 +140,27 @@ GROUP BY dt_month, product_id
 </tr>
 </thead>
 <tbody><tr>
-<td><code>{sales}</code></td>
+<td><code>{売上高}</code></td>
 <td>ディメンション修飾子なし</td>
 <td>確定した対象ディメンション</td>
 </tr>
 <tr>
-<td><code>{sales: {+d: customer_id}}</code></td>
-<td>ディメンションフィールド <code>customer_id</code> を追加</td>
-<td><code>[dt_month, region, brand, customer_id]</code></td>
+<td><code>{売上高: {+d: 顧客番号}}</code></td>
+<td>ディメンションフィールド <code>顧客番号</code> を追加</td>
+<td><code>[dt_month, 地域, ブランド, 顧客番号]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {-d: brand}}</code></td>
-<td>ディメンションフィールド <code>brand</code> を削除</td>
-<td><code>[dt_month, region]</code></td>
+<td><code>{売上高: {-d: ブランド}}</code></td>
+<td>ディメンションフィールド <code>ブランド</code> を削除</td>
+<td><code>[dt_month, 地域]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: [region]}}</code></td>
+<td><code>{売上高: {dimension: [地域]}}</code></td>
 <td>ディメンション全体を置き換え</td>
-<td><code>[region]</code></td>
+<td><code>[地域]</code></td>
 </tr>
 <tr>
-<td><code>{sales: {dimension: []}}</code></td>
+<td><code>{売上高: {dimension: []}}</code></td>
 <td>ディメンションを解除</td>
 <td>総計のコンテキスト</td>
 </tr>
@@ -165,22 +169,22 @@ GROUP BY dt_month, product_id
 <p><code>-d</code> はディメンションフィールドを削除しますが、コンパイラがフィルターをデータセットにプッシュダウンする際、そのフィールドに対するクエリフィルターは保持します。<code>-df</code> はフィールドを削除し、その参照については関連するフィルターの伝播も抑止します。クエリフィルターで除外される値も分母に含める必要がある場合は、後者を使用します。構文とフィルターの動作については、<a href="reference--modifiers.ja.html">指標の修飾子</a>を参照してください。</p>
 <h2 id="7-allowed-dimensions-measure-validity">7. 指標の評価に使用できるディメンション <a class="section-link" aria-label="この節へのリンク" href="#7-allowed-dimensions-measure-validity">#</a></h2>
 <p>業務上の定義で必要な場合は、指標の <code>dimensions:</code> で有効な評価ディメンションを制限します。</p>
-<pre><code class="language-yaml">Revenue per Customer:
+<pre><code class="language-yaml">顧客当たり収益:
     type: measure
-    formula: DIVIDE({net_sales}, {active_customers})
+    formula: DIVIDE({純売上高}, {アクティブ顧客数})
     dimensions:
-      - [customer_id]
+      - [顧客番号]
 </code></pre>
-<p><code>[customer_id]</code> は、列挙されたフィールドだけを含む許可ディメンションの一つです。評価を制限しますが、データセットの行を識別することも、クエリ出力をグループ化することもありません。</p>
+<p><code>[顧客番号]</code> は、列挙されたフィールドだけを含む許可ディメンションの一つです。評価を制限しますが、データセットの行を識別することも、クエリ出力をグループ化することもありません。</p>
 <p>省略記号を使うと、列挙されたフィールドを必須としたまま、追加のディメンションフィールドを許可できます。</p>
 <pre><code class="language-yaml">dimensions:
-  - [customer_id, ...]
+  - [顧客番号, ...]
 </code></pre>
-<p>これにより、<code>customer_id</code> を含む互換性のある評価ディメンションが許可されます。指標の <code>dimensions:</code> を省略すると、その指標と依存先のデータセットに適合する任意のディメンションが許可されます。</p>
+<p>これにより、<code>顧客番号</code> を含む互換性のある評価ディメンションが許可されます。指標の <code>dimensions:</code> を省略すると、その指標と依存先のデータセットに適合する任意のディメンションが許可されます。</p>
 <p>数式に必要な必須ディメンションフィールドがクエリにない場合は、<code>+d</code> で該当する指標参照にそのフィールドを追加し、必要な外側の集計を行います。中間計算の要件を満たすためだけに、クエリにグループ化を追加しないでください。</p>
 <h2 id="8-materialization-dimension-stored-output-identity">8. マテリアライズのディメンションと保存される結果の識別 <a class="section-link" aria-label="この節へのリンク" href="#8-materialization-dimension-stored-output-identity">#</a></h2>
 <p>マテリアライズのディメンションは、保存される結果のグループ化とキーを宣言します。</p>
-<pre><code class="language-yaml">Monthly Account Balance:
+<pre><code class="language-yaml">月次口座残高:
     type: materialize
     dimension: [account_id, dt_month]
     measures: [closing_balance]

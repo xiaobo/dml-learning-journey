@@ -43,8 +43,11 @@
   dimension: [id]
   columns:
     id:
+      abbr: id
     region:
+      abbr: region
     amount:
+      abbr: amount
   measures:
     sales: SUM({amount})
     cnt: COUNT(1)
@@ -54,7 +57,7 @@
 <p>The notebook also records how to calculate an average:</p>
 <pre><code class="language-yaml">average_sale:
   type: measure
-  formula: &#39;DIVIDE({sales}, {cnt})&#39;
+  formula: 'DIVIDE({sales}, {cnt})'
 </code></pre>
 <p>The YAML declares a measure. The formula inside it is DMX. <code>{sales}</code> and <code>{cnt}</code> reference measures, and <code>DIVIDE</code> returns NULL for a zero denominator. <code>average_sale</code> is composite because it references other measures; it has no <code>dataset:</code> property.</p>
 <p>DMX is shared expression syntax inside model definitions and query expressions. It is not a separate processing step between the model and query. The <a href="reference--expressions.html">expression reference</a> owns the syntax.</p>

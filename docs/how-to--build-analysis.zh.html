@@ -17,7 +17,7 @@
 	dt_month,
 	渠道,
 	AGG(销售额),
-	AGG({销售额: yoy}) AS 销售额_yoy,
+	AGG({销售额: yoy}) AS 销售额同比,
 	AGG(同店销售额)
 FROM MODEL
 WHERE dt_month = '2025-03-01'
@@ -45,7 +45,7 @@ GROUP BY dt_month, 渠道
 <li>使用所需的组成项定义复合比率。</li>
 <li>在描述中写明总体范围、粒度（定义行或汇总值的层级）以及 NULL 的处理方式。</li>
 </ol>
-<p>使用包含必需字段的查询测试受维度约束的度量。仅对 <code>dt_month</code> 应用筛选条件，无法满足封闭求值维度 <code>[customer, dt_month]</code> 的要求。</p>
+<p>使用包含必需字段的查询测试受维度约束的度量。仅对 <code>dt_month</code> 应用筛选条件，无法满足封闭求值维度 <code>[客户, dt_month]</code> 的要求。</p>
 <p>有关建模模式，请参阅<a href="reference--measures.zh.html">度量</a>。编写描述和命名时，请遵循<a href="how-to--write-model-metadata.zh.html">编写模型元数据</a>中的说明。</p>
 <h2 id="phase-5-validate-the-model-and-query">第 5 阶段：验证模型和查询 <a class="section-link" aria-label="本节链接" href="#phase-5-validate-the-model-and-query">#</a></h2>
 <p>如果对行为有疑问，以所选 <code>dmlc.exe</code> 的实际行为为准。记录其路径、版本、构建时间戳和方言。</p>

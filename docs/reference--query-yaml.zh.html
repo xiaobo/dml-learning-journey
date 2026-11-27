@@ -12,10 +12,10 @@
     columns:
         dimension:
             - dt_month
-            - product
-        sales:               # measure reference (no AGG needed)
-        sales_yoy:
-            formula: '{sales: yoy}'
+            - 商品
+        销售额:               # measure reference (no AGG needed)
+        销售额同比:
+            formula: '{销售额: yoy}'
 </code></pre>
 <p><code>columns:</code> 为必填项。除维度键外，其中的每个键都表示一个输出列名，对应的值是公式或对指标的直接引用。可选键 <code>dataset:</code> 用于选择数据集查询形式，不能与 <code>columns.dimension</code> 同时使用。</p>
 <p>查询筛选器有以下形式。每个键都是一个筛选器的名称，指标引用修饰符可以通过该名称指定筛选器。</p>
@@ -27,7 +27,7 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td><code>&lt;column&gt;: &lt;数值&gt;</code></td>
 <td>对同名列应用等值条件</td>
 </tr>
 <tr>
@@ -35,7 +35,7 @@
 <td>判断值是否在列表中</td>
 </tr>
 <tr>
-<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, 数值: &lt;数值&gt;}</code></td>
 <td>对显式指定的列应用命名等值筛选器</td>
 </tr>
 <tr>
@@ -70,12 +70,12 @@
 </tr>
 </tbody></table>
 <pre><code class="language-yaml"># Detail query
-product_list:
+商品清单:
     type: query
     dataset: DATASET_PRODUCTS
     columns:
         dimension:
-            - product
+            - 商品
 </code></pre>
 <p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
 <h2 id="auto-join-of-multi-dataset-measures">自动联接多个数据集中的指标 <a class="section-link" aria-label="本节链接" href="#auto-join-of-multi-dataset-measures">#</a></h2>
@@ -95,22 +95,22 @@ product_list:
 <tbody><tr>
 <td>同一数据集中的维度字段</td>
 <td>直接使用名称</td>
-<td><code>product:</code></td>
+<td><code>商品:</code></td>
 </tr>
 <tr>
 <td>其他数据集中的维度字段</td>
 <td><code>"{DATASET}.column"</code></td>
-<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+<td><code>商品编号: "{DATASET_PRODUCTS}.商品编号"</code></td>
 </tr>
 <tr>
 <td>指标</td>
 <td>直接使用名称</td>
-<td><code>sales:</code></td>
+<td><code>销售额:</code></td>
 </tr>
 <tr>
 <td>带修饰符的指标</td>
 <td><code>formula:</code></td>
-<td><code>sales_yoy: {sales: yoy}</code></td>
+<td><code>销售额同比: {销售额: yoy}</code></td>
 </tr>
 </tbody></table>
 <p><strong>注意</strong>：在未指定 <code>dataset:</code> 的聚合查询中，如果列属于某个特定数据集，仅使用列名会报错。请使用 <code>"{DATASET}.column"</code> 形式。</p>
@@ -135,13 +135,13 @@ product_list:
 <tr>
 <td><strong>查询列 → 指标（自动别名）</strong></td>
 <td>查询列没有公式，列名与指标名相同</td>
-<td><code>revenue:</code>（指标 <code>revenue</code> 已存在）</td>
+<td><code>收入:</code>（指标 <code>收入</code> 已存在）</td>
 <td>编译器代入该指标的 <code>formula:</code> 表达式</td>
 </tr>
 <tr>
 <td><strong>查询列 → 数据集列（自动别名）</strong></td>
 <td>查询列没有公式，列名与数据集列名相同，且该数据集列<strong>可从查询维度推导</strong></td>
-<td><code>prod_name:</code>（通过 <code>pk({prod_id})</code> 链找到的数据集列）</td>
+<td><code>prod_name:</code>（通过 <code>pk({商品编号})</code> 链找到的数据集列）</td>
 <td>编译器根据数据集定义解析该列</td>
 </tr>
 </tbody></table>
@@ -150,8 +150,8 @@ product_list:
 <li><code>dmlc -c</code> 不会根据表结构检查数据集列是否存在。列名不匹配时，编译仍会通过，但执行时会出现 SQL 错误。请使用 <code>validateOnly</code> 检查列名是否匹配。此选项需要数据库连接。</li>
 <li>如果查询列名与任何指标名或可推导的数据集列名都不匹配，则会报错 <code>not defined, add formula?</code>。</li>
 <li>如果查询列名与指标名不同，请添加显式公式（<code>display_name: '{measure_name}'</code>），或使用 <code>abbr:</code> 重命名该指标。</li>
-<li>如果数据集列<strong>无法从查询维度推导</strong>，例如原始事实列不依赖任何维度字段，则会报错 <code>cannot be derived from dimension [store_id]</code>。</li>
-<li>直接传递的列（无 <code>formula:</code>）可以用对象形式添加元数据属性（<code>description:</code>、<code>visibility:</code>），无需指定 <code>formula:</code>。例如，<code>revenue: { description: 'Total revenue' }</code> 会通过自动别名引用指标 <code>revenue</code>，同时添加描述。</li>
+<li>如果数据集列<strong>无法从查询维度推导</strong>，例如原始事实列不依赖任何维度字段，则会报错 <code>cannot be derived from dimension [门店编号]</code>。</li>
+<li>直接传递的列（无 <code>formula:</code>）可以用对象形式添加元数据属性（<code>description:</code>、<code>visibility:</code>），无需指定 <code>formula:</code>。例如，<code>收入: { description: 'Total revenue' }</code> 会通过自动别名引用指标 <code>收入</code>，同时添加描述。</li>
 </ul>
 <p><a id="46-visibility-hidden"></a></p>
 <h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="本节链接" href="#visibility-hidden">#</a></h2>
@@ -191,26 +191,26 @@ product_list:
 <pre><code class="language-yaml">columns:
     dimension:
         - dt_month
-        - product
+        - 商品
         # Correct: list dimension field names only
 </code></pre>
 <p><strong>错误</strong>：不要将跨数据集的列<strong>映射</strong>放入查询的维度字段中。请将这些公式定义为单独的查询列：</p>
 <pre><code class="language-yaml"># Wrong
 columns:
     dimension:
-        - f_tag_id: {DATASET_PT}.id
+        - f_tag_id: {DATASET_PT}.销售明细编号
 
 # Correct
 columns:
     dimension:
         - f_tag_id
-    f_tag_id: "{DATASET_PT}.id"
+    f_tag_id: "{DATASET_PT}.销售明细编号"
 </code></pre>
 <p><strong>例外：将指标用作维度。</strong> 查询维度条目可以绑定一个<strong>指标</strong>（通常使用 <code>+d</code>），使查询按该指标值对行分组，并以此确定查询粒度：</p>
 <pre><code class="language-yaml">columns:
     dimension:
-        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
-    sales:
+        - 首次购买月份: '{首次购买月份: {+d: 门店编号}}'
+    销售额:
 </code></pre>
 <p>使用 <code>+d</code>（首选）或 <code>dimension:</code> 显式声明分类实体的键。只有完整键一致时，才允许使用多个独立字段。常规输出指标必须能够从 <code>Q ∪ K</code> 所定义的层级正确向上汇总。标签通道过滤器（公式的 <code>filters:</code> 或 Model Query 的 <code>HAVING</code>）在标签生成<strong>之后</strong>才生效。请参阅<a href="explanation--measure-as-dimension.zh.html">将指标用作维度</a>。请勿将此例外用于物理映射或 <code>{DATASET}.col</code> 映射。</p>
 <p><a id="48-filter-placement-hierarchy"></a></p>
@@ -266,7 +266,7 @@ filters:
 </tr>
 <tr>
 <td>查询过滤器中出现 <code>referred column {DATASET}.col is undefined</code></td>
-<td>使用字符串形式：<code>"{DATASET}.col = value":</code></td>
+<td>使用字符串形式：<code>"{DATASET}.col = 数值":</code></td>
 </tr>
 <tr>
 <td>日期维度上的双元素列表仅返回 2 天的数据</td>
@@ -280,7 +280,7 @@ filters:
 <p><a id="49-pk-chaining"></a></p>
 <h2 id="pk-chaining"><code>pk</code> 链式查找 <a class="section-link" aria-label="本节链接" href="#pk-chaining">#</a></h2>
 <pre><code class="language-yaml"># Single PK lookup
-formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+formula: 'pk(客户编号).{DATASET_CUSTOMERS}.tier'
 
 # Composite PK — all columns required
 formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
@@ -289,14 +289,14 @@ formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
 <p><strong>嵌套的查找链</strong>：从一条 <code>pk()</code> 查找链派生的列可以用作另一条 <code>pk()</code> 查找链的键。编译器会追踪派生链，并生成对应的嵌套 <code>LEFT JOIN</code>。这是直接表达“查找一个属性，再用该属性查找另一个属性”的原生方式，无需使用 <code>sql:</code> 或 <code>after:</code>。</p>
 <pre><code class="language-yaml"># fact dataset
 columns:
-    store_id:
+    门店编号:
     # First hop: store_id → Dim Customer → hq_id
-    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    总部编号: pk({门店编号}).{客户名录}.总部编号
     # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
-    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    总部代码: pk({总部编号}).{客户名录}.store_code
     # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
-    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
-    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+    总部组织编号: pk({总部编号}).{客户名录}.组织编号
+    总部联系人姓名: pk({总部组织编号}).{组织名录}.员工姓名
 </code></pre>
 <p>在已检查的构建版本中，支持同一文件内的前向引用，包括列依赖和 <code>pk()</code> 的目标。为便于阅读，请将被依赖项写在前面。包含文件有独立的可见性边界，请参阅<a href="reference--model-composition.zh.html">模型组合</a>。</p>
 <p><a id="410-after-clause"></a></p>
@@ -306,9 +306,9 @@ columns:
 <pre><code class="language-yaml">my_report:
     type: query
     columns:
-        dimension: [product]
-        sales:
-    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+        dimension: [商品]
+        销售额:
+    after: 'select * from {QUERY} ORDER BY 销售额 DESC LIMIT 10'
 </code></pre>
 <p>存在 <code>after:</code> 时，必须使用 <code>{QUERY}</code> 指代编译后的查询结果，供查询后语句使用。“仅排序”表示除这层包装和 ORDER BY/TOP/LIMIT 外，不包含任何业务逻辑。如果显式指定的排序与查询的默认输出顺序一致，上游编译器会发出 <code>redundant ORDER BY</code> 警告。请按该警告针对当前位置给出的提示操作。如果 <code>after:</code> 中还有其他重要处理，只删除冗余的 <code>ORDER BY</code> 子句。只有没有其他处理时，才删除整个块。</p>
 <p><strong>错误</strong>：在标准指标查询的 <code>after:</code> 中使用 <code>group by</code> 进行二次聚合。应由查询块聚合指标。</p>
@@ -321,7 +321,7 @@ columns:
     columns:
         dimension:
             - dt_date
-        sales:
+        销售额:
 </code></pre>
 <p><code>allows:</code> 控制哪些物化结果可以作为候选项。<code>ALL</code> 允许使用候选项，<code>NONE</code> 禁止使用物化结果。显式指定名称会将候选范围限制在这些名称内。候选项是否可用，仍取决于其定义行或汇总值的粒度和筛选条件是否都与查询兼容。此设置不会放宽指标的 <code>dimensions:</code> 约束，也不允许任意指定查询粒度。请参阅<a href="reference--materialization.zh.html">物化声明</a>。</p>
 <p><a id="412-yaml-syntax-pitfalls"></a></p>

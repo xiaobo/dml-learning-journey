@@ -23,11 +23,11 @@
 <td>结构键匹配时，即使其中一个组成部分为 NULL，也可以附加属性。</td>
 </tr>
 </tbody></table>
-<p>NULL 安全的等值比较可以使用 <code>&lt;=&gt;</code>、<code>IS NOT DISTINCT FROM</code>，或使用包含显式分支的等值判断来处理两侧均为 NULL 的情况，具体取决于所用方言。显式 SQL 谓词（如 <code>a.region = b.region</code>）遵循数据库的常规等值语义。明细连接使用各自键的等值规则。</p>
+<p>NULL 安全的等值比较可以使用 <code>&lt;=&gt;</code>、<code>IS NOT DISTINCT FROM</code>，或使用包含显式分支的等值判断来处理两侧均为 NULL 的情况，具体取决于所用方言。显式 SQL 谓词（如 <code>a.地区 = b.地区</code>）遵循数据库的常规等值语义。明细连接使用各自键的等值规则。</p>
 <h2 id="output-with-null-alignment-keys">使用含 NULL 的键对齐时的输出 <a class="section-link" aria-label="本节链接" href="#output-with-null-alignment-keys">#</a></h2>
-<p>假设未分类地区的销售总额为 50，退款总额为 8。按 <code>region</code> 分组会返回一行 <code>(NULL, 50, 8)</code>，其中包含两个指标。这一行代表报表中的一个分组。底层销售记录和退款记录各自保留其标识。即使两个指标值都是 NULL，该分组仍会对齐。</p>
-<p>对于 <code>(region, channel)</code> 这样的复合键，<code>(NULL, 'online')</code> 与 <code>(NULL, 'online')</code> 对齐。<code>(NULL, 'retail')</code> 仍是单独的分组。期间计算对非时间分组键应用相同的规则，并沿用自身的时间匹配规则。</p>
-<p>如果报表需要一个带标签的分组，请使用 <code>coalesce(region, 'UNKNOWN')</code> 这样的显式分组表达式。该表达式也会将数据中实际存在的 <code>'UNKNOWN'</code> 值归入同一分组。</p>
+<p>假设未分类地区的销售总额为 50，退款总额为 8。按 <code>地区</code> 分组会返回一行 <code>(NULL, 50, 8)</code>，其中包含两个指标。这一行代表报表中的一个分组。底层销售记录和退款记录各自保留其标识。即使两个指标值都是 NULL，该分组仍会对齐。</p>
+<p>对于 <code>(地区, channel)</code> 这样的复合键，<code>(NULL, 'online')</code> 与 <code>(NULL, 'online')</code> 对齐。<code>(NULL, 'retail')</code> 仍是单独的分组。期间计算对非时间分组键应用相同的规则，并沿用自身的时间匹配规则。</p>
+<p>如果报表需要一个带标签的分组，请使用 <code>coalesce(地区, 'UNKNOWN')</code> 这样的显式分组表达式。该表达式也会将数据中实际存在的 <code>'UNKNOWN'</code> 值归入同一分组。</p>
 <h2 id="population-fill-and-densification">总体、填充和行密集化 <a class="section-link" aria-label="本节链接" href="#population-fill-and-densification">#</a></h2>
 <p>使用基于未填充的存在性指标的筛选器，可以将报表限定为来自指定来源的分组。即使对应分组在来源中存在，允许空值的业务指标也可能是 NULL。</p>
 <p>缺失行填充为指标提供备用值。行密集化补齐缺失的实体行或日历行。这两项操作都无法确定某个分组是否属于来源总体。</p>

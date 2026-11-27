@@ -3,60 +3,60 @@
 <p><a id="business-metrics-examples"></a></p>
 <h2 id="business-metric-examples">業務で使う指標の例 <a class="section-link" aria-label="この節へのリンク" href="#business-metric-examples">#</a></h2>
 <h3 id="financial-metrics">財務指標 <a class="section-link" aria-label="この節へのリンク" href="#financial-metrics">#</a></h3>
-<pre><code class="language-yaml">account_receivable:
+<pre><code class="language-yaml">売掛金:
     type: measure
     formula: |-
-        {amount: {+f: {account: 'Accounts Receivable (A/R)'}}}
+        {売上金額: {+f: {勘定科目: 'Accounts Receivable (A/R)'}}}
 
-outstanding:
+未払額:
     type: measure
     description: All unpaid amounts (including not yet due)
     formula: |-
-        {open_balance}
+        {未決済残高}
 
-balance_due:
+支払期限到来残高:
     type: measure
     description: Amounts due today or earlier
     formula: |-
-        {open_balance: {+f: 'due_date &lt;= date(current_date)'}}
+        {未決済残高: {+f: '支払期限 &lt;= date(current_date)'}}
 </code></pre>
 <h3 id="transaction-counts">取引件数 <a class="section-link" aria-label="この節へのリンク" href="#transaction-counts">#</a></h3>
-<pre><code class="language-yaml">number_of_invoices:
+<pre><code class="language-yaml">請求書数:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : 'invoice'}}}
+        {取引件数: {+f: {取引区分 : 'invoice'}}}
 
-number_of_checks:
+小切手数:
     type: measure
     formula: |-
-        {number_of_transactions: {+f: {transaction_type : 'check'}}}
+        {取引件数: {+f: {取引区分 : 'check'}}}
 
-number_of_received_checks:
+受取小切手数:
     type: measure
     formula: |-
-        {number_of_checks: {+f: 'customer is not null'}}
+        {小切手数: {+f: '顧客 is not null'}}
 </code></pre>
 <hr>
 <p>名前の付け方、<code>description:</code>、<code>abbr</code>については<a href="how-to--review-model.ja.html">モデルの確認</a>を参照してください。よくある問題は<a href="reference--troubleshooting--README.ja.html">トラブルシューティング</a>の P1 と P25 で確認できます。</p>
 <hr>
 <h2 id="common-patterns">よく使う計算式 <a class="section-link" aria-label="この節へのリンク" href="#common-patterns">#</a></h2>
 <h3 id="average-calculations">平均 <a class="section-link" aria-label="この節へのリンク" href="#average-calculations">#</a></h3>
-<pre><code class="language-yaml">avg_invoice_value:
+<pre><code class="language-yaml">平均請求額:
     type: measure
     formula: |-
-        divide({amount: {+f: {transaction_type: 'invoice'}}}, {number_of_invoices})
+        divide({売上金額: {+f: {取引区分: 'invoice'}}}, {請求書数})
 </code></pre>
 <h3 id="frequency-calculations">頻度 <a class="section-link" aria-label="この節へのリンク" href="#frequency-calculations">#</a></h3>
-<pre><code class="language-yaml">avg_bill_frequency:
+<pre><code class="language-yaml">一日当たり請求書数:
     type: measure
     formula: |-
-        divide(sum({number_of_invoices: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
+        divide(sum({請求書数: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
 </code></pre>
 <p><a id="year-over-year-metrics"></a></p>
 <h3 id="average-annual-revenue">年間売上高の平均 <a class="section-link" aria-label="この節へのリンク" href="#average-annual-revenue">#</a></h3>
-<pre><code class="language-yaml">annual_avg_revenue:
+<pre><code class="language-yaml">年平均収益:
     type: measure
     formula: |-
-        divide(sum({revenue: {+d: dt_year}}), distinctcount({dt_year}))
+        divide(sum({収益: {+d: dt_year}}), distinctcount({dt_year}))
 </code></pre>
 </main></body></html>

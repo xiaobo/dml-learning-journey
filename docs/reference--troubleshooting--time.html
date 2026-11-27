@@ -2,36 +2,36 @@
 <p>These entries cover period values, comparison context, and missing history. <a href="reference--semantics.html">Evaluation semantics</a> owns the time-context contract.</p>
 <p><a id="p29"></a></p>
 <h2 id="p29-non-first-day-time-filters">P29. Non-first-day time filters <a class="section-link" aria-label="Link to section" href="#p29-non-first-day-time-filters">#</a></h2>
-<p><strong>Wrong</strong>: <code>dt_month = &#39;2024-01-15&#39;</code> or <code>dt_month = &#39;Jan 2024&#39;</code>.
-<strong>Fix</strong>: <code>dt_month = &#39;2024-01-01&#39;</code> — always first day.</p>
+<p><strong>Wrong</strong>: <code>dt_month = '2024-01-15'</code> or <code>dt_month = 'Jan 2024'</code>.
+<strong>Fix</strong>: <code>dt_month = '2024-01-01'</code> — always first day.</p>
 <p><a id="p30"></a></p>
 <h2 id="p30-missing-current-day-in-past-n-days">P30. Missing current day in past-N-days <a class="section-link" aria-label="Link to section" href="#p30-missing-current-day-in-past-n-days">#</a></h2>
-<p><strong>Wrong</strong>: <code>dt_date BETWEEN date(current_date, &#39;-7 days&#39;) AND date(current_date, &#39;-1 day&#39;)</code>.
-<strong>Fix</strong>: <code>dt_date BETWEEN date(current_date, &#39;-6 days&#39;) AND date(current_date)</code> — 7 days including today.</p>
+<p><strong>Wrong</strong>: <code>dt_date BETWEEN date(current_date, '-7 days') AND date(current_date, '-1 day')</code>.
+<strong>Fix</strong>: <code>dt_date BETWEEN date(current_date, '-6 days') AND date(current_date)</code> — 7 days including today.</p>
 <p><a id="p31"></a></p>
 <h2 id="p31-including-current-period-in-past-n-months">P31. Including current period in past-N-months <a class="section-link" aria-label="Link to section" href="#p31-including-current-period-in-past-n-months">#</a></h2>
-<p><strong>Wrong</strong>: <code>dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;) AND date(current_date, &#39;start of month&#39;)</code>.
-<strong>Fix</strong>: <code>dt_month BETWEEN date(current_date, &#39;start of month&#39;, &#39;-12 months&#39;) AND date(current_date, &#39;start of month&#39;, &#39;-1 month&#39;)</code> — exclude current (incomplete) month.</p>
+<p><strong>Wrong</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>.
+<strong>Fix</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code> — exclude current (incomplete) month.</p>
 <p><a id="p32"></a></p>
 <h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. Using ytd modifier with full-period GROUP BY <a class="section-link" aria-label="Link to section" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
-<p><strong>Wrong</strong>: <code>SELECT dt_year, AGG(sales, &#39;ytd&#39;) FROM MODEL GROUP BY dt_year</code>.
-<strong>Fix</strong>: <code>ytd</code> is cumulative. Use <code>dt_date</code> grain: <code>SELECT dt_date, AGG(sales, &#39;ytd&#39;) FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
+<p><strong>Wrong</strong>: <code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>.
+<strong>Fix</strong>: <code>ytd</code> is cumulative. Use <code>dt_date</code> grain: <code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
 <p><a id="p33"></a></p>
 <h2 id="p33-period-to-date-with-date-range">P33. Period-to-date with date range <a class="section-link" aria-label="Link to section" href="#p33-period-to-date-with-date-range">#</a></h2>
-<p><strong>Wrong</strong>: <code>WHERE dt_date BETWEEN date(current_date, &#39;start of year&#39;) AND date(current_date)</code> for YTD.
-<strong>Fix</strong>: <code>WHERE dt_date = date(current_date)</code> with <code>AGG(sales, &#39;ytd&#39;)</code> — modifier handles the range.</p>
+<p><strong>Wrong</strong>: <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> for YTD.
+<strong>Fix</strong>: <code>WHERE dt_date = date(current_date)</code> with <code>AGG(sales, 'ytd')</code> — modifier handles the range.</p>
 <hr>
 <h2 id="category-compilation-and-validation">Category: Compilation and Validation <a class="section-link" aria-label="Link to section" href="#category-compilation-and-validation">#</a></h2>
 <p><a id="p59"></a></p>
 <h2 id="p59-yoy-without-column-probe">P59. YoY without column probe <a class="section-link" aria-label="Link to section" href="#p59-yoy-without-column-probe">#</a></h2>
-<p><strong>Wrong</strong>: <code>AGG(销售额, &#39;yoy&#39;)</code> when <code>去年同期出厂价金额</code> sums to zero.
-<strong>Fix</strong>: Detail query <code>SUM(去年同期出厂价金额)</code> before promising YoY narrative.</p>
+<p><strong>Wrong</strong>: <code>AGG(sales, 'yoy')</code> when <code>prior_year_ex_factory_amount</code> sums to zero.
+<strong>Fix</strong>: Detail query <code>SUM(prior_year_ex_factory_amount)</code> before promising YoY narrative.</p>
 <h2 id="extra-month-after-the-latest-source-data">Extra month after the latest source data <a class="section-link" aria-label="Link to section" href="#extra-month-after-the-latest-source-data">#</a></h2>
 <p>Set the report&#39;s month range explicitly when you compare periods. A full outer join can keep groups from either period. When December sales align to January as prior sales, an unbounded query can include January even if it is outside your report.</p>
-<p>This example uses data from January 2024 through December 2025, with sales in each of five categories every month. The model defines <code>revenue: SUM({amount})</code>, a month dimension named <code>dt_month</code>, and <code>revenue_mom: &#39;{revenue: pop}&#39;</code>.</p>
+<p>This example uses data from January 2024 through December 2025, with sales in each of five categories every month. The model defines <code>revenue: SUM({amount})</code>, a month dimension named <code>dt_month</code>, and <code>revenue_mom: '{revenue: pop}'</code>.</p>
 <pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
 FROM MODEL
-WHERE dt_month &gt;= &#39;2024-01-01&#39; AND dt_month &lt; &#39;2026-01-01&#39;
+WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
 GROUP BY dt_month, category
 </code></pre>
 <p>On the example data, this returns 120 rows and matches the hand-written SQL. Without the date filter, the checked query returns 125 rows. The five extra January 2026 rows have NULL current revenue and growth because only December sales contribute to those groups.</p>

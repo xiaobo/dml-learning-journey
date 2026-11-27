@@ -1,61 +1,61 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>查询示例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="入门示例使用共享销售模型。该模型提供 sales 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="查询示例 · DML"><meta property="og:description" content="入门示例使用共享销售模型。该模型提供 sales 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--examples--queries.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--examples--queries.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--queries.html">English</a></header><main><h1 id="query-examples">查询示例</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#basic-queries">基本查询</a></li><li><a href="#total-sales">销售总额</a></li><li><a href="#sales-by-region">按地区统计销售额</a></li><li><a href="#sales-this-month">本月销售额</a></li><li><a href="#sales-this-month-by-region">按地区统计本月销售额</a></li><li><a href="#detail-query--paid-transactions">明细查询：已付款交易</a></li><li><a href="#time-modifiers">时间修饰符</a></li><li><a href="#this-month-vs-last-month">本月与上月对比</a></li><li><a href="#this-month-vs-same-month-last-year">本月与去年同月对比</a></li><li><a href="#year-to-date-growth">年初至今的增长率</a></li><li><a href="#rolling-12-month-total">滚动 12 个月合计</a></li><li><a href="#specific-monthsquarters">指定月份或季度</a></li><li><a href="#nested-modifiers-in-dml"><code>.dml</code> 中的嵌套修饰符</a></li><li><a href="#rank-and-filters">排名与筛选</a></li><li><a href="#top-10-products-by-sales">销售额排名前 10 的产品</a></li><li><a href="#using-rank-modifier">使用排名修饰符</a></li><li><a href="#rank-within-the-selected-period">选定期间内的排名</a></li><li><a href="#filtering-by-rank">按排名筛选</a></li><li><a href="#having-clause--customers-with-outstanding-balance">HAVING 子句：有未结余额的客户</a></li><li><a href="#share-of-total-pot">占总计的比例（<code>pot</code>）</a></li><li><a href="#rfm-amp-co-occurrence-patterns">RFM 与共现模式</a></li><li><a href="#dimension-without-dt">不含 dt 的维度</a></li><li><a href="#sales-by-region-all-time">按地区统计销售额（全部期间）</a></li><li><a href="#product-share-by-region-no-time-grouping">按地区统计产品占比（不按时间分组）</a></li><li><a href="#selected-period-versus-all-history">选定期间与全部历史期间对比</a></li><li><a href="#period-conversion">期间转换</a></li><li><a href="#comparison-patterns">比较模式</a></li><li><a href="#period-over-period">与上一期间对比</a></li><li><a href="#growth-rate-by-account">按账户统计增长率</a></li><li><a href="#year-to-date-vs-last-year">年初至今与去年对比</a></li><li><a href="#conditional-counts">条件计数</a></li></ul></details>
-<p>入门示例使用<a href="reference--examples--shared-model.zh.html">共享销售模型</a>。该模型提供 <code>sales</code> 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。</p>
-<p><strong>示例的前提条件：</strong>基本查询、销售额的期间比较、排名、占比和产品计数均使用该模型。费用示例还需要指标 <code>expense</code>。未结余额示例需要 <code>customer</code> 和 <code>outstanding</code>，账户增长示例需要 <code>account</code> 和 <code>revenue</code>。这些是需要按实际情况调整的片段，不能直接作为共享模型的扩展运行。如需可运行的数据集以及固定日期和预期结果，请使用<a href="checked-exercise.html">经过验证的销售练习</a>。</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>查询示例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="入门示例使用共享销售模型。该模型提供 销售额 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="查询示例 · DML"><meta property="og:description" content="入门示例使用共享销售模型。该模型提供 销售额 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--queries.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--examples--queries.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--examples--queries.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--queries.html">English</a></header><main><h1 id="query-examples">查询示例</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#basic-queries">基本查询</a></li><li><a href="#total-sales">销售总额</a></li><li><a href="#sales-by-region">按地区统计销售额</a></li><li><a href="#sales-this-month">本月销售额</a></li><li><a href="#sales-this-month-by-region">按地区统计本月销售额</a></li><li><a href="#detail-query--paid-transactions">明细查询：已付款交易</a></li><li><a href="#time-modifiers">时间修饰符</a></li><li><a href="#this-month-vs-last-month">本月与上月对比</a></li><li><a href="#this-month-vs-same-month-last-year">本月与去年同月对比</a></li><li><a href="#year-to-date-growth">年初至今的增长率</a></li><li><a href="#rolling-12-month-total">滚动 12 个月合计</a></li><li><a href="#specific-monthsquarters">指定月份或季度</a></li><li><a href="#nested-modifiers-in-dml"><code>.dml</code> 中的嵌套修饰符</a></li><li><a href="#rank-and-filters">排名与筛选</a></li><li><a href="#top-10-products-by-sales">销售额排名前 10 的产品</a></li><li><a href="#using-rank-modifier">使用排名修饰符</a></li><li><a href="#rank-within-the-selected-period">选定期间内的排名</a></li><li><a href="#filtering-by-rank">按排名筛选</a></li><li><a href="#having-clause--customers-with-outstanding-balance">HAVING 子句：有未结余额的客户</a></li><li><a href="#share-of-total-pot">占总计的比例（<code>pot</code>）</a></li><li><a href="#rfm-amp-co-occurrence-patterns">RFM 与共现模式</a></li><li><a href="#dimension-without-dt">不含 dt 的维度</a></li><li><a href="#sales-by-region-all-time">按地区统计销售额（全部期间）</a></li><li><a href="#product-share-by-region-no-time-grouping">按地区统计产品占比（不按时间分组）</a></li><li><a href="#selected-period-versus-all-history">选定期间与全部历史期间对比</a></li><li><a href="#period-conversion">期间转换</a></li><li><a href="#comparison-patterns">比较模式</a></li><li><a href="#period-over-period">与上一期间对比</a></li><li><a href="#growth-rate-by-account">按账户统计增长率</a></li><li><a href="#year-to-date-vs-last-year">年初至今与去年对比</a></li><li><a href="#conditional-counts">条件计数</a></li></ul></details>
+<p>入门示例使用<a href="reference--examples--shared-model.zh.html">共享销售模型</a>。该模型提供 <code>销售额</code> 和列出的交易列，但不会创建源数据。日期示例使用当前日期，因此使用历史测试数据时可能不会返回任何行。</p>
+<p><strong>示例的前提条件：</strong>基本查询、销售额的期间比较、排名、占比和产品计数均使用该模型。费用示例还需要指标 <code>费用</code>。未结余额示例需要 <code>客户</code> 和 <code>未付金额</code>，账户增长示例需要 <code>账户</code> 和 <code>收入</code>。这些是需要按实际情况调整的片段，不能直接作为共享模型的扩展运行。如需可运行的数据集以及固定日期和预期结果，请使用<a href="checked-exercise.html">经过验证的销售练习</a>。</p>
 <h2 id="basic-queries">基本查询 <a class="section-link" aria-label="本节链接" href="#basic-queries">#</a></h2>
 <h3 id="total-sales">销售总额 <a class="section-link" aria-label="本节链接" href="#total-sales">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL
+<pre><code class="language-sql">SELECT AGG(销售额) FROM MODEL
 </code></pre>
 <h3 id="sales-by-region">按地区统计销售额 <a class="section-link" aria-label="本节链接" href="#sales-by-region">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+<pre><code class="language-sql">SELECT 地区, AGG(销售额) FROM MODEL GROUP BY 地区
 </code></pre>
 <h3 id="sales-this-month">本月销售额 <a class="section-link" aria-label="本节链接" href="#sales-this-month">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) FROM MODEL WHERE dt_month = date(current_date, 'start of month')
+<pre><code class="language-sql">SELECT AGG(销售额) FROM MODEL WHERE dt_month = date(current_date, 'start of month')
 </code></pre>
 <h3 id="sales-this-month-by-region">按地区统计本月销售额 <a class="section-link" aria-label="本节链接" href="#sales-this-month-by-region">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales)
+<pre><code class="language-sql">SELECT 地区, AGG(销售额)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region
+GROUP BY 地区
 </code></pre>
 <p><a id="detail-query--customer-payment-history"></a></p>
 <h3 id="detail-query--paid-transactions">明细查询：已付款交易 <a class="section-link" aria-label="本节链接" href="#detail-query--paid-transactions">#</a></h3>
-<pre><code class="language-sql">SELECT dt_date, transaction_id, amount, is_paid
-FROM MODEL.transactions
-WHERE is_paid = 1
+<pre><code class="language-sql">SELECT dt_date, 交易编号, 销售金额, 是否已付款
+FROM MODEL.交易明细
+WHERE 是否已付款 = 1
 ORDER BY dt_date DESC
 </code></pre>
 <hr>
 <h2 id="time-modifiers">时间修饰符 <a class="section-link" aria-label="本节链接" href="#time-modifiers">#</a></h2>
 <h3 id="this-month-vs-last-month">本月与上月对比 <a class="section-link" aria-label="本节链接" href="#this-month-vs-last-month">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
-       AGG(sales) as this_month,
-       AGG(sales, 'pp') as last_month,
-       AGG(sales, 'pop') as mom_rate
+       AGG(销售额) as 本月销售额,
+       AGG(销售额, 'pp') as 上月销售额,
+       AGG(销售额, 'pop') as 环比增长率
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 GROUP BY dt_month
 </code></pre>
 <h3 id="this-month-vs-same-month-last-year">本月与去年同月对比 <a class="section-link" aria-label="本节链接" href="#this-month-vs-same-month-last-year">#</a></h3>
 <pre><code class="language-sql">SELECT dt_month,
-       AGG(sales) as this_month,
-       AGG(sales, 'ya') as last_year_month,
-       AGG(sales, 'yoy') as yoy_rate
+       AGG(销售额) as 本月销售额,
+       AGG(销售额, 'ya') as 上年同月销售额,
+       AGG(销售额, 'yoy') as 同比增长率
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 GROUP BY dt_month
 </code></pre>
 <h3 id="year-to-date-growth">年初至今的增长率 <a class="section-link" aria-label="本节链接" href="#year-to-date-growth">#</a></h3>
 <pre><code class="language-sql">SELECT dt_date,
-       AGG(sales, 'ytd') as ytd_sales,
-       AGG(sales, 'ytd', 'ya') as ytd_last_year,
-       AGG(sales, 'ytd', 'yoy') as ytd_growth
+       AGG(销售额, 'ytd') as 本年累计销售额,
+       AGG(销售额, 'ytd', 'ya') as 上年同期累计销售额,
+       AGG(销售额, 'ytd', 'yoy') as 累计销售额同比增幅
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <p>请注意<strong>修饰符的叠加</strong>：<code>'ytd', 'ya'</code> 表示从去年年初到去年同一日期的期间。</p>
 <h3 id="rolling-12-month-total">滚动 12 个月合计 <a class="section-link" aria-label="本节链接" href="#rolling-12-month-total">#</a></h3>
-<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat}) AS rolling_sales
+<pre><code class="language-sql">SELECT dt_month, AGG(销售额), AGG({销售额: mat}) AS 滚动销售额
 FROM MODEL
 GROUP BY dt_month
 ORDER BY dt_month DESC
@@ -63,23 +63,23 @@ LIMIT 12
 </code></pre>
 <h3 id="specific-monthsquarters">指定月份或季度 <a class="section-link" aria-label="本节链接" href="#specific-monthsquarters">#</a></h3>
 <pre><code class="language-sql">-- August this year
-SELECT AGG(expense) FROM MODEL WHERE dt_month = date(current_date, 'start of year', '+7 months')
+SELECT AGG(费用) FROM MODEL WHERE dt_month = date(current_date, 'start of year', '+7 months')
 
 -- Q2 this year
-SELECT AGG(expense) FROM MODEL WHERE dt_quarter = date(current_date, 'start of year', '+1 quarter')
+SELECT AGG(费用) FROM MODEL WHERE dt_quarter = date(current_date, 'start of year', '+1 quarter')
 </code></pre>
 <h3 id="nested-modifiers-in-dml"><code>.dml</code> 中的嵌套修饰符 <a class="section-link" aria-label="本节链接" href="#nested-modifiers-in-dml">#</a></h3>
 <pre><code class="language-yaml"># In model.dml
-sales_ytd:
+本年累计销售额:
     type: measure
-    formula: '{sales: ytd}'
+    formula: '{销售额: ytd}'
 
-sales_ytd_last_year:
+上年同期累计销售额:
     type: measure
-    formula: '{sales: {ytd: ya}}'
+    formula: '{销售额: {ytd: ya}}'
 </code></pre>
 <pre><code class="language-sql">-- In query
-SELECT dt_date, AGG(sales_ytd), AGG(sales_ytd_last_year)
+SELECT dt_date, AGG(本年累计销售额), AGG(上年同期累计销售额)
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
@@ -88,52 +88,52 @@ GROUP BY dt_date
 <hr>
 <h2 id="rank-and-filters">排名与筛选 <a class="section-link" aria-label="本节链接" href="#rank-and-filters">#</a></h2>
 <h3 id="top-10-products-by-sales">销售额排名前 10 的产品 <a class="section-link" aria-label="本节链接" href="#top-10-products-by-sales">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales)
+<pre><code class="language-sql">SELECT 商品, AGG(销售额)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-ORDER BY AGG(sales) DESC
+GROUP BY 商品
+ORDER BY AGG(销售额) DESC
 LIMIT 10
 </code></pre>
 <h3 id="using-rank-modifier">使用排名修饰符 <a class="section-link" aria-label="本节链接" href="#using-rank-modifier">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales), AGG({sales: rank}) AS sales_rank
+<pre><code class="language-sql">SELECT 商品, AGG(销售额), AGG({销售额: rank}) AS 销售排名
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
-<p><code>{sales: rank}</code> 返回各产品在查询结果中的销售额排名，按销售额降序排名。</p>
+<p><code>{销售额: rank}</code> 返回各产品在查询结果中的销售额排名，按销售额降序排名。</p>
 <h3 id="rank-within-the-selected-period">选定期间内的排名 <a class="section-link" aria-label="本节链接" href="#rank-within-the-selected-period">#</a></h3>
-<pre><code class="language-sql">SELECT product,
-       AGG(sales) as period_sales,
-       AGG({sales: rank}) as selected_period_rank
+<pre><code class="language-sql">SELECT 商品,
+       AGG(销售额) as 期间销售额,
+       AGG({销售额: rank}) as 所选期间排名
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
+GROUP BY 商品
 </code></pre>
-<p>查询已仅按产品分组。保留月份筛选条件，直接按 <code>sales</code> 排名即可，无需移除时间分组层级。移除分组字段与移除时间筛选条件是两种不同的操作。</p>
+<p>查询已仅按产品分组。保留月份筛选条件，直接按 <code>销售额</code> 排名即可，无需移除时间分组层级。移除分组字段与移除时间筛选条件是两种不同的操作。</p>
 <h3 id="filtering-by-rank">按排名筛选 <a class="section-link" aria-label="本节链接" href="#filtering-by-rank">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales)
+<pre><code class="language-sql">SELECT 商品, AGG(销售额)
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-HAVING AGG({sales: rank}) &lt;= 10
+GROUP BY 商品
+HAVING AGG({销售额: rank}) &lt;= 10
 </code></pre>
 <p><code>HAVING</code> 在聚合后执行筛选，因此可以在该子句中使用 <code>rank</code>。</p>
 <h3 id="having-clause--customers-with-outstanding-balance">HAVING 子句：有未结余额的客户 <a class="section-link" aria-label="本节链接" href="#having-clause--customers-with-outstanding-balance">#</a></h3>
-<pre><code class="language-sql">SELECT customer, AGG(outstanding)
+<pre><code class="language-sql">SELECT 客户, AGG(未付金额)
 FROM MODEL
-GROUP BY customer
-HAVING AGG(outstanding) &gt; 0
+GROUP BY 客户
+HAVING AGG(未付金额) &gt; 0
 </code></pre>
 <p><strong>要点</strong>：<code>rank</code> 返回 <code>RANK() OVER (ORDER BY measure DESC)</code>。<code>rank_asc</code> 按值的升序返回排名。使用 <code>-d</code> 在排名之前移除时间维度或其他维度。将排名修饰符与 <code>HAVING</code> 结合使用，可动态筛选排名前 N 的结果。</p>
 <h3 id="share-of-total-pot">占总计的比例（<code>pot</code>） <a class="section-link" aria-label="本节链接" href="#share-of-total-pot">#</a></h3>
-<pre><code class="language-sql">SELECT product, AGG(sales) AS sales,
-       AGG(sales, 'rank') AS sales_rank,
-       AGG({sales: pot}) AS share_of_total
+<pre><code class="language-sql">SELECT 商品, AGG(销售额) AS 销售额,
+       AGG(销售额, 'rank') AS 销售排名,
+       AGG({销售额: pot}) AS 占总额的比例
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY product
-ORDER BY AGG(sales, 'rank')
+GROUP BY 商品
+ORDER BY AGG(销售额, 'rank')
 </code></pre>
 <p><code>pot</code> 等于 <code>measure / grand</code>。帕累托分析中的累计占比不是系统 fn 宏。如需计算累计总和，请在 Model Query SQL 中使用 <code>OVER()</code>。</p>
 <h3 id="rfm-amp-co-occurrence-patterns">RFM 与共现模式 <a class="section-link" aria-label="本节链接" href="#rfm-amp-co-occurrence-patterns">#</a></h3>
@@ -141,64 +141,64 @@ ORDER BY AGG(sales, 'rank')
 <hr>
 <h2 id="dimension-without-dt">不含 dt 的维度 <a class="section-link" aria-label="本节链接" href="#dimension-without-dt">#</a></h2>
 <h3 id="sales-by-region-all-time">按地区统计销售额（全部期间） <a class="section-link" aria-label="本节链接" href="#sales-by-region-all-time">#</a></h3>
-<pre><code class="language-sql">SELECT region, AGG(sales) FROM MODEL GROUP BY region
+<pre><code class="language-sql">SELECT 地区, AGG(销售额) FROM MODEL GROUP BY 地区
 </code></pre>
 <h3 id="product-share-by-region-no-time-grouping">按地区统计产品占比（不按时间分组） <a class="section-link" aria-label="本节链接" href="#product-share-by-region-no-time-grouping">#</a></h3>
-<pre><code class="language-sql">SELECT region, product, AGG(sales)
+<pre><code class="language-sql">SELECT 地区, 商品, AGG(销售额)
 FROM MODEL
-GROUP BY region, product
+GROUP BY 地区, 商品
 </code></pre>
 <p><a id="using--d-to-drop-time"></a></p>
 <h3 id="selected-period-versus-all-history">选定期间与全部历史期间对比 <a class="section-link" aria-label="本节链接" href="#selected-period-versus-all-history">#</a></h3>
 <pre><code class="language-sql">-- Selected month: retain the month filter.
-SELECT region, product, AGG(sales) AS selected_period_sales
+SELECT 地区, 商品, AGG(销售额) AS 所选期间销售额
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY region, product
+GROUP BY 地区, 商品
 
 -- All history: remove the month filter, retain the same grouping.
-SELECT region, product, AGG(sales) AS all_time_sales
+SELECT 地区, 商品, AGG(销售额) AS 历年销售额
 FROM MODEL
-GROUP BY region, product
+GROUP BY 地区, 商品
 </code></pre>
 <p>请将这些查询分别运行。<code>-d</code> 移除分组，但保留时间筛选条件。这些查询不按时间分组，因此不需要 <code>-d: dim_dt</code>。如果在此处对单个指标应用移除时间分组层级的操作，用于验证的编译器会拒绝编译。若要仅针对分母移除分组和筛选条件，请参阅<a href="reference--modifiers.zh.html">维度和筛选修饰符</a>。</p>
 <h3 id="period-conversion">期间转换 <a class="section-link" aria-label="本节链接" href="#period-conversion">#</a></h3>
 <pre><code class="language-sql">SELECT dt_year,
-       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter_at_quarter_grain
+       AGG({销售额: {dim_dt as quarter: pp}}) as 上季季度销售额
 FROM MODEL
 WHERE dt_year = '2024-01-01'
 GROUP BY dt_year
 </code></pre>
 <p><code>dim_dt as quarter</code> 表示即使查询按年分组，<code>pp</code> 修饰符也按季度计算。系统先在转换后的层级（季度）计算指标，再将结果联接回查询层级（年）。</p>
 <blockquote>
-<p><strong>注意：</strong>只有转换后的时间层级与查询的时间分组层级不同时，<code>dim_dt as &lt;grain&gt;</code> 才有用。如果查询已按 <code>dt_quarter</code> 分组，编译器会拒绝多余的 <code>dim_dt as quarter: pp</code>。此时请直接使用 <code>AGG({sales: pp})</code>。</p>
+<p><strong>注意：</strong>只有转换后的时间层级与查询的时间分组层级不同时，<code>dim_dt as &lt;grain&gt;</code> 才有用。如果查询已按 <code>dt_quarter</code> 分组，编译器会拒绝多余的 <code>dim_dt as quarter: pp</code>。此时请直接使用 <code>AGG({销售额: pp})</code>。</p>
 </blockquote>
 <p><strong>要点</strong>：没有时间筛选条件的查询会分析全部历史数据。<code>-d: dim_dt</code> 会从指标的计算维度中移除当前生效的时间字段。要指定当前生效的时间字段，请使用 <code>dim_dt</code>，不要指定 <code>dt_date</code> 之类的具体字段。<code>-d</code> 只能移除当前查询分组中包含的维度字段。<code>dim_dt as &lt;grain&gt;</code> 会更改单个指标引用的时间计算层级。混用时请注意，同一行中不按时间分组的指标与按时间分组的指标可能无法直接比较。</p>
 <hr>
 <h2 id="comparison-patterns">比较模式 <a class="section-link" aria-label="本节链接" href="#comparison-patterns">#</a></h2>
 <h3 id="period-over-period">与上一期间对比 <a class="section-link" aria-label="本节链接" href="#period-over-period">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales) as this_month, AGG(sales, 'pp') as last_month
+<pre><code class="language-sql">SELECT AGG(销售额) as 本月销售额, AGG(销售额, 'pp') as 上月销售额
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
 </code></pre>
 <h3 id="growth-rate-by-account">按账户统计增长率 <a class="section-link" aria-label="本节链接" href="#growth-rate-by-account">#</a></h3>
-<pre><code class="language-sql">SELECT account, AGG(revenue) as current, AGG(revenue, 'pp') as previous
+<pre><code class="language-sql">SELECT 账户, AGG(收入) as current, AGG(收入, 'pp') as previous
 FROM MODEL
 WHERE dt_month = date(current_date, 'start of month')
-GROUP BY account
-HAVING AGG(revenue, 'pop') &gt; 0.10  -- 10% growth
+GROUP BY 账户
+HAVING AGG(收入, 'pop') &gt; 0.10  -- 10% growth
 </code></pre>
 <h3 id="year-to-date-vs-last-year">年初至今与去年对比 <a class="section-link" aria-label="本节链接" href="#year-to-date-vs-last-year">#</a></h3>
-<pre><code class="language-sql">SELECT AGG(sales, 'ytd') as this_ytd, AGG(sales, 'ytd', 'ya') as last_ytd
+<pre><code class="language-sql">SELECT AGG(销售额, 'ytd') as 本年累计, AGG(销售额, 'ytd', 'ya') as 上年同期累计
 FROM MODEL
 WHERE dt_date = date(current_date)
 GROUP BY dt_date
 </code></pre>
 <hr>
 <h2 id="conditional-counts">条件计数 <a class="section-link" aria-label="本节链接" href="#conditional-counts">#</a></h2>
-<p>修饰符适用于<strong>指标</strong>，不适用于列。请在条件表达式中对指标使用 <code>{+d: product}</code>：</p>
-<pre><code class="language-sql">-- Count of products with per-product sales above threshold
-SELECT DISTINCTCOUNTIF(product, AGG({sales: {+d: product}}) &gt; 1000) as prod_cnt FROM MODEL
+<p>修饰符适用于<strong>指标</strong>，不适用于列。请在条件表达式中对指标使用 <code>{+d: 商品}</code>：</p>
+<pre><code class="language-sql">-- Count of products with per-商品 销售额 above threshold
+SELECT DISTINCTCOUNTIF(商品, AGG({销售额: {+d: 商品}}) &gt; 1000) as 商品数 FROM MODEL
 </code></pre>
-<p>也可以在 <code>.dml</code> 中用 <code>formula: 'DISTINCTCOUNTIF({product}, {sales: {+d: product}} &gt; 1000)'</code> 定义一次，再用 <code>SELECT AGG(high_sales_product_count) FROM MODEL</code> 查询。</p>
+<p>也可以在 <code>.dml</code> 中用 <code>formula: 'DISTINCTCOUNTIF({商品}, {销售额: {+d: 商品}} &gt; 1000)'</code> 定义一次，再用 <code>SELECT AGG(high_sales_product_count) FROM MODEL</code> 查询。</p>
 </main></body></html>

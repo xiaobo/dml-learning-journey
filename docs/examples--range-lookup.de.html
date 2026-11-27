@@ -1,5 +1,5 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ein am Ereignisdatum gültiges Attribut nachschlagen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet [valid_from, valid_to). Der"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Ein am Ereignisdatum gültiges Attribut nachschlagen · DML"><meta property="og:description" content="Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet [valid_from, valid_to). Der"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="examples--range-lookup.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--range-lookup-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--range-lookup-zh.html">中文</a></header><main><h1 id="look-up-an-attribute-valid-at-an-event-date">Ein am Ereignisdatum gültiges Attribut nachschlagen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#check-the-boundary-date">Das Datum an der Intervallgrenze prüfen</a></li><li><a href="#put-the-lookup-rule-in-the-model">Die Zuordnungsregel im Modell definieren</a></li><li><a href="#detect-an-overlap-and-repair-it">Eine Überschneidung erkennen und beheben</a></li><li><a href="#run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen</a></li></ul></details>
-<p>Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet <code>[valid_from, valid_to)</code>. Der Beginn ist eingeschlossen, das Ende ausgeschlossen.</p>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ein am Ereignisdatum gültiges Attribut nachschlagen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet [GültigAb, GültigBis). Der "><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Ein am Ereignisdatum gültiges Attribut nachschlagen · DML"><meta property="og:description" content="Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet [GültigAb, GültigBis). Der "><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--range-lookup.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="examples--range-lookup.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--range-lookup-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--range-lookup-zh.html">中文</a></header><main><h1 id="look-up-an-attribute-valid-at-an-event-date">Ein am Ereignisdatum gültiges Attribut nachschlagen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#check-the-boundary-date">Das Datum an der Intervallgrenze prüfen</a></li><li><a href="#put-the-lookup-rule-in-the-model">Die Zuordnungsregel im Modell definieren</a></li><li><a href="#detect-an-overlap-and-repair-it">Eine Überschneidung erkennen und beheben</a></li><li><a href="#run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen</a></li></ul></details>
+<p>Ordnen Sie das Ereignisdatum einem Gültigkeitsintervall desselben Objekts zu, das sich mit keinem anderen Gültigkeitsintervall dieses Objekts überschneidet. Dieses Beispiel verwendet <code>[GültigAb, GültigBis)</code>. Der Beginn ist eingeschlossen, das Ende ausgeschlossen.</p>
 <h2 id="check-the-boundary-date">Das Datum an der Intervallgrenze prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#check-the-boundary-date">#</a></h2>
 <table>
 <thead>
@@ -25,31 +25,39 @@
 </tbody></table>
 <p>Der 1. Februar gehört zu Feb, nicht zu Jan. Die Abfrage gibt Feb 20 und Jan 10 zurück und liefert genau einen Treffer pro Ereignis.</p>
 <h2 id="put-the-lookup-rule-in-the-model">Die Zuordnungsregel im Modell definieren <a class="section-link" aria-label="Link zum Abschnitt" href="#put-the-lookup-rule-in-the-model">#</a></h2>
-<p>Das Ziel deklariert <code>dimension: [id, 'range(valid_from, valid_to)']</code>. Lassen Sie den Intervallausdruck in Anführungszeichen stehen, damit sein Komma Teil eines einzigen YAML-Listeneintrags bleibt. Der Ausdruck <code>pk({id}, {event_date}).{D}.label</code> des Fakts liefert zuerst die Objekt-ID und dann das Ereignisdatum.</p>
+<p>Das Ziel deklariert <code>dimension: [Kennung, 'range(GültigAb, GültigBis)']</code>. Lassen Sie den Intervallausdruck in Anführungszeichen stehen, damit sein Komma Teil eines einzigen YAML-Listeneintrags bleibt. Der Ausdruck <code>pk({Kennung}, {dt_date}).{Zuordnung}.Bezeichnung</code> des Fakts liefert zuerst die Objekt-ID und dann das Ereignisdatum.</p>
 <details><summary>Vollständige Datei: range/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-D:
+Zuordnung:
   type: dataset
   table: DIM
-  dimension: [id, 'range(valid_from, valid_to)']
+  dimension: [Kennung, 'range(GültigAb, GültigBis)']
   columns:
-    id:
-    valid_from:
-    valid_to:
-    label:
-F:
+    Kennung:
+      abbr: id
+    GültigAb:
+      abbr: valid_from
+    GültigBis:
+      abbr: valid_to
+    Bezeichnung:
+      abbr: label
+Verkäufe:
   type: dataset
   table: FACT
-  dimension: [fid]
+  dimension: [Verkaufsnummer]
   columns:
-    fid:
-    id:
-    event_date:
-    amount:
-    label: 'pk({id}, {event_date}).{D}.label'
+    Verkaufsnummer:
+      abbr: fid
+    Kennung:
+      abbr: id
+    dt_date:
+      abbr: event_date
+    Bestellwert:
+      abbr: amount
+    Bezeichnung: 'pk({Kennung}, {dt_date}).{Zuordnung}.Bezeichnung'
   measures:
-    sales: SUM({amount})
+    Umsatz: SUM({Bestellwert})
 </code></pre>
 </details>
 <details><summary>Vollständige Datei: range/setup.sql</summary>
@@ -59,7 +67,7 @@ F:
 </details>
 <details><summary>Vollständige Datei: range/normal.sql</summary>
 
-<pre><code class="language-sql">SELECT label, AGG(sales) FROM MODEL GROUP BY label ORDER BY label
+<pre><code class="language-sql">SELECT Bezeichnung, AGG(Umsatz) FROM MODEL GROUP BY Bezeichnung ORDER BY Bezeichnung
 </code></pre>
 </details>
 
@@ -69,6 +77,6 @@ F:
 <p>Korrigieren Sie die fachliche Regel für die Gültigkeit. Wenn Sie willkürlich einen der passenden Datensätze beibehalten, verdecken Sie den Konflikt.</p>
 <p><a hreflang="zh" href="examples--range-lookup-zh.html">中文</a> · <a href="examples--index.de.html">Beispiele</a> · <a href="how-to--compile-and-validate.de.html">Kompilieren und prüfen</a></p>
 <h2 id="run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen <a class="section-link" aria-label="Link zum Abschnitt" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
-<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-13) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
+<p><a href="task-examples.de.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
+<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-27) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
 </main></body></html>

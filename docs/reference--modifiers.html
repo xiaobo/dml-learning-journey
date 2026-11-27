@@ -53,7 +53,7 @@
 <td><code>pop</code>, <code>yoy</code>, <code>mom</code></td>
 </tr>
 </tbody></table>
-<p><strong>Stacking</strong>: Modifiers can be stacked: <code>AGG(sales, &#39;ytd&#39;, &#39;ya&#39;)</code> = year-to-date one year ago. See <a href="reference--modifiers.html#25-modifier-stacking">modifier stacking</a> for full stacking semantics.</p>
+<p><strong>Stacking</strong>: Modifiers can be stacked: <code>AGG(sales, 'ytd', 'ya')</code> = year-to-date one year ago. See <a href="reference--modifiers.html#25-modifier-stacking">modifier stacking</a> for full stacking semantics.</p>
 <p><strong>Time context:</strong> time modifiers require a resolvable <code>dim_dt</code> and must satisfy their macro prerequisites. Grouping by a time field is the clearest form; a time filter can also supply the context. See <a href="reference--model-query-sql.html#35-group-by-rules">Model Query time rules</a>.</p>
 <p><strong>Period conversion</strong> with <code>dim_dt</code>:</p>
 <pre><code class="language-sql">SELECT dt_year, dt_quarter,
@@ -95,7 +95,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 </tr>
 <tr>
 <td>Atomic measure + source-column predicate</td>
-<td>Supported; e.g. <code>{sales: {+f: &quot;status = 1&quot;}}</code> emits a conditional SUM</td>
+<td>Supported; e.g. <code>{sales: {+f: "status = 1"}}</code> emits a conditional SUM</td>
 </tr>
 <tr>
 <td>Simple composite + source-column predicate</td>
@@ -106,19 +106,19 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <td>Supported in the checked AVG rollup; inspect that filtering precedes the fine-grain aggregation</td>
 </tr>
 <tr>
-<td>Predicate referencing an aggregate measure, e.g. <code>&quot;{cnt} &gt; 3&quot;</code></td>
+<td>Predicate referencing an aggregate measure, e.g. <code>"{cnt} &gt; 3"</code></td>
 <td>Rejected with <code>cannot use +f modifier with measure(s)</code>; use <a href="reference--examples--aggregation.html#26a-fine-grain-filter-then-d-roll-up">fine-grain filter examples</a></td>
 </tr>
 </tbody></table>
 <p>A bare filtered atomic reference evaluates at the current query grain. Preserve <code>+d</code> and an explicit outer aggregate when the question concerns per-entity values (especially AVG, MIN, MAX, COUNT). Conditional SUM with no accepted input returns NULL; an explicit <code>ELSE 0</code> is a different contract. Input gating can retain groups containing only rejected rows.</p>
-<p><strong>Window function fn-macros</strong> generate <code>rank() over (...)</code> in compiled SQL. Use them in Model Query SQL as <code>AGG(measure, &#39;rank&#39;)</code> or <code>AGG({measure: rank})</code>. See <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> for the full list and formulas.</p>
+<p><strong>Window function fn-macros</strong> generate <code>rank() over (...)</code> in compiled SQL. Use them in Model Query SQL as <code>AGG(measure, 'rank')</code> or <code>AGG({measure: rank})</code>. See <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> for the full list and formulas.</p>
 <p><strong>Filter modifier</strong> in <code>.dml</code> (column target):</p>
 <pre><code class="language-yaml">completed_sales:
     type: measure
-    formula: &quot;{amount: {+f: {status: &#39;completed&#39;}}}&quot;
+    formula: "{amount: {+f: {status: 'completed'}}}"
 </code></pre>
 <p><strong>Filter modifier</strong> in Model Query SQL:</p>
-<pre><code class="language-sql">SELECT AGG(sales, &#39;+f&#39;, region = &#39;North&#39;) FROM MODEL
+<pre><code class="language-sql">SELECT AGG(sales, '+f', region = 'North') FROM MODEL
 </code></pre>
 <p><a id="23-dimension-modifiers"></a></p>
 <h2 id="dimension-modifiers">Dimension modifiers <a class="section-link" aria-label="Link to section" href="#dimension-modifiers">#</a></h2>
@@ -226,7 +226,7 @@ FROM MODEL GROUP BY dt_year, dt_quarter
 <p><strong>Example: brand share within each store</strong>, retaining selected brands in the numerator but including all brands in the denominator:</p>
 <pre><code class="language-yaml">brand_share:
     type: measure
-    formula: &#39;divide({sales} * 100.0, {sales: {-df: brand_id}})&#39;
+    formula: 'divide({sales} * 100.0, {sales: {-df: brand_id}})'
 </code></pre>
 <p>At query grain <code>[store_id, brand_id]</code>, a query filter on <code>brand_id</code> applies to the numerator. The denominator removes that field and its filter, retaining the store context.</p>
 <p><strong>Dependency tracing</strong>: The compiler traces <code>pk()</code> chain dependencies. A filter on <code>客户标准名称</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) is blocked when <code>store_id</code> is <code>-df</code>&#39;d, because the column depends on <code>store_id</code>.</p>
@@ -268,7 +268,7 @@ FROM MODEL GROUP BY category, product
 </code></pre>
 <pre><code class="language-sql">-- Remove time grouping while retaining the selected time filter
 SELECT region, AGG({sales: {-d: dim_dt}}) as selected_period_sales
-FROM MODEL WHERE dt_month = date(current_date, &#39;start of month&#39;)
+FROM MODEL WHERE dt_month = date(current_date, 'start of month')
 GROUP BY region
 </code></pre>
 <p><a id="23b--d-on-composite-measures-with-full-outer-join"></a></p>
@@ -279,56 +279,56 @@ GROUP BY region
 <h2 id="combining-modifiers">Combining modifiers <a class="section-link" aria-label="Link to section" href="#combining-modifiers">#</a></h2>
 <p>Modifiers can be combined in a single reference, subject to <a href="reference--modifiers.html#same-dimension-d-with--d--df--illegal">same-dimension conflicts</a> and <a href="reference--semantics.html#44-modifier-schema-constraints">modifier constraints</a>:</p>
 <pre><code class="language-yaml"># Filter + dimension (outer SUM rolls +d back to query grain)
-formula: &#39;SUM({sales: {+d: customer, +f: {region: &quot;North&quot;}}})&#39;
+formula: 'SUM({sales: {+d: customer, +f: {region: "North"}}})'
 
 # Legal: +d and -d on DIFFERENT fields
-formula: &#39;SUM({sales: {+d: customer, -d: brand}})&#39;
+formula: 'SUM({sales: {+d: customer, -d: brand}})'
 
 # Rejected: the same field cannot appear in +d and -d or -df in one modifier object:
-# formula: &#39;SUM({sales: {+d: store_id, -d: store_id}})&#39;
-# formula: &#39;{sales: {+d: store_id, -df: store_id}}&#39;
+# formula: 'SUM({sales: {+d: store_id, -d: store_id}})'
+# formula: '{sales: {+d: store_id, -df: store_id}}'
 
 # Time + dimension
-formula: &#39;{sales: {+d: customer}, yoy}&#39;
+formula: '{sales: {+d: customer}, yoy}'
 
 # Dimension + rank
-formula: &#39;{sales: {-d: dim_dt, rank}}&#39;
+formula: '{sales: {-d: dim_dt, rank}}'
 
 # Dimension + filter removal (ratio with deferred filters)
-formula: &#39;divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})&#39;
+formula: 'divide({sales: {-df: brand_id}} * 100.0, {sales: {-df: [store_id, brand_id]}})'
 
 # Filter + absolute grain (e.g., ratio numerator/denominator at different grains)
-formula: &#39;DIVIDE({sales: {+f: &quot;status = 1&quot;, dimension: [prod_id]}}, {sales: {+f: &quot;status = 1&quot;, dimension: [prod_id, store_id]}})&#39;
+formula: 'DIVIDE({sales: {+f: "status = 1", dimension: [prod_id]}}, {sales: {+f: "status = 1", dimension: [prod_id, store_id]}})'
 </code></pre>
 <p>In Model Query SQL:</p>
 <pre><code class="language-sql">SELECT product,
        AGG({sales: {-d: dt_date, rank}}) as all_time_rank
 FROM MODEL
-WHERE dt_month = date(current_date, &#39;start of month&#39;)
+WHERE dt_month = date(current_date, 'start of month')
 GROUP BY product
 </code></pre>
 <p><a id="25-modifier-stacking"></a></p>
 <h2 id="modifier-stacking">Modifier stacking <a class="section-link" aria-label="Link to section" href="#modifier-stacking">#</a></h2>
 <p>Multiple macros can be stacked in one expression. The compiler creates intermediate measures automatically, mirroring what a user would write manually.</p>
-<p><strong>Syntax</strong>: <code>{measure: {macro1, macro2, macro3}}</code> or <code>AGG(measure, &#39;macro1&#39;, &#39;macro2&#39;, &#39;macro3&#39;)</code></p>
+<p><strong>Syntax</strong>: <code>{measure: {macro1, macro2, macro3}}</code> or <code>AGG(measure, 'macro1', 'macro2', 'macro3')</code></p>
 <p>For an ordinary sequential stack, the first macro transforms the original measure and the next macro applies to that intermediate. Time modifiers combined with multi-branch functions also transform their branches, as described below. A sequential example is:</p>
-<pre><code class="language-yaml"># Stacking: yoy creates intermediate &quot;sales_yoy&quot;, then rank applies to it
+<pre><code class="language-yaml"># Stacking: yoy creates intermediate "sales_yoy", then rank applies to it
 # Equivalent to:
 #   sales_yoy:
 #     type: measure
-#     formula: &#39;{sales: yoy}&#39;
+#     formula: '{sales: yoy}'
 #   ...then: {sales_yoy: rank}
-q_col: &#39;{sales: {yoy, rank}}&#39;
+q_col: '{sales: {yoy, rank}}'
 </code></pre>
 <p><strong>Time modifiers and multi-path functions:</strong> the verified build pushes <code>ytd</code> into the current and comparison branches of <code>yoy</code>. Both <code>{sales: {yoy, ytd}}</code> and <code>{sales: {ytd, yoy}}</code> emitted identical SQL for the recorded monthly probe: YTD sales divided by prior-year YTD sales, minus one. This is not a sum of monthly growth rates. Do not sort modifiers by category or infer a different meaning solely from generated intermediate names.</p>
-<p>Grain-changing macros such as <code>firstday</code> have additional multi-path constraints. Compile and inspect the exact combination before relying on it. Quote authored <code>+f</code> expressions containing YAML indicators, for example <code>{sales: {+f: &quot;amount &gt; 5&quot;, yoy}}</code>.</p>
+<p>Grain-changing macros such as <code>firstday</code> have additional multi-path constraints. Compile and inspect the exact combination before relying on it. Quote authored <code>+f</code> expressions containing YAML indicators, for example <code>{sales: {+f: "amount &gt; 5", yoy}}</code>.</p>
 <p><strong>Intermediate measure reuse.</strong> Before creating a new intermediate, the compiler searches existing measures for one with the same formula (by expanded formula, shorthand, or map form). If a user-defined or previously generated measure matches, it is reused. This avoids redundant intermediates and lets users name their intermediates deliberately.</p>
 <p><strong>Name collision handling.</strong> If the auto-generated intermediate name (e.g. <code>sales_yoy</code>) collides with an existing measure that has a <em>different</em> formula, the compiler appends a numeric suffix: <code>sales_yoy__2</code>, <code>sales_yoy__3</code>, etc.</p>
 <p><strong>Compatibility:</strong> macro prerequisites, time context, allowed dimensions, duplicate keys, and reaggregation determine whether a stack is valid. Compile the exact stack on the target build. Two range macros and repeated macro keys are not general composition mechanisms. If an error remains after expressing the stages explicitly, keep the diagnostic and reproducer; a manually named intermediate does not establish equivalence by itself.</p>
 <h2 id="修饰符速查">修饰符速查 <a class="section-link" aria-label="Link to section" href="#修饰符速查">#</a></h2>
 <p>修饰符只调整本次指标引用。用 <code>{sales: {+f: {status: completed}}}</code> 限定该指标的输入。用 <code>+d</code> 增加计算分组，再用外层聚合回到报表分组。用 <code>-d</code> 移除分组维度，用 <code>-df</code> 同时移除该维度上的相关筛选。期间修饰符 <code>pp</code> 取上期，<code>pop</code> 算环比，<code>ytd</code> 算年初至今。多个修饰符按声明顺序应用。</p>
 <h2 id="time-modifiers-on-composite-ratios">Time modifiers on composite ratios <a class="section-link" aria-label="Link to section" href="#time-modifiers-on-composite-ratios">#</a></h2>
-<p>A time modifier can apply directly to a named composite measure. For example, define <code>gross_margin_ytd</code> with <code>formula: &#39;{gross_margin: ytd}&#39;</code>, where <code>gross_margin</code> divides gross profit by revenue. The cumulative context recalculates the dependencies and then the ratio; it does not add monthly percentages. See the <a href="reference--examples--composable-metrics.html">complete profitability example</a>. This verified ratio example is not a promise that arbitrary non-additive formulas can be rolled up without checking their semantics.</p>
+<p>A time modifier can apply directly to a named composite measure. For example, define <code>gross_margin_ytd</code> with <code>formula: '{gross_margin: ytd}'</code>, where <code>gross_margin</code> divides gross profit by revenue. The cumulative context recalculates the dependencies and then the ratio; it does not add monthly percentages. See the <a href="reference--examples--composable-metrics.html">complete profitability example</a>. This verified ratio example is not a promise that arbitrary non-additive formulas can be rolled up without checking their semantics.</p>
 <h2 id="fixed-axis-totals-and-output-membership">Fixed-axis totals and output membership <a class="section-link" aria-label="Link to section" href="#fixed-axis-totals-and-output-membership">#</a></h2>
-<p>The <a href="examples--fixed-total-en.html">fixed-total example</a> uses an ordinary <code>month</code> field and a query grouped by region and month. With January selected, <code>-d: month</code> retains January in the denominator while <code>-df: month</code> includes both fixture months. Both queries still output only January rows. This fixture does not establish dynamic pivot axes, subtotal-level predicates or arbitrary <code>dim_dt</code> removal behavior.</p>
+<p>The <a href="examples--fixed-total-en.html">fixed-total example</a> uses the date field <code>dt_month</code> and a query grouped by region and month. With January selected, <code>-d: dt_month</code> retains January in the denominator while <code>-df: dt_month</code> includes both fixture months. Both queries still output only January rows. This fixture does not establish dynamic pivot axes, subtotal-level predicates or arbitrary <code>dim_dt</code> removal behavior.</p>
 </main></body></html>

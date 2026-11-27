@@ -27,58 +27,62 @@
 <td align="right">30</td>
 </tr>
 </tbody></table>
-<p>因此 a 的占比可以是10/10，也可以是10/30；需要由业务口径决定。未筛选月份时，两种地区总额都是30，a 的一月、二月各占自己的销售额。</p>
+<p>只看一月时，地区 a 的销售占比可以是 10/10，也可以是 10/30，取决于分母是否随月份筛选。不筛选月份时，两种算法的分母都是 30：一月占 10/30，二月占 20/30。</p>
 <h2 id="保存两种口径再改变查询">保存两种口径，再改变查询 <a class="section-link" aria-label="本节链接" href="#保存两种口径再改变查询">#</a></h2>
-<p>模型定义 <code>region_selected: &#39;{sales: {-d: month}}&#39;</code> 和 <code>region_all_months: &#39;{sales: {-df: month}}&#39;</code>。本例 <code>month</code> 是普通字符串字段，值按 ISO 日期排列，不是自动时间上下文 <code>dim_dt</code>。</p>
+<p>模型定义 <code>地区所选月份销售额: &#39;{销售额: {-d: dt_month}}&#39;</code> 和 <code>地区全部月份销售额: &#39;{销售额: {-df: dt_month}}&#39;</code>。时间维度 <code>dt_month</code> 对应原表中保存日期的列 <code>month</code>。</p>
 <details><summary>完整文件 / Complete file: fixed/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+销售记录:
   type: dataset
   table: FACT
-  dimension: [id]
+  dimension: [编号]
   columns:
-    id:
-    region:
-    month:
-    amount:
+    编号:
+      abbr: id
+    地区:
+      abbr: region
+    dt_month:
+      abbr: month
+    订单金额:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-region_selected:
+    销售额: SUM({订单金额})
+地区所选月份销售额:
   type: measure
-  formula: &#39;{sales: {-d: month}}&#39;
-region_all_months:
+  formula: '{销售额: {-d: dt_month}}'
+地区全部月份销售额:
   type: measure
-  formula: &#39;{sales: {-df: month}}&#39;
-running_sales:
+  formula: '{销售额: {-df: dt_month}}'
+累计销售额:
   type: measure
-  formula: &#39;SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)&#39;
+  formula: 'SUM({销售额}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,&#39;a&#39;,&#39;2024-01-01&#39;,10),(2,&#39;a&#39;,&#39;2024-02-01&#39;,20),(3,&#39;b&#39;,&#39;2024-01-01&#39;,30);
+<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month DATE,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/january.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE month=&#39;2024-01-01&#39; GROUP BY region,month ORDER BY region,month
+<pre><code class="language-sql">SELECT 地区, dt_month, AGG(销售额), AGG(地区所选月份销售额), AGG(地区全部月份销售额) FROM MODEL WHERE dt_month='2024-01-01' GROUP BY 地区,dt_month ORDER BY 地区,dt_month
 </code></pre>
 </details>
 <details><summary>完整文件 / Complete file: fixed/unfiltered.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, month ORDER BY region,month
+<pre><code class="language-sql">SELECT 地区, dt_month, AGG(销售额), AGG(地区所选月份销售额), AGG(地区全部月份销售额) FROM MODEL GROUP BY 地区, dt_month ORDER BY 地区,dt_month
 </code></pre>
 </details>
 
 <p>模型不变，查询决定报表显示哪些月份。验证器比较所有列与完整行集合，确保 <code>-df</code> 没有把二月输出行带回来。</p>
 <h2 id="哪些结论不能直接推广">哪些结论不能直接推广？ <a class="section-link" aria-label="本节链接" href="#哪些结论不能直接推广">#</a></h2>
-<p>这里是已知的地区、月份分组，不是动态透视轴或自动小计 API。普通字段的结果也不能代替对 <code>dim_dt</code> 时间粒度移除的验证。对于时间查询，先看<a href="examples--time-context-zh.html">累计 KPI 的上下文</a>，不要照搬字段替换。</p>
+<p>这里是已知的地区、月份分组，不是动态透视轴或自动小计 API。对于时间查询，先看<a href="examples--time-context-zh.html">累计 KPI 的上下文</a>，不要照搬字段替换。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
-<p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
+<p><a href="task-examples.zh.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p>本例在 dmlc 0.3.16、2026-11-27 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--fixed-total-en.html">English</a></p>
 </main></body></html>

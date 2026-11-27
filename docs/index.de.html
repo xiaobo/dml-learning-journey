@@ -1,17 +1,17 @@
-<!doctype html><html data-search-title="DML: Gemeinsame Kennzahlen für Berichte" lang="de" data-course-locale="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML: Gemeinsame Kennzahlen für Berichte</title><link rel="stylesheet" href="official.css?v=6a3ff6e4bb"><script src="legacy-routes.js?v=c11d9693ef"></script><meta name="description" content="Definieren Sie Nettoumsatz oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen "><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/index.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/index.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/index.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/index.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/index.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/index.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML: Gemeinsame Kennzahlen für Berichte"><meta property="og:description" content="Definieren Sie Nettoumsatz oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen "><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/index.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">Zum Inhalt</a><header><div class="bar"><a class="brand" href="index.de.html">DML</a><nav><a data-text="docs" href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a></nav><div class="tools"><a href="search.de.html">Dokumentation durchsuchen</a><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a></div></div></header><main id="main"><div class="wrap">
+<!doctype html><html data-search-title="DML: Gemeinsame Kennzahlen für Berichte" lang="de" data-course-locale="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML: Gemeinsame Kennzahlen für Berichte</title><link rel="stylesheet" href="official.css?v=6a3ff6e4bb"><script src="legacy-routes.js?v=c11d9693ef"></script><meta name="description" content="Definieren Sie Nettoerlös oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen B"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/index.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/index.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/index.zh.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/index.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/index.de.html"><link rel="alternate" hreflang="x-default" href="https://xiaobo.github.io/dml-learning-journey/index.en.html"><meta property="og:type" content="website"><meta property="og:title" content="DML: Gemeinsame Kennzahlen für Berichte"><meta property="og:description" content="Definieren Sie Nettoerlös oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen B"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/index.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">Zum Inhalt</a><header><div class="bar"><a class="brand" href="index.de.html">DML</a><nav><a data-text="docs" href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a></nav><div class="tools"><a href="search.de.html">Dokumentation durchsuchen</a><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a></div></div></header><main id="main"><div class="wrap">
 <div class="hero" id="metric-theatre">
 <h1>Eine Formel für mehrere Berichte</h1>
-<p>Definieren Sie Nettoumsatz oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen Bericht aus und vergleichen Sie die Ergebnisse.</p>
+<p>Definieren Sie Nettoerlös oder Bruttomarge in DML. Monats- und Regionalberichte können dieselbe Formel verwenden. Sehen Sie sich das erzeugte SQL an oder führen Sie es mit denselben Daten wie Ihren bisherigen Bericht aus und vergleichen Sie die Ergebnisse.</p>
 <div class="actions"><a href="docs.de.html" class="button">Dokumentation lesen</a><a href="learn.de.html" class="secondary">An Beispielen lernen</a></div></div>
 <section id="refunds">
 <h2>Was ändert sich, wenn Sie Erstattungen abziehen?</h2>
-<p>Der Monatsbericht fasst Bestellungen nach Monat zusammen, der Regionalbericht nach Region. Beide verwenden den Nettoumsatz. Ändern Sie eine Zeile im Modell und führen Sie beide Abfragen erneut aus.</p>
+<p>Der Monatsbericht fasst Bestellungen nach Monat zusammen, der Regionalbericht nach Region. Beide verwenden den Nettoerlös. Ändern Sie eine Zeile im Modell und führen Sie beide Abfragen erneut aus.</p>
 <div class="split">
 <div class="formula">
 <div>Bisherige Formel</div>
-<pre><code>net_revenue: SUM({amount})</code></pre>
+<pre><code>Nettoerlös: SUM({Bestellwert})</code></pre>
 <div>Erstattungen abziehen</div>
-<pre><code>net_revenue: SUM({amount}) - SUM({refund})</code></pre></div>
+<pre><code>Nettoerlös: SUM({Bestellwert}) - SUM({Erstattungsbetrag})</code></pre></div>
 <div>
 <table>
 <thead><tr><th>Bericht</th><th>Monat oder Region</th><th>Vorher</th><th>Nach Abzug der Erstattungen</th></tr></thead>
@@ -19,25 +19,39 @@
 <tr><td>Monatsbericht</td><td>Februar</td><td>230</td><td>200</td></tr>
 <tr><td>Regionalbericht</td><td>Ost</td><td>250</td><td>210</td></tr>
 <tr><td>Regionalbericht</td><td>West</td><td>80</td><td>80</td></tr></tbody></table></div></div>
-<p>Beide Erstattungen betreffen die Region Ost: 10 im Januar und 30 im Februar. In der Region West gab es keine Erstattung. Der Nettoumsatz im Westen bleibt bei 80.</p>
+<p>Beide Erstattungen betreffen die Region Ost: 10 im Januar und 30 im Februar. In der Region West gab es keine Erstattung. Der Nettoerlös im Westen bleibt bei 80.</p>
 <details>
 <summary>Modell und beide Abfragen ansehen</summary>
 <pre><code>dialect: duckdb
-Sales:
+Bestellungen:
   type: dataset
   table: orders
-  dimension: [order_id]
+  dimension: [Bestellnummer]
   columns:
-    order_id:
-    report_month:
-    region:
-    amount:
-    refund:
+    Bestellnummer:
+      abbr: order_id
+    dt_month:
+      abbr: report_month
+    Region:
+      abbr: region
+    Bestellwert:
+      abbr: amount
+    Erstattungsbetrag:
+      abbr: refund
   measures:
-    net_revenue: SUM({amount})</code></pre>
+    Nettoerlös: SUM({Bestellwert})
+
+NettoerlösVormonat:
+  type: measure
+  formula: '{Nettoerlös: pp}'</code></pre>
 <h3>Monatsbericht</h3>
-<pre><code>SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC</code></pre>
+<pre><code>SELECT dt_month, AGG(Nettoerlös) FROM MODEL GROUP BY dt_month ORDER BY dt_month</code></pre>
 <h3>Regionalbericht</h3>
-<pre><code>SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region</code></pre><a href="task-examples.zip" class="">Ausführbare Beispiele herunterladen</a></details>
+<pre><code>SELECT Region, AGG(Nettoerlös) FROM MODEL GROUP BY Region ORDER BY Region</code></pre><h3>Februar mit Januar vergleichen</h3><p>Wählen Sie mit dt_month den Februar. Mit pp erhalten Sie für dieselbe Kennzahl den Nettoerlös des Vormonats. Nach Abzug der Erstattungen liegt der Nettoerlös im Februar bei 200 und im Januar bei 90.</p><pre><code>SELECT AGG(Nettoerlös), AGG(NettoerlösVormonat) FROM MODEL WHERE dt_month='2025-02-01'</code></pre><a href="task-examples.de.zip" class="">Ausführbare Beispiele herunterladen</a><p>Öffnen Sie im entpackten Projekt den Ordner net-revenue und führen Sie diese Befehle aus:</p><pre><code>dmlc -q setup.sql
+dmlc -q --model=model.dml monthly.sql
+dmlc -q --model=model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml monthly.sql
+dmlc -q --model=after-refunds/model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml previous-month.sql</code></pre></details>
 </section></div>
 <nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a><a lang="de" hreflang="de" href="index.de.html">Deutsch</a></nav></main></body></html>

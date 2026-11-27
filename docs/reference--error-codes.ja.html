@@ -202,7 +202,7 @@
 <li><strong>コード</strong>：VALIDATION_ERROR。<code>data.issues</code> で問題の種類を確認します。</li>
 <li><strong>よくある原因</strong>：データセットのディメンション値の完全な組み合わせが複数回出現するか、範囲に基づく検索で範囲が重複する複数のソース行が一致する可能性があります。</li>
 <li><strong>推奨される対処方法</strong>：ソースキー、データセットの <code>dimension:</code> のフィールドリスト、重複する範囲、またはソースデータを修正してから、<code>--validate</code> を再実行します。コンパイル済みの SQL に含まれる <code>DISTINCT</code>/<code>GROUP BY</code> を使っても、<code>DISTINCTCOUNT</code> 指標を使っても、<code>pk(...)</code> による検索結果が一意にならない問題は解消できません。</li>
-<li><strong>例</strong>：<code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+<li><strong>例</strong>：<code>Declared DML dataset dimension is not unique in dataset '注文明細' on this connection at validation time.</code></li>
 </ul>
 <p><a id="validation_query_failed"></a></p>
 <h4 id="execution_error-1">EXECUTION_ERROR</h4>

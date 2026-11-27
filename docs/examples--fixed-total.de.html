@@ -27,57 +27,61 @@
 <td align="right">30</td>
 </tr>
 </tbody></table>
-<p>Der Anteil für Region a kann daher je nach fachlicher Definition 10/10 oder 10/30 betragen. Ohne Monatsfilter beträgt die Summe in beiden Regionen jeweils 30. In den Januar- und Februarzeilen für Region a bleiben die Umsätze bei 10 bzw. 20.</p>
+<p>Der Anteil für Region a kann daher je nach fachlicher Definition 10/10 oder 10/30 betragen. Ohne Monatsfilter verwenden beide Berechnungen für Region a denselben Nenner von 30. Der Umsatz beträgt im Januar 10 und im Februar 20.</p>
 <h2 id="save-both-definitions-then-change-the-query">Beide Definitionen speichern und anschließend die Abfrage ändern <a class="section-link" aria-label="Link zum Abschnitt" href="#save-both-definitions-then-change-the-query">#</a></h2>
-<p>Das Modell definiert <code>region_selected: '{sales: {-d: month}}'</code> und <code>region_all_months: '{sales: {-df: month}}'</code>. <code>month</code> ist hier eine gewöhnliche Zeichenfolge im ISO-Format und kein automatischer Zeitkontext (<code>dim_dt</code>).</p>
+<p>Das Modell definiert <code>RegionsumsatzAuswahl: '{Umsatz: {-d: dt_month}}'</code> und <code>RegionsumsatzAlleMonate: '{Umsatz: {-df: dt_month}}'</code>. Die Zeitdimension <code>dt_month</code> liest das Datum aus der Tabellenspalte <code>month</code>.</p>
 <details><summary>Vollständige Datei: fixed/model.dml</summary>
 
 <pre><code class="language-yaml">dialect: duckdb
-F:
+Verkäufe:
   type: dataset
   table: FACT
-  dimension: [id]
+  dimension: [Kennung]
   columns:
-    id:
-    region:
-    month:
-    amount:
+    Kennung:
+      abbr: id
+    Region:
+      abbr: region
+    dt_month:
+      abbr: month
+    Bestellwert:
+      abbr: amount
   measures:
-    sales: SUM({amount})
-region_selected:
+    Umsatz: SUM({Bestellwert})
+RegionsumsatzAuswahl:
   type: measure
-  formula: '{sales: {-d: month}}'
-region_all_months:
+  formula: '{Umsatz: {-d: dt_month}}'
+RegionsumsatzAlleMonate:
   type: measure
-  formula: '{sales: {-df: month}}'
-running_sales:
+  formula: '{Umsatz: {-df: dt_month}}'
+LaufenderUmsatz:
   type: measure
-  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  formula: 'SUM({Umsatz}) OVER (ORDER BY {dt_month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
   dimensions:
-    - [month]
+    - [dt_month]
 </code></pre>
 </details>
 <details><summary>Vollständige Datei: fixed/setup.sql</summary>
 
-<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
+<pre><code class="language-sql">CREATE TABLE FACT(id INTEGER,region VARCHAR, month DATE,amount INTEGER); INSERT INTO FACT VALUES (1,'a','2024-01-01',10),(2,'a','2024-02-01',20),(3,'b','2024-01-01',30);
 </code></pre>
 </details>
 <details><summary>Vollständige Datei: fixed/january.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL WHERE month='2024-01-01' GROUP BY region,month ORDER BY region,month
+<pre><code class="language-sql">SELECT Region, dt_month, AGG(Umsatz), AGG(RegionsumsatzAuswahl), AGG(RegionsumsatzAlleMonate) FROM MODEL WHERE dt_month='2024-01-01' GROUP BY Region,dt_month ORDER BY Region,dt_month
 </code></pre>
 </details>
 <details><summary>Vollständige Datei: fixed/unfiltered.sql</summary>
 
-<pre><code class="language-sql">SELECT region, month, AGG(sales), AGG(region_selected), AGG(region_all_months) FROM MODEL GROUP BY region, month ORDER BY region,month
+<pre><code class="language-sql">SELECT Region, dt_month, AGG(Umsatz), AGG(RegionsumsatzAuswahl), AGG(RegionsumsatzAlleMonate) FROM MODEL GROUP BY Region, dt_month ORDER BY Region,dt_month
 </code></pre>
 </details>
 
 <p>Die Abfrage legt fest, welche Monate angezeigt werden, ohne das Modell zu ändern. Die Verifikation vergleicht jede Spalte und die vollständige Zeilenmenge und prüft, dass <code>-df</code> die Februarzeilen nicht wieder in die Ausgabe aufnimmt.</p>
 <h2 id="keep-the-demonstrated-boundary">Den Geltungsbereich des Beispiels beachten <a class="section-link" aria-label="Link zum Abschnitt" href="#keep-the-demonstrated-boundary">#</a></h2>
-<p>Dieses Beispiel verwendet bekannte Gruppierungen nach Region und Monat. Dynamische Pivot-Achsen und eine API für automatische Zwischensummen kommen dabei nicht zum Einsatz. Das Verhalten bei gewöhnlichen Feldern belegt nicht, dass die zeitliche Gruppierungsebene von <code>dim_dt</code> aufgehoben wird. Lesen Sie bei zeitbezogenen Abfragen den Abschnitt zum <a href="examples--time-context.de.html">kumulativen KPI-Kontext</a>, bevor Sie Felder austauschen.</p>
+<p>Dieses Beispiel gruppiert nach Region und Monat. Dynamische Pivot-Achsen und eine API für automatische Zwischensummen werden hier nicht behandelt. Wie ein Stichtag den Berichtszeitraum bestimmt, zeigt der <a href="examples--time-context.de.html">kumulative KPI</a>.</p>
 <p><a hreflang="zh" href="examples--fixed-total-zh.html">中文</a> · <a href="examples--index.de.html">Beispiele</a> · <a href="how-to--compile-and-validate.de.html">Kompilieren und prüfen</a></p>
 <h2 id="run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen <a class="section-link" aria-label="Link zum Abschnitt" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
-<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-13) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
+<p><a href="task-examples.de.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.ps1</code> wie in der Datei README beschrieben in PowerShell aus. dmlc muss über den Suchpfad erreichbar sein. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner an und speichert dort die Ergebnisse und Diagnosemeldungen.</p>
+<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-27) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
 </main></body></html>

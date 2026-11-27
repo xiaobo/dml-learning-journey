@@ -29,15 +29,29 @@ Sales:
   dimension: [order_id]
   columns:
     order_id:
-    report_month:
+      abbr: order_id
+    dt_month:
+      abbr: report_month
     region:
+      abbr: region
     amount:
+      abbr: amount
     refund:
+      abbr: refund
   measures:
-    net_revenue: SUM({amount})</code></pre>
+    net_revenue: SUM({amount})
+
+previous_month_net_revenue:
+  type: measure
+  formula: '{net_revenue: pp}'</code></pre>
 <h3>Monthly report</h3>
-<pre><code>SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC</code></pre>
+<pre><code>SELECT dt_month, AGG(net_revenue) FROM MODEL GROUP BY dt_month ORDER BY dt_month</code></pre>
 <h3>Regional report</h3>
-<pre><code>SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region</code></pre><a href="task-examples.zip" class="">Download the runnable examples</a></details>
+<pre><code>SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region</code></pre><h3>Compare February with January</h3><p>Use dt_month to select February. With pp, the same measure returns January’s net revenue. After refunds, February is 200 and January is 90.</p><pre><code>SELECT AGG(net_revenue), AGG(previous_month_net_revenue) FROM MODEL WHERE dt_month='2025-02-01'</code></pre><a href="task-examples.zip" class="">Download the runnable examples</a><p>In the extracted project, open the net-revenue folder and run:</p><pre><code>dmlc -q setup.sql
+dmlc -q --model=model.dml monthly.sql
+dmlc -q --model=model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml monthly.sql
+dmlc -q --model=after-refunds/model.dml regional.sql
+dmlc -q --model=after-refunds/model.dml previous-month.sql</code></pre></details>
 </section></div>
 <nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="index.en.html">English</a><a lang="zh" hreflang="zh" href="index.zh.html">中文</a><a lang="ja" hreflang="ja" href="index.ja.html">日本語</a><a lang="de" hreflang="de" href="index.de.html">Deutsch</a></nav></main></body></html>

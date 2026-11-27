@@ -5,9 +5,9 @@
 </blockquote>
 <p>Lesen Sie zuerst <a href="maz-prepare-refresh.de.html">„prepare und refresh auswählen: Parameter und Wiederherstellungsregeln“</a>.</p>
 <h2 id="a-quarterly-report-from-the-tutorial39s-sales-data">Ein Quartalsbericht auf Basis der Umsatzdaten aus dem Tutorial <a class="section-link" aria-label="Link zum Abschnitt" href="#a-quarterly-report-from-the-tutorial39s-sales-data">#</a></h2>
-<p>In Kapitel 12 des interaktiven Tutorials liest der Datensatz <code>FACT_SALES</code> aus <code>TABLE_SALES</code>, identifiziert jeden Verkauf anhand von <code>id</code>, erfasst den Monat in <code>dt_month</code> und berechnet den Umsatz als <code>SUM({amount})</code>. Verwenden Sie dieses Modell mit seinen 8 Quellzeilen weiter. Die Summe für Januar beträgt 70, die für Februar 100.</p>
+<p>In Kapitel 12 des interaktiven Tutorials liest der Datensatz <code>Verkaufspositionen</code> aus <code>TABLE_SALES</code>, identifiziert jeden Verkauf anhand von <code>VerkaufspositionID</code>, erfasst den Monat in <code>dt_month</code> und berechnet den Umsatz als <code>SUM({Verkaufsbetrag})</code>. Verwenden Sie dieses Modell mit seinen 8 Quellzeilen weiter. Die Summe für Januar beträgt 70, die für Februar 100.</p>
 <p>Diese Erweiterung fügt zwei materialisierte Ergebnisse und einen Quartalsbericht hinzu.</p>
-<p><code>TABLE_SALES</code> (Verkaufsdetails) → <code>SALES_MONTHLY</code> (Monatsumsatz) → <code>SALES_QUARTERLY</code> (Quartalsumsatz) → <code>quarterly_sales</code> (Bericht)</p>
+<p><code>TABLE_SALES</code> (Verkaufsdetails) → <code>SALES_MONTHLY</code> (Monatsumsatz) → <code>SALES_QUARTERLY</code> (Quartalsumsatz) → <code>Quartalsumsatz</code> (Bericht)</p>
 <p>Bei der Abfragevorbereitung wird zuerst geprüft, welche Monate in der vorgelagerten Materialisierung benötigt werden. Anschließend wird das Quartal in der nachgelagerten Materialisierung aufgebaut. Für jede Partition, die neu aufgebaut werden muss, erfolgt ein eigener Commit.</p>
 <h2 id="prepare-the-first-quarter">Das erste Quartal vorbereiten <a class="section-link" aria-label="Link zum Abschnitt" href="#prepare-the-first-quarter">#</a></h2>
 <ol>
@@ -45,16 +45,16 @@ OPTION (MAXRECURSION 0);
   type: materialize
   parameters: {dt_month: range}
   dimension: [dt_month]
-  measures: [sales]
+  measures: [Umsatz]
 
 SALES_QUARTERLY:
   type: materialize
   allows: [SALES_MONTHLY]
   parameters: {dt_quarter: range}
   dimension: [dt_quarter]
-  measures: [sales]
+  measures: [Umsatz]
 
-quarterly_sales:
+Quartalsumsatz:
   type: query
   allows: [SALES_QUARTERLY]
   filters:
@@ -62,7 +62,7 @@ quarterly_sales:
       range: ['2025-01-01', '2025-01-01']
   columns:
     dimension: [dt_quarter]
-    sales:
+    Umsatz:
 </code></pre>
 </details>
 
@@ -71,7 +71,7 @@ $compiled.data.setupSql    # setup_sql
 $compiled.data.prepareSql  # prepare_sql
 $compiled.data.sql         # sql
 </code></pre>
-<p>Kompilieren Sie das erweiterte Modell und installieren Sie die Materialisierungen und Abhängigkeiten mit dem generierten <code>setup_sql</code>. Führen Sie anschließend für <code>quarterly_sales</code> das zugehörige <code>prepare_sql</code> über eine Verbindung mit Autocommit aus. Es schließt die Vorbereitung und die Prüfung der tatsächlichen Datenbereitschaft ab und gibt <code>data_ready=1</code> zurück. Führen Sie dann die fachliche Abfrage aus <code>sql</code> für dieselbe Anfrage aus. Während der Wartezeit kann eine andere Verbindung den Status mit <code>prepare_status_sql</code> abfragen. Führen Sie die Abfrage bei einem Fehler oder bei Ablauf der Wartezeit noch nicht aus. Beheben Sie zuerst die Ursache und wiederholen Sie die reguläre Vorbereitung. Für die Sitzung auf SQL Server sind <code>IMPLICIT_TRANSACTIONS OFF</code> und <code>@@TRANCOUNT = 0</code> erforderlich. Die fachliche Abfrage bleibt ein SELECT oder ein CTE.</p>
+<p>Kompilieren Sie das erweiterte Modell und installieren Sie die Materialisierungen und Abhängigkeiten mit dem generierten <code>setup_sql</code>. Führen Sie anschließend für <code>Quartalsumsatz</code> das zugehörige <code>prepare_sql</code> über eine Verbindung mit Autocommit aus. Es schließt die Vorbereitung und die Prüfung der tatsächlichen Datenbereitschaft ab und gibt <code>data_ready=1</code> zurück. Führen Sie dann die fachliche Abfrage aus <code>sql</code> für dieselbe Anfrage aus. Während der Wartezeit kann eine andere Verbindung den Status mit <code>prepare_status_sql</code> abfragen. Führen Sie die Abfrage bei einem Fehler oder bei Ablauf der Wartezeit noch nicht aus. Beheben Sie zuerst die Ursache und wiederholen Sie die reguläre Vorbereitung. Für die Sitzung auf SQL Server sind <code>IMPLICIT_TRANSACTIONS OFF</code> und <code>@@TRANCOUNT = 0</code> erforderlich. Die fachliche Abfrage bleibt ein SELECT oder ein CTE.</p>
 <p>Für das erste Quartal liefert die Abfrage <strong>170</strong>. Für die Monate 1, 2 und 3 liegt jeweils ein Status für die Monatspartition vor. Die Partition für März war zu diesem Zeitpunkt leer. Das Beispiel schreibt die Namen der Materialisierungen vollständig in Großbuchstaben, um eine derzeitige Einschränkung bei der Registrierung verschachtelter Namen mit gemischter Groß- und Kleinschreibung auf SQL Server zu umgehen.</p>
 <h2 id="how-new-months-and-historical-corrections-are-handled">Wie neue Monate und Korrekturen an historischen Daten verarbeitet werden <a class="section-link" aria-label="Link zum Abschnitt" href="#how-new-months-and-historical-corrections-are-handled">#</a></h2>
 <p>Führen Sie die drei unten aufgeführten Datenänderungen der Reihe nach in der Übungsdatenbank aus. Führen Sie refresh nach dem Commit der Quelltransaktion aus. Beide Einfügevorgänge verwenden Regionen und Kunden aus dem Tutorial.</p>
@@ -94,7 +94,7 @@ $compiled.data.sql         # sql
 <td>Q2 liefert erstmals <strong>40</strong>.</td>
 </tr>
 <tr>
-<td>Den Februarumsatz für <code>id = 2</code> von 20 auf 25 korrigieren.</td>
+<td>Den Februarumsatz für <code>VerkaufspositionID = 2</code> von 20 auf 25 korrigieren.</td>
 <td>refresh für Februar auf <code>SALES_MONTHLY</code> ausführen. Standardmäßig werden dieser Monat und das betroffene Q1 aktualisiert.</td>
 <td>Q1 <strong>200 → 205</strong>, Q2 bleibt bei <strong>40</strong>.</td>
 </tr>

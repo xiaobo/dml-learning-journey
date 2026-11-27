@@ -13,7 +13,17 @@ GROUP BY id, region
 HAVING COUNT(*) &gt; 1;</code></pre>
 <table>
 <thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
-<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table><details><summary>Schlüsseldefinition im DML-Modell ansehen</summary><pre><code>Zuordnung:
+  type: dataset
+  table: DIM
+  dimension: [Kennung, Region]
+  columns:
+    Kennung:
+      abbr: id
+    Region:
+      abbr: region
+    Bezeichnung:
+      abbr: label</code></pre></details>
 </section>
 <section>
 <h2>Wie wirkt sich das auf den Bericht aus?</h2>

@@ -81,8 +81,8 @@
 </tbody></table>
 <p>A forced refresh first invalidates the required work and affected downstream; active demand is limited to this request&#39;s required-upstream closure, so other reports are not warmed as a side effect. A query&#39;s shared dependencies are reused by partition and parameter binding. Ordinary preparation reuses valid results for date partitions and whole tables when the parameter binding matches. Missing, invalid, expired, or re-bound results are rebuilt; to force recomputation, use force_update=1 explicitly. Source changes must still be reported reliably.</p>
 <pre><code class="language-sql">EXEC dbo.DML_PREPARE_MAZ
-    @_materialize=N&#39;SALES_QUARTERLY&#39;,
-    @_range_start=&#39;20250101&#39;, @_range_end=&#39;20250331&#39;, @_force_update=1;
+    @_materialize=N'SALES_QUARTERLY',
+    @_range_start='20250101', @_range_end='20250331', @_force_update=1;
 </code></pre>
 <h2 id="refresh-parameters-and-matching">refresh parameters and matching <a class="section-link" aria-label="Link to section" href="#refresh-parameters-and-matching">#</a></h2>
 <table>
@@ -145,19 +145,19 @@
 <pre><code class="language-sql">-- After the source write commits, register February and its materialized
 -- affected downstream, and call the runner.
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize=N&#39;SALES_MONTHLY&#39;,
-    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+    @_materialize=N'SALES_MONTHLY',
+    @_range_start='20250201', @_range_end='20250228';
 
 -- Invalidate every materialized range only; backfill later as queries need it.
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize=N&#39;%&#39;, @_match=N&#39;like&#39;, @_invalidate_only=1;
+    @_materialize=N'%', @_match=N'like', @_invalidate_only=1;
 </code></pre>
 <p><code>invalidate_only=1</code> does not run writers in this call. Runners already running on other connections may continue processing existing pending work.</p>
 <h2 id="choose-the-change-range-from-a-maz-or-a-source-table">Choose the change range from a Maz or a source table <a class="section-link" aria-label="Link to section" href="#choose-the-change-range-from-a-maz-or-a-source-table">#</a></h2>
 <p>When you know the source table, you can select every direct entry point registered for it:</p>
 <pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
-    @_source=N&#39;dbo.TABLE_SALES&#39;,
-    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+    @_source=N'dbo.TABLE_SALES',
+    @_range_start='20250201', @_range_end='20250228';
 </code></pre>
 <p>A source identity mark proves date-and-partition equality and then the range is applied as given; without proof, existing downstream ranges are covered conservatively and cold date partitions are not guessed. Unknown or cross-database sources, missing schema, giving both source and materialize, and source combined with like all raise errors. Source selection does not auto-detect source changes.</p>
 <p>When selecting by Maz, a source table with several independent direct entry points must report every entry point. Refreshing the quarter alone will not discover an unreported stale monthly summary; when you do not know at which layer the cache is stale, use the query&#39;s forced prepare.</p>
@@ -216,7 +216,7 @@ FROM dbo.DML_MAZ_PROGRESS;
 </tbody></table>
 <p>Physical partitions are deduplicated by Maz, partition type, and date; a whole table with several parameter bindings counts as one partition. A partition completed several times in the window still counts once, and a completion followed by another invalidation also counts in the window&#39;s completed count. Rates therefore measure partition coverage, not actual writer executions.</p>
 <p>With no pending work the estimate is 0. It is NULL when additions meet or exceed completions, or when the runner has stopped while work remains. Partitions with different costs and the moving window both affect the estimate.</p>
-<p>The progress view cannot decide whether a particular query is ready. It reads committed state, publication transactions can cause brief waits, and it provides no cross-partition snapshot. For other windows, the standalone Java helper <code>MazRunner.progressSql(&quot;mssql&quot;, 300)</code> can generate read-only SQL for the last five minutes; executing that SQL directly needs STATE read permission.</p>
+<p>The progress view cannot decide whether a particular query is ready. It reads committed state, publication transactions can cause brief waits, and it provides no cross-partition snapshot. For other windows, the standalone Java helper <code>MazRunner.progressSql("mssql", 300)</code> can generate read-only SQL for the last five minutes; executing that SQL directly needs STATE read permission.</p>
 </details>
 
 <h2 id="interruption-and-retry">Interruption and retry <a class="section-link" aria-label="Link to section" href="#interruption-and-retry">#</a></h2>
@@ -249,7 +249,7 @@ FROM dbo.DML_MAZ_PROGRESS;
 <td>The outcome is unknown; re-check state instead of assuming the commit did not happen</td>
 </tr>
 </tbody></table>
-<pre><code class="language-sql">-- Continue the current database&#39;s registered backlog without
+<pre><code class="language-sql">-- Continue the current database's registered backlog without
 -- re-invalidating completed partitions.
 EXEC dbo.DML_REFRESH_MAZ;
 </code></pre>

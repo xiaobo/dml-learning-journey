@@ -81,8 +81,8 @@
 </tbody></table>
 <p>强刷先使必要工作及受影响下游失效，主动需求限定于本次必要上游闭包；其他报表不会因此全部预热。Query 的共享依赖按分片和参数复用。普通准备对日期片和整表都复用有效且参数绑定相同的结果。缺失、无效、过期或绑定变化时重建；需要强制重算时显式使用 force_update=1。源变化仍须可靠通知。</p>
 <pre><code class="language-sql">EXEC dbo.DML_PREPARE_MAZ
-    @_materialize=N&#39;SALES_QUARTERLY&#39;,
-    @_range_start=&#39;20250101&#39;, @_range_end=&#39;20250331&#39;, @_force_update=1;
+    @_materialize=N'SALES_QUARTERLY',
+    @_range_start='20250101', @_range_end='20250331', @_force_update=1;
 </code></pre>
 <h2 id="refresh-参数与全匹配">refresh 参数与全匹配 <a class="section-link" aria-label="本节链接" href="#refresh-参数与全匹配">#</a></h2>
 <table>
@@ -144,19 +144,19 @@
 <p>SQL LIKE 使用 %、_ 和方括号模式，~ 是转义符；* 不是全匹配。exact 不展开通配符。未知精确名称报错，模式零匹配返回 0 个目标。精确名称最多 128 个 UTF-16 代码单元，模式最多 512 个，不能截断后执行。</p>
 <pre><code class="language-sql">-- 源写入提交后，登记二月及已物化的受影响下游，并调用 runner。
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize=N&#39;SALES_MONTHLY&#39;,
-    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+    @_materialize=N'SALES_MONTHLY',
+    @_range_start='20250201', @_range_end='20250228';
 
 -- 全部已物化范围仅失效，随后按查询需要补齐。
 EXEC dbo.DML_REFRESH_MAZ
-    @_materialize=N&#39;%&#39;, @_match=N&#39;like&#39;, @_invalidate_only=1;
+    @_materialize=N'%', @_match=N'like', @_invalidate_only=1;
 </code></pre>
 <p><code>invalidate_only=1</code> 不由本次调用执行 writer。其他连接已经运行的 runner 可以继续处理既有待办。</p>
 <h2 id="从-maz-或源表选择变化范围">从 Maz 或源表选择变化范围 <a class="section-link" aria-label="本节链接" href="#从-maz-或源表选择变化范围">#</a></h2>
 <p>知道源表时可按已登记来源选择全部直接入口：</p>
 <pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
-    @_source=N&#39;dbo.TABLE_SALES&#39;,
-    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+    @_source=N'dbo.TABLE_SALES',
+    @_range_start='20250201', @_range_end='20250228';
 </code></pre>
 <p>来源 identity 标记证明日期与目标分片等同时按范围处理；无法证明时保守覆盖已有范围，不猜测冷日期分片。未知或跨库来源、缺少 schema、同时给出 source 与 materialize，以及 source 配合 like 都报错。来源选择不自动侦测源变化。</p>
 <p>按 Maz 选择时，源表有多个独立直接入口须通知全部入口。只 refresh 季度不会发现未通知的旧月汇总；不知道缓存在哪层陈旧时，使用 Query 的强制 prepare。</p>
@@ -215,7 +215,7 @@ FROM dbo.DML_MAZ_PROGRESS;
 </tbody></table>
 <p>物理分片按 Maz、分片类型和日期去重，整表的多个参数绑定只算一个分片。同一分片在窗口内完成多次仍只计一次，完成后再次失效也计入窗口完成数。因此速度表示分片覆盖数，不是实际 writer 执行次数。</p>
 <p>没有待办时，预计秒数为 0。新增速度达到或超过完成速度，或 runner 已停止但仍有待办时，预计秒数为 NULL。成本不同的分片和移动窗口都会影响估算。</p>
-<p>进展视图不能判断某个 Query 是否就绪。它读取已提交状态，发布事务可能造成短暂等待，不提供跨分片快照。需要其他窗口时，独立 Java 接口 <code>MazRunner.progressSql(&quot;mssql&quot;, 300)</code> 可生成最近五分钟的只读 SQL；直接执行该 SQL 需要 STATE 读取权限。</p>
+<p>进展视图不能判断某个 Query 是否就绪。它读取已提交状态，发布事务可能造成短暂等待，不提供跨分片快照。需要其他窗口时，独立 Java 接口 <code>MazRunner.progressSql("mssql", 300)</code> 可生成最近五分钟的只读 SQL；直接执行该 SQL 需要 STATE 读取权限。</p>
 </details>
 
 <h2 id="中断与重试">中断与重试 <a class="section-link" aria-label="本节链接" href="#中断与重试">#</a></h2>

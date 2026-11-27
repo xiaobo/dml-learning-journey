@@ -23,15 +23,15 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 <pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --output=result.json --replace
 </code></pre>
 <p>For lint or compile evidence, capture stdout separately from stderr. A Node.js argument array avoids shell quoting and gives explicit UTF-8 decoding. Save this script as <code>compile.cjs</code> beside the model and query.</p>
-<pre><code class="language-javascript">const fs = require(&#39;node:fs&#39;);
-const { spawnSync } = require(&#39;node:child_process&#39;);
+<pre><code class="language-javascript">const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
 const result = spawnSync(process.argv[2], [
-	&#39;--compile&#39;, &#39;--strict&#39;, &#39;query.sql&#39;, &#39;--model=model.dml&#39;,
-	&#39;--json&#39;, &#39;--artifacts=gen&#39;
-], { encoding: &#39;utf8&#39;, cwd: __dirname });
+	'--compile', '--strict', 'query.sql', '--model=model.dml',
+	'--json', '--artifacts=gen'
+], { encoding: 'utf8', cwd: __dirname });
 if (result.error) throw result.error;
-fs.writeFileSync(&#39;compile.stdout.json&#39;, result.stdout);
-fs.writeFileSync(&#39;compile.stderr.txt&#39;, result.stderr);
+fs.writeFileSync('compile.stdout.json', result.stdout);
+fs.writeFileSync('compile.stderr.txt', result.stderr);
 const report = JSON.parse(result.stdout);
 console.log(JSON.stringify({ processExit: result.status, report }, null, 2));
 process.exitCode = result.status ?? 1;
@@ -68,8 +68,34 @@ process.exitCode = result.status ?? 1;
 <h2 id="practice-a-modeldata-contract-repair">Practice a model/data contract repair <a class="section-link" aria-label="Link to section" href="#practice-a-modeldata-contract-repair">#</a></h2>
 <p>Run the <a href="examples--compound-key-en.html">compound-key</a> and <a href="examples--range-lookup-en.html">effective-range</a> examples to observe normal validation, a deliberate duplicate or overlap failure, and repaired validation followed by result comparison. This catches inconsistencies between the declared key and observed data before trusting a lookup result. Validation and query execution are separate operations; a successful check is not a same-snapshot or future-uniqueness guarantee.</p>
 <h2 id="inspect-a-change-or-recover-an-existing-query">Inspect a change or recover an existing query <a class="section-link" aria-label="Link to section" href="#inspect-a-change-or-recover-an-existing-query">#</a></h2>
-<p>For a supported variance analysis, use <code>--explain-change</code> with a named measure, baseline and explicit time scope. Read the required inputs from <code>dmlc --advanced-help</code>. For a model containing <code>net_revenue</code>, <code>dt_month</code> and <code>region</code>, the checked invocation is:</p>
-<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+<p>For a supported variance analysis, use <code>--explain-change</code> with a named measure, baseline and explicit time scope. Read the required inputs from <code>dmlc --advanced-help</code>. For a model containing <code>net_sales</code>, <code>dt_month</code> and <code>region</code>, the checked invocation is:</p>
+<p>In an empty DuckDB database, use the following four sales. Each amount is the sale after refunds. Save the statements as <code>monthly-sales.sql</code> and run <code>dmlc -q monthly-sales.sql</code> using the DuckDB connection.</p>
+<pre><code class="language-sql">CREATE TABLE monthly_sales (id INTEGER, dt_month DATE, region VARCHAR, net_amount INTEGER);
+INSERT INTO monthly_sales VALUES
+  (1, DATE '2025-01-01', 'North', 100),
+  (2, DATE '2025-01-01', 'South', 200),
+  (3, DATE '2025-02-01', 'North', 300),
+  (4, DATE '2025-02-01', 'South', 100);
+</code></pre>
+<p>Save the following model as <code>model.dml</code> in the example directory. Then compare February with January.</p>
+<pre><code class="language-yaml">dialect: duckdb
+transactions:
+    type: dataset
+    table: monthly_sales
+    dimension: [id]
+    columns:
+        id:
+            abbr: id
+        dt_month:
+            abbr: dt_month
+        region:
+            abbr: region
+        net_amount:
+            abbr: net_amount
+    measures:
+        net_sales: SUM({net_amount})
+</code></pre>
+<pre><code class="language-powershell">dmlc --explain-change --measure=net_sales --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
 </code></pre>
 <p>The comparison fixture gives baseline 300, current 400, and region contributions +200 and -100. These are fixture values, not the amounts in every example on this site. Check the baseline and current values before interpreting ranked dimensions. Contributions and surprise scores help select an investigation; they do not establish causes or eliminate confounding factors.</p>
 <p>For an existing SQL query, <code>--to-dml</code> can generate a draft model and query.</p>
