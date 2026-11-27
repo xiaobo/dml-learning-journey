@@ -38,7 +38,7 @@
 </code></pre>
 <p>誤解を招く正規名をコメントで補わないでください。恒常的な制約は <code>description:</code> に記載し、メタデータを読み取るツールで表示できるようにします。</p>
 <h2 id="use-the-source-column-name">元のテーブルの列名を指定する <a class="section-link" aria-label="この節へのリンク" href="#use-the-source-column-name">#</a></h2>
-<p>データセットが 1 つのテーブルを参照する場合は、<code>table:</code> に元のテーブル名、<code>abbr:</code> に元の列名を指定します。クエリでは業務上の名前を使います。次の例のように、指標にも内部で使う略称を指定できます。</p>
+<p>データセットが 1 つのテーブルを参照する場合は、<code>table:</code> にテーブル名を指定します。DML は、モデルのフィールドと同じ名前の列を読み取ります。名前が異なる場合は、<code>abbr:</code> に元のテーブルの列名を指定します。クエリではモデルのフィールド名を使います。次の例では、指標に内部で使う略称を付けています。</p>
 <pre><code class="language-yaml">税抜仕入額:
   abbr: SaleAmountNoTax
   type: measure

@@ -183,7 +183,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.resultTitle": "示例结果",
     "capstone.queryNote": "查询复用这些定义，分组和筛选由报表控件决定。",
     "identity.fields": "<code>id</code> = 销售编号，<code>region</code> = 地区，<code>amount</code> = 销售金额。",
-    "model.notation": "<code>{amount}</code> 引用模型中的“销售金额”。字段的 <code>abbr</code> 对应源表中的列名。",
+    "model.notation": "<code>{amount}</code> 引用“销售金额”。模型字段名和源表列名不同时，用 <code>abbr</code> 指定源表列名。",
     "filters.notation": "<strong>修饰符（modifier）</strong>告诉模型，这一次如何计算引用的度量。<code>{sales: ...}</code> 的冒号前是度量，后面是修饰设置。这里 <code>+f</code> 增加“已完成”状态筛选，sales 原定义保持不变。",
     "common.modelCodeLabel": "model.dml · 度量定义",
     "common.queryCodeLabel": "query.sql · 报表问题",

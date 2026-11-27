@@ -1,7 +1,7 @@
 {
   "version": "dmlc version 0.3.16\nBuild:    2026-11-27 06:20:08 Z\nSystem:   windows/amd64\nLicenses:  dmlc --licenses",
   "sha256": "311c9925e4183ce857dcfb1935c296fe2bcc070457ae7ca622fcbf6d21999f6c",
-  "modelSha256": "68ba064a736e62e3720e409a260d5f90fee73a980430a403c5ef2cc6d6e81076",
+  "modelSha256": "067090bed56e5978f962c878b7b31c3ec02f89c2190210b1cdb0d801dcbe2c5f",
   "scope": "SQL Server strict compilation; DuckDB examples executed separately.",
   "cases": [
     {

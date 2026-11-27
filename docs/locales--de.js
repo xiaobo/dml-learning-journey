@@ -183,7 +183,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.resultTitle": "Beispielergebnis",
     "capstone.queryNote": "Die Abfrage verwendet diese Definitionen. Die Berichtseinstellungen bestimmen Gruppierung und Filter.",
     "identity.fields": "<code>id</code> = Verkaufs-ID, <code>region</code> = Verkaufsregion, <code>amount</code> = Verkaufsbetrag.",
-    "model.notation": "<code>{amount}</code> verweist auf das Modellfeld für den Verkaufsbetrag. Unter <code>abbr</code> steht der Spaltenname aus der Quelltabelle.",
+    "model.notation": "<code>{amount}</code> verweist auf den Verkaufsbetrag. Wenn das Feld im Modell anders heißt als die Spalte in der Quelltabelle, geben Sie den Spaltennamen unter <code>abbr</code> an.",
     "filters.notation": "Ein <strong>Modifikator</strong> legt fest, wie diese Referenz berechnet wird. In <code>{sales: ...}</code> steht vor dem Doppelpunkt die Kennzahl, dahinter die Modifikatoreinstellung. Hier ergänzt <code>+f</code> den Filter status = completed; die Definition von sales bleibt unverändert.",
     "common.modelCodeLabel": "model.dml · Kennzahldefinition",
     "common.queryCodeLabel": "query.sql · Berichtsfrage",

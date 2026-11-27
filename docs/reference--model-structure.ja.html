@@ -60,7 +60,7 @@
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;source_column&gt; # column name in the source table
+            abbr: &lt;source_column&gt; # optional when the names match
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -166,7 +166,7 @@
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>データセットの列には、元のテーブルの列名を指定します。指標には内部で使う略称を指定できます。クエリ結果には業務上の名前か、<code>AS</code> で指定した別名が表示されます。</td>
+<td>データセットのフィールド名と元のテーブルの列名が異なる場合に、元の列名を指定します。指標には内部で使う略称を指定できます。クエリ結果には業務上の名前か、<code>AS</code> で指定した別名が表示されます。</td>
 </tr>
 <tr>
 <td><code>description</code></td>

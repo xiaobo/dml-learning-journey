@@ -38,7 +38,7 @@ active_pharmacies:
 </code></pre>
 <p>Do not use a comment to compensate for a misleading canonical name. Put a durable limitation in <code>description:</code> so tools that read metadata can expose it.</p>
 <h2 id="use-the-source-column-name">Use the source column name <a class="section-link" aria-label="Link to section" href="#use-the-source-column-name">#</a></h2>
-<p>For a dataset based on one table, set <code>table:</code> to the source table and <code>abbr:</code> to the source column. Readers use the business name in queries. A measure can also have a short internal name, as shown below.</p>
+<p>For a dataset based on one table, use <code>table:</code> to name the table. DML reads the column with the same name as the model field. If the names differ, use <code>abbr:</code> to give the source column name. In queries, use the model field name. The example below gives a measure a short internal name.</p>
 <pre><code class="language-yaml">purchases_excl_tax:
   abbr: SaleAmountNoTax
   type: measure

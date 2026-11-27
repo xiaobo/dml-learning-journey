@@ -21,11 +21,8 @@ FACT_SALES:
   dimension: [id]
   columns:
     id:
-      abbr: id
     region:
-      abbr: region
     amount:
-      abbr: amount
   measures:
     sales: SUM({amount})
     cnt: COUNT(1)

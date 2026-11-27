@@ -6,15 +6,10 @@ FACT_PROFITABILITY:
   dimension: [id]
   columns:
     id:
-      abbr: id
     region:
-      abbr: region
     dt_month:
-      abbr: dt_month
     revenue_amount:
-      abbr: revenue_amount
     cost_amount:
-      abbr: cost_amount
   measures:
     net_revenue: SUM({revenue_amount})
     sales_cost: SUM({cost_amount})

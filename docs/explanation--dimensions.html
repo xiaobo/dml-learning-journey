@@ -94,13 +94,9 @@
     dimension: [order_id, line_id]
     columns:
         order_id:
-            abbr: order_id
         line_id:
-            abbr: line_id
         product_id:
-            abbr: product_id
         net_amount:
-            abbr: net_amount
 </code></pre>
 <p>Uniqueness applies to the complete <code>[order_id, line_id]</code> value combination. <code>order_id</code> may repeat across lines, and <code>line_id</code> may repeat across orders, while the complete dataset dimension remains unique.</p>
 <p>Do not replace the physical identity with a repeatable business grouping. If the source contains several ledger entries for the same <code>[account_id, invoice_id]</code>, that list is not a valid dataset dimension even when reports commonly group by it. Use the physical entry key as the dataset dimension and <code>[account_id, invoice_id]</code> as a query or materialization dimension.</p>

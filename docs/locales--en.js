@@ -183,7 +183,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.resultTitle": "Illustrative result",
     "capstone.queryNote": "The query reuses these definitions. Report controls set its grouping and filters.",
     "identity.fields": "<code>id</code> = sale ID, <code>region</code> = sales region, <code>amount</code> = sale amount.",
-    "model.notation": "<code>{amount}</code> refers to the sale amount in the model. Its <code>abbr</code> gives the column name in the source table.",
+    "model.notation": "<code>{amount}</code> refers to the sale amount. DML reads the source column with the same name. Use <code>abbr</code> when the names differ.",
     "filters.notation": "A <strong>modifier</strong> tells the model how to calculate this reference. In <code>{sales: ...}</code>, the measure comes before the colon and the modifier settings after it. Here <code>+f</code> adds the completed-status filter; the sales definition stays unchanged.",
     "common.modelCodeLabel": "model.dml · measure definition",
     "common.queryCodeLabel": "query.sql · report question",

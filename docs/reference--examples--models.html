@@ -37,15 +37,10 @@ GROUP BY category, product
         - region
     columns:
         dt_date:
-            abbr: dt_date
         product:
-            abbr: product
         region:
-            abbr: region
         transaction_id:          # internal dimension, not for analysis
-            abbr: transaction_id
         amount:
-            abbr: amount
 </code></pre>
 <p><code>transaction_id</code> can still be used in <code>+d</code> modifiers but won&#39;t clutter the MODEL table.</p>
 <h3 id="moving-annual-total-mat">Moving annual total (MAT) <a class="section-link" aria-label="Link to section" href="#moving-annual-total-mat">#</a></h3>
@@ -79,7 +74,6 @@ GROUP BY product
         - dt_date
     columns:
         dt_date:
-            abbr: dt_date
         has_data:
             source: '1'
 </code></pre>
@@ -180,11 +174,8 @@ Dim Customer:
     dimension: [store_id]
     columns:
         store_id:
-            abbr: store_id
         store_name:
-            abbr: store_name
         hq_id:
-            abbr: hq_id
 
 Dim Org:
     type: dataset
@@ -192,9 +183,7 @@ Dim Org:
     dimension: [org_id]
     columns:
         org_id:
-            abbr: org_id
         emp_name:
-            abbr: emp_name
 
 # 2. Source fact dataset with pk() chain enrichment
 #    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
@@ -204,13 +193,9 @@ raw_sales:
     dimension: [dt_month, store_id, prod_id]
     columns:
         dt_month:
-            abbr: dt_month
         store_id:
-            abbr: store_id
         prod_id:
-            abbr: prod_id
         amt:
-            abbr: amt
         # pk() chain enrichment replaces LEFT JOINs
         store_name: pk({store_id}).{Dim Customer}.store_name
         hq_id: pk({store_id}).{Dim Customer}.hq_id
@@ -278,15 +263,10 @@ report:
         - customer
     columns:
         dt_date:
-            abbr: dt_date
         product:
-            abbr: product
         region:
-            abbr: region
         customer:
-            abbr: customer
         amount:
-            abbr: amount
 
 inventory:
     type: dataset
@@ -297,13 +277,9 @@ inventory:
         - warehouse
     columns:
         dt_date:
-            abbr: dt_date
         product:
-            abbr: product
         warehouse:
-            abbr: warehouse
         units:
-            abbr: units
 
 total_sales:
     type: measure

@@ -183,7 +183,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.resultTitle": "結果の例",
     "capstone.queryNote": "クエリはこれらの定義を再利用します。グループ化とフィルターはレポートの設定で決まります。",
     "identity.fields": "<code>id</code> = 売上ID、<code>region</code> = 地域、<code>amount</code> = 売上金額。",
-    "model.notation": "<code>{amount}</code> はモデルの「売上金額」を参照します。<code>abbr</code> には元テーブルの列名を指定します。",
+    "model.notation": "<code>{amount}</code> は「売上金額」を参照します。モデルのフィールド名と元のテーブルの列名が異なる場合は、<code>abbr</code> に元の列名を指定します。",
     "filters.notation": "<strong>修飾子（modifier）</strong>は、この参照をどう計算するかを指定します。<code>{sales: ...}</code> のコロンの前はメジャー、後は修飾設定です。ここでは <code>+f</code> で完了状態のフィルターを加え、sales の定義は変えません。",
     "common.modelCodeLabel": "model.dml · メジャー定義",
     "common.queryCodeLabel": "query.sql · レポートの問い",

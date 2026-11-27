@@ -183,11 +183,8 @@ avg_sales_per_trx:
     table: FACT_SALES
     columns:
         store_id:
-            abbr: store_id
         prod_id:
-            abbr: prod_id
         qty:
-            abbr: qty
         net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
     measures:
         sum_net_qty: 'SUM({net_qty})'

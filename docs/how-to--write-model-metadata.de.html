@@ -38,7 +38,7 @@ AktiveApotheken:
 </code></pre>
 <p>Kompensieren Sie einen irreführenden kanonischen Namen nicht mit einem Kommentar. Halten Sie eine dauerhaft geltende Einschränkung in <code>description:</code> fest, damit Werkzeuge, die Metadaten lesen, sie anzeigen können.</p>
 <h2 id="use-the-source-column-name">Den Spaltennamen aus der Quelltabelle angeben <a class="section-link" aria-label="Link zum Abschnitt" href="#use-the-source-column-name">#</a></h2>
-<p>Wenn ein Datensatz auf einer einzigen Tabelle beruht, geben Sie unter <code>table:</code> die Quelltabelle und unter <code>abbr:</code> die Quellspalte an. In Abfragen verwenden Sie den fachlichen Namen. Das folgende Beispiel zeigt einen kurzen internen Namen für eine Kennzahl.</p>
+<p>Wenn ein Datensatz aus einer Tabelle stammt, geben Sie unter <code>table:</code> den Tabellennamen an. DML liest die Spalte, die genauso heißt wie das Feld im Modell. Bei abweichenden Namen geben Sie unter <code>abbr:</code> den Spaltennamen aus der Quelltabelle an. In Abfragen verwenden Sie den Feldnamen aus dem Modell. Im folgenden Beispiel erhält eine Kennzahl einen kurzen internen Namen.</p>
 <pre><code class="language-yaml">EinkaufswertOhneSteuer:
   abbr: SaleAmountNoTax
   type: measure

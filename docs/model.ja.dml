@@ -23,7 +23,6 @@ dialect: mssql
     顧客:
       abbr: customer
     dt_month:
-      abbr: dt_month
     注文状態:
       abbr: status
     売上金額:

@@ -245,9 +245,7 @@ source can be selected, tooling must fail closed rather than choose an arbitrary
     dimension: [dt_date]
     columns:
         dt_date:
-            abbr: dt_date
         dt_week:
-            abbr: dt_week
         dt_month:
             source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
         dt_quarter:

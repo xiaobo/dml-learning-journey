@@ -37,7 +37,6 @@ GROUP BY 类别, 商品
         - 地区
     columns:
         dt_date:
-            abbr: dt_date
         商品:
             abbr: product
         地区:
@@ -79,7 +78,6 @@ GROUP BY 商品
         - dt_date
     columns:
         dt_date:
-            abbr: dt_date
         是否有数据:
             source: '1'
 </code></pre>
@@ -204,7 +202,6 @@ GROUP BY dt_month, 商品, 地区
     dimension: [dt_month, 门店编号, 商品编号]
     columns:
         dt_month:
-            abbr: dt_month
         门店编号:
             abbr: store_id
         商品编号:
@@ -278,7 +275,6 @@ report:
         - 客户
     columns:
         dt_date:
-            abbr: dt_date
         商品:
             abbr: product
         地区:
@@ -297,7 +293,6 @@ report:
         - 仓库
     columns:
         dt_date:
-            abbr: dt_date
         商品:
             abbr: product
         仓库:

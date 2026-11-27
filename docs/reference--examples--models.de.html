@@ -37,11 +37,9 @@ GROUP BY Kategorie, Produkt
         - Region
     columns:
         dt_date:
-            abbr: dt_date
         Produkt:
             abbr: product
         Region:
-            abbr: region
         TransaktionsID:          # internal dimension, not for analysis
             abbr: transaction_id
         Verkaufsbetrag:
@@ -79,7 +77,6 @@ GROUP BY Produkt
         - dt_date
     columns:
         dt_date:
-            abbr: dt_date
         DatenVorhanden:
             source: '1'
 </code></pre>
@@ -204,7 +201,6 @@ Verkaufsrohdaten:
     dimension: [dt_month, Filialnummer, Artikelnummer]
     columns:
         dt_month:
-            abbr: dt_month
         Filialnummer:
             abbr: store_id
         Artikelnummer:
@@ -278,11 +274,9 @@ report:
         - Kunde
     columns:
         dt_date:
-            abbr: dt_date
         Produkt:
             abbr: product
         Region:
-            abbr: region
         Kunde:
             abbr: customer
         Verkaufsbetrag:
@@ -297,7 +291,6 @@ Bestand:
         - Lager
     columns:
         dt_date:
-            abbr: dt_date
         Produkt:
             abbr: product
         Lager:

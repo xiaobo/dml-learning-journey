@@ -6,7 +6,6 @@ Regionsverzeichnis:
   dimension: [Region]
   columns:
     Region:
-      abbr: region
     Regionalleitung:
       abbr: manager
 
@@ -23,7 +22,6 @@ Verkaufspositionen:
     Kunde:
       abbr: customer
     dt_month:
-      abbr: dt_month
     Bestellstatus:
       abbr: status
     Verkaufsbetrag:

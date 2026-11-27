@@ -30,24 +30,17 @@ D:
   dimension: [id, region]
   columns:
     id:
-      abbr: id
     region:
-      abbr: region
     label:
-      abbr: label
 F:
   type: dataset
   table: FACT
   dimension: [fid]
   columns:
     fid:
-      abbr: fid
     id:
-      abbr: id
     region:
-      abbr: region
     amount:
-      abbr: amount
     label: 'pk({id}, {region}).{D}.label'
   measures:
     sales: SUM({amount})

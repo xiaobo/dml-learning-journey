@@ -11,7 +11,6 @@ ErlöseUndKosten:
       abbr: region
     Region: '{Quellregion}'
     dt_month:
-      abbr: dt_month
     Erlösbetrag:
       abbr: revenue_amount
     Kostenbetrag:

@@ -38,7 +38,7 @@
 </code></pre>
 <p>不要用注释弥补容易误导的规范名称。将长期适用的限制写入 <code>description:</code>，以便读取元数据的工具显示该限制。</p>
 <h2 id="use-the-source-column-name">对应源表列名 <a class="section-link" aria-label="本节链接" href="#use-the-source-column-name">#</a></h2>
-<p>如果数据集来自一张表，<code>table:</code> 填源表名，<code>abbr:</code> 填源表列名。写查询时用业务名称。指标也可以指定内部简称，见下例。</p>
+<p>数据集来自一张表时，用 <code>table:</code> 指定表名。DML 直接读取与模型字段同名的列。两者名称不同时，用 <code>abbr:</code> 指定源表列名。写查询时用模型字段名。下面的例子给指标起了一个内部简称。</p>
 <pre><code class="language-yaml">进货额(不含税):
   abbr: SaleAmountNoTax
   type: measure

@@ -76,9 +76,7 @@ HAVING SUM(total) &gt; 500      -- report-level HAVING
     table: FACT
     columns:
         product:
-            abbr: product
         region:
-            abbr: region
     measures:
         total: SUM(amount)
         cnt: COUNT(1)

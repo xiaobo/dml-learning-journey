@@ -35,26 +35,19 @@ D:
   dimension: [id, 'range(valid_from, valid_to)']
   columns:
     id:
-      abbr: id
     valid_from:
-      abbr: valid_from
     valid_to:
-      abbr: valid_to
     label:
-      abbr: label
 F:
   type: dataset
   table: FACT
   dimension: [fid]
   columns:
     fid:
-      abbr: fid
     id:
-      abbr: id
     dt_date:
       abbr: event_date
     amount:
-      abbr: amount
     label: 'pk({id}, {dt_date}).{D}.label'
   measures:
     sales: SUM({amount})

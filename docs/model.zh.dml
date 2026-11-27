@@ -23,7 +23,6 @@ dialect: mssql
     客户:
       abbr: customer
     dt_month:
-      abbr: dt_month
     订单状态:
       abbr: status
     销售金额:

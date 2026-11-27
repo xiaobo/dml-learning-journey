@@ -41,11 +41,8 @@
   dimension: [transaction_id]
   columns:
     transaction_id:
-      abbr: transaction_id
     amount:
-      abbr: amount
     discount:
-      abbr: discount
     net_amount: amount - discount
   measures:
     sales: SUM({net_amount})

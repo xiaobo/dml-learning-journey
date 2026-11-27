@@ -33,13 +33,9 @@
   dimension: [id]
   columns:
     id:
-      abbr: id
     customer:
-      abbr: customer
     region:
-      abbr: region
     amount:
-      abbr: amount
     customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
   measures:
     repeated_customer_amount: 'SUM({customer_amount})'

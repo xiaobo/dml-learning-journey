@@ -60,7 +60,7 @@ sales:
         col1:                    # direct column (pass-through)
         col2: expr               # calculated column (inline expression)
         col3:                    # full column definition
-            abbr: &lt;source_column&gt; # column name in the source table
+            abbr: &lt;source_column&gt; # optional when the names match
             description: &lt;text&gt;
             formula: expr        # calculated column (block form)
             # source: expr       # alternative to formula: data-source verification formula
@@ -167,7 +167,7 @@ sales:
 <tbody><tr>
 <td><code>abbr</code></td>
 <td><code>string</code></td>
-<td>For a dataset column, use the column name from the source table. For a measure, you can supply a short internal name. Query results use the business name or the alias you specify with <code>AS</code>.</td>
+<td>For a dataset column, set this to the source column name only when it differs from the model field name. For a measure, you can supply a short internal name. Query results use the business name or the alias you specify with <code>AS</code>.</td>
 </tr>
 <tr>
 <td><code>description</code></td>

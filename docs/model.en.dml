@@ -6,9 +6,7 @@ DIM_REGION:
   dimension: [region]
   columns:
     region:
-      abbr: region
     manager:
-      abbr: manager
 
 FACT_SALES:
   type: dataset
@@ -16,17 +14,11 @@ FACT_SALES:
   dimension: [id]
   columns:
     id:
-      abbr: id
     region:
-      abbr: region
     customer:
-      abbr: customer
     dt_month:
-      abbr: dt_month
     status:
-      abbr: status
     amount:
-      abbr: amount
     manager: 'pk(region).{DIM_REGION}.manager'
   measures:
     sales: SUM({amount})

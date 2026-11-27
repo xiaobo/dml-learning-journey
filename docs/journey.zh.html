@@ -176,7 +176,7 @@
     amount:
   measures:
     sales: SUM({amount})
-    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> 引用模型中的“销售金额”。字段的 <code>abbr</code> 对应源表中的列名。</p></div>
+    cnt: COUNT(1)</code></pre><p class="small notation-note" data-i18n="model.notation"><code>{amount}</code> 引用“销售金额”。模型字段名和源表列名不同时，用 <code>abbr</code> 指定源表列名。</p></div>
 		</section>
 		<section class="chapter" id="expressions" aria-labelledby="expressions-title">
 			<div>
@@ -318,11 +318,11 @@ dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen</
 		<details class="symbol-guide" id="symbol-guide"><summary data-i18n="recall.summary">带上这些符号 · 随手速查</summary><p data-i18n="recall.intro">读引用时，先看“哪个度量”，再看“这一次怎么算”。这些是记忆提示，不是额外语法或算术运算。</p><div class="lesson-table"><table><thead><tr><th data-i18n="recall.symbol">符号</th><th data-i18n="recall.meaning">回想它的含义</th></tr></thead><tbody><tr><th scope="row"><code>+f</code></th><td data-help-entry="+f"></td></tr><tr><th scope="row"><code>+d</code></th><td data-help-entry="+d"></td></tr><tr><th scope="row"><code>-d</code></th><td data-help-entry="-d"></td></tr><tr><th scope="row"><code>-df</code></th><td data-help-entry="-df"></td></tr><tr><th scope="row"><code>pp</code></th><td data-help-entry="pp"></td></tr><tr><th scope="row"><code>pop</code></th><td data-help-entry="pop"></td></tr><tr><th scope="row"><code>AGG</code></th><td data-help-entry="AGG"></td></tr><tr><th scope="row"><code>pk</code></th><td data-help-entry="pk"></td></tr><tr><th scope="row"><code>ISNULL</code></th><td data-help-entry="ISNULL"></td></tr></tbody></table></div><p data-i18n="recall.roles">源维度 <code>dimension: [id]</code> 标识源行；查询维度 <code>GROUP BY region</code> 决定结果分组；用 <code>+d: customer</code> 调整求值维度，计算中间客户总额。</p><p class="small" data-i18n="syntax.reference">需要更多形式时，查阅<a href="reference--modifiers.zh.html">修饰符规则与示例</a>。</p></details>
 		<footer><p data-i18n="common.text7">DML 定义，DMX 表达，Model Query 选择并分组。</p><p data-i18n="common.text8"><a href="compiler-observations.json">编译器记录</a> · <a href="explanation--visual-introduction.zh.html">原文字版介绍</a> · 可离线使用</p></footer>
 	<nav aria-label="Languages" class="language-links" style="display:flex;flex-wrap:wrap;gap:1em;margin:1.5em 0"><a lang="en" hreflang="en" href="journey.en.html">English</a><a lang="zh" hreflang="zh" href="journey.zh.html">中文</a><a lang="ja" hreflang="ja" href="journey.ja.html">日本語</a><a lang="de" hreflang="de" href="journey.de.html">Deutsch</a></nav></main>
-	<script src="locales--en.js?v=db09ce2b9b"></script>
-	<script src="locales--zh.js?v=bc1a5123de"></script>
-	<script src="locales--ja.js?v=b1e43c3c6a"></script>
-	<script src="locales--de.js?v=5f49627531"></script>
-	<script src="journey-samples.js?v=7f6a183b8b"></script><script src="course-i18n.js?v=01b5f8c7a5"></script>
+	<script src="locales--en.js?v=2ad4ee01c1"></script>
+	<script src="locales--zh.js?v=afe540e41c"></script>
+	<script src="locales--ja.js?v=9b0d570c4a"></script>
+	<script src="locales--de.js?v=b24e5d010b"></script>
+	<script src="journey-samples.js?v=f4c824c79b"></script><script src="course-i18n.js?v=01b5f8c7a5"></script>
 	<script>
 		(() => {
 			const i18n = window.SmallJourneyI18n, t = i18n.t;
