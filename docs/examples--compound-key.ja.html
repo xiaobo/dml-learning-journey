@@ -64,6 +64,6 @@ F:
 <p>検証では、宣言したキーで現在のデータの行を特定できるかを確認します。その後のデータ追加で新たな重複が生じることはあります。重複の原因に応じて元データやキーの定義を修正してください。最後に DISTINCT を追加しても、二重に集計された金額を正しく戻せるとは限りません。</p>
 <p><a hreflang="zh" href="examples--compound-key-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
 <h2 id="run-and-interpret-the-checks">検証を実行して結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#run-and-interpret-the-checks">#</a></h2>
-<p><a href="task-examples.zip">プロジェクト一式をダウンロード</a>し、README の手順に従って <code>verify.py</code> を実行します。必要なものは dmlc、Python、DuckDB です。練習用データベースは指定した新しい出力フォルダーに作成されます。実行結果と診断内容も同じ場所に保存されます。</p>
+<p><a href="task-examples.zip">プロジェクトをダウンロード</a>して、READMEの手順に従い、PowerShellで<code>verify.ps1</code>を実行します。dmlcにパスを通してください。新しい出力フォルダーに演習用データベースを作成し、結果と診断情報を保存します。</p>
 <p>この例は DuckDB で実行しました。使用したコンパイラのバージョンと検証結果は、ダウンロードに含まれる <code>verification-summary.json</code> で確認できます。検証とクエリの実行は別々に行われるため、その間にデータが変わる可能性があります。他のデータベースで使う場合は個別に確認してください。</p>
 </main></body></html>

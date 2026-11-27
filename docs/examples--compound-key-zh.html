@@ -63,7 +63,7 @@ F:
 <p>在这份数据上运行 <code>--validate</code>，校验报告会列出 <code>duplicate_key</code>。修正地区表，让 <code>(1,east)</code> 只出现一次，再校验、运行原来的报表，东区恢复为 10 元，西区仍是 20 元。下载包中的脚本会检查重复时的 SQL 合计、校验报错和修复后的两行结果。</p>
 <p>这说明验证能够发现键声明与当前数据的不一致，帮助在信任结果前避免关联放大。它不证明以后写入的数据仍唯一。实际业务应修正来源、完整键或数据，在最终结果加 DISTINCT 不能可靠修复已经放大的聚合。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
 <p>本例已在 DuckDB 上运行。包内的 <code>verification-summary.json</code> 记录了编译器版本和校验结果。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--compound-key-en.html">English</a></p>

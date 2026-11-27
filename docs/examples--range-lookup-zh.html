@@ -68,7 +68,7 @@ F:
 <p>脚本将 Jan 的终点改为2月2日，使2月1日同时落入两个区间。<code>--validate</code> 检出 <code>VALIDATION_ERROR</code>。恢复2月1日终点后，验证和两行结果重新通过。</p>
 <p>正确修复应来自业务有效期规则，不能任意保留其中一条匹配记录来掩盖冲突。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
 <p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--range-lookup-en.html">English</a></p>

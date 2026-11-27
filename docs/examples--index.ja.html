@@ -34,10 +34,17 @@
 </tr>
 </tbody></table>
 <h2 id="replay-the-examples">例を再現する <a class="section-link" aria-label="この節へのリンク" href="#replay-the-examples">#</a></h2>
-<p><a href="task-examples.zip">プロジェクトをダウンロード</a>します。展開先のディレクトリで、Python 3、例が依存する <code>duckdb==1.5.5</code>、インストール済みのコンパイラを使って、次のコマンドを実行します。</p>
-<pre><code class="language-powershell">py verify.py --dmlc C:/path/to/dmlc.exe --output C:/path/to/new-practice-output
+<p><a href="task-examples.zip">プロジェクトをダウンロード</a>し、新しいフォルダーに展開します。そのフォルダーから純収益の例を実行します。</p>
+<pre><code class="language-sh">cd net-revenue
+dmlc -q setup.sql
+dmlc -q --with-validation --model=model.dml monthly.sql
+dmlc -q --with-validation --model=model.dml regional.sql
+cd ..
 </code></pre>
-<p>両方のパスを置き換えてください。出力ディレクトリは事前に存在していてはいけません。再現するたびに新しいディレクトリを指定してください。スクリプトは、そのディレクトリに練習用データベースとローカル接続設定を作成し、業務データは読み取りません。Python の <code>-O</code> オプションはアサーションを無効にするため、使用しないでください。Windows 以外では、<code>py</code> の代わりに Python 3 の実行ファイルを直接呼び出せます。</p>
+<p>すべての例を自動で検証するには、プロジェクトのフォルダーでPowerShellから次のコマンドを実行します。</p>
+<pre><code class="language-powershell">./verify.ps1 -Output practice-output
+</code></pre>
+<p>実行のたびに新しい出力フォルダーを指定してください。</p>
 <p>再現実行が成功すると、各ケースの最終ステータスは合格になり、<code>results.json</code>、未加工の診断出力、生成された SQL が出力ディレクトリに保存されます。失敗が想定されているケースでは、まず指定された診断メッセージが出て失敗し、修正後に成功する必要があります。パッケージに含まれる README には、JDBC での実行方法も記載されています。パッケージには人が読める形式のソースと期待される出力が含まれます。コンパイラのバイナリやサードパーティ製のランタイムは含まれません。JDBC の検証には、JDK と対応する JAR ファイルが別途インストールされている必要があります。</p>
 <p>コンパイル、実際のデータベースでの検証、実行、結果の比較は、それぞれ独立した確認項目です。意図的に不正な内容を含めたケースでは、想定どおりに失敗し、修正後に検証に合格する必要があります。自分のテーブルに置き換える前に、キーが完全であることと、使用する時刻関連のフィールド、グループ化、フィルターの適用範囲を確認してください。</p>
 <p>あるデータベースで例が成功しても、すべての方言や指標、あるいは行や集計値を定義するすべての粒度で同様に動作することが確認できたわけではありません。構文は言語リファレンスで定義されています。これらのガイドでは、具体的な課題を取り上げ、結果を再現できる形で解決方法を示します。</p>

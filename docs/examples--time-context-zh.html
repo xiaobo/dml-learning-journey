@@ -55,7 +55,7 @@ margin_ytd:
 <p>本夹具返回12个月：一月累计30%、收入10；二月累计20%、收入20；三月至十二月累计20%、普通收入为 NULL。累计分支使用日历产生的月份，不能把这些行描述为新增交易，也不能把 NULL 当成零收入。</p>
 <p>如果报表只需要某个截止月份，请显式筛选。改变日期范围后，仍需检查输出月份与每个指标的范围。</p>
 <h2 id="运行与验证范围">运行与验证范围 <a class="section-link" aria-label="本节链接" href="#运行与验证范围">#</a></h2>
-<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.py</code>。需要已有的 dmlc、Python 和 DuckDB；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
+<p><a href="task-examples.zip">下载完整项目</a>，按包内 README.md 运行 <code>verify.ps1</code>。在 PowerShell 中运行，确保能直接调用 dmlc；脚本只在你指定的全新输出目录创建练习库。所有案例共用一个入口，结果与诊断保存在输出目录。</p>
 <p>本例在 dmlc 0.3.16、2026-11-13 构建的 DuckDB 连接上验证。编译器指纹、用例列表和状态见包内 verification-summary.json。数据库验证和随后执行是独立操作，不保证同一快照。其他引擎需单独验证。</p>
 <p><a href="examples--index.html">返回案例目录</a> · <a href="how-to--compile-and-validate-zh.html">编译与验证</a></p>
 <p><a hreflang="en" href="examples--time-context-en.html">English</a></p>

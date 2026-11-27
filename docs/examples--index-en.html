@@ -34,10 +34,17 @@
 </tr>
 </tbody></table>
 <h2 id="replay-the-examples">Replay the examples <a class="section-link" aria-label="Link to section" href="#replay-the-examples">#</a></h2>
-<p><a href="task-examples.zip">Download the project</a>. From the extracted directory, use Python 3 with the example&#39;s <code>duckdb==1.5.5</code> dependency and your already-installed compiler:</p>
-<pre><code class="language-powershell">py verify.py --dmlc C:/path/to/dmlc.exe --output C:/path/to/new-practice-output
+<p><a href="task-examples.zip">Download the project</a> and extract it into a new folder. Run the net revenue example from that folder:</p>
+<pre><code class="language-sh">cd net-revenue
+dmlc -q setup.sql
+dmlc -q --with-validation --model=model.dml monthly.sql
+dmlc -q --with-validation --model=model.dml regional.sql
+cd ..
 </code></pre>
-<p>Replace both paths. The output directory must not exist; use a new one for each replay. The script creates its own practice database and local connection configuration there and does not read business data. Do not use Python <code>-O</code>, which disables assertions. Non-Windows users can invoke their Python 3 executable instead of <code>py</code>.</p>
+<p>To check every example automatically, run this in PowerShell from the project folder:</p>
+<pre><code class="language-powershell">./verify.ps1 -Output practice-output
+</code></pre>
+<p>Choose a new output directory for each run.</p>
 <p>Successful replay ends with passed case statuses and records <code>results.json</code>, raw diagnostics and generated SQL under the output directory. Expected failure cases must fail with their specified diagnostics before repair succeeds. The package README also gives JDBC invocation details. It includes readable sources and expected outputs, not compiler binaries or third-party runtimes. The JDBC checks additionally need a JDK and the matching installed jars.</p>
 <p>Compilation, live validation, execution and result comparison are separate checks. Deliberately invalid cases must produce the expected failure, then pass after repair. Before substituting your tables, check complete keys, time fields, grouping and filter scope.</p>
 <p>A successful example on one database does not establish every dialect, metric or query grain. The language reference owns syntax; these guides show specific tasks with reproducible answers.</p>
