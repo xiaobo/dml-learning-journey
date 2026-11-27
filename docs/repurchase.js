@@ -15,6 +15,6 @@ for (const button of items('vote')) button.addEventListener('click',()=>{
   scenario('0');
   comparison.hidden=false;
 });
-comparison.hidden=true;
+scenario('0');
 article.querySelector('[data-voting]').hidden=false;
 article.querySelector('[data-picker]').hidden=false;
