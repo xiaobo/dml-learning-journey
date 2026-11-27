@@ -110,11 +110,11 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.label1": "Add an invalid second North directory row",
     "lookups.text4": "Regional directory",
     "lookups.text5": "February rows after lookup",
-    "lookups.text6": "The duplicate toggle deliberately violates the declared key. Ordinary compilation does not read source rows. With a database connection, <code>dmlc --validate</code> checks the complete dataset dimensions reached by the query and reports <code>DIMENSION_NOT_UNIQUE</code> when the declared key is not unique.",
+    "lookups.text6": "The duplicate toggle deliberately violates the declared key. Ordinary compilation does not read source rows. With a database connection, <code>dmlc --validate</code> checks the complete dataset dimensions reached by the query and reports <code>VALIDATION_ERROR</code> when the declared key is not unique.",
     "lookups.text7": "Catch the duplicate key with dmlc",
     "lookups.text8": "For database practice, save this query as <code>lookup.sql</code> beside the downloaded project's <code>model.dml</code>. Selecting manager makes the query reach the DIM_REGION dataset.",
     "lookups.text9": "Run validation on the connection containing your sample tables. Replace <code>default</code> with that connection's ID.",
-    "lookups.text10": "If that connection's TABLE_REGION contains both North entries, expect <code>DIMENSION_NOT_UNIQUE</code> for DIM_REGION. Correct the dataset dimension declaration or source data, then rerun validation.",
+    "lookups.text10": "If that connection's TABLE_REGION contains both North entries, expect <code>VALIDATION_ERROR</code> for DIM_REGION. Correct the dataset dimension declaration or source data, then rerun validation.",
     "lookups.text11": "Validation checks observed keys and probes the main query with EXPLAIN; it does not execute the report's result rows. This browser toggle changes only the invented data on this page, not your database.",
     "missing.text1": "11 / Decide what missing means",
     "missing.text2": "An empty page<br>is not automatically zero.",
@@ -143,7 +143,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text13": "The preview calculates our invented rows, not arbitrary DML. Only recorded companion queries have compiler evidence; other builder combinations need their own compile check. This page makes no database connection.",
     "capstone.text14": "Download the checked project",
     "capstone.text15": "See the local compiler commands",
-    "capstone.text16": "These compile commands need no database connection. For checked execution, replace default with your practice connection. The key-union diagnostic is informational. Check whether regions found only in the comparison month belong in the report.",
+    "capstone.text16": "These compile commands need no database connection. The project includes sample source data and setup SQL for a separate database exercise. Expected join warnings are recorded with the compiler snapshots; an expected warning is not a passed strict check.",
     "capstone.text17": "Run the compiler tutorial",
     "capstone.text18": "Explore the language reference",
     "capstone.mazExtension": "Use SQL Server Maz: readiness and runner progress (Chinese)",
@@ -438,7 +438,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "Each North sale can appear twice in the joined result",
         "Nothing; the declared dimension does not affect lookups"
       ],
-      "why": "Each North sale matches two directory rows, so it appears twice in the joined result and can be counted twice. The source sales rows are unchanged. With a database connection, --validate reports DIMENSION_NOT_UNIQUE for DIM_REGION.",
+      "why": "Each North sale matches two directory rows, so it appears twice in the joined result and can be counted twice. The source sales rows are unchanged. With a database connection, --validate reports VALIDATION_ERROR for DIM_REGION.",
       "hint": "Count how many directory rows each North sale matches."
     },
     "missing": {

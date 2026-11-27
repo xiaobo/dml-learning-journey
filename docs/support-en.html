@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Troubleshooting: first locate the failing step · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="Save the complete diagnostics first, then narrow down to one measure. A successful compile does not prove the source keys match the data; a passing validation does not replace checking business results."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/support-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Troubleshooting: first locate the failing step · DML"><meta property="og:description" content="Save the complete diagnostics first, then narrow down to one measure. A successful compile does not prove the source keys match the data; a passing validation does not replace checking business results."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/support-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="support.html" hreflang="zh" lang="zh" rel="alternate">中文</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="troubleshooting-first-locate-the-failing-step">Troubleshooting: first locate the failing step</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#prepare-reproducible-material">Prepare reproducible material</a></li><li><a href="#versions-and-known-limits">Versions and known limits</a></li></ul></details>
+<p><strong>Save the complete diagnostics first, then narrow down to one measure.</strong> A successful compile does not prove the source keys match the data; a passing validation does not replace checking business results.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Next step</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Model not found</td>
+<td>Check the file name and the <code>FROM</code> name; <a href="reference--model-query-sql.html">query discovery rules</a></td>
+</tr>
+<tr>
+<td>Compilation error</td>
+<td>Keep the exit code and JSON; <a href="reference--error-codes.html">error code reference</a></td>
+</tr>
+<tr>
+<td>VALIDATION_ERROR</td>
+<td>Fix the keys or the data and retest; <a href="guide--duplicate-lookup-en.html">duplicate-key validation</a></td>
+</tr>
+<tr>
+<td>Totals, shares, or historical values look wrong</td>
+<td>Check input rows, filters, and grouping; <a href="reference--modifiers.html">modifiers</a></td>
+</tr>
+<tr>
+<td>Materialized result is stale</td>
+<td><a href="materialization-workflow-en.html">Materialization lifecycle</a></td>
+</tr>
+</tbody></table>
+<h2 id="prepare-reproducible-material">Prepare reproducible material <a class="section-link" aria-label="Link to section" href="#prepare-reproducible-material">#</a></h2>
+<p>Save <code>dmlc --version</code>, the command, the exit code, the complete diagnostics, a minimal model/query, sanitized inputs, and the expected result. Remove passwords, tokens, real connection strings, and personal information. Give feedback through your existing product contact; this site does not list a public support channel yet, so do not submit private data to unrelated repositories.</p>
+<h2 id="versions-and-known-limits">Versions and known limits <a class="section-link" aria-label="Link to section" href="#versions-and-known-limits">#</a></h2>
+<p>Observations of a specific build apply only to that recorded build and its fixtures. Historical issues are not a defect list for the current version. When you see a difference, reproduce it with the current compiler and keep the generated SQL. Start with the <a href="checked-exercise-en.html">sales exercise</a> for its validation status; mark other dialects or unexecuted scenarios as &quot;not verified&quot;.</p>
+</main></body></html>

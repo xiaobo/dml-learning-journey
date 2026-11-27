@@ -1,0 +1,194 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Using Maz on SQL Server · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="For report developers, application developers, and data operations staff who know SQL."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Using Maz on SQL Server · DML"><meta property="og:description" content="For report developers, application developers, and data operations staff who know SQL."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="maz-sqlserver.html" hreflang="zh" lang="zh" rel="alternate">中文</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="using-maz-on-sql-server">Using Maz on SQL Server</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#a-quarterly-report-from-the-tutorial39s-sales-data">A quarterly report from the tutorial&#39;s sales data</a></li><li><a href="#prepare-the-first-quarter">Prepare the first quarter</a></li><li><a href="#how-new-months-and-historical-corrections-are-handled">How new months and historical corrections are handled</a></li><li><a href="#continuing-after-an-interruption">Continuing after an interruption</a></li><li><a href="#common-problems">Common problems</a></li><li><a href="#watch-global-runner-progress">Watch global runner progress</a></li></ul></details>
+<p>For report developers, application developers, and data operations staff who know SQL.</p>
+<blockquote>
+<p>This exercise uses two Mazes, monthly and quarterly sales. Install the runtime with the generated <code>setup_sql</code>. Run <code>prepare_sql</code>, and run the business query once it returns <code>data_ready=1</code>. While waiting, use <code>prepare_status_sql</code> to watch this request and <code>DML_MAZ_PROGRESS</code> for global progress.</p>
+</blockquote>
+<p>Read <a href="maz-prepare-refresh-en.html">choosing prepare and refresh: parameters and recovery rules</a> first.</p>
+<h2 id="a-quarterly-report-from-the-tutorial39s-sales-data">A quarterly report from the tutorial&#39;s sales data <a class="section-link" aria-label="Link to section" href="#a-quarterly-report-from-the-tutorial39s-sales-data">#</a></h2>
+<p>In chapter 12 of the interactive journey, the <code>FACT_SALES</code> dataset reads <code>TABLE_SALES</code>, identifies one sale by <code>id</code>, records the month in <code>dt_month</code>, and computes sales as <code>SUM({amount})</code>. Keep using that model and its 8 source rows: January totals 70, February totals 100.</p>
+<p>This extension adds two materialized results and one quarterly report.</p>
+<p><code>TABLE_SALES</code> (sales details) → <code>SALES_MONTHLY</code> (monthly sales) → <code>SALES_QUARTERLY</code> (quarterly sales) → <code>quarterly_sales</code> (report)</p>
+<p>Query preparation first checks which months the upstream needs, then builds the downstream quarter. Each partition that needs rebuilding commits separately.</p>
+<h2 id="prepare-the-first-quarter">Prepare the first quarter <a class="section-link" aria-label="Link to section" href="#prepare-the-first-quarter">#</a></h2>
+<ol>
+<li>Run the interactive journey&#39;s setup script in an empty SQL Server practice database. If you already ran that exercise, keep using the same database.</li>
+<li>Run the calendar extension below. The tutorial&#39;s practice calendar has only date and month and ends in February 2025; this step adds quarters and fills the calendar through the end of June.</li>
+<li>Add <code>dialect: mssql</code> at the top of the tutorial&#39;s <code>model.dml</code>, then append the materialization and report definitions below.</li>
+</ol>
+<p>For reference, see <a href="journey.html#capstone">interactive journey chapter 12</a> and download the original <a href="model.dml">model.dml</a> and <a href="lesson-files--setup-mssql.sql">SQL Server setup script</a>.</p>
+<details>
+<summary>Show the SQL Server calendar extension</summary>
+
+<pre><code class="language-sql">ALTER TABLE dbo.DML_CALENDAR ADD dt_quarter date NULL;
+GO
+UPDATE dbo.DML_CALENDAR
+SET dt_quarter = DATEFROMPARTS(YEAR(dt_date), 3 * (DATEPART(quarter, dt_date) - 1) + 1, 1);
+ALTER TABLE dbo.DML_CALENDAR ALTER COLUMN dt_quarter date NOT NULL;
+
+;WITH dates AS (
+    SELECT CAST(&#39;20250301&#39; AS date) AS dt_date
+    UNION ALL
+    SELECT DATEADD(day, 1, dt_date) FROM dates WHERE dt_date &lt; &#39;20250630&#39;
+)
+INSERT dbo.DML_CALENDAR (dt_date, dt_month, dt_quarter)
+SELECT dt_date, DATEFROMPARTS(YEAR(dt_date), MONTH(dt_date), 1),
+       DATEFROMPARTS(YEAR(dt_date), 3 * (DATEPART(quarter, dt_date) - 1) + 1, 1)
+FROM dates
+OPTION (MAXRECURSION 0);
+</code></pre>
+</details>
+
+<details>
+<summary>Show the materialization and report definitions</summary>
+
+<pre><code class="language-yaml">SALES_MONTHLY:
+  type: materialize
+  parameters: {dt_month: range}
+  dimension: [dt_month]
+  measures: [sales]
+
+SALES_QUARTERLY:
+  type: materialize
+  allows: [SALES_MONTHLY]
+  parameters: {dt_quarter: range}
+  dimension: [dt_quarter]
+  measures: [sales]
+
+quarterly_sales:
+  type: query
+  allows: [SALES_QUARTERLY]
+  filters:
+    dt_quarter:
+      range: [&#39;2025-01-01&#39;, &#39;2025-01-01&#39;]
+  columns:
+    dimension: [dt_quarter]
+    sales:
+</code></pre>
+</details>
+
+<p>Compile the extended model and install the materializations and dependencies with the generated <code>setup_sql</code>. Then run <code>quarterly_sales</code>&#39;s <code>prepare_sql</code> on an autocommit connection; it completes preparation and the actual readiness check, returns <code>data_ready=1</code>, and you then run the same request&#39;s business <code>sql</code>. While waiting, another connection can observe status with <code>prepare_status_sql</code>. On error or wait timeout, do not query yet; remove the cause and retry ordinary preparation. The SQL Server session needs <code>IMPLICIT_TRANSACTIONS OFF</code> and <code>@@TRANCOUNT = 0</code>. The business query remains a SELECT or CTE.</p>
+<p>The first quarter returns <strong>170</strong>. Months 1, 2, and 3 all have monthly partition state; March&#39;s partition was empty at that point. The example uses uppercase materialization names to avoid a current limitation in SQL Server registration with mixed-case nested names.</p>
+<h2 id="how-new-months-and-historical-corrections-are-handled">How new months and historical corrections are handled <a class="section-link" aria-label="Link to section" href="#how-new-months-and-historical-corrections-are-handled">#</a></h2>
+<p>Run the three data changes below in order in the practice database. Run refresh after the source transaction commits. The two inserts reuse regions and customers from the tutorial.</p>
+<table>
+<thead>
+<tr>
+<th>Source change</th>
+<th>Operation</th>
+<th>Report result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Insert March sales of 30 into <code>TABLE_SALES</code>; Q1 already published</td>
+<td>refresh <code>SALES_MONTHLY</code> for March; the default refreshes that month and the materialized Q1</td>
+<td>Q1 <strong>170 → 200</strong></td>
+</tr>
+<tr>
+<td>Insert April sales of 40; Q2 and its monthly partitions not yet built</td>
+<td>Change both filter bounds of <code>quarterly_sales</code> to <code>2025-04-01</code>. Run the new <code>prepare_sql</code>, then run <code>sql</code> for Q2 after it returns normally</td>
+<td>Q2 returns <strong>40</strong> for the first time</td>
+</tr>
+<tr>
+<td>Correct February <code>id = 2</code> sales from 20 to 25</td>
+<td>refresh <code>SALES_MONTHLY</code> for February; the default refreshes that month and affected Q1</td>
+<td>Q1 <strong>200 → 205</strong>, Q2 stays <strong>40</strong></td>
+</tr>
+</tbody></table>
+<p>The replay uses historical 2025 partitions. After the March backfill and the February correction, ordinary preparation alone still reuses old results. The first time you query Q2, ordinary preparation can read April&#39;s new data from the source, because Q2 and its upstream partitions are built for the first time. If upstream caches already exist — including months once built as empty — notify the affected months after committing to avoid missed refreshes.</p>
+<details>
+<summary>Show the SQL for the three writes and notifications</summary>
+
+<pre><code class="language-sql">-- 1. March backfill. After the source write commits, register the
+--    refresh demand and attempt to call the runner.
+INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
+VALUES (9, N&#39;North&#39;, N&#39;A&#39;, &#39;20250301&#39;, N&#39;completed&#39;, 30);
+
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize = N&#39;SALES_MONTHLY&#39;,
+    @_range_start = &#39;20250301&#39;,
+    @_range_end   = &#39;20250331&#39;;
+
+-- 2. April arrives for the first time. After the write commits,
+--    prepare Q2 for the first time.
+INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
+VALUES (10, N&#39;South&#39;, N&#39;C&#39;, &#39;20250401&#39;, N&#39;completed&#39;, 40);
+
+-- 3. Back to Q1. After the February correction commits, refresh
+--    the month and the quarter.
+UPDATE dbo.TABLE_SALES SET amount = 25 WHERE id = 2;
+
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize = N&#39;SALES_MONTHLY&#39;,
+    @_range_start = &#39;20250201&#39;,
+    @_range_end   = &#39;20250228&#39;;
+</code></pre>
+<p>After each step, verify the result with the report range listed in the table before moving on. If your load script opens an explicit transaction, commit it first, then call refresh on an autocommit connection.</p>
+</details>
+
+<p>The default refresh first invalidates and registers the selected month plus affected quarters as a unit, then calls the runner; it may return &quot;accepted&quot; while busy. Run the query&#39;s prepare_sql before reading the report; it waits and checks this query&#39;s readiness. To defer rebuilding until a query needs it, add @_invalidate_only=1 explicitly; it submits marks and returns, starts no runner, and keeps existing pending work.</p>
+<p>To audit the whole report, use <code>DML_PREPARE_MAZ</code> on <code>SALES_QUARTERLY</code> with the Q1 range and <code>@_force_update = 1</code>, forcing a rebuild of this request&#39;s required months and quarter. When you only know a month&#39;s source changed, call refresh from <code>SALES_MONTHLY</code>; refreshing the quarter alone will not discover unreported stale monthly caches.</p>
+<p><code>@_match</code> defaults to exact; <code>like</code> with <code>SALES~_%</code> matches the literal prefix SALES_ and with <code>%</code> matches every registered Maz. Dates include both bounds; refresh with both dates omitted handles existing ranges and does not prebuild the whole calendar. Moving across months must cover the old and the new month.</p>
+<h2 id="continuing-after-an-interruption">Continuing after an interruption <a class="section-link" aria-label="Link to section" href="#continuing-after-an-interruption">#</a></h2>
+<p>Each partition commits independently. When a later partition fails, completed partitions are kept and the current one rolls back. Ordinary prepare can fill in known targets and ranges; re-running prepare with force_update=1 is a new forced refresh.</p>
+<p>After a default refresh is interrupted, the registered remainder stays in STATE. Once the error is resolved, call parameterless <code>DML_REFRESH_MAZ</code>, or wake the runner through a later prepare or refresh. Sending a default refresh or force_update=1 again re-declares demand and may redo completed partitions. Parameterless refresh continues pending work only and does not re-invalidate completed partitions. After a cancellation or timeout, close the physical connection before continuing; ROLLBACK alone does not release the session-level runner lock. If a commit response was lost, re-check state first.</p>
+<h2 id="common-problems">Common problems <a class="section-link" aria-label="Link to section" href="#common-problems">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Checks and handling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Source corrected but the report still shows old values</td>
+<td>Check the source transaction committed, invalidation covered every entry point and date, and the report then ran <code>prepare_sql</code>. If you notified downstream only, check whether its upstream also needed invalidation.</td>
+</tr>
+<tr>
+<td>Procedure, target, or <code>@_match</code> parameter not found</td>
+<td>Confirm you are connected to the target database and that deployment ran the model&#39;s generated <code>setup_sql</code>. Exact names use registered Maz names. LIKE with no matches succeeds but changes nothing; confirm the matched set first.</td>
+</tr>
+<tr>
+<td>Asked for autocommit</td>
+<td>Use a JDBC connection with <code>autoCommit=true</code> and no explicit or implicit transaction. Send invalidation calls only after the source-write transaction commits.</td>
+</tr>
+<tr>
+<td>Invalidation reports missing, reversed, or uncovered dates</td>
+<td>Pass both dates in order and confirm <code>dbo.DML_CALENDAR</code> covers every day in the interval. When you explicitly want every materialized range, omit both dates.</td>
+</tr>
+<tr>
+<td>Writer permission denied</td>
+<td>Ask a database administrator to check the calling account&#39;s execute permission on the invalidation procedure and each affected Maz&#39;s writer. All affected targets are validated before invalidation; unauthorized requests are rejected.</td>
+</tr>
+<tr>
+<td>Lock timeout or disconnection during a call</td>
+<td>After a client cancellation or timeout, close the physical connection where it happened; with a pool, discard it to release the session-level runner lock. Once the error is resolved, use parameterless <code>DML_REFRESH_MAZ</code> to continue registered work. If query preparation failed, re-run the whole <code>prepare_sql</code> and query only after <code>data_ready=1</code>.</td>
+</tr>
+</tbody></table>
+<p>With read permission on the state table, check partitions with:</p>
+<pre><code class="language-sql">SELECT materialize, dim_dt, state, COALESCE(last_end_time, created_end_time) AS build_finished_at
+FROM dbo.DML_MATERIALIZE_STATE
+WHERE materialize IN (N&#39;SALES_QUARTERLY&#39;, N&#39;SALES_MONTHLY&#39;)
+ORDER BY materialize, dim_dt;
+</code></pre>
+<p><code>state = 0</code> means ordinary invalidation, <code>state = 3</code> means invalid and pending active refresh, and <code>state = 1</code> means a complete result has been published. The build time records when the Maz&#39;s writer finished. To judge whether a given correction is included, also check the invalidation notification and the preparation that followed.</p>
+<p>Verify the exercise&#39;s final result with this source query: Q1 is 205, Q2 is 40.</p>
+<pre><code class="language-sql">WITH source_rows AS (
+    SELECT DATEFROMPARTS(YEAR(dt_month), 3 * (DATEPART(quarter, dt_month) - 1) + 1, 1) AS dt_quarter,
+           amount
+    FROM dbo.TABLE_SALES
+    WHERE dt_month &gt;= &#39;20250101&#39; AND dt_month &lt; &#39;20250701&#39;
+)
+SELECT dt_quarter, SUM(amount) AS sales
+FROM source_rows
+GROUP BY dt_quarter
+ORDER BY dt_quarter;
+</code></pre>
+<p>See the <a href="maz-prepare-refresh-en.html">prepare and refresh conventions</a>.</p>
+<h2 id="watch-global-runner-progress">Watch global runner progress <a class="section-link" aria-label="Link to section" href="#watch-global-runner-progress">#</a></h2>
+<p>Install the shared progress view with the generated <code>setup_sql</code>, then query:</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>The view&#39;s statistics cover the last 60 seconds per query and report current pending work, distinct-partition completion and addition rates, and estimated seconds to drain. A partition completed several times within the window counts once. With no pending work the estimate is 0; it is NULL when the runner stopped with work remaining or cannot drain net-positive demand. Monitoring accounts need SELECT on the view.</p>
+<p>This is global progress, not proof that this report is ready. Before reading the report, use that query&#39;s <code>prepare_sql</code> to wait for and confirm readiness. Full column descriptions, runtime object ownership, and recovery steps are in the <a href="maz-prepare-refresh-en.html#runner-progress">prepare and refresh conventions</a>.</p>
+</main></body></html>

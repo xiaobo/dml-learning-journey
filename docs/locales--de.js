@@ -114,11 +114,11 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.label1": "Ungültigen zweiten North-Eintrag hinzufügen",
     "lookups.text4": "Regionsverzeichnis",
     "lookups.text5": "Februarzeilen nach dem Lookup",
-    "lookups.text6": "Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>DIMENSION_NOT_UNIQUE</code>.",
+    "lookups.text6": "Der Schalter verletzt absichtlich den deklarierten Schlüssel. Normales Kompilieren liest keine Quellzeilen. Mit einer Datenbankverbindung prüft <code>dmlc --validate</code> die vollständigen Dimensionen der erreichten Datasets und meldet bei nicht eindeutigen Schlüsseln <code>VALIDATION_ERROR</code>.",
     "lookups.text7": "Doppelte Schlüssel mit dmlc erkennen",
     "lookups.text8": "Speichere die Abfrage für die Datenbankübung als <code>lookup.sql</code> neben <code>model.dml</code> im heruntergeladenen Projekt. Die Auswahl von manager führt zum Dataset DIM_REGION.",
     "lookups.text9": "Führe die Validierung mit der Verbindung aus, die deine Beispieltabellen enthält. Ersetze <code>default</code> durch deren Verbindungs-ID.",
-    "lookups.text10": "Enthält TABLE_REGION dort beide North-Einträge, erwarte <code>DIMENSION_NOT_UNIQUE</code> für DIM_REGION. Korrigiere die Dimensionsdeklaration oder Quelldaten und validiere erneut.",
+    "lookups.text10": "Enthält TABLE_REGION dort beide North-Einträge, erwarte <code>VALIDATION_ERROR</code> für DIM_REGION. Korrigiere die Dimensionsdeklaration oder Quelldaten und validiere erneut.",
     "lookups.text11": "Die Validierung prüft beobachtete Schlüssel und die Hauptabfrage mit EXPLAIN; sie führt den Bericht nicht zur Ergebnisgewinnung aus. Der Browserschalter ändert nur die erfundenen Daten dieser Seite, nicht deine Datenbank.",
     "missing.text1": "11 / Fehlende Werte verstehen",
     "missing.text2": "Ein fehlender Wert<br>ist nicht automatisch 0.",
@@ -147,7 +147,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text13": "Die Vorschau berechnet unsere Beispieldaten, kein beliebiges DML. Compilerbelege liegen nur für die aufgezeichneten Begleitabfragen vor; andere Kombinationen benötigen eigene Prüfungen. Die Seite verbindet sich nicht mit einer Datenbank.",
     "capstone.text14": "Geprüftes Projekt herunterladen",
     "capstone.text15": "Lokale Compilerbefehle ansehen",
-    "capstone.text16": "Zum Kompilieren ist keine Datenbankverbindung nötig. Für die Ausführung mit Validierung ersetzen Sie default durch die Übungsverbindung. Die Meldung zur Schlüsselvereinigung ist ein Hinweis. Prüfen Sie, ob Regionen, die nur im Vergleichsmonat vorkommen, in den Bericht gehören.",
+    "capstone.text16": "Diese Compilerbefehle benötigen keine Datenbankverbindung. Beispieldaten und SQL-Server-Setup dienen einer getrennten Datenbankübung. Erwartete Join-Warnungen sind aufgezeichnet; eine erwartete Warnung bedeutet nicht, dass die strenge Prüfung bestanden wurde.",
     "capstone.text17": "Zum Compiler-Tutorial",
     "capstone.text18": "Sprachreferenz erkunden",
     "capstone.mazExtension": "SQL Server Maz: Datenbereitschaft und Runner-Fortschritt (Chinesisch)",
@@ -438,7 +438,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "North-Verkäufe können im verbundenen Ergebnis mehrfach erscheinen",
         "Nichts, denn die Deklaration dimension hat keine Auswirkung auf die Berechnung"
       ],
-      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet DIMENSION_NOT_UNIQUE.",
+      "why": "Jeder North-Verkauf findet zwei Einträge. Dadurch kann er im verbundenen Ergebnis zweimal vorkommen und doppelt in die Summe eingehen; die Quelltabelle TABLE_SALES bleibt unverändert. Mit Datenbankverbindung erkennt --validate den nicht eindeutigen Schlüssel [region] von DIM_REGION und meldet VALIDATION_ERROR.",
       "hint": "Zähle, wie viele Verzeichniszeilen zu jedem Verkauf in North passen."
     },
     "missing": {

@@ -114,11 +114,11 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "lookups.label1": "加入一条无效的重复 North 目录记录",
     "lookups.text4": "地区目录",
     "lookups.text5": "关联后的二月记录",
-    "lookups.text6": "这个开关有意违反声明的键。普通编译不会读取源数据；连接数据库后，<code>dmlc --validate</code> 会检查查询涉及的数据集的完整维度。键不唯一时会报告 <code>DIMENSION_NOT_UNIQUE</code>。",
+    "lookups.text6": "这个开关有意违反声明的键。普通编译不会读取源数据；连接数据库后，<code>dmlc --validate</code> 会检查查询涉及的数据集的完整维度。键不唯一时会报告 <code>VALIDATION_ERROR</code>。",
     "lookups.text7": "用 dmlc 检出重复键",
     "lookups.text8": "数据库练习中，把查询保存为 <code>lookup.sql</code>，与下载项目中的 <code>model.dml</code> 放在一起。选择 manager 会使查询访问 DIM_REGION 数据集。",
     "lookups.text9": "在存放示例表的连接上运行验证。把 <code>default</code> 换成该连接的 ID。",
-    "lookups.text10": "若该连接中的 TABLE_REGION 同时包含两条 North 记录，预期会对 DIM_REGION 报告 <code>DIMENSION_NOT_UNIQUE</code>。修正维度声明或源数据后重新验证。",
+    "lookups.text10": "若该连接中的 TABLE_REGION 同时包含两条 North 记录，预期会对 DIM_REGION 报告 <code>VALIDATION_ERROR</code>。修正维度声明或源数据后重新验证。",
     "lookups.text11": "验证检查实际键值，并通过 EXPLAIN 探测主查询，不会执行报表结果查询。浏览器开关只改变本页虚构数据，不改变数据库。",
     "missing.text1": "11 / 判断缺失的含义",
     "missing.text2": "空白的一页，<br>不一定是零。",
@@ -147,7 +147,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
     "capstone.text13": "预览只计算本页虚构数据，不能执行任意 DML。只有已记录的配套查询带有编译器证据，其他组合仍需单独编译检查。本页不连接数据库。",
     "capstone.text14": "下载已检查的项目",
     "capstone.text15": "查看本地编译命令",
-    "capstone.text16": "编译无需数据库连接。执行并校验时，将 default 改为练习库的连接 ID。键并集诊断是信息提示。请确认只在对比月份出现的地区是否应纳入报表。",
+    "capstone.text16": "这些编译命令无需数据库连接。项目还含有示例数据和 SQL Server 建表脚本，供独立数据库练习使用。预期关联警告已记录在编译快照中；预期警告不代表严格检查通过。",
     "capstone.text17": "进入编译器教程",
     "capstone.text18": "探索语言参考",
     "capstone.mazExtension": "使用 SQL Server Maz：数据就绪与 runner 进展",
@@ -437,7 +437,7 @@ window.SmallJourneyLocales=window.SmallJourneyLocales||{};window.SmallJourneyLoc
         "同一笔 North 销售匹配两次，汇总金额可能变大",
         "结果不受影响，dimension 只是说明文字"
       ],
-      "why": "DIM_REGION 声明 [region] 为源行键，因此每个地区最多应匹配一条记录。两条 North 记录会让每笔 North 销售匹配两次，本例的 North 合计从 30 增至 60，源销售记录本身不变。连接数据库运行 --validate 可检出键不唯一，并报告 DIMENSION_NOT_UNIQUE。",
+      "why": "DIM_REGION 声明 [region] 为源行键，因此每个地区最多应匹配一条记录。两条 North 记录会让每笔 North 销售匹配两次，本例的 North 合计从 30 增至 60，源销售记录本身不变。连接数据库运行 --validate 可检出键不唯一，并报告 VALIDATION_ERROR。",
       "hint": "数一数，每笔 North 销售会匹配几条目录记录。"
     },
     "missing": {

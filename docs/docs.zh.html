@@ -1,6 +1,99 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档：按问题找答案 · DML</title><link rel="stylesheet" href="docs.css?v=cca2b1f4d0"><meta name="description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档：按问题找答案 · DML"><meta property="og:description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.html">核心文档（英文）</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-文档按问题找答案">DML 文档：按问题找答案</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#按业务问题运行完整案例">按业务问题运行完整案例</a></li><li><a href="#开始与验证">开始与验证</a></li><li><a href="#我想解决什么问题">我想解决什么问题？</a></li><li><a href="#先确认集成需要的能力">先确认集成需要的能力</a></li><li><a href="#扩展自己的计算规则">扩展自己的计算规则</a></li><li><a href="#术语与完整参考">术语与完整参考</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档：按问题找答案 · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档：按问题找答案 · DML"><meta property="og:description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.zh.html">文档</a><a href="docs.html" hreflang="en" lang="en" rel="alternate">English</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-文档按问题找答案">DML 文档：按问题找答案</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#你想核对什么">你想核对什么？</a></li><li><a href="#扣除退款后月报和地区报表会怎么变">扣除退款后，月报和地区报表会怎么变？</a></li><li><a href="#按业务问题运行完整案例">按业务问题运行完整案例</a></li><li><a href="#开始与验证">开始与验证</a></li><li><a href="#我想解决什么问题">我想解决什么问题？</a></li><li><a href="#先确认集成需要的能力">先确认集成需要的能力</a></li><li><a href="#扩展自己的计算规则">扩展自己的计算规则</a></li><li><a href="#术语与完整参考">术语与完整参考</a></li></ul></details>
 <p><strong>先选要完成的事，再查语法。</strong> 标注“英文”的链接通向完整参考，不代表已有中文翻译。</p>
 <p>DML 是可独立使用的语义层编译器，保存可复用指标并生成 SQL，由数据库执行。它检查模型结构、粒度与上下文；业务口径、结果正确性和访问权限仍需使用者、数据库与应用负责。</p>
+<h2 id="你想核对什么">你想核对什么？ <a class="section-link" aria-label="Link to section" href="#你想核对什么">#</a></h2>
+<ul>
+<li><a href="guide--cumulative-margin-zh.html">为什么二月毛利率是 20%，前两个月合计是 25%？</a></li>
+<li><a href="examples--compound-key-zh.html">一笔销售被算了两次，怎么查？</a></li>
+<li><a href="#review-metric-change">扣除退款后，哪些报表会变？</a></li>
+<li><a id="trace-report-number"></a><a href="checked-exercise.html">SQL 和 DML 算得一样吗？用销售示例核对。</a></li>
+</ul>
+<p><a id="review-metric-change"></a></p>
+<h2 id="扣除退款后月报和地区报表会怎么变">扣除退款后，月报和地区报表会怎么变？ <a class="section-link" aria-label="Link to section" href="#扣除退款后月报和地区报表会怎么变">#</a></h2>
+<p>假设团队以前按订单金额报收入，现在决定扣除退款。两张报表都引用模型里的净收入指标 <code>net_revenue</code>。月报按月汇总，地区报表按地区汇总。</p>
+<table>
+<thead>
+<tr>
+<th>月份</th>
+<th>地区</th>
+<th align="right">订单金额</th>
+<th align="right">退款</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一月</td>
+<td>东区</td>
+<td align="right">100</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>二月</td>
+<td>东区</td>
+<td align="right">150</td>
+<td align="right">30</td>
+</tr>
+<tr>
+<td>二月</td>
+<td>西区</td>
+<td align="right">80</td>
+<td align="right">0</td>
+</tr>
+</tbody></table>
+<p>只改模型里的一行。用原来的两条查询重新生成 SQL，在同一份数据上再跑一次。</p>
+<table>
+<thead>
+<tr>
+<th>报表</th>
+<th>行</th>
+<th align="right">原来</th>
+<th align="right">扣除退款后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>月报</td>
+<td>一月</td>
+<td align="right">100</td>
+<td align="right">90</td>
+</tr>
+<tr>
+<td>月报</td>
+<td>二月</td>
+<td align="right">230</td>
+<td align="right">200</td>
+</tr>
+<tr>
+<td>地区报表</td>
+<td>东区</td>
+<td align="right">250</td>
+<td align="right">210</td>
+</tr>
+<tr>
+<td>地区报表</td>
+<td>西区</td>
+<td align="right">80</td>
+<td align="right">80</td>
+</tr>
+</tbody></table>
+<p>东区一共退了 40，两笔退款分别扣在一月和二月。西区没有退款，仍是 80。如果报表已经导出，要重新运行查询，再导出一份。</p>
+<p><strong>对照公式和查询。</strong></p>
+<p>原来</p>
+<pre><code class="language-yaml">net_revenue: SUM({amount})
+</code></pre>
+<p>扣除退款后</p>
+<pre><code class="language-yaml">net_revenue: SUM({amount}) - SUM({refund})
+</code></pre>
+<details><summary>完整文件 / Complete file: net-revenue/monthly.sql</summary>
+
+<pre><code class="language-sql">SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC
+</code></pre>
+</details>
+<details><summary>完整文件 / Complete file: net-revenue/regional.sql</summary>
+
+<pre><code class="language-sql">SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region
+</code></pre>
+</details>
+
+<p><a href="task-examples.zip">下载示例</a>，按包内说明运行 <code>verify.py</code>。打开输出目录的 <code>net-revenue</code> 文件夹，比较 <code>monthly-rows.json</code> 和 <code>after-monthly-rows.json</code>；地区报表对应的文件以 <code>regional</code> 和 <code>after-regional</code> 开头。</p>
 <h2 id="按业务问题运行完整案例">按业务问题运行完整案例 <a class="section-link" aria-label="Link to section" href="#按业务问题运行完整案例">#</a></h2>
 <p><a href="examples--index.html">关联、累计与分母案例集</a>提供数据、完整模型、查询、预期输出和可重跑校验。</p>
 <h2 id="开始与验证">开始与验证 <a class="section-link" aria-label="Link to section" href="#开始与验证">#</a></h2>
@@ -8,7 +101,7 @@
 <li><a href="journey.html">十二章互动教程</a>：浏览器内学习。</li>
 <li><a href="checked-exercise.html">运行销售练习并核对结果</a>：已有编译器的用户从固定数据开始。</li>
 <li><a href="tutorials--first-query.html">编译第一个查询（英文）</a>。</li>
-<li><a href="how-to--compile-and-validate.html">验证键声明并执行（英文）</a>。</li>
+<li><a href="how-to--compile-and-validate-zh.html">验证键声明并执行</a>。</li>
 <li><a href="support.html">排错与反馈准备</a>。</li>
 </ul>
 <h2 id="我想解决什么问题">我想解决什么问题？ <a class="section-link" aria-label="Link to section" href="#我想解决什么问题">#</a></h2>

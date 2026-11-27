@@ -1,0 +1,298 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choosing Maz prepare and refresh · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="prepare readies the data a query needs; refresh handles source data changes. Run setup_sql at deployment time; the query's preparation unit checks readiness before querying, and DML_MAZ_PROGRESS shows global pr"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh-en.html"><meta property="og:type" content="website"><meta property="og:title" content="Choosing Maz prepare and refresh · DML"><meta property="og:description" content="prepare readies the data a query needs; refresh handles source data changes. Run setup_sql at deployment time; the query's preparation unit checks readiness before querying, and DML_MAZ_PROGRESS shows global pr"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh-en.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="maz-prepare-refresh.html" hreflang="zh" lang="zh" rel="alternate">中文</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="choosing-maz-prepare-and-refresh">Choosing Maz prepare and refresh</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#pick-the-entry-point-by-task">Pick the entry point by task</a></li><li><a href="#prepare-this-query39s-data-before-reading">Prepare this query&#39;s data before reading</a></li><li><a href="#prepare-parameters">prepare parameters</a></li><li><a href="#refresh-parameters-and-matching">refresh parameters and matching</a></li><li><a href="#choose-the-change-range-from-a-maz-or-a-source-table">Choose the change range from a Maz or a source table</a></li><li><a href="#watch-global-runner-progress">Watch global runner progress</a></li><li><a href="#interruption-and-retry">Interruption and retry</a></li><li><a href="#execution-conditions-and-result-boundaries">Execution conditions and result boundaries</a></li></ul></details>
+<p>prepare readies the data a query needs; refresh handles source data changes. Run <code>setup_sql</code> at deployment time; the query&#39;s preparation unit checks readiness before querying, and <code>DML_MAZ_PROGRESS</code> shows global progress during operations.</p>
+<h2 id="pick-the-entry-point-by-task">Pick the entry point by task <a class="section-link" aria-label="Link to section" href="#pick-the-entry-point-by-task">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Operation</th>
+<th>How to confirm completion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Open a report, switch periods</td>
+<td>Run the query&#39;s ordinary <code>prepare_sql</code></td>
+<td>After <code>prepare_sql</code> returns <code>data_ready=1</code> normally, run the business <code>sql</code></td>
+</tr>
+<tr>
+<td>Audit a report, force recomputation</td>
+<td>prepare(force_update=1)</td>
+<td>The target and its required upstream are rebuilt forcibly; query after prepare returns normally</td>
+</tr>
+<tr>
+<td>Update dependent results after a load</td>
+<td>refresh(invalidate_only=0, default)</td>
+<td>Requirements for the target and affected downstream are registered; use query prepare to wait for readiness when reading</td>
+</tr>
+<tr>
+<td>Load now, recompute later</td>
+<td>refresh(invalidate_only=1)</td>
+<td>Invalidation marks are submitted; no runner call, no new active demand, no cancellation of pending work</td>
+</tr>
+<tr>
+<td>Month-end warm-up</td>
+<td>Run the ordinary prepare for chosen queries in advance</td>
+<td>That query&#39;s <code>prepare_sql</code> returns normally</td>
+</tr>
+<tr>
+<td>Resume registered work after an interruption</td>
+<td>Run <code>DML_REFRESH_MAZ</code> with no parameters</td>
+<td>Check global pending work and this query&#39;s readiness</td>
+</tr>
+</tbody></table>
+<p>prepare works upward through dependencies and accepts exact names only. refresh works downward from a change entry point and supports exact names and SQL LIKE. If a source change was not reported, old data may be reused; valid does not mean absolutely freshest against the source.</p>
+<p>Delta refresh selects work by partition; it is not row-level CDC on the source. A full refresh means a forced rebuild of the range you named this time, not all history. Each partition commits its business data and success status together; a later partition&#39;s failure does not roll back committed partitions.</p>
+<h2 id="prepare-this-query39s-data-before-reading">Prepare this query&#39;s data before reading <a class="section-link" aria-label="Link to section" href="#prepare-this-query39s-data-before-reading">#</a></h2>
+<p>Shared prepare and targeted refresh first submit a refresh demand, then call the shared procedure <code>DML_RUN_MAZ</code> synchronously. The invalidate-only branch returns immediately after submitting. The caller that obtains execution processes the global backlog; if a runner already exists, the call returns directly without waiting. An ordinary prepare may also keep running because of another call&#39;s global work.</p>
+<p>At most one runner per database performs actual builds. The runner owns dependency order, writer invocation, and per-partition commits. The default implementation needs no Service Broker, SQL Server Agent, or background application service; it does not promise to keep working in the background after the call returns or the connection drops.</p>
+<p>For the same request and its parameters, run this sequence:</p>
+<ol>
+<li>Run <code>setup_sql</code> at deployment time to install the shared runtime and each Maz&#39;s writer.</li>
+<li>At query time run the generated <code>prepare_sql</code>. It completes ordinary preparation, the actual readiness check, and any retries, returning one row with <code>data_ready=1</code>.</li>
+<li>After a normal return, run the business <code>sql</code>. Stop on preparation error or wait timeout, remove the cause, and retry.</li>
+</ol>
+<p>The preparation unit retries ordinary preparation every 100 milliseconds and raises an error when the five-second retry deadline passes without readiness. The deadline does not interrupt an already-running synchronous writer or a target lock wait; client timeouts and connection cancellation are the integration&#39;s responsibility. Retries never escalate into a forced refresh.</p>
+<p>While waiting, another connection can run the same request&#39;s <code>prepare_status_sql</code> to observe only this query&#39;s partitions, dates, and parameter bindings. It adds no demand and requires no hand-written polling from ordinary callers. The result column is <code>data_ready</code>. The readiness check and the following SELECT do not share a snapshot.</p>
+<p>Calling the low-level shared prepare directly may still return 2, meaning registered but runner busy; 1 means this round completed. refresh results include <code>accepted</code>, <code>runner_busy</code>, and affected partitions. An accepted refresh or an empty global backlog does not replace the query&#39;s actual readiness check; the query&#39;s generated preparation unit performs that check.</p>
+<h2 id="prepare-parameters">prepare parameters <a class="section-link" aria-label="Link to section" href="#prepare-parameters">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>Required, exact Maz name; patterns are not supported</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>Date-partitioned Mazes require both closed bounds; queries may derive them; every intersecting complete partition is included</td>
+</tr>
+<tr>
+<td>@_force_update</td>
+<td>Default 0; 1 forcibly rebuilds this target and its required upstream; null is not accepted</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>Typed parameter binding and audit purposes</td>
+</tr>
+</tbody></table>
+<p>A forced refresh first invalidates the required work and affected downstream; active demand is limited to this request&#39;s required-upstream closure, so other reports are not warmed as a side effect. A query&#39;s shared dependencies are reused by partition and parameter binding. Ordinary preparation reuses valid results for date partitions and whole tables when the parameter binding matches. Missing, invalid, expired, or re-bound results are rebuilt; to force recomputation, use force_update=1 explicitly. Source changes must still be reported reliably.</p>
+<pre><code class="language-sql">EXEC dbo.DML_PREPARE_MAZ
+    @_materialize=N&#39;SALES_QUARTERLY&#39;,
+    @_range_start=&#39;20250101&#39;, @_range_end=&#39;20250331&#39;, @_force_update=1;
+</code></pre>
+<h2 id="refresh-parameters-and-matching">refresh parameters and matching <a class="section-link" aria-label="Link to section" href="#refresh-parameters-and-matching">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>Exact name or pattern; mutually exclusive with @_source; if both are omitted, only existing pending work continues</td>
+</tr>
+<tr>
+<td>@_source</td>
+<td>Exact schema.table of a registered local physical source table; same-database database.schema.table is also accepted; like is not supported</td>
+</tr>
+<tr>
+<td>@_match</td>
+<td>Default exact; like matches per the collation of the registered column</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>Give both or neither; omitting means the existing ranges, not the whole calendar</td>
+</tr>
+<tr>
+<td>@_invalidate_only</td>
+<td>Default 0, registers active demand and calls the runner; 1 submits only invalidation marks, does not call the runner, and keeps existing pending work; null is not accepted</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>Typed parameters and audit; parameters required by batch targets are validated before invalidation</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Match</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Single target</td>
+<td>exact + SALES_MONTHLY</td>
+</tr>
+<tr>
+<td>Prefix</td>
+<td>like + SALES%</td>
+</tr>
+<tr>
+<td>Literal underscore prefix</td>
+<td>like + SALES~_%</td>
+</tr>
+<tr>
+<td>Every registered Maz in the current database</td>
+<td>like + %</td>
+</tr>
+</tbody></table>
+<p>SQL LIKE uses %, _, and bracket patterns; ~ is the escape character; * is not a wildcard. exact expands no wildcards. An unknown exact name raises an error; a pattern with zero matches returns zero targets. Exact names allow at most 128 UTF-16 code units and patterns at most 512; truncated names must not be executed.</p>
+<pre><code class="language-sql">-- After the source write commits, register February and its materialized
+-- affected downstream, and call the runner.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N&#39;SALES_MONTHLY&#39;,
+    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+
+-- Invalidate every materialized range only; backfill later as queries need it.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N&#39;%&#39;, @_match=N&#39;like&#39;, @_invalidate_only=1;
+</code></pre>
+<p><code>invalidate_only=1</code> does not run writers in this call. Runners already running on other connections may continue processing existing pending work.</p>
+<h2 id="choose-the-change-range-from-a-maz-or-a-source-table">Choose the change range from a Maz or a source table <a class="section-link" aria-label="Link to section" href="#choose-the-change-range-from-a-maz-or-a-source-table">#</a></h2>
+<p>When you know the source table, you can select every direct entry point registered for it:</p>
+<pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
+    @_source=N&#39;dbo.TABLE_SALES&#39;,
+    @_range_start=&#39;20250201&#39;, @_range_end=&#39;20250228&#39;;
+</code></pre>
+<p>A source identity mark proves date-and-partition equality and then the range is applied as given; without proof, existing downstream ranges are covered conservatively and cold date partitions are not guessed. Unknown or cross-database sources, missing schema, giving both source and materialize, and source combined with like all raise errors. Source selection does not auto-detect source changes.</p>
+<p>When selecting by Maz, a source table with several independent direct entry points must report every entry point. Refreshing the quarter alone will not discover an unreported stale monthly summary; when you do not know at which layer the cache is stale, use the query&#39;s forced prepare.</p>
+<p>Date bounds are closed intervals, expanded into intersecting complete partitions before downstream impact is computed; moving across periods covers both the old and new periods. For dimension tables and unclear impact, choose a range large enough. When exact reverse mapping cannot be proven, the system widens existing downstream ranges conservatively. One-sided dates, reversed dates, and incomplete calendar coverage are rejected, never silently clipped.</p>
+<p>A dated default refresh may build an explicitly selected Maz for the first time; discovered cold downstream is propagated but not auto-prebuilt. An intermediate Maz without state does not block propagation to existing downstream. Undated refresh handles existing ranges only; a database-wide first warm-up needs explicit finite dates. A whole-table Maz is treated as one physical partition; passing dates widens it to the whole table.</p>
+<p>Date partitions do not accept non-date value parameters; a whole table has a single current parameter binding.</p>
+<p><a id="runner-progress"></a></p>
+<h2 id="watch-global-runner-progress">Watch global runner progress <a class="section-link" aria-label="Link to section" href="#watch-global-runner-progress">#</a></h2>
+<p>After running the current build&#39;s generated <code>setup_sql</code>, query the shared view:</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>This is progress for every Maz in the same database, unrelated to a specific query, and not added to query compilation results. The ordinary view reads current STATE on each query, keeps fixed statistics for the last 60 seconds, and stores no sampled history. A monitoring account needs SELECT on the view; deployment does not grant it automatically.</p>
+<details><summary>All statistics columns and their definitions</summary>
+
+<p>The full column set is available via <code>SELECT * FROM dbo.DML_MAZ_PROGRESS;</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending_partitions</td>
+<td>Physical partitions currently pending, including those building but not yet published</td>
+</tr>
+<tr>
+<td>runner_running</td>
+<td>Whether a runner currently holds the singleton execution right</td>
+</tr>
+<tr>
+<td>completed_partitions / added_partitions</td>
+<td>Distinct physical partitions completed / newly registered within the last 60 seconds</td>
+</tr>
+<tr>
+<td>completed_partitions_per_second / added_partitions_per_second</td>
+<td>Window counts divided by 60 seconds</td>
+</tr>
+<tr>
+<td>net_partitions_per_second</td>
+<td>Completion rate minus addition rate</td>
+</tr>
+<tr>
+<td>estimated_seconds</td>
+<td>Estimated seconds to drain at the current net rate</td>
+</tr>
+<tr>
+<td>average_build_seconds</td>
+<td>Mean of each partition&#39;s latest successful build duration within the window</td>
+</tr>
+<tr>
+<td>sample_start / sampled_at</td>
+<td>Start and sampling time of this statistics window</td>
+</tr>
+</tbody></table>
+<p>Physical partitions are deduplicated by Maz, partition type, and date; a whole table with several parameter bindings counts as one partition. A partition completed several times in the window still counts once, and a completion followed by another invalidation also counts in the window&#39;s completed count. Rates therefore measure partition coverage, not actual writer executions.</p>
+<p>With no pending work the estimate is 0. It is NULL when additions meet or exceed completions, or when the runner has stopped while work remains. Partitions with different costs and the moving window both affect the estimate.</p>
+<p>The progress view cannot decide whether a particular query is ready. It reads committed state, publication transactions can cause brief waits, and it provides no cross-partition snapshot. For other windows, the standalone Java helper <code>MazRunner.progressSql(&quot;mssql&quot;, 300)</code> can generate read-only SQL for the last five minutes; executing that SQL directly needs STATE read permission.</p>
+</details>
+
+<h2 id="interruption-and-retry">Interruption and retry <a class="section-link" aria-label="Link to section" href="#interruption-and-retry">#</a></h2>
+<p>Initial invalidation and demand registration commit or roll back in one metadata transaction; builds then commit partition by partition. STATE durably keeps partitions pending active refresh and their actual parameters. On interruption, committed partitions are kept, the current partition rolls back, and unfinished demand waits for the next call.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Runner build failure or dropped connection</td>
+<td>Remove the cause, then run ordinary prepare or parameterless DML_REFRESH_MAZ to continue the global backlog</td>
+</tr>
+<tr>
+<td>Continue only the registered remainder</td>
+<td>Run the parameterless refresh below; do not re-declare a refresh range</td>
+</tr>
+<tr>
+<td>Sending force_update=1 or a default refresh again</td>
+<td>Treated as a new refresh demand; completed partitions may be invalidated and rebuilt</td>
+</tr>
+<tr>
+<td>Ordinary result invalid or new demand not yet registered</td>
+<td>Run the relevant query&#39;s ordinary prepare, then check readiness</td>
+</tr>
+<tr>
+<td>Commit response lost</td>
+<td>The outcome is unknown; re-check state instead of assuming the commit did not happen</td>
+</tr>
+</tbody></table>
+<pre><code class="language-sql">-- Continue the current database&#39;s registered backlog without
+-- re-invalidating completed partitions.
+EXEC dbo.DML_REFRESH_MAZ;
+</code></pre>
+<p>Client cancellation or timeout can bypass SQL Server&#39;s CATCH and leave a session-level runner lock on the live connection. After a cancellation, close that physical connection and have the pool discard it; ROLLBACK alone is not enough. After disconnection, another call can advance the durable backlog. An ordinary SQL user can, after confirming the runner has stopped, roll back the open transaction on the original connection and then explicitly release the DML_MAZ_RUNNER session lock.</p>
+<p>Parameterless refresh() continues pending work only; it does not mean a full-history rebuild, and it accepts no dates, like, invalidate-only, or parameter binding options. Selecting all Mazes still requires explicit % with like. Ordinary invalid state=0 takes no action by itself, state=3 means invalid and pending active refresh, state=1 means a complete published result; state=2 exists only inside the publication transaction. A window remains between source commit and notification; loaders must report reliably and retry.</p>
+<h2 id="execution-conditions-and-result-boundaries">Execution conditions and result boundaries <a class="section-link" aria-label="Link to section" href="#execution-conditions-and-result-boundaries">#</a></h2>
+<p>Use an autocommit connection: IMPLICIT_TRANSACTIONS OFF and no active transaction. The entry point checks permissions on this request&#39;s targets and affected writers. The runner processes the global backlog as the caller, so the executing account also needs the writer permissions of everything pending; on insufficient permissions it returns the original error and keeps the demand.</p>
+<details><summary>Operations reference: runtime objects and permissions</summary>
+
+<table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Each Maz&#39;s result table and writer (PROC_M__...)</td>
+<td>Single Maz</td>
+</tr>
+<tr>
+<td>prepare_sql, prepare_status_sql, business sql</td>
+<td>Current query and this request&#39;s parameters</td>
+</tr>
+<tr>
+<td>DML_MATERIALIZE_DEFINITION, DML_MATERIALIZE_DEPENDENCY, DML_MATERIALIZE_STATE</td>
+<td>Shared runtime tables, records per Maz and partition</td>
+</tr>
+<tr>
+<td>DML_PREPARE_MAZ, DML_REFRESH_MAZ, DML_RUN_MAZ</td>
+<td>Shared runtime procedures</td>
+</tr>
+<tr>
+<td>DML_MAZ_IS_READY</td>
+<td>Shared readiness function</td>
+</tr>
+<tr>
+<td>DML_MAZ_PROGRESS</td>
+<td>Shared global progress view</td>
+</tr>
+</tbody></table>
+<p>The calendar and its maintenance routines are installed by system setup. Before redeploying, stop new requests and confirm the runner has exited, then run the generated setup.</p>
+</details>
+
+<p>Use the same sales data in the <a href="maz-sqlserver-en.html">monthly-to-quarterly exercise</a>.</p>
+</main></body></html>
