@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN" data-course-locale="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>排查重复键 · duplicate_key</title><link rel="stylesheet" href="official.css?v=8214f6eda8"><meta name="description" content="找出地区表里重复的键，核对一笔销售为什么被算了两次。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="排查重复键 · duplicate_key"><meta property="og:description" content="找出地区表里重复的键，核对一笔销售为什么被算了两次。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/duplicate-key.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">跳到正文</a><header><div class="bar"><a class="brand" href="index.zh.html">DML</a><nav><a data-text="docs" href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a></nav><div class="tools"><a href="search.html">搜索文档</a><a hreflang="en" href="duplicate-key.en.html">English</a></div></div></header><main id="main"><div class="layout">
+<aside>
+<div>文档目录</div><a href="docs.zh.html#start" class="">快速开始</a><a href="docs.zh.html#guides" class="">操作指南</a><a href="docs.zh.html#reference" class="">语言参考</a><a href="docs.zh.html#errors" class="">排查问题</a><a href="docs.zh.html#verify" class="">核对结果</a></aside>
+<article><p class="crumb"><a href="docs.zh.html" class="">文档</a> / 排查问题</p>
+<h1><code>duplicate_key</code><br>排查重复键</h1>
+<p>先看校验报告里列出的数据集和键。模型要求这个键唯一，但这次校验找到了重复记录。</p>
+<section>
+<h2>找出重复记录</h2>
+<p>本例的地区表 DIM 用 id 和 region 一起标识一条记录。编号 1 可以在东区和西区各出现一次。用下面的 SQL 检查两个字段的组合。</p>
+<pre><code>SELECT id, region, COUNT(*) AS matches
+FROM DIM
+GROUP BY id, region
+HAVING COUNT(*) &gt; 1;</code></pre>
+<table>
+<thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+</section>
+<section>
+<h2>这会怎样影响报表？</h2>
+<p>东区只有一笔 10 元的销售。地区表中有两条 (1, east)，用普通 SQL 关联时，这笔销售会匹配两次，合计变成 20 元。西区仍是 20 元。</p>
+</section>
+<section>
+<h2>修正后再核对</h2>
+<p>先确认两条记录是否本来就应当不同。如果两行都有效，检查模型声明的键是否完整。本例中第二条东区记录是误加的。修正地区表后，重新校验，再运行报表。东区应回到 10，西区仍是 20。</p><a href="examples--compound-key-zh.html" class="">查看完整模型、命令和示例数据</a>
+</section>
+</article></div>
+</main></body></html>

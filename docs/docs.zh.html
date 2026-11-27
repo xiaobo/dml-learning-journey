@@ -1,241 +1,64 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档：按问题找答案 · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档：按问题找答案 · DML"><meta property="og:description" content="先选要完成的事，再查语法。 标注“英文”的链接通向完整参考，不代表已有中文翻译。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">互动教程</a><a href="docs.zh.html">文档</a><a href="docs.html" hreflang="en" lang="en" rel="alternate">English</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-文档按问题找答案">DML 文档：按问题找答案</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#你想核对什么">你想核对什么？</a></li><li><a href="#扣除退款后月报和地区报表会怎么变">扣除退款后，月报和地区报表会怎么变？</a></li><li><a href="#按业务问题运行完整案例">按业务问题运行完整案例</a></li><li><a href="#开始与验证">开始与验证</a></li><li><a href="#我想解决什么问题">我想解决什么问题？</a></li><li><a href="#先确认集成需要的能力">先确认集成需要的能力</a></li><li><a href="#扩展自己的计算规则">扩展自己的计算规则</a></li><li><a href="#术语与完整参考">术语与完整参考</a></li></ul></details>
-<p><strong>先选要完成的事，再查语法。</strong> 标注“英文”的链接通向完整参考，不代表已有中文翻译。</p>
-<p>DML 是可独立使用的语义层编译器，保存可复用指标并生成 SQL，由数据库执行。它检查模型结构、粒度与上下文；业务口径、结果正确性和访问权限仍需使用者、数据库与应用负责。</p>
-<h2 id="你想核对什么">你想核对什么？ <a class="section-link" aria-label="Link to section" href="#你想核对什么">#</a></h2>
+<!doctype html><html lang="zh-CN" data-course-locale="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 文档</title><link rel="stylesheet" href="official.css?v=8214f6eda8"><script src="legacy-routes.js?v=e258182e3c"></script><meta name="description" content="第一次使用 DML，可以从一张销售报表开始。已有模型时，可以直接查语法、校验方法或错误信息。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 文档"><meta property="og:description" content="第一次使用 DML，可以从一张销售报表开始。已有模型时，可以直接查语法、校验方法或错误信息。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">跳到正文</a><header><div class="bar"><a class="brand" href="index.zh.html">DML</a><nav><a data-text="docs" href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a></nav><div class="tools"><a href="search.html">搜索文档</a><a hreflang="en" href="docs.html">English</a></div></div></header><main id="main"><div class="layout">
+<aside>
+<div>文档目录</div><a href="docs.zh.html#start" class="">快速开始</a><a href="docs.zh.html#guides" class="">操作指南</a><a href="docs.zh.html#reference" class="">语言参考</a><a href="docs.zh.html#errors" class="">排查问题</a><a href="docs.zh.html#verify" class="">核对结果</a></aside>
+<article>
+<h1>DML 文档</h1>
+<p>第一次使用 DML，可以从一张销售报表开始。已有模型时，可以直接查语法、校验方法或错误信息。</p>
+<form action="search.html"><input type="search" aria-label="搜索文档" name="q" placeholder="搜索语法或错误信息"><button>搜索</button></form>
+<section id="start"><span id="扣除退款后月报和地区报表会怎么变"></span>
+<h2>快速开始</h2>
+<p>运行销售报表需要 dmlc、Python 和 DuckDB。想先在浏览器里体验，可以<a href="learn.zh.html" class="">从互动示例开始</a>。</p>
 <ul>
-<li><a href="guide--cumulative-margin-zh.html">为什么二月毛利率是 20%，前两个月合计是 25%？</a></li>
+<li><a href="checked-exercise.html" class="">运行并核对第一张销售报表</a></li>
+<li><a href="journey.zh.html">十二章互动教程</a></li>
+<li><a href="tutorials--first-query.html">编译第一个查询（英文）</a></li></ul>
+</section>
+<section id="guides"><span id="dml-文档按问题找答案"></span><span id="review-metric-change"></span><span id="按业务问题运行完整案例"></span><span id="我想解决什么问题"></span><span id="扩展自己的计算规则"></span>
+<h2>操作指南</h2>
+<ul>
+<li><a href="index.zh.html#refunds" class="">修改两张报表共用的净收入公式</a></li>
+<li><a href="guide--cumulative-margin-zh.html" class="">计算累计毛利率</a></li>
 <li><a href="examples--compound-key-zh.html">一笔销售被算了两次，怎么查？</a></li>
-<li><a href="#review-metric-change">扣除退款后，哪些报表会变？</a></li>
-<li><a id="trace-report-number"></a><a href="checked-exercise.html">SQL 和 DML 算得一样吗？用销售示例核对。</a></li>
-</ul>
-<p><a id="review-metric-change"></a></p>
-<h2 id="扣除退款后月报和地区报表会怎么变">扣除退款后，月报和地区报表会怎么变？ <a class="section-link" aria-label="Link to section" href="#扣除退款后月报和地区报表会怎么变">#</a></h2>
-<p>假设团队以前按订单金额报收入，现在决定扣除退款。两张报表都引用模型里的净收入指标 <code>net_revenue</code>。月报按月汇总，地区报表按地区汇总。</p>
-<table>
-<thead>
-<tr>
-<th>月份</th>
-<th>地区</th>
-<th align="right">订单金额</th>
-<th align="right">退款</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>一月</td>
-<td>东区</td>
-<td align="right">100</td>
-<td align="right">10</td>
-</tr>
-<tr>
-<td>二月</td>
-<td>东区</td>
-<td align="right">150</td>
-<td align="right">30</td>
-</tr>
-<tr>
-<td>二月</td>
-<td>西区</td>
-<td align="right">80</td>
-<td align="right">0</td>
-</tr>
-</tbody></table>
-<p>只改模型里的一行。用原来的两条查询重新生成 SQL，在同一份数据上再跑一次。</p>
-<table>
-<thead>
-<tr>
-<th>报表</th>
-<th>行</th>
-<th align="right">原来</th>
-<th align="right">扣除退款后</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>月报</td>
-<td>一月</td>
-<td align="right">100</td>
-<td align="right">90</td>
-</tr>
-<tr>
-<td>月报</td>
-<td>二月</td>
-<td align="right">230</td>
-<td align="right">200</td>
-</tr>
-<tr>
-<td>地区报表</td>
-<td>东区</td>
-<td align="right">250</td>
-<td align="right">210</td>
-</tr>
-<tr>
-<td>地区报表</td>
-<td>西区</td>
-<td align="right">80</td>
-<td align="right">80</td>
-</tr>
-</tbody></table>
-<p>东区一共退了 40，两笔退款分别扣在一月和二月。西区没有退款，仍是 80。如果报表已经导出，要重新运行查询，再导出一份。</p>
-<p><strong>对照公式和查询。</strong></p>
-<p>原来</p>
-<pre><code class="language-yaml">net_revenue: SUM({amount})
-</code></pre>
-<p>扣除退款后</p>
-<pre><code class="language-yaml">net_revenue: SUM({amount}) - SUM({refund})
-</code></pre>
-<details><summary>完整文件 / Complete file: net-revenue/monthly.sql</summary>
-
-<pre><code class="language-sql">SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC
-</code></pre>
-</details>
-<details><summary>完整文件 / Complete file: net-revenue/regional.sql</summary>
-
-<pre><code class="language-sql">SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region
-</code></pre>
-</details>
-
-<p><a href="task-examples.zip">下载示例</a>，按包内说明运行 <code>verify.py</code>。打开输出目录的 <code>net-revenue</code> 文件夹，比较 <code>monthly-rows.json</code> 和 <code>after-monthly-rows.json</code>；地区报表对应的文件以 <code>regional</code> 和 <code>after-regional</code> 开头。</p>
-<h2 id="按业务问题运行完整案例">按业务问题运行完整案例 <a class="section-link" aria-label="Link to section" href="#按业务问题运行完整案例">#</a></h2>
-<p><a href="examples--index.html">关联、累计与分母案例集</a>提供数据、完整模型、查询、预期输出和可重跑校验。</p>
-<h2 id="开始与验证">开始与验证 <a class="section-link" aria-label="Link to section" href="#开始与验证">#</a></h2>
+<li><a href="task-examples.zip">下载示例</a></li>
+<li><a href="examples--index.html">关联、累计与分母案例集</a></li>
+<li><a href="examples--range-lookup-zh.html">有效期查找</a></li>
+<li><a href="examples--running-total-zh.html">按月份计算累计销售额</a></li>
+<li><a href="examples--time-context-zh.html">选择累计销售额的截止日期</a></li>
+<li><a href="examples--fixed-total-zh.html">固定销售占比的分母</a></li>
+<li><a href="examples--duckdb-timezone-zh.html">在 DuckDB 中按业务时区计算日期</a></li>
+<li><a href="guide--share-denominator-zh.html">占比分母</a></li>
+<li><a href="guide--duplicate-lookup-zh.html">重复键验证</a></li>
+<li><a href="materialization-workflow.html">物化运行与验证</a></li>
+<li><a href="maz-sqlserver.html">在 SQL Server 上使用 Maz</a></li>
+<li><a href="maz-prepare-refresh.html">用 prepare 和 refresh 更新物化数据</a></li>
+<li><a href="maz-prepare-refresh.html#runner-progress">全局进展视图 DML_MAZ_PROGRESS</a></li>
+<li><a href="how-to--define-macros.html#a-verified-composition-example">定义并验证自定义修饰符（英文）</a></li></ul>
+</section>
+<section id="reference"><span id="先确认集成需要的能力"></span><span id="术语与完整参考"></span>
+<h2>语言参考</h2>
 <ul>
-<li><a href="journey.html">十二章互动教程</a>：浏览器内学习。</li>
-<li><a href="checked-exercise.html">运行销售练习并核对结果</a>：已有编译器的用户从固定数据开始。</li>
-<li><a href="tutorials--first-query.html">编译第一个查询（英文）</a>。</li>
-<li><a href="how-to--compile-and-validate-zh.html">验证键声明并执行</a>。</li>
-<li><a href="support.html">排错与反馈准备</a>。</li>
-</ul>
-<h2 id="我想解决什么问题">我想解决什么问题？ <a class="section-link" aria-label="Link to section" href="#我想解决什么问题">#</a></h2>
-<table>
-<thead>
-<tr>
-<th>问题</th>
-<th>文档</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>交易发生时哪条价格或等级有效？</td>
-<td><a href="examples--range-lookup-zh.html">有效期查找</a></td>
-</tr>
-<tr>
-<td>不同地区重复编号怎样关联？</td>
-<td><a href="examples--compound-key-zh.html">复合键</a></td>
-</tr>
-<tr>
-<td>累计指标怎样定义一次再复用？</td>
-<td><a href="examples--running-total-zh.html">有序累计</a></td>
-</tr>
-<tr>
-<td>单个累计 KPI 用哪个截止点？</td>
-<td><a href="examples--time-context-zh.html">时间上下文</a></td>
-</tr>
-<tr>
-<td>只显示一月，分母要包含其他月份吗？</td>
-<td><a href="examples--fixed-total-zh.html">分母范围</a></td>
-</tr>
-<tr>
-<td>查找属性、准备源关系、组合独立指标有什么区别？</td>
-<td><a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">源关系与指标组合（英文）</a></td>
-</tr>
-<tr>
-<td>能面向哪些数据库，是否都执行验证过？</td>
-<td><a href="reference--model-structure.html#sql-dialect">方言与验证范围（英文）</a></td>
-</tr>
-<tr>
-<td>应用能绑定查询参数吗？</td>
-<td><a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">物理 SQL 与语义查询的参数边界（英文）</a></td>
-</tr>
-<tr>
-<td>模型检查能证明列值类型正确吗？</td>
-<td><a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">声明结构与 SQL 值类型（英文）</a></td>
-</tr>
-<tr>
-<td>怎样调查指标变化，或从已有 SQL 开始建模？</td>
-<td><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">贡献分析与 SQL 恢复（英文）</a></td>
-</tr>
-<tr>
-<td>业务日如何处理夏令时？</td>
-<td><a href="examples--duckdb-timezone-zh.html">DuckDB 配方</a></td>
-</tr>
-<tr>
-<td>同比、上月、累计怎么计算？</td>
-<td><a href="reference--modifiers.html">修饰符（英文）</a></td>
-</tr>
-<tr>
-<td>筛选地区后分母怎样保持全体？</td>
-<td><a href="guide--share-denominator-zh.html">占比分母</a></td>
-</tr>
-<tr>
-<td>先按客户汇总再平均？</td>
-<td><a href="reference--examples--aggregation.html">中间粒度（英文）</a></td>
-</tr>
-<tr>
-<td>怎样计算累计毛利率？</td>
-<td><a href="guide--cumulative-margin-zh.html">累计毛利率</a></td>
-</tr>
-<tr>
-<td>维度重复导致多行怎么办？</td>
-<td><a href="guide--duplicate-lookup-zh.html">重复键验证</a></td>
-</tr>
-<tr>
-<td>NULL、零分母怎样处理？</td>
-<td><a href="reference--expressions.html">表达式与函数（英文）</a></td>
-</tr>
-<tr>
-<td>怎样声明临时指标？</td>
-<td><a href="reference--model-query-sql.html">查询及内联指标（英文）</a></td>
-</tr>
-<tr>
-<td>怎样确认预计算命中和刷新？</td>
-<td><a href="materialization-workflow.html">物化运行与验证</a></td>
-</tr>
-<tr>
-<td>SQL Server 中的月汇总和季度汇总，如何处理新月份与历史更正？</td>
-<td><a href="maz-sqlserver.html">在 SQL Server 上使用 Maz</a></td>
-</tr>
-<tr>
-<td>查询准备、主动刷新、只失效和中断重试如何选择？</td>
-<td><a href="maz-prepare-refresh.html">prepare 与 refresh 使用约定</a></td>
-</tr>
-<tr>
-<td>怎样查看全部 Maz 的待办、刷新速度和预计完成时间？</td>
-<td><a href="maz-prepare-refresh.html#runner-progress">全局进展视图 DML_MAZ_PROGRESS</a></td>
-</tr>
-</tbody></table>
-<h2 id="先确认集成需要的能力">先确认集成需要的能力 <a class="section-link" aria-label="Link to section" href="#先确认集成需要的能力">#</a></h2>
-<p>已测 JDBC 物理 SQL 和 <code>FROM MODEL</code> 查询都能绑定位置参数 <code>?</code>；示例覆盖筛选条件和指标表达式。物化参数和内部字面量参数化是不同机制；不要拼接不可信输入。</p>
-<p>按目标数据库显式设置 <code>dialect:</code>；当前编译器在缺少方言的测试模型中报错，连接配置不会代替该声明。识别方言不等于各引擎所有功能都执行验证过。列值类型由数据库定义，已测列声明不接受 <code>type:</code>，编译通过仍可能出现数据库类型错误。</p>
-<p>累计指标要区分时间范围与筛选后行窗口。二月的窗口累计不会自动包含一月；日历累计则要明确截止点和输出期间。键验证也不保证与后续执行使用同一数据快照。根据上表的对应指南验证边界，再对照完整结果。</p>
-<h2 id="扩展自己的计算规则">扩展自己的计算规则 <a class="section-link" aria-label="Link to section" href="#扩展自己的计算规则">#</a></h2>
-<p><strong>可以扩展修饰符，也可以调用数据库中的标量函数。</strong> 自定义 <code>fn-macro</code> 包装指标公式，<code>dt-macro</code> 调整时间上下文，并按同一语法组合。数据库函数的实现、部署和权限由数据库负责；编译通过不代表函数存在，应在目标连接上验证。</p>
-<p><a href="how-to--define-macros.html#a-verified-composition-example">完整定义、实测结果与边界（英文）</a></p>
-<h2 id="术语与完整参考">术语与完整参考 <a class="section-link" aria-label="Link to section" href="#术语与完整参考">#</a></h2>
-<table>
-<thead>
-<tr>
-<th>中文</th>
-<th>参考中的名称</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>数据集、源行键</td>
-<td>dataset、dimension</td>
-</tr>
-<tr>
-<td>原子指标、复合指标</td>
-<td>atomic/composite measure</td>
-</tr>
-<tr>
-<td>查询分组、计算粒度</td>
-<td>grouping、evaluation grain</td>
-</tr>
-<tr>
-<td>筛选、修饰符</td>
-<td>filter、modifier</td>
-</tr>
-<tr>
-<td>物化、预先存储的汇总</td>
-<td>materialization</td>
-</tr>
-</tbody></table>
-<p><a href="reference--README.html">完整参考（英文）</a> · <a href="reference--examples--README.html">所有示例（英文）</a> · <a href="docs.html">英文导航</a></p>
+<li><a href="reference--model-structure.html" class="">数据集、字段与键（英文）</a></li>
+<li><a href="reference--model-query-sql.html" class="">Model Query 语法（英文）</a></li>
+<li><a href="reference--modifiers.html" class="">指标修饰符与 ytd（英文）</a></li>
+<li><a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">源关系与指标组合（英文）</a></li>
+<li><a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">物理 SQL 与语义查询的参数边界（英文）</a></li>
+<li><a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">声明结构与 SQL 值类型（英文）</a></li>
+<li><a href="reference--examples--aggregation.html">先按客户汇总再求平均（英文）</a></li>
+<li><a href="reference--expressions.html">表达式与函数（英文）</a></li>
+<li><a href="reference--README.html">完整参考（英文）</a></li>
+<li><a href="reference--examples--README.html">所有示例（英文）</a></li></ul>
+</section>
+<section id="errors">
+<h2>排查问题</h2>
+<ul>
+<li><a href="duplicate-key.zh.html" class="">duplicate_key：检查重复键</a></li>
+<li><a href="support.html">排错与反馈准备</a></li></ul>
+</section>
+<section id="verify"><span id="你想核对什么"></span><span id="trace-report-number"></span><span id="开始与验证"></span>
+<h2>核对结果</h2>
+<ul>
+<li><a href="how-to--compile-and-validate-zh.html" class="">用同一份数据核对 DML 和 SQL</a></li>
+<li><a href="reference--model-structure.html#sql-dialect">方言与验证范围（英文）</a></li>
+<li><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">贡献分析与 SQL 恢复（英文）</a></li></ul>
+</section></article></div>
 </main></body></html>

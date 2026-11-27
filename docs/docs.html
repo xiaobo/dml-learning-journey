@@ -1,216 +1,80 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML and DMX documentation · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="Define and compose reusable business metrics with DML. Write formulas and adjust a measure's calculation with DMX. Ask questions of the model with Model Query."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:type" content="website"><meta property="og:title" content="DML and DMX documentation · DML"><meta property="og:description" content="Define and compose reusable business metrics with DML. Write formulas and adjust a measure's calculation with DMX. Ask questions of the model with Model Query."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.html">DML</a><a href="journey.html">Interactive journey</a><a href="docs.html">Documentation</a><a href="docs.zh.html" hreflang="zh" lang="zh" rel="alternate">中文</a><a href="docs.zh.html">中文导航</a><a href="search.html">搜索 / Search</a></header><main><h1 id="dml-and-dmx-documentation">DML and DMX documentation</h1><details class="page-toc"><summary>On this page</summary><ul><li><a href="#what-would-you-like-to-check">What would you like to check?</a></li><li><a href="#what-happens-to-the-monthly-and-regional-reports-when-we-deduct-refunds">What happens to the monthly and regional reports when we deduct refunds?</a></li><li><a href="#continue-from-the-journey">Continue from the journey</a></li><li><a href="#find-a-task">Find a task</a></li><li><a href="#concepts">Concepts</a></li><li><a href="#language-reference">Language reference</a></li><li><a href="#examples">Examples</a></li><li><a href="#usage-guides">Usage guides</a></li><li><a href="#solve-an-analytical-question">Solve an analytical question</a></li></ul></details>
-<p>Define and compose reusable business metrics with <strong>DML</strong>. Write formulas and adjust a measure&#39;s calculation with <strong>DMX</strong>. Ask questions of the model with <strong>Model Query</strong>.</p>
-<p>A measure can reference other measures, including measures from different datasets at compatible grains. Applying a time rule to a ratio recalculates its components in that period; it does not average displayed percentages. The <a href="reference--examples--composable-metrics.html">profitability example</a> follows one definition through these changes.</p>
-<p>New to DML? Open the <a href="index.html">overview</a> for the idea, then follow the <a href="journey.html">interactive journey</a>: twelve illustrated lessons with exercises in English, 中文, 日本語 and Deutsch. Core reference pages are in English; the problem guides below are available in English and Chinese.</p>
-<h2 id="what-would-you-like-to-check">What would you like to check? <a class="section-link" aria-label="Link to section" href="#what-would-you-like-to-check">#</a></h2>
+<!doctype html><html lang="en" data-course-locale="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML documentation</title><link rel="stylesheet" href="official.css?v=8214f6eda8"><script src="legacy-routes.js?v=e258182e3c"></script><meta name="description" content="Start with a sales report, or look up a language rule, a validation step or an error."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:type" content="website"><meta property="og:title" content="DML documentation"><meta property="og:description" content="Start with a sales report, or look up a language rule, a validation step or an error."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/docs.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">Skip to content</a><header><div class="bar"><a class="brand" href="index.en.html">DML</a><nav><a data-text="docs" href="docs.html">Docs</a><a href="learn.en.html">Learn</a></nav><div class="tools"><a href="search.html">Search docs</a><a hreflang="zh" href="docs.zh.html">中文</a></div></div></header><main id="main"><div class="layout">
+<aside>
+<div>Documentation</div><a href="docs.html#start" class="">Quick start</a><a href="docs.html#guides" class="">How-to guides</a><a href="docs.html#reference" class="">Language reference</a><a href="docs.html#errors" class="">Troubleshooting</a><a href="docs.html#verify" class="">Verify results</a></aside>
+<article>
+<h1>DML documentation</h1>
+<p>Start with a sales report, or look up a language rule, a validation step or an error.</p>
+<form action="search.html"><input type="search" aria-label="Search docs" name="q" placeholder="Search syntax or errors"><button>Search</button></form>
+<section id="start"><span id="dml-and-dmx-documentation"></span><span id="what-would-you-like-to-check"></span><span id="continue-from-the-journey"></span><span id="solve-an-analytical-question"></span>
+<h2>Quick start</h2>
+<p>To run the sales report locally you need dmlc, Python and DuckDB. To try it in your browser, <a href="learn.en.html" class="">start with an interactive example</a>.</p>
 <ul>
-<li><a href="guide--cumulative-margin-en.html">Why is February’s gross margin 20% and the two-month margin 25%?</a></li>
+<li><a href="checked-exercise-en.html" class="">Run and check a sales report</a></li>
+<li><a href="journey.en.html">Interactive DML tutorial</a></li>
+<li><a href="tutorials--first-query.html">Compile your first query</a></li></ul>
+</section>
+<section id="guides"><span id="review-metric-change"></span><span id="what-happens-to-the-monthly-and-regional-reports-when-we-deduct-refunds"></span><span id="find-a-task"></span><span id="examples"></span><span id="usage-guides"></span>
+<h2>How-to guides</h2>
+<ul>
+<li><a href="index.en.html#refunds" class="">Change the net revenue formula for two reports</a></li>
+<li><a href="guide--cumulative-margin-en.html" class="">Calculate year-to-date gross margin</a></li>
 <li><a href="examples--compound-key-en.html">Did a sale get counted twice?</a></li>
-<li><a href="#review-metric-change">Which reports change when we deduct refunds?</a></li>
-<li><a id="trace-report-number"></a><a href="checked-exercise-en.html">Do SQL and DML give the same result? Compare them on the sample sales data.</a></li>
-</ul>
-<p><a id="review-metric-change"></a></p>
-<h2 id="what-happens-to-the-monthly-and-regional-reports-when-we-deduct-refunds">What happens to the monthly and regional reports when we deduct refunds? <a class="section-link" aria-label="Link to section" href="#what-happens-to-the-monthly-and-regional-reports-when-we-deduct-refunds">#</a></h2>
-<p>Suppose your team used to report the full order amount as revenue. Now it wants to deduct refunds. Both reports use the model’s <code>net_revenue</code> measure. One groups orders by month and the other by region.</p>
-<table>
-<thead>
-<tr>
-<th>Month</th>
-<th>Region</th>
-<th align="right">Order amount</th>
-<th align="right">Refund</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>January</td>
-<td>East</td>
-<td align="right">100</td>
-<td align="right">10</td>
-</tr>
-<tr>
-<td>February</td>
-<td>East</td>
-<td align="right">150</td>
-<td align="right">30</td>
-</tr>
-<tr>
-<td>February</td>
-<td>West</td>
-<td align="right">80</td>
-<td align="right">0</td>
-</tr>
-</tbody></table>
-<p>Change one line in the model. Compile the same two queries again and run them on the same data.</p>
-<table>
-<thead>
-<tr>
-<th>Report</th>
-<th>Row</th>
-<th align="right">Before</th>
-<th align="right">After refunds</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Monthly</td>
-<td>January</td>
-<td align="right">100</td>
-<td align="right">90</td>
-</tr>
-<tr>
-<td>Monthly</td>
-<td>February</td>
-<td align="right">230</td>
-<td align="right">200</td>
-</tr>
-<tr>
-<td>Regional</td>
-<td>East</td>
-<td align="right">250</td>
-<td align="right">210</td>
-</tr>
-<tr>
-<td>Regional</td>
-<td>West</td>
-<td align="right">80</td>
-<td align="right">80</td>
-</tr>
-</tbody></table>
-<p>East has 40 in refunds across the two months. West has none, so its figure stays at 80. To update an exported report, rerun the query and export the new results.</p>
-<p><strong>Compare the formulas and queries.</strong></p>
-<p>Before</p>
-<pre><code class="language-yaml">net_revenue: SUM({amount})
-</code></pre>
-<p>After deducting refunds</p>
-<pre><code class="language-yaml">net_revenue: SUM({amount}) - SUM({refund})
-</code></pre>
-<details><summary>完整文件 / Complete file: net-revenue/monthly.sql</summary>
+<li><a href="task-examples.zip">Download the examples</a></li>
+<li><a href="how-to--define-macros.html">Custom modifiers and database functions</a></li>
+<li><a href="materialization-workflow-en.html">Materialization workflow</a></li>
+<li><a href="examples--index-en.html">Runnable task examples</a></li>
 
-<pre><code class="language-sql">SELECT report_month, AGG(net_revenue) FROM MODEL GROUP BY report_month ORDER BY report_month DESC
-</code></pre>
-</details>
-<details><summary>完整文件 / Complete file: net-revenue/regional.sql</summary>
+<li><a href="examples--range-lookup-en.html">Effective-date lookup</a></li>
+<li><a href="examples--running-total-en.html">Named running sales</a></li>
+<li><a href="examples--time-context-en.html">Time context and sibling measures</a></li>
+<li><a href="examples--fixed-total-en.html">Fixed totals</a></li>
+<li><a href="examples--duckdb-timezone-en.html">DuckDB timezone recipe</a></li>
+<li><a href="tutorials--interactive-journey.html">Use the interactive journey and its downloadable project</a></li>
+<li><a href="how-to--build-analysis.html">Build an analysis</a></li>
+<li><a href="how-to--design-measures.html">Design reusable measures</a></li>
+<li><a href="how-to--design-materializations.html">Design materializations</a></li>
+<li><a href="how-to--write-model-metadata.html">Write model metadata</a></li>
+<li><a href="how-to--review-model.html">Review a model</a></li>
 
-<pre><code class="language-sql">SELECT region, AGG(net_revenue) FROM MODEL GROUP BY region ORDER BY region
-</code></pre>
-</details>
+<li><a href="guide--share-denominator-en.html">Why a region filter changes the share denominator</a></li>
 
-<p><a href="task-examples.zip">Download the examples</a> and run <code>verify.py</code> as shown in the README. In the output’s <code>net-revenue</code> folder, compare <code>monthly-rows.json</code> with <code>after-monthly-rows.json</code>. The regional results are in <code>regional-rows.json</code> and <code>after-regional-rows.json</code>.</p>
-<h2 id="continue-from-the-journey">Continue from the journey <a class="section-link" aria-label="Link to section" href="#continue-from-the-journey">#</a></h2>
-<table>
-<thead>
-<tr>
-<th>When you want to…</th>
-<th>Look up…</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Choose a lookup, prepared source relation or cross-dataset metric composition</td>
-<td><a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">Source relations and composition</a></td>
-</tr>
-<tr>
-<td>Reuse a calculation rule across metrics</td>
-<td><a href="how-to--define-macros.html">Custom modifiers and database functions</a></td>
-</tr>
-<tr>
-<td>Define a dataset and its source-row key (chapters 1–2)</td>
-<td><a href="explanation--core-concepts.html">Core concepts</a> and <a href="explanation--dimensions.html">dimensions</a></td>
-</tr>
-<tr>
-<td>Reuse a calculation (chapters 3–4)</td>
-<td><a href="reference--measures.html">Measure declarations</a> and <a href="reference--model-query-sql.html">Model Query SQL</a></td>
-</tr>
-<tr>
-<td>Change filters, grain or time (chapters 6–9)</td>
-<td><a href="reference--modifiers.html">Measure modifiers</a></td>
-</tr>
-<tr>
-<td>Check lookups, missing values and results (chapters 5, 10–12)</td>
-<td><a href="how-to--compile-and-validate.html">Compile and validate</a></td>
-</tr>
-</tbody></table>
-<p>For a second worked example, <a href="reference--examples--composable-metrics.html">follow profitability</a> from definitions to cumulative comparison.</p>
-<h2 id="find-a-task">Find a task <a class="section-link" aria-label="Link to section" href="#find-a-task">#</a></h2>
-<p><a href="docs.zh.html">中文文档导航</a> · <a href="checked-exercise.html">Checked sales exercise</a> · <a href="materialization-workflow.html">Materialization workflow</a> · <a href="support.html">Troubleshooting and feedback</a></p>
-<h2 id="concepts">Concepts <a class="section-link" aria-label="Link to section" href="#concepts">#</a></h2>
-<ul>
-<li><a href="explanation--core-concepts.html">Core concepts</a> — how the model, query and expression layers fit together.</li>
-<li><a href="explanation--dimensions.html">Dimensions</a> — source-row identity, report grouping and evaluation grain.</li>
-<li><a href="explanation--measure-as-dimension.html">Measure-as-dimension</a> — calculate a label per entity, then group by it.</li>
-<li><a href="explanation--window-placement.html">Window placement</a> — choose the stage at which a window calculation runs.</li>
-<li><a href="explanation--visual-introduction.html">Text introduction</a> — a short companion to the interactive journey.</li>
+<li><a href="guide--duplicate-lookup-en.html">Why duplicate dimension keys can double sales</a></li>
 </ul>
-<h2 id="language-reference">Language reference <a class="section-link" aria-label="Link to section" href="#language-reference">#</a></h2>
-<p>The <a href="reference--README.html">reference index</a> covers model declarations, measures, DMX expressions, modifiers, SQL and YAML queries, materialization and model composition.</p>
-<h2 id="examples">Examples <a class="section-link" aria-label="Link to section" href="#examples">#</a></h2>
-<p><a href="examples--index-en.html">Runnable task examples</a> · <a href="examples--index.html">中文</a> include source data, complete models, queries, expected results and replay instructions for lookups, time context, running totals and fixed denominators.</p>
-<p>Browse the <a href="reference--examples--README.html">example catalog</a> for models, queries, aggregation, measure formulas and advanced calculations. Each example states the definitions it needs.</p>
-<table>
-<thead>
-<tr>
-<th>Your question</th>
-<th>Start here</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Which price was valid when a transaction happened?</td>
-<td><a href="examples--range-lookup-en.html">Effective-date lookup</a></td>
-</tr>
-<tr>
-<td>Can an id repeat in different regions?</td>
-<td><a href="examples--compound-key-en.html">Compound keys</a></td>
-</tr>
-<tr>
-<td>Can a running total be a reusable metric?</td>
-<td><a href="examples--running-total-en.html">Named running sales</a></td>
-</tr>
-<tr>
-<td>Does a February KPI include January?</td>
-<td><a href="examples--time-context-en.html">Time context and sibling measures</a></td>
-</tr>
-<tr>
-<td>Should a denominator retain the report filter?</td>
-<td><a href="examples--fixed-total-en.html">Fixed totals</a></td>
-</tr>
-<tr>
-<td>Which database dialect can I target, and what was executed?</td>
-<td><a href="reference--model-structure.html#sql-dialect">Dialect and execution scope</a></td>
-</tr>
-<tr>
-<td>Can my application bind query parameters?</td>
-<td><a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">Physical and semantic query binding</a></td>
-</tr>
-<tr>
-<td>What does checking a model prove about column types?</td>
-<td><a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">Declaration schemas and SQL value types</a></td>
-</tr>
-<tr>
-<td>Can I explore a metric before saving its definition?</td>
-<td><a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures</a></td>
-</tr>
-<tr>
-<td>How do I investigate a change or reuse existing SQL?</td>
-<td><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">Contribution analysis and SQL recovery</a></td>
-</tr>
-<tr>
-<td>How should a business day handle daylight saving?</td>
-<td><a href="examples--duckdb-timezone-en.html">DuckDB timezone recipe</a></td>
-</tr>
-</tbody></table>
-<h2 id="usage-guides">Usage guides <a class="section-link" aria-label="Link to section" href="#usage-guides">#</a></h2>
+</section>
+<section id="reference"><span id="concepts"></span><span id="language-reference"></span>
+<h2>Language reference</h2>
 <ul>
-<li><a href="tutorials--first-query.html">Compile your first query</a>.</li>
-<li><a href="tutorials--interactive-journey.html">Use the interactive journey and its downloadable project</a>.</li>
-<li><a href="how-to--build-analysis.html">Build an analysis</a> and <a href="how-to--design-measures.html">design reusable measures</a>.</li>
-<li><a href="how-to--define-macros.html">Extend DML with custom modifiers and database functions</a> and <a href="how-to--design-materializations.html">design materializations</a>.</li>
-<li><a href="how-to--write-model-metadata.html">Write model metadata</a> and <a href="how-to--review-model.html">review a model</a>.</li>
-<li><a href="how-to--compile-and-validate.html">Compile and validate</a>, <a href="how-to--troubleshoot-query.html">troubleshoot a query</a>, or look up an <a href="reference--error-codes.html">error code</a>.</li>
-<li><a href="checked-exercise-en.html">Run and check the sales report</a> on DuckDB with recorded compiler evidence (also in <a href="checked-exercise.html">Chinese</a>).</li>
-</ul>
-<p>A successful compile produces SQL to inspect. Validate source keys on the intended connection and compare result values separately.</p>
-<h2 id="solve-an-analytical-question">Solve an analytical question <a class="section-link" aria-label="Link to section" href="#solve-an-analytical-question">#</a></h2>
+<li><a href="reference--model-structure.html" class="">Datasets, columns and keys</a></li>
+<li><a href="reference--model-query-sql.html" class="">Model Query syntax</a></li>
+<li><a href="reference--modifiers.html" class="">Measure modifiers and ytd</a></li>
+<li><a href="reference--examples--composable-metrics.html">Calculate gross profit and margin</a></li>
+<li><a href="explanation--core-concepts.html#2-source-relations-lookups-and-metric-composition">Source relations and composition</a></li>
+<li><a href="explanation--core-concepts.html">Core concepts</a></li>
+<li><a href="explanation--dimensions.html">Dimension roles and grouping</a></li>
+<li><a href="reference--measures.html">Measure declarations</a></li>
+<li><a href="explanation--measure-as-dimension.html">Measure-as-dimension</a></li>
+<li><a href="explanation--window-placement.html">Window placement</a></li>
+<li><a href="explanation--visual-introduction.html">Introduction to DML concepts</a></li>
+<li><a href="reference--README.html">Language reference index</a></li>
+<li><a href="reference--examples--README.html">Language examples</a></li>
+<li><a href="reference--model-query-sql.html#jdbc-parameters-and-query-kind">Physical and semantic query binding</a></li>
+<li><a href="reference--model-structure.html#column-metadata-is-not-a-sql-type-declaration">Declaration schemas and SQL value types</a></li>
+<li><a href="reference--model-query-sql.html#312-inline-measures--dml--">Inline measures</a></li>
+<li><a href="reference--error-codes.html">Compiler error codes</a></li></ul>
+</section>
+<section id="errors">
+<h2>Troubleshooting</h2>
 <ul>
-<li><a href="guide--cumulative-margin-en.html">Why you cannot average monthly gross margins</a> · <a href="guide--cumulative-margin-zh.html">中文</a>.</li>
-<li><a href="guide--share-denominator-en.html">Why a region filter changes the share denominator</a> · <a href="guide--share-denominator-zh.html">中文</a>.</li>
-<li><a href="guide--duplicate-lookup-en.html">Why duplicate dimension keys can double sales</a> · <a href="guide--duplicate-lookup-zh.html">中文</a>.</li>
-</ul>
+<li><a href="duplicate-key.en.html" class="">duplicate_key: find repeated keys</a></li>
+<li><a href="support-en.html">Troubleshooting and feedback</a></li>
+<li><a href="how-to--troubleshoot-query.html">Troubleshoot a query</a></li></ul>
+</section>
+<section id="verify"><span id="trace-report-number"></span>
+<h2>Verify results</h2>
+<ul>
+<li><a href="how-to--compile-and-validate.html" class="">Compare DML and SQL on the same data</a></li>
+
+<li><a href="reference--model-structure.html#sql-dialect">Dialect and execution scope</a></li>
+<li><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">Contribution analysis and SQL recovery</a></li></ul>
+</section></article></div>
 </main></body></html>
