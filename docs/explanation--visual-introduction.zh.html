@@ -1,0 +1,105 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML入门之旅 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="一位旅人带着一个问题而来：每个地区的销售额是多少？"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML入门之旅 · DML"><meta property="og:description" content="一位旅人带着一个问题而来：每个地区的销售额是多少？"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="explanation--visual-introduction.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="explanation--visual-introduction.ja.html">日本語</a> <a lang="en" hreflang="en" href="explanation--visual-introduction.html">English</a></header><main><h1 id="a-small-journey-through-dml">DML入门之旅</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#each-sale-has-an-identity">每笔销售都有自己的标识</a></li><li><a href="#dml-records-the-reusable-definitions">DML 记录可复用的定义</a></li><li><a href="#dmx-expresses-a-calculation">DMX 表达计算逻辑</a></li><li><a href="#the-query-chooses-what-one-result-row-represents">查询决定每行结果代表什么</a></li><li><a href="#compilation-produces-sql">编译生成 SQL</a></li></ul></details>
+<p>一位旅人带着一个问题而来：每个地区的销售额是多少？</p>
+<p><img src="assets--little-worlds.png" alt="围着金色围巾的小旅人，望向漂浮的水彩小世界：花园、笔记、望远镜和纸卡。"></p>
+<p>打开<a href="journey.zh.html">带插图的交互式教程</a>。教程现在包含十二章，提供有评分的练习、进度保存功能和最终报表创建工具。<a href="tutorials--interactive-journey.zh.html">练习指南</a>涵盖整个入门项目。本页保留较简短的概念介绍。</p>
+<h2 id="each-sale-has-an-identity">每笔销售都有自己的标识 <a class="section-link" aria-label="本节链接" href="#each-sale-has-an-identity">#</a></h2>
+<p>旅人记录了四笔销售。这些行是为说明而虚构的，并非从数据库获取的记录。</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>region</th>
+<th>amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>North</td>
+<td>10</td>
+</tr>
+<tr>
+<td>2</td>
+<td>North</td>
+<td>20</td>
+</tr>
+<tr>
+<td>3</td>
+<td>South</td>
+<td>30</td>
+</tr>
+<tr>
+<td>4</td>
+<td>South</td>
+<td>40</td>
+</tr>
+</tbody></table>
+<p>源数据集定义了 <code>dimension: [id]</code>，每行代表一笔销售。两笔销售可能属于同一个地区，因此 <code>region</code> 无法唯一标识源数据中的一行。查询仍然可以按地区对这些行分组。</p>
+<p><a href="explanation--dimensions.zh.html">维度说明</a>详细介绍了如何标识源数据中的行，以及如何在报表中分组。</p>
+<h2 id="dml-records-the-reusable-definitions">DML 记录可复用的定义 <a class="section-link" aria-label="本节链接" href="#dml-records-the-reusable-definitions">#</a></h2>
+<p>旅人用笔记本记录各项定义。DML 就是这个模型，用 YAML 编写。以下代码片段为销售数据集声明了两个原子指标：</p>
+<pre><code class="language-yaml">FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+</code></pre>
+<p><code>sales</code> 对金额求和。<code>cnt</code> 统计源数据的行数。两者都是原子指标，均继承 <code>FACT_SALES</code> 作为数据集，直接对其中的行或列表达式进行聚合，不引用其他指标。如果报表定义行或汇总值的层级适用于这些指标的计算，就可以复用它们。</p>
+<h2 id="dmx-expresses-a-calculation">DMX 表达计算逻辑 <a class="section-link" aria-label="本节链接" href="#dmx-expresses-a-calculation">#</a></h2>
+<p>笔记本还记录了如何计算平均值：</p>
+<pre><code class="language-yaml">average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+</code></pre>
+<p>这段 YAML 声明了一个指标，其中的公式用 DMX 编写。<code>{sales}</code> 和 <code>{cnt}</code> 引用指标，分母为零时，<code>DIVIDE</code> 返回 NULL。<code>average_sale</code> 引用了其他指标，因此是复合指标。它没有 <code>dataset:</code> 属性。</p>
+<p>DMX 是模型定义和查询表达式共用的表达式语法。它不是模型与查询之间的独立处理步骤。语法以<a href="reference--expressions.zh.html">表达式参考</a>为准。</p>
+<h2 id="the-query-chooses-what-one-result-row-represents">查询决定每行结果代表什么 <a class="section-link" aria-label="本节链接" href="#the-query-chooses-what-one-result-row-represents">#</a></h2>
+<p>旅人把望远镜转向各个地区：</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>AGG</code> 引用模型中的一个指标。<code>GROUP BY region</code> 指定每个地区对应一行结果。根据示例中虚构的四笔销售，可以算出以下数值：</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>sales</th>
+<th>average_sale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td>30</td>
+<td>15</td>
+</tr>
+<tr>
+<td>South</td>
+<td>70</td>
+<td>35</td>
+</tr>
+</tbody></table>
+<p>不指定分组字段时，同一组模型指标得出的总销售额为 100，平均每笔销售额为 25。按 <code>id</code> 分组时，每笔销售对应一行结果。无论如何分组，源数据的行标识始终是 <code>[id]</code>。</p>
+<p>在声明的源键 <code>[id]</code> 所定义的层级上，经过检查的编译器将聚合简化为逐行表达式，并报告一条严格模式下的诊断信息。这项简化以 <code>id</code> 在源数据中唯一为前提。总计查询和按地区分组的查询均在经过检查的构建版本中通过严格模式编译。</p>
+<p><a href="compiler-observations.json">教程的编译器验证记录</a>列出了交互式项目使用的可执行文件、该文件的指纹以及执行过的检查。</p>
+<p>交互页面在浏览器中计算这些小型示例表中的值。它不会运行 DML，也不会连接数据库。</p>
+<h2 id="compilation-produces-sql">编译生成 SQL <a class="section-link" aria-label="本节链接" href="#compilation-produces-sql">#</a></h2>
+<p>编译器结合模型和查询，生成 SQL。数据库针对实际的源表执行生成的 SQL。</p>
+<pre><code class="language-text">DML model + Model Query
+          |
+        dmlc
+          |
+     generated SQL
+          |
+       database
+          |
+       result rows
+</code></pre>
+<p>编译成功可以确认受检编译器的行为。源数据的键需要在实际数据上校验，查询结果需要与独立算出的结果核对。<a href="tutorials--first-query.zh.html">首个查询教程</a>使用同一个模型，带你编译按地区汇总的查询，并查看生成的 SQL。</p>
+<p>如需了解更多内容，请参阅<a href="explanation--core-concepts.zh.html">核心概念</a>、<a href="reference--measures.zh.html">指标声明</a>或<a href="reference--model-query-sql.zh.html">模型查询 SQL</a>。</p>
+</main></body></html>

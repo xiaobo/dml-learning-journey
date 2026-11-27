@@ -1,0 +1,192 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Modellstruktur · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Seite beschreibt Felder auf Modellebene, Datensätze, Spaltenmakros und gemeinsame Metadaten. Die Sichtbarkeit eingebundener Dateien und die Namensauflösung sind unter Modellzusammensetzung beschrieben."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Modellstruktur · DML"><meta property="og:description" content="Diese Seite beschreibt Felder auf Modellebene, Datensätze, Spaltenmakros und gemeinsame Metadaten. Die Sichtbarkeit eingebundener Dateien und die Namensauflösung sind unter Modellzusammensetzung beschrieben."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--model-structure.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--model-structure.html">English</a> <a lang="zh" hreflang="zh" href="reference--model-structure.zh.html">中文</a></header><main><h1 id="model-structure">Modellstruktur</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#model-level-fields">Felder auf Modellebene</a></li><li><a href="#sql-dialect">SQL-Dialekt</a></li><li><a href="#dataset-definition-type-dataset">Datensatzdefinition (<code>type: dataset</code>)</a></li><li><a href="#column-macros">Spaltenmakros</a></li><li><a href="#common-metadata-fields">Gemeinsame Metadatenfelder</a></li><li><a href="#column-metadata-is-not-a-sql-type-declaration">Spaltenmetadaten sind keine SQL-Typdeklaration</a></li><li><a href="#system-calendar">Systemkalender</a></li></ul></details>
+<p>Diese Seite beschreibt Felder auf Modellebene, Datensätze, Spaltenmakros und gemeinsame Metadaten. Die Sichtbarkeit eingebundener Dateien und die Namensauflösung sind unter <a href="reference--model-composition.de.html">Modellzusammensetzung</a> beschrieben.</p>
+<p><a id="51-model-level-fields"></a></p>
+<h2 id="model-level-fields">Felder auf Modellebene <a class="section-link" aria-label="Link zum Abschnitt" href="#model-level-fields">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Feld</th>
+<th>Typ</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>includes</code></td>
+<td><code>string[]</code></td>
+<td>Pfade zu weiteren <code>.dml</code>-Dateien, die zusammengeführt werden sollen (die Symbole werden vereinigt)</td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td><code>string</code></td>
+<td>Ziel-SQL-Dialekt. Geben Sie ihn explizit an. Die erkannten Namen, den Standardwert und den Ausführungsumfang finden Sie unter <a href="#sql-dialect">SQL-Dialekt</a>.</td>
+</tr>
+<tr>
+<td><code>column-macros</code></td>
+<td><code>object</code></td>
+<td>Gemeinsame Spaltendefinitionen für mehrere Datensätze</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td><code>object</code> | <code>string</code></td>
+<td>Ein Datensatz, eine Kennzahl, ein dt-macro, ein fn-macro, ein materialize-Objekt oder eine Abfrage</td>
+</tr>
+</tbody></table>
+<p><strong>Zulässige Objektnamen</strong>: Jede Zeichenfolge außer reservierten Schlüsselwörtern (<code>includes</code>, <code>column-macros</code>, <code>datasets</code>, <code>measures</code>, <code>columns</code>, <code>dimensions[dt]</code>, <code>dt-macros</code>, <code>fn-macros</code>, <code>materializes</code>, <code>queries</code>, <code>dialects</code> sowie deren Singularformen).</p>
+<p><strong>Kurzform für Kennzahldefinitionen</strong>: Ist der Wert eines Eintrags auf oberster Ebene eine einfache Zeichenfolge, wird er als Kurzform für eine Kennzahlformel behandelt:</p>
+<pre><code class="language-yaml">sales: SUM({amount})
+# equivalent to:
+sales:
+    type: measure
+    formula: SUM({amount})
+</code></pre>
+<h3 id="sql-dialect">SQL-Dialekt <a class="section-link" aria-label="Link zum Abschnitt" href="#sql-dialect">#</a></h3>
+<p>Der geprüfte Compiler erkennt <code>adb_mysql</code>, <code>duckdb</code>, <code>mssql</code>, <code>mysql</code>, <code>postgres</code> und <code>sqlite</code>. Der aktuelle Compiler weist das geprüfte Modell zurück, wenn die Dialektangabe fehlt. Geben Sie den Zieldialekt explizit an. Eine konfigurierte DuckDB-Verbindung ändert den Zieldialekt des Modells nicht. Geben Sie für DuckDB als Ziel <code>dialect: duckdb</code> an.</p>
+<p>BigQuery, Snowflake, Databricks und ClickHouse wurden bei dieser Prüfung nicht als Ziele erkannt. Wenn eine Bereitstellung eine nicht erkannte Datenbank-Engine voraussetzt, muss diese Anforderung geklärt werden, bevor dmlc für die Bereitstellung eingesetzt wird.</p>
+<p>Die Erkennung eines Dialekts und der Umfang der geprüften Ausführung sind getrennt zu betrachten. Die ausführbaren Beispiele prüfen hauptsächlich Ergebnisse in DuckDB. Die Übersicht dokumentiert die Kompilierung für SQL Server gesondert. Diese Prüfungen belegen keinen identischen Funktionsumfang für alle sechs Datenbank-Engines. Validieren Sie das erzeugte SQL und vergleichen Sie die Ergebnisse in der vorgesehenen Datenbank. Erzeugtes SQL kann mehrere Anweisungen, Zwischenrelationen und Kalenderobjekte erfordern.</p>
+<p><a id="52-dataset-definition-type-dataset"></a></p>
+<h2 id="dataset-definition-type-dataset">Datensatzdefinition (<code>type: dataset</code>) <a class="section-link" aria-label="Link zum Abschnitt" href="#dataset-definition-type-dataset">#</a></h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: dataset
+    table: &lt;table_name&gt;          # required (or sql:)
+    # sql: &lt;SELECT ...&gt;          # alternative to table: — derived dataset
+    dimension: [col1, col2]      # dataset grain dimensions
+    materialize: &lt;name&gt;          # optional, declare a materialize table for this dataset
+    # or:
+    # materialize:
+    #     name: &lt;name&gt;
+    #     parameters:
+    #         &lt;param&gt;: &lt;value&gt;
+    columns:                     # required
+        col1:                    # direct column (pass-through)
+        col2: expr               # calculated column (inline expression)
+        col3:                    # full column definition
+            abbr: &lt;short&gt;        # abbreviation for display
+            description: &lt;text&gt;
+            formula: expr        # calculated column (block form)
+            # source: expr       # alternative to formula: data-source verification formula
+            prerequisite: &lt;expr&gt; # column-level grain constraint
+    dimensions[dt]:              # optional explicit time metadata; coarser standard dt_* fields may be system-derived
+        dt_date: date
+        dt_month: month
+    measures:                    # atomic measures (inherit enclosing dataset; no dataset:)
+        &lt;measure_name&gt;: &lt;formula or full definition&gt;
+            abbr: &lt;short&gt;
+            description: &lt;text&gt;
+</code></pre>
+<p><strong>Einschränkungen</strong>:</p>
+<ul>
+<li>Geben Sie genau eines der beiden Felder <code>table:</code> oder <code>sql:</code> an (sie schließen sich gegenseitig aus).</li>
+<li><strong><code>table:</code> legt eine exklusive Zuordnung fest.</strong> Mit <code>table: policy</code> gehört die physische Tabelle dem Datensatz <code>Policy</code>. Andere Datensätze dürfen den physischen Tabellennamen in <code>sql:</code> weder mit <code>FROM</code> noch mit <code>JOIN</code> referenzieren. Schreiben Sie <code>from {Policy}</code> bzw. <code>join {Policy}</code> (der Compiler setzt den Abfragenamen des Datensatzes ein), oder rufen Sie Attribute mit <code>pk(...).{Policy}.Col</code> ab und lassen Sie den Join weg. Um eine Tabelle ohne exklusive Zuordnung gemeinsam zu verwenden, geben Sie <code>sql: select * from &lt;table&gt;</code> anstelle von <code>table:</code> an.</li>
+<li><strong>Muster für Faktentabellen:</strong> Dimensionsdatensätze (<code>Claim</code>, <code>Policy</code>) verwenden <code>table:</code>. Ein Faktendatensatz, der nur die Attribute dieser Dimensionen benötigt, kann weiterhin eine Quelltabelle ohne exklusive Zuordnung verwenden und die Attribute mit <code>pk()</code> abrufen, statt in <code>sql:</code> einen Join mit der exklusiv zugeordneten Tabelle auszuführen.</li>
+<li><strong>Sichtbarkeit:</strong> Die geprüfte Version unterstützt innerhalb derselben Datei Verweise auf später definierte Datensätze, Kennzahlen und Spalten. Eingebundene Dateien müssen Namen über ihre eigenen Definitionen oder Einbindungen auflösen. Die übergeordnete Datei steht dafür nicht zur Verfügung. Siehe <a href="reference--model-composition.de.html">Modellzusammensetzung</a>.</li>
+<li>Wenn Sie eine Datei direkt kompilieren, benennen Sie die Abfrage wie die Datei ohne Dateiendung (<code>report.dml</code> → <code>report</code>).</li>
+<li><code>allows:</code> legt fest, welche Materialisierungen infrage kommen (<code>ALL</code>, <code>NONE</code> oder explizit angegebene Namen). Die Einstellung überschreibt keine Kennzahldimensionen.</li>
+<li>Für die im Beispiel gezeigte Form einer Kennzahlabfrage ist <code>columns:</code> erforderlich.</li>
+<li><code>dimensions[dt]</code> hat die folgenden Aufzählungswerte: <code>year</code>, <code>quarter</code>, <code>month</code>, <code>week</code>, <code>date</code> und <code>hour</code>.</li>
+<li><code>materialize:</code> akzeptiert entweder einen Namen als Skalarwert oder ein Objekt mit dem Pflichtfeld <code>name:</code> und dem optionalen Feld <code>parameters:</code>. Beide Formen identifizieren dieselbe Materialisierung innerhalb des Datensatzes.</li>
+</ul>
+<p>Mit dem SQL eines Datensatzes lassen sich unterstützte Joins, Vereinigungen und Unterabfragen vor der Auswertung der Kennzahlen ausführen. <code>UNION ALL</code> erhält die Zeilenmultiplizität: Ein Schlüssel, der die Zeilen in jeder Eingabe für sich eindeutig identifiziert, ist für die zusammengeführten Zeilen möglicherweise nicht eindeutig. Definieren Sie einen Schlüssel für die zusammengeführte Relation, statt anzunehmen, dass der ursprüngliche Schlüssel eines Zweigs eindeutig bleibt. Die geprüften Beispiele greifen über <code>{DATASET}</code>-Referenzen auf Quelldatensätze zu, die nur Spalten definieren. Das aktuelle Programm validiert diese abgeleiteten Relationen, ohne eine nicht verfügbare Zwischentabelle vorauszusetzen. Prüfen Sie den vollständigen Schlüssel der abgeleiteten Relation: Sind die Schlüssel eindeutig, ist die Validierung erfolgreich. Bei doppelten Schlüsseln meldet der Validierungsbericht einen Verstoß mit <code>data.issues[].kind: duplicate_key</code>. Ergänzen Sie die fehlende Schlüsselkomponente, damit die Validierung wieder erfolgreich ist. Eine fehlende physische Quelle führt zu <code>EXECUTION_ERROR</code> und wird nicht als doppelter Schlüssel gemeldet. Prüfen Sie die fachlichen Ergebnisse zusätzlich zur Validierung.</p>
+<p><strong>Formen der Spaltendefinition</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>YAML</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Direkt</td>
+<td><code>amount:</code> (null)</td>
+<td>Übernimmt die Spalte der zugrunde liegenden Tabelle unverändert</td>
+</tr>
+<tr>
+<td>Berechnet (inline)</td>
+<td><code>net: amount - discount</code> (Zeichenfolge)</td>
+<td>Per Ausdruck abgeleitete Spalte</td>
+</tr>
+<tr>
+<td>Berechnet (Block)</td>
+<td><code>net: { formula: amount - discount }</code></td>
+<td>Abgeleitete Spalte mit Metadaten</td>
+</tr>
+<tr>
+<td>Mit Verifizierungsformel</td>
+<td><code>net: { source: amount - discount }</code></td>
+<td>Deklariert eine Formel zur Überprüfung der Datenquelle. Die Kompilierung allein weist nicht nach, dass die Quellwerte übereinstimmen.</td>
+</tr>
+</tbody></table>
+<p><strong>Namensbindung mit geschweiften Klammern in Formeln</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Schreibweise in <code>formula:</code></th>
+<th>Wird gebunden als</th>
+<th>Beispiel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>amount</code> allein</td>
+<td><strong>Physische</strong> (native) Tabellenspalte. Der Compiler übernimmt den Namen unverändert in das SQL.</td>
+<td><code>net: amount - discount</code>, wenn beide Spalten als direkt definiert sind</td>
+</tr>
+<tr>
+<td><code>{calc_amt}</code></td>
+<td><strong>Berechnete</strong> Spalte (oder Kennzahl bzw. Spaltenmakro). DMX expandiert die Definition.</td>
+<td><code>doubled: '{calc_amt} * 2'</code></td>
+</tr>
+</tbody></table>
+<p>Ein Name ohne geschweifte Klammern in der Formel einer berechneten Spalte wird als native SQL-Spalte behandelt. Die Reihenfolge der Aliase in SELECT kann den Eindruck erwecken, dass der Verweis funktioniert. Die Definition der berechneten Spalte wird jedoch <strong>nicht</strong> expandiert. Setzen Sie den Namen in geschweifte Klammern, wenn die Formel diese Definition wiederverwenden soll.</p>
+<p>Abhängigkeiten zuerst zu definieren, ist eine Konvention für bessere Lesbarkeit. In der geprüften Version wurde ein <code>pk()</code>-Verweis auf ein später in derselben Datei definiertes Ziel erfolgreich kompiliert. Nicht auflösbare Namen können auf eine fehlende Einbindung, einen Tippfehler oder einen Verstoß gegen die Sichtbarkeitsregeln für Einbindungen hinweisen. Siehe <a href="reference--model-composition.de.html">Modellzusammensetzung</a>.</p>
+<p><a id="56-column-macros"></a></p>
+<h2 id="column-macros">Spaltenmakros <a class="section-link" aria-label="Link zum Abschnitt" href="#column-macros">#</a></h2>
+<p>Spaltenmakros definieren Spalten, die in mehreren Datasets verwendet werden:</p>
+<pre><code class="language-yaml">column-macros:
+    datasets: [tx, orders]       # scoped datasets
+    columns:                     # shared column definitions
+        region: '{stores}.region'  # cross-dataset lookup
+    dimensions[dt]:
+        dt_month: month
+
+    # OR per-dataset scope:
+    &lt;dataset_name&gt;:
+        &lt;col&gt;: &lt;formula&gt;
+</code></pre>
+<p><a id="57-common-metadata-fields"></a></p>
+<h2 id="common-metadata-fields">Gemeinsame Metadatenfelder <a class="section-link" aria-label="Link zum Abschnitt" href="#common-metadata-fields">#</a></h2>
+<p>Welche Metadaten unterstützt werden, hängt vom Objekttyp ab. Maßgeblich ist die zugehörige Schemadefinition:</p>
+<table>
+<thead>
+<tr>
+<th>Feld</th>
+<th>Typ</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>abbr</code></td>
+<td><code>string</code></td>
+<td>SQL-tauglicher Kurzname ausschließlich für den internen Gebrauch in temporären Tabellen, Joins und der Ausgabe von <code>materialize</code>. Dieser Kurzname erscheint nie als Spaltenalias im endgültigen Abfrageergebnis. Dafür wird der Schlüssel mit dem fachlichen Namen oder ein expliziter <code>AS</code>-Alias verwendet.</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>string</code></td>
+<td>Für Menschen verständliche Beschreibung</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>Frei wählbare Tags</td>
+</tr>
+<tr>
+<td><code>prerequisite</code></td>
+<td><code>string</code> (Formel)</td>
+<td>Einschränkung für die zulässige Ebene, auf der Zeilen oder Summen definiert sind (Kennzahlen, Spalten, dt-Makros, fn-Makros)</td>
+</tr>
+</tbody></table>
+<h2 id="column-metadata-is-not-a-sql-type-declaration">Spaltenmetadaten sind keine SQL-Typdeklaration <a class="section-link" aria-label="Link zum Abschnitt" href="#column-metadata-is-not-a-sql-type-declaration">#</a></h2>
+<p>Spalteneigenschaften müssen dem DML-Schema entsprechen. Geben Sie die Eigenschaften unter der jeweiligen Spalte an. Steht <code>type: text</code> innerhalb von <code>columns:</code> auf derselben Ebene wie diese Spalte, definiert der Eintrag eine andere Spalte namens <code>type</code>. Ob das Modell akzeptiert wird, sagt dann nichts über den Typ der ursprünglich gemeinten Spalte aus. In der geprüften Build-Version werden sowohl <code>type: text</code> als auch <code>type: banana</code> unter einer Spalte als nicht unterstützte Eigenschaft abgelehnt. Dabei wird das Metadatenschema validiert. Daraus lässt sich keine vollständige statische Typprüfung von Ausdrücken ableiten. Definieren Sie physische Spaltentypen in der Datenbank und verwenden Sie bei einer erforderlichen Konvertierung unterstützte Ausdrücke oder Casts. Die Angaben <code>type: dataset</code> und <code>type: measure</code> auf oberster Ebene kennzeichnen DML-Objektarten. Sie deklarieren keine SQL-Werttypen.</p>
+<h2 id="system-calendar">Systemkalender <a class="section-link" aria-label="Link zum Abschnitt" href="#system-calendar">#</a></h2>
+<p>Bei manchen Verbindungen wird <code>DML_CALENDAR</code> initialisiert, sobald die Verbindung erstmals für eine Validierung mit Datenbankzugriff oder eine Ausführung verwendet wird. Das gilt auch, wenn die Abfrage keinen Zeitmodifikator enthält. Bei der getesteten DuckDB-Verbindung wurde für jeden Tag von 2016 bis einschließlich 2036 eine Zeile initialisiert (7,671 Zeilen). Das für die Initialisierung verwendete Konto benötigt die Berechtigung, die Tabelle im Zielschema anzulegen und zu befüllen. Für nachfolgende Abfragen ist Lesezugriff erforderlich.</p>
+<p>Wenn das Laufzeitkonto keine Tabellen erstellen kann, lassen Sie den Kalender von einem Datenbankadministrator mit derselben dmlc-Build-Version, demselben Verbindungsdialekt und demselben Schema initialisieren, bevor Sie die Validierung mit dem Laufzeitkonto ausführen. Prüfen Sie, ob der Kalender den Berichtszeitraum und die Vergleichszeiträume abdeckt.</p>
+</main></body></html>

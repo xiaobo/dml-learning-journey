@@ -1,21 +1,21 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>在 SQL Server 上使用 Maz · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="面向熟悉 SQL 的报表开发、应用开发和数据运维人员。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><meta property="og:type" content="website"><meta property="og:title" content="在 SQL Server 上使用 Maz · DML"><meta property="og:description" content="面向熟悉 SQL 的报表开发、应用开发和数据运维人员。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.html">搜索文档</a><a href="maz-sqlserver-en.html" hreflang="en" lang="en" rel="alternate">English</a></header><main><h1 id="在-sql-server-上使用-maz">在 SQL Server 上使用 Maz</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#用教程中的销售数据做季度报表">用教程中的销售数据做季度报表</a></li><li><a href="#准备第一季度">准备第一季度</a></li><li><a href="#新月份和历史更正怎样处理">新月份和历史更正怎样处理</a></li><li><a href="#中断后继续工作">中断后继续工作</a></li><li><a href="#处理常见问题">处理常见问题</a></li><li><a href="#查看全局-runner-进展">查看全局 runner 进展</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>在 SQL Server 上使用 Maz · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="面向熟悉 SQL 的报表开发、应用开发和数据运维人员。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="在 SQL Server 上使用 Maz · DML"><meta property="og:description" content="面向熟悉 SQL 的报表开发、应用开发和数据运维人员。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="maz-sqlserver.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="maz-sqlserver.ja.html">日本語</a> <a lang="en" hreflang="en" href="maz-sqlserver-en.html">English</a></header><main><h1 id="在-sql-server-上使用-maz">在 SQL Server 上使用 Maz</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#用教程中的销售数据做季度报表">用教程中的销售数据做季度报表</a></li><li><a href="#准备第一季度">准备第一季度</a></li><li><a href="#新月份和历史更正怎样处理">新月份和历史更正怎样处理</a></li><li><a href="#中断后继续工作">中断后继续工作</a></li><li><a href="#处理常见问题">处理常见问题</a></li><li><a href="#查看全局-runner-进展">查看全局 runner 进展</a></li></ul></details>
 <p>面向熟悉 SQL 的报表开发、应用开发和数据运维人员。</p>
 <blockquote>
 <p>本练习使用月销售额与季度销售额两个 Maz。用生成的 <code>setup_sql</code> 安装运行时。执行 <code>prepare_sql</code> 后，根据返回的 <code>data_ready=1</code> 执行业务查询。等待期间可用 <code>prepare_status_sql</code> 查看本次请求，用 <code>DML_MAZ_PROGRESS</code> 查看全局进展。</p>
 </blockquote>
 <p>先阅读<a href="maz-prepare-refresh.html">prepare 与 refresh 的选择、参数和恢复规则</a>。</p>
-<h2 id="用教程中的销售数据做季度报表">用教程中的销售数据做季度报表 <a class="section-link" aria-label="Link to section" href="#用教程中的销售数据做季度报表">#</a></h2>
+<h2 id="用教程中的销售数据做季度报表">用教程中的销售数据做季度报表 <a class="section-link" aria-label="本节链接" href="#用教程中的销售数据做季度报表">#</a></h2>
 <p>互动教程第 12 章的 <code>FACT_SALES</code> 数据集读取 <code>TABLE_SALES</code>，用 <code>id</code> 标识一笔销售，<code>dt_month</code> 记录月份，<code>sales: SUM({amount})</code> 计算销售额。继续使用这份模型和 8 笔原始数据。1 月合计 70，2 月合计 100。</p>
 <p>这个扩展新增两个物化结果和一张季度报表。</p>
 <p><code>TABLE_SALES</code>（销售明细） → <code>SALES_MONTHLY</code>（月销售额） → <code>SALES_QUARTERLY</code>（季度销售额） → <code>quarterly_sales</code>（报表）</p>
 <p>查询准备先检查上游需要的月份，再构建下游季度。每个需要重建的分片单独提交。</p>
-<h2 id="准备第一季度">准备第一季度 <a class="section-link" aria-label="Link to section" href="#准备第一季度">#</a></h2>
+<h2 id="准备第一季度">准备第一季度 <a class="section-link" aria-label="本节链接" href="#准备第一季度">#</a></h2>
 <ol>
 <li>在空的 SQL Server 练习库运行互动教程的安装脚本。若已运行过该练习，继续使用同一个练习库。</li>
 <li>运行下方的日历扩展。教程的练习日历只有日期和月份，范围截至 2025 年 2 月。这一步增加季度并补齐到 6 月底。</li>
-<li>在教程的 <code>model.dml</code> 顶部加入 <code>dialect: mssql</code>，再追加下面的物化与报表定义。</li>
+<li>将教程的 <code>model.dml</code> 另存为 <code>quarterly_sales.dml</code>。保留已有的 <code>dialect: mssql</code>，在文件末尾加上下面的物化和报表定义。</li>
 </ol>
-<p>回看<a href="journey.html#capstone">互动教程第 12 章</a>，下载原始 <a href="model.dml">model.dml</a> 和 <a href="lesson-files--setup-mssql.sql">SQL Server 安装脚本</a>。</p>
+<p>回看<a href="journey.zh.html#capstone">互动教程第 12 章</a>，下载原始 <a href="model.dml">model.dml</a> 和 <a href="lesson-files--setup-mssql.sql">SQL Server 安装脚本</a>。</p>
 <details>
 <summary>展开 SQL Server 日历扩展</summary>
 
@@ -66,9 +66,14 @@ quarterly_sales:
 </code></pre>
 </details>
 
+<pre><code class="language-powershell">$compiled = dmlc --compile --strict --json --artifacts=gen quarterly_sales.dml | ConvertFrom-Json
+$compiled.data.setupSql    # setup_sql
+$compiled.data.prepareSql  # prepare_sql
+$compiled.data.sql         # sql
+</code></pre>
 <p>编译扩展后的模型，用生成的 <code>setup_sql</code> 安装物化和依赖。随后在自动提交连接上执行 <code>quarterly_sales</code> 的 <code>prepare_sql</code>；它完成准备和实际就绪检查后返回 <code>data_ready=1</code>，再执行同一请求的业务 <code>sql</code>。等待期间可从另一连接用 <code>prepare_status_sql</code> 观察状态。错误或等待超时后暂不查询，排除原因后重试普通准备。SQL Server 会话需要 <code>IMPLICIT_TRANSACTIONS OFF</code> 且 <code>@@TRANCOUNT = 0</code>。业务查询仍为 SELECT 或 CTE。</p>
 <p>第一季度返回 <strong>170</strong>。1、2、3 月都已有月分片状态，3 月的分片当时为空。示例使用大写物化名，以避开当前 SQL Server 登记对混合大小写嵌套名称的问题。</p>
-<h2 id="新月份和历史更正怎样处理">新月份和历史更正怎样处理 <a class="section-link" aria-label="Link to section" href="#新月份和历史更正怎样处理">#</a></h2>
+<h2 id="新月份和历史更正怎样处理">新月份和历史更正怎样处理 <a class="section-link" aria-label="本节链接" href="#新月份和历史更正怎样处理">#</a></h2>
 <p>按下方顺序在练习库运行三次数据变动。源事务提交后再执行 refresh。两次插入分别使用教程已有的地区和客户。</p>
 <table>
 <thead>
@@ -85,7 +90,7 @@ quarterly_sales:
 </tr>
 <tr>
 <td>向 <code>TABLE_SALES</code> 插入 4 月销售额 40。二季度及所需月分片尚未构建</td>
-<td>将 <code>quarterly_sales</code> 的两个筛选边界都改为 <code>2025-04-01</code>。执行新的 <code>prepare_sql</code>，正常返回后再执行 <code>sql</code> 查询二季度</td>
+<td>保留一季度的编译结果。在 <code>quarterly_sales.dml</code> 中，把 <code>dt_quarter</code> 的起止日期都改为 <code>2025-04-01</code>，重新运行上面的编译命令。执行新结果中的 <code>prepareSql</code>，收到 <code>data_ready=1</code> 后，再执行同一结果中的 <code>sql</code>。核对二月修正后的金额时，用之前保留的一季度编译结果，或把起止日期都改回 <code>2025-01-01</code> 后重新编译。</td>
 <td>二季度首次返回 <strong>40</strong></td>
 </tr>
 <tr>
@@ -125,10 +130,10 @@ EXEC dbo.DML_REFRESH_MAZ
 <p>默认 refresh 先统一失效并登记选中月及受影响季度，再调用 runner；忙时可返回已受理。读取报表前执行 Query 的 prepare_sql，它会等待并检查本次就绪。若希望等查询使用时再重建，显式增加 @_invalidate_only=1；它提交标记后返回，不启动 runner，不取消既有待办。</p>
 <p>需要核验整张报表时，对 <code>SALES_QUARTERLY</code> 使用 <code>DML_PREPARE_MAZ</code>、第一季度范围和 <code>@_force_update = 1</code>，强制重建本次必要月份和季度。只知道某个月源数据变化时，从 <code>SALES_MONTHLY</code> 调用 refresh；只刷新季度不会发现未通知的旧月缓存。</p>
 <p><code>@_match</code> 默认 exact；<code>like</code> 配合 <code>SALES~_%</code> 匹配字面前缀 SALES_，配合 <code>%</code> 匹配全部已登记 Maz。日期包含起止日；refresh 同时省略日期处理已有范围，不预建整个日历。跨月移动须覆盖旧月和新月。</p>
-<h2 id="中断后继续工作">中断后继续工作 <a class="section-link" aria-label="Link to section" href="#中断后继续工作">#</a></h2>
+<h2 id="中断后继续工作">中断后继续工作 <a class="section-link" aria-label="本节链接" href="#中断后继续工作">#</a></h2>
 <p>每片独立提交。后片失败时，已完成片保留，当前片回滚。普通 prepare 可补齐已知目标和范围；重新执行带 force_update=1 的 prepare 是新强刷。</p>
 <p>默认 refresh 中断后，已登记的剩余分片保存在 STATE。排除错误后，可调用无参 <code>DML_REFRESH_MAZ</code>，或通过后续 prepare、refresh 唤起 runner。再次发送默认 refresh 或 force_update=1 会重新声明需求，允许重做已完成片。无参 refresh 只继续待办，不重新失效已完成片。取消或超时后须先关闭该物理连接，再继续待办；仅 ROLLBACK 不会释放会话级 runner 锁。提交响应丢失时，先重新检查状态。</p>
-<h2 id="处理常见问题">处理常见问题 <a class="section-link" aria-label="Link to section" href="#处理常见问题">#</a></h2>
+<h2 id="处理常见问题">处理常见问题 <a class="section-link" aria-label="本节链接" href="#处理常见问题">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -181,7 +186,7 @@ GROUP BY dt_quarter
 ORDER BY dt_quarter;
 </code></pre>
 <p>参阅<a href="maz-prepare-refresh.html">prepare 与 refresh 使用约定</a>。</p>
-<h2 id="查看全局-runner-进展">查看全局 runner 进展 <a class="section-link" aria-label="Link to section" href="#查看全局-runner-进展">#</a></h2>
+<h2 id="查看全局-runner-进展">查看全局 runner 进展 <a class="section-link" aria-label="本节链接" href="#查看全局-runner-进展">#</a></h2>
 <p>用生成的 <code>setup_sql</code> 安装共享进展视图，然后查询：</p>
 <pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
 FROM dbo.DML_MAZ_PROGRESS;

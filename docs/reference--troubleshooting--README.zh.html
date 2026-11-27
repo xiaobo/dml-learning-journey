@@ -1,0 +1,436 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>故障排查索引 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="在下方查找症状，或按固定 ID 查找已知陷阱。诊断步骤见“排查查询问题”，结构化诊断信息见“错误代码”。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="故障排查索引 · DML"><meta property="og:description" content="在下方查找症状，或按固定 ID 查找已知陷阱。诊断步骤见“排查查询问题”，结构化诊断信息见“错误代码”。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--troubleshooting--README.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--troubleshooting--README.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--README.html">English</a></header><main><h1 id="troubleshooting-index">故障排查索引</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#error--fix-quick-reference">错误与修复方法速查</a></li><li><a href="#find-a-pitfall-by-id">按 ID 查找常见陷阱</a></li></ul></details>
+<p>在下方查找症状，或按固定 ID 查找已知陷阱。诊断步骤见“<a href="how-to--troubleshoot-query.zh.html">排查查询问题</a>”，结构化诊断信息见“<a href="reference--error-codes.zh.html">错误代码</a>”。</p>
+<h2 id="error--fix-quick-reference">错误与修复方法速查 <a class="section-link" aria-label="本节链接" href="#error--fix-quick-reference">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>错误或症状</th>
+<th>修复方法</th>
+<th>常见陷阱</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UNION is not supported</code></td>
+<td>独立的查询，或筛选条件不同的指标</td>
+<td><a href="reference--troubleshooting--queries.zh.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>aggregation is not possible with MODEL.DATASET_*</code></td>
+<td><code>FROM MODEL</code> + <code>AGG(measure)</code></td>
+<td><a href="reference--troubleshooting--queries.zh.html#p8">P8</a>, <a href="reference--troubleshooting--queries.zh.html#p45">P45</a></td>
+</tr>
+<tr>
+<td><code>subquery is not supported</code></td>
+<td>使用 DML 指标，或将 <code>+f</code> / <code>HAVING</code> 与 <code>AGG()</code> 搭配使用</td>
+<td><a href="reference--troubleshooting--queries.zh.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>JOIN is not supported</code></td>
+<td>列宏中的 <code>{DATASET}.column</code></td>
+<td><a href="reference--troubleshooting--queries.zh.html#p11">P11</a></td>
+</tr>
+<tr>
+<td><code>ref {...} not defined</code></td>
+<td>在模型中定义，在 SQL 中直接使用名称</td>
+<td><a href="reference--troubleshooting--models.zh.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>measure cannot be redefined</code></td>
+<td>移除 <code>AGG(measure_name)</code> 上的 <code>AS measure_name</code></td>
+<td><a href="reference--troubleshooting--models.zh.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>use existing measure "X" instead of recreating…</code></td>
+<td>仅使用 <code>AGG(X)</code></td>
+<td><a href="reference--troubleshooting--models.zh.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>... was referenced but not defined in sql</code></td>
+<td>从模型查询的 SQL 中移除 <code>{...}</code>（<code>AGG({…})</code> 内的修饰符形式除外）</td>
+<td><a href="reference--troubleshooting--models.zh.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>file not found: SELECT ...</code>（Windows）</td>
+<td>在 CLI 中直接输入模型查询 SQL 时，将 <code>/</code> 运算符替换为 <code>DIVIDE()</code></td>
+<td><a href="reference--troubleshooting--tooling.zh.html#p63">P63</a></td>
+</tr>
+<tr>
+<td><code>table … is owned by dataset …</code></td>
+<td><code>from {Dataset}</code> / <code>join {Dataset}</code>，或 <code>pk(...).{Dataset}.Col</code></td>
+<td><a href="reference--troubleshooting--models.zh.html#p22b">P22b</a></td>
+</tr>
+<tr>
+<td>将指标用作维度时，缺少 <code>+d</code>、标签键不兼容，或同级指标无法安全上卷</td>
+<td>为每个用作维度的指标显式指定完整的 <code>+d</code> 键。使用兼容的键和可聚合的输出指标。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p66">P66</a>–<a href="reference--troubleshooting--grain-and-joins.zh.html#p68">P68</a></td>
+</tr>
+<tr>
+<td>对同一对象使用 <code>{+d:x,-d:x}</code> / <code>{+d:x,-df:x}</code> 时，会在没有提示的情况下变成单独的 <code>{m}</code> 或 <code>{-f:x}</code></td>
+<td>此写法不合法，必须明确报错。改写表达式，直接指定所需操作。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p79">P79</a></td>
+</tr>
+<tr>
+<td><code>-f</code> / <code>-df</code> 分支移除了与分组粒度无关的查询筛选条件，导致 FOJ 另一侧的行混入结果</td>
+<td>继续限制报表覆盖的数据范围（<code>EXISTS</code> / 半连接）。<code>-f</code> 不改变分组。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p80">P80</a></td>
+</tr>
+<tr>
+<td>月度查询中的 <code>{m:{dimension:[dt_quarter]}}</code> 被作为标量接入，或接入时使用了错误的粒度</td>
+<td>通过日历关联较粗粒度的 CTE，将季度值分发到该季度的各行</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p81">P81</a></td>
+</tr>
+<tr>
+<td>细粒度 CTE 中的 <code>WHERE</code> 及其外层的 <code>SUM</code> 被改写为粗粒度的 <code>filters: "cnt &gt; 3"</code></td>
+<td>在指标内部使用 <code>SUMIF</code> / <code>SUM(iif)</code>，并指定与之匹配的 <code>{+d: …}</code></td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p69">P69</a></td>
+</tr>
+<tr>
+<td><code>window functions are not allowed in atomic measures</code> / <code>GROUP BY</code> 与 <code>OVER</code> 的非法组合</td>
+<td>明细级的 <code>OVER</code> 放在 <code>columns:</code> 下。<code>GROUP-BY</code> 之后使用复合指标或 <code>{-d:}</code>。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p70">P70</a>–<a href="reference--troubleshooting--grain-and-joins.zh.html#p71">P71</a></td>
+</tr>
+<tr>
+<td><code>… reference is not allowed in PARTITION BY</code></td>
+<td>如果在指标的窗口函数中直接将 <code>{col}</code> 用于窗口定义，请将明细计算移到 <code>columns:</code>，或使用 <code>{-d:}</code> / <code>{dimension:}</code>。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p71">P71</a></td>
+</tr>
+<tr>
+<td>上卷时比率的分母算错（本应为 <code>left × right</code>，实际为 <code>left²</code>），且没有诊断信息</td>
+<td>两个定义粒度的字段指向同一列。<code>-df</code>/<code>dimension:</code> 将第二个角色绑定到了第一个键。使用 <code>pk()</code> 引用已声明维度的 <code>sql:</code> 数据集。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p72">P72</a></td>
+</tr>
+<tr>
+<td>上卷的复合指标生成额外的行，或生成实际不存在的 <code>left = right</code> 行</td>
+<td>跨数据集的 <code>-df</code> 会生成 <code>FULL OUTER JOIN</code>。使用 <code>'{primary_measure} is not null':</code> 限制结果。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p73">P73</a></td>
+</tr>
+<tr>
+<td><code>-df</code> 上卷丢弃了定义粒度的一个字段，仅发出“skip dimension column”警告</td>
+<td>基于同一物理表的两个 <code>table:</code> 数据集使用了不同的列集合。保持列集合完全一致，或避免使用让同一张表承担不同角色的数据集。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p74">P74</a></td>
+</tr>
+<tr>
+<td>重命名维度后，<code>-df</code> 报错 <code>column(s) [x] … not in dimension</code></td>
+<td><code>-df</code> 的参数应使用已声明的粒度字段名，而不是源列名。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p76">P76</a></td>
+</tr>
+<tr>
+<td><code>MAX(pk(…))</code> 报错 <code>dataset must be specified … did you mean X</code></td>
+<td>将 <code>dataset:</code> 设为<strong>使用方</strong>数据集</td>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p77">P77</a></td>
+</tr>
+</tbody></table>
+<h2 id="find-a-pitfall-by-id">按 ID 查找常见陷阱 <a class="section-link" aria-label="本节链接" href="#find-a-pitfall-by-id">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>主题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="reference--troubleshooting--migration.zh.html#p1">P1</a></td>
+<td>在 DML 中加入展示逻辑</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.zh.html#p2">P2</a></td>
+<td>在 DML 中加入仅供查询使用的派生列</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.zh.html#p5">P5</a></td>
+<td>未验证编译生成的 SQL 是否与基准 SQL 一致</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.zh.html#p6">P6</a></td>
+<td>为筛选条件或查询维度组合创建一次性指标</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.zh.html#p7">P7</a></td>
+<td>重复定义聚合公式</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p8">P8</a></td>
+<td>在聚合查询中遗漏 AGG()</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p9">P9</a></td>
+<td>为 AGG() 添加多余的别名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p10">P10</a></td>
+<td>使用子查询</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p11">P11</a></td>
+<td>使用 JOIN</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p12">P12</a></td>
+<td>时间修饰符缺少时间上下文</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p13">P13</a></td>
+<td>混用不同的时间粒度</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p14">P14</a></td>
+<td>添加不必要的空值筛选条件</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p15">P15</a></td>
+<td>对单个周期使用 BETWEEN</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p16">P16</a></td>
+<td>时间筛选条件的顺序属于书写惯例</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p17">P17</a></td>
+<td>在不需要时使用 ORDER BY</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p18">P18</a></td>
+<td>手动计算增长率</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p20">P20</a></td>
+<td>仅使用 DISTINCT 检查是否存在记录</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p21">P21</a></td>
+<td>在指标公式中使用 AGG()</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p22">P22</a></td>
+<td>跨数据集引用时未使用查找</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p22b">P22b</a></td>
+<td>在另一个数据集的 <code>sql:</code> 中连接已通过 <code>table:</code> 归属某个数据集的物理表</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p23">P23</a></td>
+<td>原子指标缺少 <code>dataset:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p24">P24</a></td>
+<td>指标名称过于具体</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p25">P25</a></td>
+<td>未记录边界情况</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p27">P27</a></td>
+<td>将受维度约束的指标用于不兼容的查询</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p28">P28</a></td>
+<td><code>GROUP BY</code> 已经足够时仍使用 <code>+d</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p28b">P28b</a></td>
+<td>连接时缺少匹配行会导致空值传播</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p28c">P28c</a></td>
+<td>跨数据集组合中分组键为 NULL</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p29">P29</a></td>
+<td>时间筛选条件指定了周期首日以外的日期</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p30">P30</a></td>
+<td>过去 N 天的范围遗漏当天</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p31">P31</a></td>
+<td>将当前周期计入过去 N 个月</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p32">P32</a></td>
+<td>将 ytd 修饰符与按完整周期分组的 GROUP BY 搭配使用</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p33">P33</a></td>
+<td>将从周期起始至指定日期的统计与日期范围搭配使用</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p34">P34</a></td>
+<td>在依赖结果之前未运行 validateOnly</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p35">P35</a></td>
+<td>忽略列说明</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p36">P36</a></td>
+<td>方言不匹配</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p37">P37</a></td>
+<td>对列使用修饰符</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p38">P38</a></td>
+<td>YAML 公式未加引号</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p39">P39</a></td>
+<td>在复合指标上使用 <code>dataset:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p40">P40</a></td>
+<td>无法重新定义指标 / 公式重复</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p41">P41</a></td>
+<td>在模型查询的 SQL 中使用 DML 的 <code>{...}</code> 语法</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.zh.html#p42">P42</a></td>
+<td><code>.dml</code> 公式中直接使用名称与使用 <code>{col}</code> 的区别</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p43">P43</a></td>
+<td><code>{dimension: [...]}</code> 与 <code>{-d: dim_dt}</code> 的区别（SQL 结构不同）</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p44">P44</a></td>
+<td>窗口内占比与 <code>{-d: dim}</code> 的区别</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p45">P45</a></td>
+<td>在明细查询中使用指标</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p46">P46</a></td>
+<td>在聚合查询中直接使用列名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p47">P47</a></td>
+<td>数据集之间的维度字段名不一致</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p48">P48</a></td>
+<td>在 <code>dimension:</code> 下使用映射作为维度字段</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p49">P49</a></td>
+<td>在 <code>measures:</code> 下定义维度字段</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p50">P50</a></td>
+<td>在查询的 <code>filters:</code> 中使用复杂筛选条件</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p51">P51</a></td>
+<td>PK 链式调用的参数数量不匹配</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p52">P52</a></td>
+<td>在 <code>after:</code> 中手动编写 GROUP BY</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p53">P53</a></td>
+<td>在 PowerShell 中使用 <code>&amp;&amp;</code> 串联命令</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p53b">P53b</a></td>
+<td><code>FROM</code> 中的名称 ≠ <code>--model=</code> 中的<strong>文件</strong>名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p63">P63</a></td>
+<td>在 Windows 的 CLI 中直接输入模型查询 SQL 时使用 <code>/</code> 运算符</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.zh.html#p54">P54</a></td>
+<td>通过 PowerShell 管道传递含 CJK 字符的 JSON</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.zh.html#p59">P59</a></td>
+<td>未检查列就进行同比计算</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p60">P60</a></td>
+<td>在聚合查询中使用子查询求日期的 MAX</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.zh.html#p61">P61</a></td>
+<td>使用 GROUP BY 直接对数据集进行聚合</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p62">P62</a></td>
+<td>将指标的 <code>dimensions:</code> 当作数据集标识或查询分组依据</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p64">P64</a></td>
+<td>在指标上使用 <code>materialize: true</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p66">P66</a></td>
+<td>将指标用作维度时未显式指定实体键</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p67">P67</a></td>
+<td>由指标派生的维度不兼容或存在依赖关系</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p68">P68</a></td>
+<td>无法将输出指标从定义分类的粒度上卷到更粗的粒度</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p69">P69</a></td>
+<td>将细粒度的 <code>WHERE</code> 放到粗粒度查询的 <code>filters:</code> 中</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p70">P70</a></td>
+<td>在原子指标上使用 <code>OVER</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p71">P71</a></td>
+<td>在指标的 <code>PARTITION BY</code> 中直接使用 <code>{col}</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p72">P72</a></td>
+<td>两个定义粒度的字段指向同一列，导致跨数据集上卷绑定到错误的键</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p73">P73</a></td>
+<td>使用 <code>-df</code> 上卷的复合指标会输出仅存在于连接另一侧的行，还可能生成实际不存在的键值</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p74">P74</a></td>
+<td>基于同一张物理表的两个 <code>table:</code> 数据集：合并时的特殊行为及 <code>-df</code> 指定的粒度在无提示的情况下丢失</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p75">P75</a></td>
+<td>查询中通过 <code>filters:</code> 保护指标的筛选条件：结构和失败方式</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p76">P76</a></td>
+<td><code>-df</code> 和 <code>-d</code> 的参数是已声明的粒度字段名，而非源列名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p77">P77</a></td>
+<td>对聚合关系使用 <code>pk()</code>：以 <code>sql:</code> 为目标，并在外层定义上使用 <code>dataset:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p79">P79</a></td>
+<td>在同一维度上将 <code>+d</code> 与 <code>-d</code> 或 <code>-df</code> 搭配使用</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p80">P80</a></td>
+<td>使用 <code>-f</code> 或 <code>-df</code> 后，针对非粒度字段的查询筛选条件将不再用于筛选报表行</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p81">P81</a></td>
+<td>使用 <code>dimension:</code> 跨粒度替换时间维度，不将值广播到日历各期</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.zh.html#p78">P78</a></td>
+<td>使用 <code>sql:</code> 转义时，必须在其中写明限定数据总体和窗口的谓词</td>
+</tr>
+</tbody></table>
+</main></body></html>

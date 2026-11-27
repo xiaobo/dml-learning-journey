@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指标公式示例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="使用每个公式前，先定义其中引用的数据集、列和指标。这里的片段用来说明公式写法。要用作验收测试，还需要完整的模型和测试数据。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="指标公式示例 · DML"><meta property="og:description" content="使用每个公式前，先定义其中引用的数据集、列和指标。这里的片段用来说明公式写法。要用作验收测试，还需要完整的模型和测试数据。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--examples--measure-formulas.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--examples--measure-formulas.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--measure-formulas.html">English</a></header><main><h1 id="measure-formula-examples">指标公式示例</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#business-metric-examples">常用业务指标</a></li><li><a href="#financial-metrics">财务指标</a></li><li><a href="#transaction-counts">交易笔数</a></li><li><a href="#common-patterns">常用公式</a></li><li><a href="#average-calculations">计算平均值</a></li><li><a href="#frequency-calculations">计算频率</a></li><li><a href="#average-annual-revenue">年均收入</a></li></ul></details>
+<p>使用每个公式前，先定义其中引用的数据集、列和指标。这里的片段用来说明公式写法。要用作验收测试，还需要完整的模型和测试数据。</p>
+<p><a id="business-metrics-examples"></a></p>
+<h2 id="business-metric-examples">常用业务指标 <a class="section-link" aria-label="本节链接" href="#business-metric-examples">#</a></h2>
+<h3 id="financial-metrics">财务指标 <a class="section-link" aria-label="本节链接" href="#financial-metrics">#</a></h3>
+<pre><code class="language-yaml">account_receivable:
+    type: measure
+    formula: |-
+        {amount: {+f: {account: 'Accounts Receivable (A/R)'}}}
+
+outstanding:
+    type: measure
+    description: All unpaid amounts (including not yet due)
+    formula: |-
+        {open_balance}
+
+balance_due:
+    type: measure
+    description: Amounts due today or earlier
+    formula: |-
+        {open_balance: {+f: 'due_date &lt;= date(current_date)'}}
+</code></pre>
+<h3 id="transaction-counts">交易笔数 <a class="section-link" aria-label="本节链接" href="#transaction-counts">#</a></h3>
+<pre><code class="language-yaml">number_of_invoices:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : 'invoice'}}}
+
+number_of_checks:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : 'check'}}}
+
+number_of_received_checks:
+    type: measure
+    formula: |-
+        {number_of_checks: {+f: 'customer is not null'}}
+</code></pre>
+<hr>
+<p>命名、<code>description:</code> 和 <code>abbr</code> 的规则见<a href="how-to--review-model.zh.html">检查模型</a>。常见问题见<a href="reference--troubleshooting--README.zh.html">排错目录</a>中的 P1 和 P25。</p>
+<hr>
+<h2 id="common-patterns">常用公式 <a class="section-link" aria-label="本节链接" href="#common-patterns">#</a></h2>
+<h3 id="average-calculations">计算平均值 <a class="section-link" aria-label="本节链接" href="#average-calculations">#</a></h3>
+<pre><code class="language-yaml">avg_invoice_value:
+    type: measure
+    formula: |-
+        divide({amount: {+f: {transaction_type: 'invoice'}}}, {number_of_invoices})
+</code></pre>
+<h3 id="frequency-calculations">计算频率 <a class="section-link" aria-label="本节链接" href="#frequency-calculations">#</a></h3>
+<pre><code class="language-yaml">avg_bill_frequency:
+    type: measure
+    formula: |-
+        divide(sum({number_of_invoices: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
+</code></pre>
+<p><a id="year-over-year-metrics"></a></p>
+<h3 id="average-annual-revenue">年均收入 <a class="section-link" aria-label="本节链接" href="#average-annual-revenue">#</a></h3>
+<pre><code class="language-yaml">annual_avg_revenue:
+    type: measure
+    formula: |-
+        divide(sum({revenue: {+d: dt_year}}), distinctcount({dt_year}))
+</code></pre>
+</main></body></html>

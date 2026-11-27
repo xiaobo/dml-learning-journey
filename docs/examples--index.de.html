@@ -1,0 +1,44 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ausführbares Beispiel nach fachlicher Fragestellung auswählen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Jedes Beispiel enthält Eingabedaten, vollständige Modelldefinitionen, Abfragen, erwartete Ergebnisse und eine Anleitung zum Nachvollziehen. Jede Anleitung erläutert die Berechnung, ihren Geltungsbereich und die"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--index.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--index.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--index-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--index.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--index.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Ausführbares Beispiel nach fachlicher Fragestellung auswählen · DML"><meta property="og:description" content="Jedes Beispiel enthält Eingabedaten, vollständige Modelldefinitionen, Abfragen, erwartete Ergebnisse und eine Anleitung zum Nachvollziehen. Jede Anleitung erläutert die Berechnung, ihren Geltungsbereich und die"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--index.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="examples--index.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--index-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--index.html">中文</a></header><main><h1 id="choose-a-runnable-example-by-business-question">Ausführbares Beispiel nach fachlicher Fragestellung auswählen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#replay-the-examples">Beispiele nachvollziehen</a></li></ul></details>
+<p>Jedes Beispiel enthält Eingabedaten, vollständige Modelldefinitionen, Abfragen, erwartete Ergebnisse und eine Anleitung zum Nachvollziehen. Jede Anleitung erläutert die Berechnung, ihren Geltungsbereich und die Punkte, die Sie vor einer Anpassung prüfen sollten.</p>
+<p><a href="examples--index.de.html">Chinesisch</a></p>
+<table>
+<thead>
+<tr>
+<th>Ihre Frage</th>
+<th>Anleitung mit ausführbarem Beispiel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Wie unterscheide ich Datensätze, wenn dieselbe ID in mehreren Regionen vorkommt?</td>
+<td><a href="examples--compound-key.de.html">Zusammengesetzte Schlüssel und Eindeutigkeit</a></td>
+</tr>
+<tr>
+<td>Welcher Preis oder welche Kategorie galt zum Zeitpunkt eines Ereignisses?</td>
+<td><a href="examples--range-lookup.de.html">Suche anhand des Gültigkeitszeitraums</a></td>
+</tr>
+<tr>
+<td>Bis zu welchem Zeitpunkt soll eine einzelne kumulierte KPI berechnet werden?</td>
+<td><a href="examples--time-context.de.html">Expliziter Zeitkontext</a></td>
+</tr>
+<tr>
+<td>Kann ich eine laufende Umsatzsumme einmal definieren und wiederverwenden?</td>
+<td><a href="examples--running-total.de.html">Benannte laufende Summe</a></td>
+</tr>
+<tr>
+<td>Soll der Nenner für Januar auch andere Monate einbeziehen?</td>
+<td><a href="examples--fixed-total.de.html">Filtergeltungsbereich und feste Gesamtsummen</a></td>
+</tr>
+<tr>
+<td>Wie berücksichtige ich Mitternacht als Grenze des Geschäftstags und die Sommerzeit?</td>
+<td><a href="examples--duckdb-timezone.de.html">Feste Zeitzone in DuckDB verwenden</a></td>
+</tr>
+</tbody></table>
+<h2 id="replay-the-examples">Beispiele nachvollziehen <a class="section-link" aria-label="Link zum Abschnitt" href="#replay-the-examples">#</a></h2>
+<p><a href="task-examples.zip">Laden Sie das Projekt herunter</a>. Führen Sie im entpackten Verzeichnis den folgenden Befehl mit Python 3, der für das Beispiel erforderlichen Abhängigkeit <code>duckdb==1.5.5</code> und Ihrem bereits installierten Compiler aus:</p>
+<pre><code class="language-powershell">py verify.py --dmlc C:/path/to/dmlc.exe --output C:/path/to/new-practice-output
+</code></pre>
+<p>Ersetzen Sie beide Pfade. Das Ausgabeverzeichnis darf noch nicht vorhanden sein. Verwenden Sie für jeden Durchlauf ein neues Verzeichnis. Das Skript legt dort eine eigene Übungsdatenbank und eine lokale Verbindungskonfiguration an und liest keine Geschäftsdaten. Verwenden Sie Python nicht mit <code>-O</code>, da diese Option Assertions deaktiviert. Auf anderen Betriebssystemen als Windows können Sie statt <code>py</code> direkt die ausführbare Datei für Python 3 aufrufen.</p>
+<p>Bei einem erfolgreichen Durchlauf werden die Fälle am Ende als bestanden ausgewiesen. Im Ausgabeverzeichnis werden <code>results.json</code>, die unverarbeiteten Diagnosemeldungen und der generierte SQL-Code gespeichert. Fälle, für die ein Fehler erwartet wird, müssen zunächst mit den vorgegebenen Diagnosemeldungen fehlschlagen und nach der Korrektur erfolgreich sein. Die mitgelieferte README beschreibt auch den Aufruf über JDBC. Das Paket enthält lesbare Quelldateien und erwartete Ausgaben. Compiler-Binärdateien und Laufzeitumgebungen von Drittanbietern sind nicht enthalten. Für die JDBC-Prüfungen müssen zusätzlich ein JDK und die passenden JAR-Dateien installiert sein.</p>
+<p>Kompilierung, Validierung an der laufenden Datenbank, Ausführung und Ergebnisvergleich werden separat geprüft. Absichtlich ungültige Fälle müssen wie erwartet fehlschlagen und nach der Korrektur die Prüfung bestehen. Prüfen Sie vor dem Einsatz eigener Tabellen, ob die Schlüssel vollständig sind und welche Zeitfelder, Gruppierungen und Filtergeltungsbereiche verwendet werden.</p>
+<p>Ein erfolgreiches Beispiel auf einer Datenbank belegt nicht, dass es für alle Dialekte, Kennzahlen oder Ebenen gilt, auf denen eine Abfrage Zeilen oder Summen definiert. Die Syntax ist in der Sprachreferenz beschrieben. Diese Anleitungen zeigen konkrete Aufgaben mit reproduzierbaren Ergebnissen.</p>
+</main></body></html>

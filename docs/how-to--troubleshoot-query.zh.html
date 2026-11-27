@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>排查查询问题 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="如果编译失败、出现严格模式警告，或生成的 SQL 与查询意图不符，请按此流程排查。如果不确定实际行为，请使用所选的 dmlc.exe 进行确认。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="排查查询问题 · DML"><meta property="og:description" content="如果编译失败、出现严格模式警告，或生成的 SQL 与查询意图不符，请按此流程排查。如果不确定实际行为，请使用所选的 dmlc.exe 进行确认。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--troubleshoot-query.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--troubleshoot-query.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--troubleshoot-query.html">English</a></header><main><h1 id="troubleshoot-a-query">排查查询问题</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#debugging-workflow-model-query-sql">调试流程（Model Query SQL）</a></li><li><a href="#reading-compiler-errors">阅读编译错误</a></li><li><a href="#prevention-checklist">问题预防检查清单</a></li></ul></details>
+<p>如果编译失败、出现严格模式警告，或生成的 SQL 与查询意图不符，请按此流程排查。如果不确定实际行为，请使用所选的 <code>dmlc.exe</code> 进行确认。</p>
+<h2 id="debugging-workflow-model-query-sql">调试流程（Model Query SQL） <a class="section-link" aria-label="本节链接" href="#debugging-workflow-model-query-sql">#</a></h2>
+<p>如果编译报告 <code>COMPILE_ERROR</code>，或消息中提到 <code>UNION</code>、<code>JOIN</code>、<code>subquery</code>、<code>aggregation is not possible</code>、<code>ref {...} not defined</code>、<code>measure cannot be redefined</code> 或 <code>use existing measure</code>，请使用此流程。</p>
+<ol>
+<li><strong>阅读完整的错误信息</strong>，包括消息载荷中生成的 <code>-- dialect: …</code> SQL。</li>
+<li><strong>确定查询类型</strong>：明细查询（存在性检查、列表、单条记录）或聚合查询。聚合使用 <code>FROM MODEL</code> + <code>AGG()</code>。如果模型文件名为 <code>&lt;name&gt;.dml</code>，则使用 <code>FROM &lt;name&gt;</code> 作为查询来源。</li>
+<li><strong>选择合适的 FROM 子句</strong>。聚合查询使用 <code>FROM MODEL</code>，文件名为 <code>&lt;name&gt;.dml</code> 时使用 <code>FROM &lt;name&gt;</code>。明细查询使用 <code>FROM MODEL.&lt;dataset&gt;</code> 或 <code>FROM &lt;name&gt;.&lt;dataset&gt;</code>，不使用 <code>AGG</code> 或 <code>GROUP BY</code>。名称应与 <code>.dml</code> 文件对应（<code>model.dml</code> ↔ <code>FROM MODEL</code>）。</li>
+<li><strong>移除不受支持的 SQL</strong>。不得使用子查询、UNION 或 JOIN。需要可移植的窗口操作时，使用 <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> 中的 fn 宏（<code>rank</code>、<code>pot</code>、<code>grand</code>）。多级聚合使用 <code>+d</code> 指标，复杂逻辑使用 <code>.dml</code> 定义（参见<a href="how-to--design-measures.zh.html">指标设计</a>和<a href="reference--modifiers.zh.html#25-modifier-stacking">修饰符叠加</a>）。手写 <code>OVER</code> 时，有关数据集中<strong>窗口操作的放置位置</strong>，请参见<a href="explanation--window-placement.zh.html">窗口操作的放置位置</a>。如果没有 fn 宏支持所需的写法，可以在 Model Query 中直接编写 <code>OVER()</code>。</li>
+<li><strong>区分指标和列</strong>。在查询中使用 <code>AGG(measure)</code>，在 <code>.dml</code> 文件中使用 <code>{column}</code> 或 <code>'{measure: modifier}'</code>。在 Model Query SQL 中，除 <code>AGG({measure: modifier})</code> 外，不要对直接引用的列使用 <code>{...}</code>。</li>
+<li><strong>逐步调试</strong>。先验证 <code>SELECT AGG(one_measure) FROM MODEL</code>，再添加 <code>GROUP BY</code> 和筛选条件。使用 <code>dmlc --validate &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --json</code> 进行验证。</li>
+</ol>
+<p><a id="reading-mcp-wrapped-errors"></a></p>
+<h3 id="reading-compiler-errors">阅读编译错误 <a class="section-link" aria-label="本节链接" href="#reading-compiler-errors">#</a></h3>
+<p>结合生成的 SQL 阅读编译器消息。如果原因不明，请先将查询简化为一个指标，再逐个添加列和筛选条件。</p>
+<h2 id="prevention-checklist">问题预防检查清单 <a class="section-link" aria-label="本节链接" href="#prevention-checklist">#</a></h2>
+<p>提交任何 DML 或 Model Query SQL 前，请检查以下各项：</p>
+<ol>
+<li>指标使用业务名称，不使用技术名称。</li>
+<li><code>.dml</code> 文件中的指标公式不含 <code>AGG()</code>。</li>
+<li>直接使用的 <code>AGG(measure)</code> 没有多余的别名。</li>
+<li>时间修饰符的时间上下文已确定，并满足宏的前置条件。</li>
+<li>时间筛选条件采用相应时间段首日的日期格式。</li>
+<li>为便于阅读，可以将时间筛选条件放在最后。语法不要求谓词按特定顺序排列。</li>
+<li>不使用子查询、JOIN 或 UNION。</li>
+<li>将易于阅读的 Model Query SQL 保存到 <code>.sql</code> 文件中。</li>
+<li>查询类型（明细或聚合）符合查询意图。</li>
+<li>在预定的数据库连接上，<code>--validate</code> 验证通过。</li>
+<li>不要用 <code>GROUP BY</code> 直接对 <code>MODEL.DATASET_*</code> 聚合。请使用 <code>FROM MODEL</code> + <code>AGG()</code>，或导出明细数据。</li>
+<li>对于涉及稀疏数据或 FOJ 的复合指标，请为引用的输入启用默认值填充，将 <code>isnull</code>、<code>ifnull</code> 或 <code>coalesce(公式, 字面量)</code> 放在最外层（P28b）。嵌入已启用填充的依赖项时，填充逻辑仍会展开。</li>
+<li>将指标用作维度时，每个从指标派生的维度都必须有完整、显式的实体键（优先使用 <code>+d</code>）。如果有多个标签，各标签的键彼此独立且相同。每个输出指标都必须能从 <code>Q ∪ K</code> 所定义的粒度正确向上汇总。标签筛选条件在标签生成后应用（P66–P68）。</li>
+<li>如果要先在细粒度 CTE 中应用 <code>WHERE</code>，再在外层执行 <code>SUM</code>，请使用 <code>SUMIF</code> 或 <code>SUM(iif)</code>，并指定匹配的 <code>{+d: …}</code>。不要在粗粒度查询中直接按指标筛选（P69）。</li>
+<li>窗口操作的放置位置：将明细级 <code>OVER</code> 放在 <code>columns:</code> 下，然后执行原子聚合。<code>GROUP-BY</code> 之后，将窗口操作放在复合指标、<code>{-d:}</code> 或 <code>{-df:}</code> 中。切勿在原子指标上使用 <code>OVER</code>（P70–P71）。</li>
+<li>如果两个定义粒度的字段是同一物理列的别名，请检查生成的每个汇总 <code>ON</code> 子句是否使用了正确的键（P72）。需要显式键时，可改用 <code>pk()</code> 将数据导入已声明维度的 <code>sql:</code> 数据集（P77）。</li>
+<li>跨数据集的 <code>-df</code> 复合汇总采用 FULL OUTER。使用 <code>'{primary_measure} is not null':</code> 排除仅存在于对侧的行（P73）。对侧的临时结果可能包含由 <code>max()</code> 填充的键，因此“额外的行”可能看起来像与自身匹配的有效行对。</li>
+<li>切勿对同一对象编写 <code>{+d:x,-d:x}</code> 或 <code>{+d:x,-df:x}</code>。遇到这种写法应明确报错，并显式改写表达式（P79）。</li>
+<li><code>-f</code> 不会移除限定查询总体的筛选条件。受阻且不涉及粒度字段的筛选条件需要使用 <code>EXISTS</code>（P80）。</li>
+<li>跨粒度替换时间 <code>dimension:</code> 时，需要通过日历建立映射，并将值广播到目标行（P81）。</li>
+<li>单独使用 <code>{m:{+d:x}}</code> 时，结果仅处于细粒度。要汇总回原粒度，必须在外层使用 <code>SUM</code>、<code>AVG</code> 等聚合函数，MAD 标签绑定除外。</li>
+</ol>
+</main></body></html>

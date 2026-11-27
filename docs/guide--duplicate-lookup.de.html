@@ -1,0 +1,37 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Warum doppelte Dimensionsschlüssel bei einem Lookup die Umsatzsumme verdoppeln können · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Wenn eine Faktenzeile zu zwei Dimensionszeilen passt, kann der Join dieselbe Faktenzeile zweimal zurückgeben. Werden die Beträge im Join-Ergebnis summiert, gehen beide Treffer in die Summe ein. Ein Lookup ist n"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Warum doppelte Dimensionsschlüssel bei einem Lookup die Umsatzsumme verdoppeln können · DML"><meta property="og:description" content="Wenn eine Faktenzeile zu zwei Dimensionszeilen passt, kann der Join dieselbe Faktenzeile zweimal zurückgeben. Werden die Beträge im Join-Ergebnis summiert, gehen beide Treffer in die Summe ein. Ein Lookup ist n"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="guide--duplicate-lookup.ja.html">日本語</a> <a lang="en" hreflang="en" href="guide--duplicate-lookup-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a></header><main><h1 id="why-duplicate-dimension-keys-can-double-sales-after-a-lookup">Warum doppelte Dimensionsschlüssel bei einem Lookup die Umsatzsumme verdoppeln können</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#one-region-two-matches">Eine Region, zwei Treffer</a></li><li><a href="#inspect-the-rows">Zeilen prüfen</a></li><li><a href="#validate-the-real-connection">Die tatsächliche Verbindung validieren</a></li></ul></details>
+<p>Wenn eine Faktenzeile zu zwei Dimensionszeilen passt, kann der Join dieselbe Faktenzeile zweimal zurückgeben. Werden die Beträge im Join-Ergebnis summiert, gehen beide Treffer in die Summe ein. Ein Lookup ist nur dann sicher, wenn der deklarierte Zielschlüssel in den tatsächlichen Daten eindeutig ist.</p>
+<h2 id="one-region-two-matches">Eine Region, zwei Treffer <a class="section-link" aria-label="Link zum Abschnitt" href="#one-region-two-matches">#</a></h2>
+<p>Die Lektion enthält zwei Verkäufe für North mit den Beträgen 10 und 20. Bei einem einzigen Verzeichniseintrag für North beträgt die Summe der zugeordneten Verkäufe 30. Kommt ein zweiter Eintrag für North hinzu, hat jeder Verkauf zwei Treffer:</p>
+<table>
+<thead>
+<tr>
+<th>Verkauf in den Quelldaten</th>
+<th align="right">Treffer</th>
+<th align="right">Beitrag zur Summe nach dem Join</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North, Betrag 10</td>
+<td align="right">2</td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>North, Betrag 20</td>
+<td align="right">2</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>Gesamtwert</td>
+<td align="right">4 Zeilen im Join-Ergebnis</td>
+<td align="right">60</td>
+</tr>
+</tbody></table>
+<p>Die Verkäufe in den Quelldaten haben sich nicht geändert. Das Join-Ergebnis enthält mehr Zeilen. Eine spätere Aggregation kann die zusätzlichen Zeilen verdecken, während der zu hohe Betrag bestehen bleibt.</p>
+<h2 id="inspect-the-rows">Zeilen prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-rows">#</a></h2>
+<p><a href="journey.de.html#lookups">Öffnen Sie die Lookup-Übung</a> und aktivieren Sie den ungültigen doppelten Eintrag für North. Vergleichen Sie das Verzeichnis, die übereinstimmenden Zeilen und die Summe für North. Für das logische Dataset DIM_REGION ist dimension: [region] deklariert. Seine physische Quelle ist TABLE_REGION. Mehrfach vorkommende North-Werte verletzen diese Deklaration des Quellschlüssels.</p>
+<h2 id="validate-the-real-connection">Die tatsächliche Verbindung validieren <a class="section-link" aria-label="Link zum Abschnitt" href="#validate-the-real-connection">#</a></h2>
+<p>Führen Sie vor der Berichtsausführung <code>dmlc --validate</code> auf der vorgesehenen Verbindung aus. Der Befehl prüft, ob für die von der Abfrage erreichten Datasets jeweils die gesamte deklarierte Dimensionskombination in den tatsächlichen Daten eindeutig ist. In diesem Beispiel führen zwei Einträge für North dazu, dass die Validierung für <code>DIM_REGION</code> den Fehler <code>VALIDATION_ERROR</code> meldet. <a href="journey.de.html#lookups">Verwenden Sie exakt den Befehl und die Abfrage aus der Übung</a>, korrigieren Sie die Deklaration oder die Quelldaten und wiederholen Sie die Validierung vor der Ausführung, um doppelte Lookup-Ergebnisse zu vermeiden.</p>
+<p>Wiederholen Sie die Validierung nach relevanten Änderungen am Modell, an der Abfrage, an der Verbindung oder an den Quelldaten. Bei einer gültigen Eins-zu-viele-Beziehung muss die Berechnung ausdrücklich auf diese Beziehung ausgelegt sein.</p>
+<p>Der Schalter im Browser wirkt sich nur auf die fiktiven Daten im Browser aus. Die Validierung prüft Quellschlüssel und Abfrageplanung. Sie vergleicht keine Ergebnisse ausgeführter Berichte. Siehe <a href="reference--troubleshooting--grain-and-joins.de.html">Granularität von Zeilen und Summen und ihre Rolle bei Joins</a>.</p>
+<p><a hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.zip">Projekt zur Lektion herunterladen</a></p>
+</main></body></html>

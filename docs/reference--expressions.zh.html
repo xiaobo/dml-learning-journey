@@ -1,0 +1,346 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMX 表达式与函数 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页介绍引用形式和内在函数。修饰符的行为见指标修饰符。查询语法和别名规则见Model Query SQL。示例中的函数采用表达式语法，生成的 SQL 取决于所选方言。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DMX 表达式与函数 · DML"><meta property="og:description" content="本页介绍引用形式和内在函数。修饰符的行为见指标修饰符。查询语法和别名规则见Model Query SQL。示例中的函数采用表达式语法，生成的 SQL 取决于所选方言。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--expressions.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--expressions.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--expressions.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--expressions.html">English</a></header><main><h1 id="dmx-expressions-and-functions">DMX 表达式与函数</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#reference-syntax">引用语法</a></li><li><a href="#in-dml-formulas">在 <code>.dml</code> 公式中</a></li><li><a href="#in-model-query-sql">在 Model Query SQL 中</a></li><li><a href="#pk-lookups">使用 <code>pk(...)</code> 查找</a></li><li><a href="#compound-and-effective-date-keys">复合键和带生效日期的键</a></li><li><a href="#functions">函数</a></li><li><a href="#core-aggregation-functions">基本聚合函数</a></li><li><a href="#dml-specific-functions">DML 特有的函数</a></li><li><a href="#conditional-and-utility-functions">条件函数和辅助函数</a></li><li><a href="#date-functions-sqlite-dialect">日期函数（SQLite 方言）</a></li><li><a href="#modifier-syntax-in-model-query-sql">Model Query SQL 中的修饰符语法</a></li><li><a href="#runtime-variables">运行时变量</a></li><li><a href="#database-defined-scalar-functions">数据库定义的标量函数</a></li><li><a href="#complete-lookup-examples">完整的查找示例</a></li></ul></details>
+<p>本页介绍引用形式和内在函数。修饰符的行为见<a href="reference--modifiers.zh.html">指标修饰符</a>。查询语法和别名规则见<a href="reference--model-query-sql.zh.html">Model Query SQL</a>。示例中的函数采用表达式语法，生成的 SQL 取决于所选方言。</p>
+<p><a id="1-reference-syntax"></a></p>
+<h2 id="reference-syntax">引用语法 <a class="section-link" aria-label="本节链接" href="#reference-syntax">#</a></h2>
+<h3 id="in-dml-formulas">在 <code>.dml</code> 公式中 <a class="section-link" aria-label="本节链接" href="#in-dml-formulas">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>引用类型</th>
+<th>语法</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>列</td>
+<td><code>{column_name}</code></td>
+<td><code>SUM({amount})</code></td>
+</tr>
+<tr>
+<td>指标</td>
+<td><code>{measure_name}</code></td>
+<td><code>DIVIDE({sales}, {count})</code></td>
+</tr>
+<tr>
+<td>其他数据集中的列</td>
+<td><code>{DATASET}.column</code></td>
+<td><code>{products}.price</code></td>
+</tr>
+<tr>
+<td>带修饰符的指标</td>
+<td><code>{measure: modifier}</code></td>
+<td><code>{sales: yoy}</code></td>
+</tr>
+<tr>
+<td>带嵌套修饰符的指标</td>
+<td><code>{measure: {modifier: sub}}</code></td>
+<td><code>{sales: {+d: customer}}</code></td>
+</tr>
+</tbody></table>
+<h3 id="in-model-query-sql">在 Model Query SQL 中 <a class="section-link" aria-label="本节链接" href="#in-model-query-sql">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>引用类型</th>
+<th>语法</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>列（维度）</td>
+<td>直接使用名称</td>
+<td><code>SELECT product, dt_month</code></td>
+</tr>
+<tr>
+<td>指标</td>
+<td><code>AGG(measure_name)</code></td>
+<td><code>AGG(sales)</code></td>
+</tr>
+<tr>
+<td>带修饰符的指标</td>
+<td><code>AGG({measure: modifier})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+<tr>
+<td>以位置参数指定修饰符的指标</td>
+<td><code>AGG(measure, 'modifier')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
+</tr>
+</tbody></table>
+<p><strong>基本规则</strong>：花括号 <code>{...}</code> 仅用于 <code>.dml</code>。在 Model Query SQL 中，维度直接使用名称，指标使用 <code>AGG(...)</code>。唯一的例外是修饰符写法 <code>AGG({measure: modifier})</code>。</p>
+<h3 id="pk-lookups">使用 <code>pk(...)</code> 查找 <a class="section-link" aria-label="本节链接" href="#pk-lookups">#</a></h3>
+<p>查找支持单字段键、复合键和带生效日期的键。请提供目标的完整键，而不是使用该查找的查询的分组字段。此类属性查找不同于在数据集 SQL 中准备关系，也不同于组合独立聚合的指标。参见<a href="explanation--core-concepts.zh.html#2-source-relations-lookups-and-metric-composition">源关系、查找与指标组合</a>。</p>
+<p>在 <code>.dml</code> 公式中查找其他数据集的列：</p>
+<pre><code class="language-yaml"># Single PK
+formula: 'SUM({amount} * pk(customer_id).{customers}.tier_discount)'
+
+# Composite PK
+formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
+</code></pre>
+<p>按声明顺序为目标的每个维度字段提供一个表达式。对于 <code>[brand_id, tag_id]</code>，<code>pk(1, tag_id)</code> 的参数个数正确，并且有意将 <code>brand_id</code> 固定为 1。此查找是否正确，取决于预期使用的键以及该键在源数据中是否唯一。</p>
+<h3 id="compound-and-effective-date-keys">复合键和带生效日期的键 <a class="section-link" aria-label="本节链接" href="#compound-and-effective-date-keys">#</a></h3>
+<p>目标的 <code>dimension:</code> 定义其完整的源键，而不是报表的分组方式。以下两种查找写法均按声明顺序使用目标字段：</p>
+<pre><code class="language-yaml"># Target with a compound key:
+dimension: [id, region]
+# Column in the referring dataset:
+label: 'pk({id}, {region}).{D}.label'
+</code></pre>
+<pre><code class="language-yaml"># Target with an object key and validity interval:
+dimension: [id, 'range(valid_from, valid_to)']
+# Column in the referring dataset:
+label: 'pk({id}, {event_date}).{D}.label'
+</code></pre>
+<p>请保留 <code>'range(valid_from, valid_to)'</code> 的引号，使逗号留在同一个 YAML 列表项中。事件日期按 <code>[valid_from, valid_to)</code> 匹配，包含起始日期，排除结束日期。因此，2 月 1 日的事件匹配从 2 月 1 日开始的区间，而不匹配当天结束的区间。这与数据库中用于生成数组的 <code>range()</code> 函数不同。</p>
+<p>只要整个复合键唯一，同一 ID 就可以出现在多个地区。同一 ID 的有效日期区间不得重叠。即使编译成功，目标记录重复或区间重叠仍可能使查询产生额外的行。<code>--validate</code> 验证所观察到的数据是否满足键约束，但不会修复数据，也不保证后续执行使用同一数据快照。</p>
+<p><a href="examples--compound-key-zh.html">复合键</a>和<a href="examples--range-lookup-zh.html">带生效日期的键</a>练习提供了完整的模型、边界日期、特意构造的验证失败以及修正后的结果。练习演示的是有限且相邻的区间，不涉及无界区间或通用的多对多分摊规则。对于使用桥接表的分析或分摊分析，请单独定义完整键、权重和预期总计。仅凭查找参数个数错误，无法判断该分析能否表达。</p>
+<hr>
+<p><a id="3-functions"></a></p>
+<h2 id="functions">函数 <a class="section-link" aria-label="本节链接" href="#functions">#</a></h2>
+<p><a id="31-core-aggregation-functions"></a></p>
+<h3 id="core-aggregation-functions">基本聚合函数 <a class="section-link" aria-label="本节链接" href="#core-aggregation-functions">#</a></h3>
+<p>这些函数在 <code>.dml</code> 和 Model Query SQL 中均可使用。在 <code>.dml</code> 中，它们可以聚合原始列（<code>SUM({amount})</code>）或更细粒度的指标（<code>SUM({sales: {+d: product}})</code>）。在 Model Query SQL 中，它们只能聚合更细粒度的指标。例如，<code>SUM(AGG({sales: {+d: product}}))</code> 将各产品的销售额相加，得出销售总额。仅引用指标时，单独使用 <code>AGG(measure)</code>。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SUM</code></td>
+<td><code>SUM({column})</code></td>
+<td>求和</td>
+</tr>
+<tr>
+<td><code>COUNT</code></td>
+<td><code>COUNT({column})</code></td>
+<td>统计非空值的个数</td>
+</tr>
+<tr>
+<td><code>COUNT(DISTINCT ...)</code></td>
+<td><code>COUNT(DISTINCT {column})</code></td>
+<td>去重计数</td>
+</tr>
+<tr>
+<td><code>MAX</code></td>
+<td><code>MAX({column})</code></td>
+<td>最大值</td>
+</tr>
+<tr>
+<td><code>MIN</code></td>
+<td><code>MIN({column})</code></td>
+<td>最小值</td>
+</tr>
+<tr>
+<td><code>AVG</code></td>
+<td><code>AVG({column})</code></td>
+<td>平均值</td>
+</tr>
+</tbody></table>
+<p><a id="32-dml-specific-functions"></a></p>
+<h3 id="dml-specific-functions">DML 特有的函数 <a class="section-link" aria-label="本节链接" href="#dml-specific-functions">#</a></h3>
+<p>上下文列说明函数可以出现在有效指标表达式的哪些位置。Model Query SQL 仍要求通过 <code>AGG(...)</code> 聚合指标。这些函数不允许在 <code>SELECT</code> 中聚合原始列。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>语法</th>
+<th>上下文</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AGG()</code></td>
+<td><code>AGG(measure)</code></td>
+<td>仅限 Model Query SQL</td>
+<td>在查询中引用指标（不是聚合函数）</td>
+</tr>
+<tr>
+<td><code>DIVIDE()</code></td>
+<td><code>DIVIDE({num}, {den})</code></td>
+<td>两者均适用</td>
+<td>安全除法（除数为零时返回 NULL）</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNT()</code></td>
+<td><code>DISTINCTCOUNT({column})</code></td>
+<td>两者均适用</td>
+<td>统计不同值的个数</td>
+</tr>
+<tr>
+<td><code>SUMIF</code></td>
+<td><code>SUMIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>条件求和</td>
+</tr>
+<tr>
+<td><code>COUNTIF</code></td>
+<td><code>COUNTIF({condition})</code> / <code>COUNTIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>满足条件的行／满足条件的非空值</td>
+</tr>
+<tr>
+<td><code>AVGIF</code></td>
+<td><code>AVGIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>条件平均值</td>
+</tr>
+<tr>
+<td><code>MAXIF</code></td>
+<td><code>MAXIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>条件最大值</td>
+</tr>
+<tr>
+<td><code>MINIF</code></td>
+<td><code>MINIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>条件最小值</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNTIF</code></td>
+<td><code>DISTINCTCOUNTIF({val}, {condition})</code></td>
+<td>两者均适用</td>
+<td>条件去重计数</td>
+</tr>
+</tbody></table>
+<p><strong>条件聚合示例</strong>：</p>
+<pre><code class="language-yaml"># In .dml
+completed_sales:
+    type: measure
+    formula: SUMIF({amount}, {status} = 'completed')
+
+high_value_customers:
+    type: measure
+    formula: 'DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)'
+</code></pre>
+<pre><code class="language-sql">-- In Model Query SQL (modifier form)
+SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+</code></pre>
+<p><a id="33-conditional-and-utility-functions"></a></p>
+<h3 id="conditional-and-utility-functions">条件函数和辅助函数 <a class="section-link" aria-label="本节链接" href="#conditional-and-utility-functions">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IIF</code></td>
+<td><code>IIF(condition, true_val, false_val)</code></td>
+<td>内联条件表达式</td>
+</tr>
+<tr>
+<td><code>ISNULL</code> / <code>IFNULL</code> / <code>COALESCE</code></td>
+<td><code>ISNULL({expr}, default)</code></td>
+<td>返回首个非空值</td>
+</tr>
+<tr>
+<td><code>NULLIF</code></td>
+<td><code>NULLIF({a}, {b})</code></td>
+<td>当 a = b 时返回 NULL</td>
+</tr>
+</tbody></table>
+<p>辅助函数使用 SQL 表达式层。它们可以在公式中使用，但不属于 DML 的正式内在符号。DML 函数目录只将 DML 自身定义的函数列为此类符号，例如 <code>AGG</code>、<code>DIVIDE</code> 和 <code>SUMIF</code>。</p>
+<p>如果指标公式的最外层是以字面量作为后备值的 NULL 合并操作，则该指标的各个引用位置会启用<a href="reference--measures.zh.html#fill-default-when-row-missing">缺失行填充</a>。</p>
+<pre><code class="language-yaml">daily_sales:
+    type: measure
+    formula: SUM(ISNULL({sales: {+d: dt_date}}, 0))
+</code></pre>
+<p><a id="34-date-functions-sqlite-dialect"></a></p>
+<h3 id="date-functions-sqlite-dialect">日期函数（SQLite 方言） <a class="section-link" aria-label="本节链接" href="#date-functions-sqlite-dialect">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>date()</code></td>
+<td><code>date(current_date)</code></td>
+<td>当前日期</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of month')</code></td>
+<td>—</td>
+<td>本月第一天</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of month', '-1 month')</code></td>
+<td>—</td>
+<td>上月第一天</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of year')</code></td>
+<td>—</td>
+<td>本年第一天</td>
+</tr>
+<tr>
+<td><code>date(current_date, '-N days')</code></td>
+<td>—</td>
+<td>N 天前</td>
+</tr>
+</tbody></table>
+<p><strong>方言说明</strong>：请使用与目标方言匹配的日期函数。DML 支持 SQLite 风格的日期表达式语言，并将支持的写法转换为所选方言。请检查生成的 SQL。目标数据库不一定能直接接受原样的表达式文本。</p>
+<hr>
+<p><a id="4-modifier-syntax-in-model-query-sql"></a></p>
+<h2 id="modifier-syntax-in-model-query-sql">Model Query SQL 中的修饰符语法 <a class="section-link" aria-label="本节链接" href="#modifier-syntax-in-model-query-sql">#</a></h2>
+<p>Model Query SQL 中的两种等价写法：</p>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>语法</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>位置参数写法</td>
+<td><code>AGG(measure, 'mod1', 'mod2')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
+</tr>
+<tr>
+<td>花括号写法</td>
+<td><code>AGG({measure: mod})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+</tbody></table>
+<p><strong>别名规则</strong>：正式规则表见<a href="reference--model-query-sql.zh.html#33-alias-rules">Model Query 别名规则</a>。<code>AGG(sales)</code> 会自动获得别名，<code>AGG({sales: yoy})</code> 则必须使用 <code>AS</code>。</p>
+<hr>
+<h2 id="runtime-variables">运行时变量 <a class="section-link" aria-label="本节链接" href="#runtime-variables">#</a></h2>
+<p>这些变量是求值上下文的占位符，而非调用方提供的查询参数。有关应用程序中的绑定，请参见<a href="reference--model-query-sql.zh.html#jdbc-parameters-and-query-kind">JDBC 参数和查询类型</a>。物理 SQL 层的绑定即使通过检查，也不会建立 Model Query 的语义绑定。</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>上下文</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{dim_dt}</code></td>
+<td>感知时间的表达式和修饰符</td>
+<td>在当前求值上下文中解析出的标准时间字段</td>
+</tr>
+<tr>
+<td><code>{measure}</code></td>
+<td><code>fn-macro</code> 公式</td>
+<td>调用该宏且由该宏包裹的指标</td>
+</tr>
+<tr>
+<td><code>{dt_date}</code>, <code>{dt_week}</code>, <code>{dt_month}</code>, <code>{dt_quarter}</code>, <code>{dt_year}</code></td>
+<td>标准时间字段引用</td>
+<td>按名称指定的标准时间字段</td>
+</tr>
+</tbody></table>
+<p><a href="reference--semantics.zh.html#24-dim_dt--the-time-dimension">时间上下文</a>定义时间分辨率和时间段的约定。<a href="how-to--define-macros.zh.html">定义宏</a>介绍如何声明宏和使用变量。</p>
+<h2 id="database-defined-scalar-functions">数据库定义的标量函数 <a class="section-link" aria-label="本节链接" href="#database-defined-scalar-functions">#</a></h2>
+<p>标量函数调用可以保留在生成的 SQL 中，包括在原子指标内部调用函数，或将函数应用于指标的聚合结果。DML 负责管理指标上下文，目标数据库决定函数的实现及其是否可用。有关可运行的示例、求值阶段的差异和验证要求，请参阅<a href="how-to--define-macros.zh.html#calling-a-function-defined-in-your-database">经过验证的自定义修饰符和数据库函数</a>。这一说明并不普遍适用于聚合 UDF 或返回表的 UDF。</p>
+<h2 id="complete-lookup-examples">完整的查找示例 <a class="section-link" aria-label="本节链接" href="#complete-lookup-examples">#</a></h2>
+<p><code>pk()</code> 按目标数据集中维度的顺序接收参数，并不限于单个键。<a href="examples--compound-key-zh.html">复合键示例</a>声明 <code>[id, region]</code>，并使用 validate-only 检查目标数据集中的键组合是否重复。<a href="examples--range-lookup-zh.html">范围示例</a>使用 <code>[id, 'range(valid_from, valid_to)']</code>，并通过该示例的测试数据验证范围包含起点、排除终点，且重叠的范围会被拒绝。这些示例并不能证明支持任意多对多分配。</p>
+</main></body></html>

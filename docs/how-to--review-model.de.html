@@ -1,0 +1,66 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ein DML-Modell prüfen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Führen Sie diese technische Prüfung durch, sobald die zutreffenden Prüfungen in Vorwärtsanalyse, Phase 5 bestanden sind. Prüfen Sie die Wiederverwendung des Modells, die Abfragestruktur, die Ebene, auf der Kenn"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Ein DML-Modell prüfen · DML"><meta property="og:description" content="Führen Sie diese technische Prüfung durch, sobald die zutreffenden Prüfungen in Vorwärtsanalyse, Phase 5 bestanden sind. Prüfen Sie die Wiederverwendung des Modells, die Abfragestruktur, die Ebene, auf der Kenn"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="how-to--review-model.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--review-model.html">English</a> <a lang="zh" hreflang="zh" href="how-to--review-model.zh.html">中文</a></header><main><h1 id="review-a-dml-model">Ein DML-Modell prüfen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#prepare-an-independent-review">Eine unabhängige Prüfung vorbereiten</a></li><li><a href="#61-reconcile-the-report-contract">6.1 Mit der Berichtsspezifikation abgleichen</a></li><li><a href="#62-review-model-definitions">6.2 Modelldefinitionen prüfen</a></li><li><a href="#63-review-consumer-queries">6.3 Abfragen prüfen, die das Modell verwenden</a></li><li><a href="#64-check-results-against-explicit-assumptions">6.4 Ergebnisse anhand expliziter Annahmen prüfen</a></li><li><a href="#65-recheck-affected-artifacts">6.5 Betroffene Artefakte erneut prüfen</a></li><li><a href="#66-deliver-the-artifacts-and-review-evidence">6.6 Artefakte und Prüfnachweise ausliefern</a></li><li><a href="#67-resolve-findings">6.7 Feststellungen bearbeiten</a></li><li><a href="#68-check-analytical-claims-separately">6.8 Analytische Aussagen gesondert prüfen</a></li></ul></details>
+<p>Führen Sie diese technische Prüfung durch, sobald die zutreffenden Prüfungen in <a href="how-to--build-analysis.de.html#phase-5-validate-the-model-and-query">Vorwärtsanalyse, Phase 5</a> bestanden sind. Prüfen Sie die Wiederverwendung des Modells, die Abfragestruktur, die Ebene, auf der Kennzahlen ausgewertet werden, und die Validierungsnachweise.</p>
+<h2 id="prepare-an-independent-review">Eine unabhängige Prüfung vorbereiten <a class="section-link" aria-label="Link zum Abschnitt" href="#prepare-an-independent-review">#</a></h2>
+<p>Stellen Sie der prüfenden Person die relevanten Unterlagen zusammen. Geben Sie ihr die finalen Artefakte und die verbindliche Berichtsspezifikation anstelle des vollständigen Gesprächsverlaufs.</p>
+<p>Die Unterlagen umfassen die folgenden Punkte.</p>
+<ul>
+<li>Das Modell und die eingebundenen Dateien mit gekennzeichneten geänderten Definitionen.</li>
+<li>Die Abfragen, die das Modell verwenden, und die ursprüngliche Berichtsspezifikation.</li>
+<li>Pfad der ausführbaren Datei, Version, Build-Zeitstempel, Fingerabdruck und Dialekt.</li>
+<li>Nachweise zur Kompilierung, zur Validierung durch Ausführung und zum Ergebnisvergleich.</li>
+<li>Die erforderlichen semantischen Prüfungen und die ihnen zugrunde liegenden Annahmen.</li>
+<li>Bekannte Feststellungen und fehlende Voraussetzungen.</li>
+</ul>
+<p>Weisen Sie bei umfangreichen Änderungen die Prüfung der Wiederverwendung des Modells, der Abfragen, die das Modell verwenden, und der Ergebnisse jeweils unterschiedlichen Personen zu. Halten Sie die Zuständigkeiten ausdrücklich fest. Wer die Änderung erstellt hat, setzt die akzeptierten Korrekturen um und entscheidet abschließend über die Auslieferung.</p>
+<h2 id="61-reconcile-the-report-contract">6.1 Mit der Berichtsspezifikation abgleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#61-reconcile-the-report-contract">#</a></h2>
+<p>Vergleichen Sie jede Abfrage, die das Modell verwendet, mit dem Entwurf aus Phase 2.</p>
+<ol>
+<li>Prüfen Sie, auf welcher Ebene die Ergebniszeilen definiert sind und welche Grundgesamtheit sie abdecken.</li>
+<li>Prüfen Sie, ob alle erforderlichen Kennzahlen auf die vorgesehenen Definitionen aufgelöst werden.</li>
+<li>Prüfen Sie den Zeitraum, den Vergleichszeitraum und die Datenausschnitte des Berichts.</li>
+<li>Prüfen Sie die Ausgabespalten, Aliasnamen, Datentypen und die tatsächliche Reihenfolge.</li>
+<li>Entfernen Sie Debug-Spalten, die im ausgelieferten Bericht nicht benötigt werden.</li>
+</ol>
+<h2 id="62-review-model-definitions">6.2 Modelldefinitionen prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#62-review-model-definitions">#</a></h2>
+<p>Prüfen Sie für jede neue Kennzahl, ob sie in einem anderen Bericht wiederverwendet werden kann.</p>
+<ul>
+<li>Führen Sie doppelte Formeln nur zusammen, wenn Grundgesamtheit, Auswertungsebene, Filter und das Verhalten bei NULL übereinstimmen.</li>
+<li>Verlagern Sie berichtsspezifische Datenausschnitte in die Abfrage, es sei denn, der jeweilige Datenausschnitt definiert die fachliche Kennzahl.</li>
+<li>Behalten Sie Zwischenkennzahlen bei, die eine erforderliche Auswertungsdimension abbilden.</li>
+<li>Behalten Sie eine benannte abgeleitete Kennzahl bei, wenn sie als fachliche Kennzahl wiederverwendbar ist oder eine Materialisierung von ihr abhängt.</li>
+<li>Prüfen Sie, ob Namen, Beschreibungen und Formeln zueinander passen.</li>
+<li>Prüfen Sie Warnungen zu ähnlichen Kennzahlen, bevor Sie entscheiden, ob zwei Definitionen redundant sind.</li>
+</ul>
+<p>Prüfen Sie nach einer Zusammenführung oder Umbenennung die geänderten Modelle mit dem Linter und kompilieren Sie die betroffenen Abfragen im strikten Modus.</p>
+<h2 id="63-review-consumer-queries">6.3 Abfragen prüfen, die das Modell verwenden <a class="section-link" aria-label="Link zum Abschnitt" href="#63-review-consumer-queries">#</a></h2>
+<p>Prüfen Sie, ob die Gruppierung und die Kennzahlmodifikatoren die Anforderungen an den Bericht abbilden.</p>
+<ul>
+<li>Behalten Sie für modifizierte Kennzahlreferenzen jeweils einen eigenen, expliziten Alias bei.</li>
+<li>Entfernen Sie redundante Aliasnamen bei unmodifizierten <code>AGG(measure)</code>-Ausdrücken, wenn die Abnehmer sie nicht benötigen.</li>
+<li>Behalten Sie <code>ORDER BY</code> und <code>LIMIT</code> bei, wenn die Bedeutung des Ergebnisses oder eine verbindliche Anforderung eines Abnehmers davon abhängt.</li>
+<li>Prüfen Sie den aufgelösten Zeitkontext und die Voraussetzungen für die Makros.</li>
+<li>Prüfen Sie die Gleichheitsbedingungen für Joins, die Zugehörigkeit zu den Datenquellen, das Auffüllverhalten und die projizierten Spalten.</li>
+<li>Halten Sie SQL in gespeicherten Dateien lesbar. Kodieren Sie den Code als Zeichenfolge, wenn ein Werkzeug dieses Format verlangt.</li>
+</ul>
+<h2 id="64-check-results-against-explicit-assumptions">6.4 Ergebnisse anhand expliziter Annahmen prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#64-check-results-against-explicit-assumptions">#</a></h2>
+<p>Wiederholen Sie nach Änderungen am Modell oder an Abfragen die betroffenen Ergebnisprüfungen.</p>
+<ol>
+<li>Prüfen Sie bei Zählungen für Teilmengen, ob beide Zählungen auf vergleichbaren Grundgesamtheiten beruhen.</li>
+<li>Berücksichtigen Sie bei Beträgen für Teilmengen negative Werte, bevor Sie eine Ungleichung anwenden.</li>
+<li>Prüfen Sie bei Verhältniszahlen das festgelegte Verhalten, wenn der Nenner null ist oder Eingabewerte fehlen.</li>
+<li>Prüfen Sie bei Zeitvergleichen, inwieweit Daten für den vorherigen Zeitraum vorliegen und welche Regel für NULL oder für das Auffüllen festgelegt ist.</li>
+<li>Vergleichen Sie repräsentative Zeilen mit einem unabhängigen Ergebnis, sofern eines vorliegt.</li>
+</ol>
+<p>Legen Sie keine allgemeine Regel fest, nach der fehlende Vorjahresdaten den Wert null ergeben. Prüfen Sie die Formel und den ausgegebenen SQL-Code. Vermerken Sie fehlende Nachweise aus einer Ausführung als <code>not run</code>.</p>
+<h2 id="65-recheck-affected-artifacts">6.5 Betroffene Artefakte erneut prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#65-recheck-affected-artifacts">#</a></h2>
+<p>Prüfen Sie nach einer Korrektur die geänderten Modelle mit dem Linter und kompilieren Sie die geänderten Abfragen im strikten Modus. Wiederholen Sie die zutreffende Validierung durch Ausführung und die Ergebnisprüfungen, wenn sich deren Eingaben durch die Korrektur ändern. Prüfen Sie sowohl den SQL-Code als auch die Summen, insbesondere wenn sich die Ebene der Ergebniszeilen oder Summen geändert hat oder Kennzahlen zusammengeführt wurden.</p>
+<p>Melden Sie die Feststellung, wenn eine Warnung im strikten Modus bestehen bleibt. Die Ausgabe eines SQL-Artefakts gilt nicht als bestandene Prüfung im strikten Modus.</p>
+<h2 id="66-deliver-the-artifacts-and-review-evidence">6.6 Artefakte und Prüfnachweise ausliefern <a class="section-link" aria-label="Link zum Abschnitt" href="#66-deliver-the-artifacts-and-review-evidence">#</a></h2>
+<p>Übergeben Sie das Modell, die Abfragen, die das Modell verwenden, die Prüffeststellungen, die akzeptierten Änderungen und die Prüfergebnisse. Unterscheiden Sie zwischen bestandenen Prüfungen, reproduzierten Fehlern und nicht ausgeführten Prüfungen.</p>
+<p>Behalten Sie bei Exporten und Dashboards numerische Datentypen für Kennzahlen bei und gleichen Sie die Ausgabenamen mit den Anforderungen des Abnehmers ab.</p>
+<h2 id="67-resolve-findings">6.7 Feststellungen bearbeiten <a class="section-link" aria-label="Link zum Abschnitt" href="#67-resolve-findings">#</a></h2>
+<p>Prüfen Sie die akzeptierten Korrekturen im aktualisierten Modell und in den betroffenen Abfragen erneut. Dokumentieren Sie offene Feststellungen und deren Auswirkungen auf die Ergebnisse.</p>
+<p>Kehren Sie zu Phase 4 zurück, wenn eine vorgeschlagene Optimierung eine fachliche Definition ändert. Dokumentieren Sie diese Änderung ausdrücklich.</p>
+<h2 id="68-check-analytical-claims-separately">6.8 Analytische Aussagen gesondert prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#68-check-analytical-claims-separately">#</a></h2>
+<p>Prüfen Sie fachliche Annahmen während der Modellierung und nach der Ausführung. Eine technische Prüfung allein belegt nicht, dass sich eine fachliche Schlussfolgerung aus den Daten ableiten lässt.</p>
+</main></body></html>

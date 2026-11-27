@@ -1,0 +1,298 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Maz: prepare und refresh auswählen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="prepare stellt die für eine Abfrage benötigten Daten bereit. refresh verarbeitet Änderungen an den Quelldaten. Führen Sie bei der Bereitstellung setup_sql aus. Die Vorbereitungseinheit der Abfrage prüft vor der"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Maz: prepare und refresh auswählen · DML"><meta property="og:description" content="prepare stellt die für eine Abfrage benötigten Daten bereit. refresh verarbeitet Änderungen an den Quelldaten. Führen Sie bei der Bereitstellung setup_sql aus. Die Vorbereitungseinheit der Abfrage prüft vor der"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="maz-prepare-refresh.ja.html">日本語</a> <a lang="en" hreflang="en" href="maz-prepare-refresh-en.html">English</a> <a lang="zh" hreflang="zh" href="maz-prepare-refresh.html">中文</a></header><main><h1 id="choosing-maz-prepare-and-refresh">Maz: prepare und refresh auswählen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#pick-the-entry-point-by-task">Einstiegspunkt je nach Aufgabe</a></li><li><a href="#prepare-this-query39s-data-before-reading">Daten dieser Abfrage vor dem Lesen vorbereiten</a></li><li><a href="#prepare-parameters">Parameter für prepare</a></li><li><a href="#refresh-parameters-and-matching">Parameter und Namensabgleich für refresh</a></li><li><a href="#choose-the-change-range-from-a-maz-or-a-source-table">Änderungsbereich anhand eines Maz oder einer Quelltabelle auswählen</a></li><li><a href="#watch-global-runner-progress">Gesamtfortschritt des Runners überwachen</a></li><li><a href="#interruption-and-retry">Unterbrechung und erneuter Versuch</a></li><li><a href="#execution-conditions-and-result-boundaries">Ausführungsbedingungen und Geltungsbereich der Ergebnisse</a></li></ul></details>
+<p>prepare stellt die für eine Abfrage benötigten Daten bereit. refresh verarbeitet Änderungen an den Quelldaten. Führen Sie bei der Bereitstellung <code>setup_sql</code> aus. Die Vorbereitungseinheit der Abfrage prüft vor der Abfrageausführung, ob die Daten bereit sind. <code>DML_MAZ_PROGRESS</code> zeigt während der Verarbeitung den globalen Fortschritt an.</p>
+<h2 id="pick-the-entry-point-by-task">Einstiegspunkt je nach Aufgabe <a class="section-link" aria-label="Link zum Abschnitt" href="#pick-the-entry-point-by-task">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Aufgabe</th>
+<th>Vorgang</th>
+<th>Abschluss prüfen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Bericht öffnen oder Zeitraum wechseln</td>
+<td>Das reguläre <code>prepare_sql</code> der Abfrage ausführen</td>
+<td>Wenn <code>prepare_sql</code> regulär <code>data_ready=1</code> zurückgibt, das fachliche <code>sql</code> ausführen</td>
+</tr>
+<tr>
+<td>Bericht prüfen und Neuberechnung erzwingen</td>
+<td>prepare(force_update=1)</td>
+<td>Das Ziel und seine erforderlichen vorgelagerten Abhängigkeiten werden zwangsweise neu aufgebaut. Die Abfrage ausführen, sobald prepare regulär zurückkehrt.</td>
+</tr>
+<tr>
+<td>Abhängige Ergebnisse nach einem Ladevorgang aktualisieren</td>
+<td>refresh(invalidate_only=0, Standardwert)</td>
+<td>Der Bedarf für das Ziel und die betroffenen nachgelagerten Einheiten wird registriert. Beim Lesen mit prepare für die Abfrage warten, bis die Daten bereit sind.</td>
+</tr>
+<tr>
+<td>Jetzt laden, später neu berechnen</td>
+<td>refresh(invalidate_only=1)</td>
+<td>Ungültigkeitsmarkierungen werden übermittelt. Es wird kein Runner aufgerufen, kein neuer aktiver Bedarf registriert und keine ausstehende Arbeit abgebrochen.</td>
+</tr>
+<tr>
+<td>Vorbereitung für den Monatsabschluss</td>
+<td>Für ausgewählte Abfragen vorab das reguläre prepare ausführen</td>
+<td>Das <code>prepare_sql</code> der jeweiligen Abfrage kehrt regulär zurück</td>
+</tr>
+<tr>
+<td>Registrierte Arbeit nach einer Unterbrechung fortsetzen</td>
+<td><code>DML_REFRESH_MAZ</code> ohne Parameter ausführen</td>
+<td>Global ausstehende Arbeit und die Datenbereitschaft dieser Abfrage prüfen</td>
+</tr>
+</tbody></table>
+<p>prepare folgt den Abhängigkeiten in Richtung der vorgelagerten Einheiten und akzeptiert nur exakte Namen. refresh geht vom Ausgangspunkt einer Änderung zu den nachgelagerten Einheiten und unterstützt exakte Namen und SQL LIKE. Wurde eine Quelländerung nicht gemeldet, können ältere Daten wiederverwendet werden. Gültige Daten entsprechen nicht zwangsläufig dem allerneuesten Stand der Quelle.</p>
+<p>Die Delta-Aktualisierung wählt die Arbeit partitionsweise aus. Sie führt kein zeilenweises CDC an der Quelle durch. Eine vollständige Aktualisierung erzwingt den Neuaufbau des in diesem Aufruf angegebenen Bereichs und erstreckt sich nicht automatisch über die gesamte Historie. Für jede Partition werden die Fachdaten und der Erfolgsstatus gemeinsam per Commit festgeschrieben. Schlägt eine spätere Partition fehl, bleiben bereits festgeschriebene Partitionen erhalten.</p>
+<h2 id="prepare-this-query39s-data-before-reading">Daten dieser Abfrage vor dem Lesen vorbereiten <a class="section-link" aria-label="Link zum Abschnitt" href="#prepare-this-query39s-data-before-reading">#</a></h2>
+<p>Das gemeinsame prepare und ein gezieltes refresh melden zuerst Aktualisierungsbedarf an und rufen dann die gemeinsame Prozedur <code>DML_RUN_MAZ</code> synchron auf. Der Zweig für reine Invalidierung kehrt unmittelbar nach dem Melden zurück. Der Aufruf, der die Ausführung übernimmt, arbeitet die global ausstehenden Aufgaben ab. Gibt es bereits einen Runner, kehrt der Aufruf sofort zurück, ohne zu warten. Auch ein reguläres prepare kann weiterlaufen, um global ausstehende Aufgaben aus einem anderen Aufruf abzuarbeiten.</p>
+<p>Pro Datenbank führt höchstens ein Runner den tatsächlichen Aufbau durch. Der Runner ist für die Reihenfolge gemäß den Abhängigkeiten, den Aufruf der Writer und die Commits pro Partition zuständig. Die Standardimplementierung benötigt weder Service Broker noch den SQL Server Agent oder einen Hintergrunddienst der Anwendung. Sie garantiert keine weitere Verarbeitung im Hintergrund, nachdem der Aufruf zurückgekehrt ist oder die Verbindung abgebrochen ist.</p>
+<p>Führen Sie für dieselbe Anfrage mit denselben Parametern die folgenden Schritte in dieser Reihenfolge aus.</p>
+<ol>
+<li>Führen Sie bei der Bereitstellung <code>setup_sql</code> aus, um die gemeinsame Laufzeitumgebung und den Writer jedes Maz zu installieren.</li>
+<li>Führen Sie zur Abfragezeit das generierte <code>prepare_sql</code> aus. Es führt die reguläre Vorbereitung, die Prüfung der tatsächlichen Datenbereitschaft und gegebenenfalls Wiederholungsversuche durch und gibt eine Zeile mit <code>data_ready=1</code> zurück.</li>
+<li>Führen Sie nach der regulären Rückkehr das fachliche <code>sql</code> aus. Brechen Sie bei einem Vorbereitungsfehler oder einer Zeitüberschreitung beim Warten ab, beheben Sie die Ursache und versuchen Sie es erneut.</li>
+</ol>
+<p>Die Vorbereitungseinheit wiederholt die reguläre Vorbereitung alle 100 Millisekunden. Sind die Daten nach Ablauf der Wiederholungsfrist von fünf Sekunden noch nicht bereit, meldet sie einen Fehler. Die Frist unterbricht weder die laufende synchrone Ausführung eines Writers noch das Warten auf eine Sperre am Ziel. Für clientseitige Zeitüberschreitungen und das Abbrechen der Verbindung ist die Integration zuständig. Wiederholungsversuche lösen nie eine erzwungene Aktualisierung aus.</p>
+<p>Während der Wartezeit kann eine andere Verbindung das <code>prepare_status_sql</code> derselben Anfrage ausführen, um ausschließlich die Partitionen, Datumswerte und Parameterbindungen dieser Abfrage zu überprüfen. Dadurch wird kein zusätzlicher Bedarf registriert. Reguläre Aufrufer müssen dafür kein eigenes Polling implementieren. Die Ergebnisspalte heißt <code>data_ready</code>. Die Bereitschaftsprüfung und das nachfolgende SELECT verwenden keinen gemeinsamen Snapshot.</p>
+<p>Ein direkter Aufruf des gemeinsamen prepare auf niedriger Ebene kann weiterhin 2 zurückgeben. Das bedeutet, dass der Bedarf registriert wurde und bereits ein Runner arbeitet. 1 bedeutet, dass dieser Durchlauf abgeschlossen ist. Die Ergebnisse von refresh enthalten <code>accepted</code>, <code>runner_busy</code> und die betroffenen Partitionen. Auch wenn refresh angenommen wurde oder global keine Arbeit mehr aussteht, muss die tatsächliche Datenbereitschaft für die Abfrage geprüft werden. Diese Prüfung übernimmt die generierte Vorbereitungseinheit der Abfrage.</p>
+<h2 id="prepare-parameters">Parameter für prepare <a class="section-link" aria-label="Link zum Abschnitt" href="#prepare-parameters">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Regel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>Erforderlich. Der exakte Maz-Name ist anzugeben. Muster werden nicht unterstützt.</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>Bei nach Datum partitionierten Maz sind beide Grenzen einschließlich der Grenzwerte erforderlich. Abfragen können sie ableiten. Jede Partition, die den Bereich schneidet, wird vollständig einbezogen.</td>
+</tr>
+<tr>
+<td>@_force_update</td>
+<td>Der Standardwert ist 0. 1 erzwingt den Neuaufbau dieses Ziels und seiner erforderlichen vorgelagerten Abhängigkeiten. null ist nicht zulässig.</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>Für typisierte Parameterbindung und Audits</td>
+</tr>
+</tbody></table>
+<p>Eine erzwungene Aktualisierung markiert zunächst die erforderliche Arbeit und die betroffenen nachgelagerten Einheiten als ungültig. Aktiver Bedarf wird nur für die Arbeit der aktuellen Anfrage und deren erforderliche vorgelagerte Abhängigkeiten registriert, auch über mehrere Stufen hinweg. Andere Berichte werden dabei nicht vorab berechnet. Gemeinsame Abhängigkeiten einer Abfrage werden je nach Partition und Parameterbindung wiederverwendet. Die reguläre Vorbereitung verwendet gültige Ergebnisse für Datumspartitionen und ganze Tabellen wieder, wenn die Parameterbindung übereinstimmt. Fehlende, ungültige oder abgelaufene Ergebnisse sowie Ergebnisse mit geänderter Parameterbindung werden neu berechnet. Um eine Neuberechnung zu erzwingen, geben Sie ausdrücklich force_update=1 an. Quelländerungen müssen weiterhin zuverlässig gemeldet werden.</p>
+<pre><code class="language-sql">EXEC dbo.DML_PREPARE_MAZ
+    @_materialize=N'SALES_QUARTERLY',
+    @_range_start='20250101', @_range_end='20250331', @_force_update=1;
+</code></pre>
+<h2 id="refresh-parameters-and-matching">Parameter und Namensabgleich für refresh <a class="section-link" aria-label="Link zum Abschnitt" href="#refresh-parameters-and-matching">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Regel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>Exakter Name oder Muster. Kann nicht gemeinsam mit @_source angegeben werden. Fehlen beide Angaben, wird nur bereits ausstehende Arbeit fortgesetzt.</td>
+</tr>
+<tr>
+<td>@_source</td>
+<td>Exakter Name einer registrierten lokalen physischen Quelltabelle in der Form schema.table. Für Tabellen derselben Datenbank ist auch database.schema.table zulässig. like wird nicht unterstützt.</td>
+</tr>
+<tr>
+<td>@_match</td>
+<td>Der Standardwert ist exact. Bei like richtet sich der Abgleich nach der Kollation der registrierten Spalte.</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>Geben Sie beide Grenzen an oder lassen Sie beide weg. Ohne Angabe gelten nur die vorhandenen Bereiche, nicht der gesamte Kalender.</td>
+</tr>
+<tr>
+<td>@_invalidate_only</td>
+<td>Der Standardwert 0 registriert aktiven Aktualisierungsbedarf und ruft den Runner auf. 1 setzt nur Invalidierungsmarkierungen, ruft den Runner nicht auf und erhält bereits ausstehende Arbeiten. null ist unzulässig.</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>Typisierte Parameter und Audit-Protokollierung. Die für die Ziele des Batches erforderlichen Parameter werden vor der Invalidierung validiert.</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Abgleich</th>
+<th>Beispiel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Einzelnes Ziel</td>
+<td>exact + SALES_MONTHLY</td>
+</tr>
+<tr>
+<td>Präfix</td>
+<td>like + SALES%</td>
+</tr>
+<tr>
+<td>Präfix mit einem wörtlichen Unterstrich</td>
+<td>like + SALES~_%</td>
+</tr>
+<tr>
+<td>Alle registrierten Maz in der aktuellen Datenbank</td>
+<td>like + %</td>
+</tr>
+</tbody></table>
+<p>SQL LIKE verwendet %, _ und Muster in eckigen Klammern. ~ ist das Escape-Zeichen. * ist kein Platzhalter. exact löst keine Platzhalter auf. Ein unbekannter exakter Name führt zu einem Fehler. Ein Muster ohne Treffer liefert null Ziele. Exakte Namen dürfen höchstens 128 UTF-16-Codeeinheiten umfassen, Muster höchstens 512. Mit abgeschnittenen Namen darf keine Ausführung erfolgen.</p>
+<pre><code class="language-sql">-- After the source write commits, register February and its materialized
+-- affected downstream, and call the runner.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N'SALES_MONTHLY',
+    @_range_start='20250201', @_range_end='20250228';
+
+-- Invalidate every materialized range only; backfill later as queries need it.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N'%', @_match=N'like', @_invalidate_only=1;
+</code></pre>
+<p>Mit <code>invalidate_only=1</code> werden in diesem Aufruf keine Writer ausgeführt. Runner, die bereits auf anderen Verbindungen laufen, können vorhandene ausstehende Arbeiten weiterverarbeiten.</p>
+<h2 id="choose-the-change-range-from-a-maz-or-a-source-table">Änderungsbereich anhand eines Maz oder einer Quelltabelle auswählen <a class="section-link" aria-label="Link zum Abschnitt" href="#choose-the-change-range-from-a-maz-or-a-source-table">#</a></h2>
+<p>Wenn Sie die Quelltabelle kennen, können Sie alle dafür registrierten direkten Einstiegspunkte auswählen:</p>
+<pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
+    @_source=N'dbo.TABLE_SALES',
+    @_range_start='20250201', @_range_end='20250228';
+</code></pre>
+<p>Eine Markierung zur Quellidentität weist nach, dass Datum und Partition übereinstimmen. In diesem Fall wird der Bereich wie angegeben angewendet. Ohne diesen Nachweis werden vorhandene nachgelagerte Bereiche vorsorglich abgedeckt, und bisher nicht aufgebaute Datumspartitionen werden nicht auf Verdacht einbezogen. Unbekannte Quellen, Quellen in einer anderen Datenbank, ein fehlendes Schema, die gleichzeitige Angabe von source und materialize sowie die Kombination von source mit like führen jeweils zu einem Fehler. Die Auswahl einer Quelle erkennt Änderungen an der Quelle nicht automatisch.</p>
+<p>Bei der Auswahl nach Maz müssen für eine Quelltabelle mit mehreren unabhängigen direkten Einstiegspunkten alle Einstiegspunkte gemeldet werden. Eine Aktualisierung nur des Quartals erkennt eine veraltete Monatszusammenfassung nicht, wenn diese nicht gemeldet wurde. Wenn Sie nicht wissen, auf welcher Ebene der Cache veraltet ist, verwenden Sie die erzwungene Vorbereitung (forced prepare) der Abfrage.</p>
+<p>Datumsgrenzen bilden ein geschlossenes Intervall. Bevor die Auswirkungen auf nachgelagerte Bereiche berechnet werden, wird das Intervall auf sämtliche vollständigen Partitionen erweitert, die es schneidet. Bei einer Verschiebung über Periodengrenzen hinweg werden sowohl die alte als auch die neue Periode erfasst. Wählen Sie für Dimensionstabellen und bei unklaren Auswirkungen einen ausreichend großen Bereich. Wenn sich die genaue Rückzuordnung nicht nachweisen lässt, erweitert das System vorhandene nachgelagerte Bereiche vorsorglich. Einseitige Datumsangaben, vertauschte Datumsgrenzen und eine unvollständige Kalenderabdeckung werden abgelehnt. Der Bereich wird nie stillschweigend gekürzt.</p>
+<p>Eine Standardaktualisierung mit Datumsangaben kann ein explizit ausgewähltes Maz erstmals aufbauen. Die Aktualisierung wird an erkannte, noch nicht aufgebaute nachgelagerte Maz weitergegeben, ohne sie automatisch vorab aufzubauen. Ein dazwischenliegendes Maz ohne Zustand hindert die Weitergabe an vorhandene nachgelagerte Maz nicht. Eine Aktualisierung ohne Datumsangaben erfasst nur vorhandene Bereiche. Der erstmalige Aufbau für die gesamte Datenbank erfordert explizite, endliche Datumsgrenzen. Bei einem Maz für die gesamte Tabelle gilt diese als eine physische Partition. Mit Datumsangaben wird der Bereich auf die gesamte Tabelle erweitert.</p>
+<p>Datumspartitionen akzeptieren nur Datumswerte als Parameterwerte. Für die gesamte Tabelle gibt es genau eine aktuelle Parameterbindung.</p>
+<p><a id="runner-progress"></a></p>
+<h2 id="watch-global-runner-progress">Gesamtfortschritt des Runners überwachen <a class="section-link" aria-label="Link zum Abschnitt" href="#watch-global-runner-progress">#</a></h2>
+<p>Führen Sie das vom aktuellen Build erzeugte <code>setup_sql</code> aus und fragen Sie anschließend die gemeinsame Sicht ab:</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>Die Sicht zeigt den Fortschritt aller Maz in derselben Datenbank. Sie ist unabhängig von einzelnen Abfragen, und ihre Daten werden den Ergebnissen der Abfragekompilierung nicht hinzugefügt. Die Standardsicht liest bei jeder Abfrage den aktuellen STATE. Sie ermittelt die Statistiken für die jeweils letzten 60 Sekunden und speichert keinen Verlauf der Stichproben. Ein Überwachungskonto benötigt SELECT für die Sicht. Die Bereitstellung erteilt diese Berechtigung nicht automatisch.</p>
+<details><summary>Alle Statistikspalten und ihre Definitionen</summary>
+
+<p>Alle Spalten lassen sich mit <code>SELECT * FROM dbo.DML_MAZ_PROGRESS;</code> abrufen.</p>
+<table>
+<thead>
+<tr>
+<th>Spalte</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending_partitions</td>
+<td>Derzeit ausstehende physische Partitionen, einschließlich der Partitionen, deren Aufbau läuft und die noch nicht veröffentlicht sind</td>
+</tr>
+<tr>
+<td>runner_running</td>
+<td>Gibt an, ob ein Runner derzeit das exklusive Ausführungsrecht hält</td>
+</tr>
+<tr>
+<td>completed_partitions / added_partitions</td>
+<td>Anzahl eindeutiger physischer Partitionen, die in den letzten 60 Sekunden fertiggestellt bzw. neu registriert wurden</td>
+</tr>
+<tr>
+<td>completed_partitions_per_second / added_partitions_per_second</td>
+<td>Anzahlen im Zeitfenster, jeweils geteilt durch 60 Sekunden</td>
+</tr>
+<tr>
+<td>net_partitions_per_second</td>
+<td>Abschlussrate abzüglich der Rate der Neuregistrierungen</td>
+</tr>
+<tr>
+<td>estimated_seconds</td>
+<td>Geschätzte Zeit in Sekunden, bis die ausstehenden Arbeiten bei der aktuellen Nettorate abgearbeitet sind</td>
+</tr>
+<tr>
+<td>average_build_seconds</td>
+<td>Durchschnitt der Dauer des jeweils letzten erfolgreichen Aufbaus pro Partition im Zeitfenster</td>
+</tr>
+<tr>
+<td>sample_start / sampled_at</td>
+<td>Beginn des Statistikfensters und Zeitpunkt der Stichprobe</td>
+</tr>
+</tbody></table>
+<p>Physische Partitionen werden anhand von Maz, Partitionstyp und Datum dedupliziert. Eine gesamte Tabelle mit mehreren Parameterbindungen zählt als eine Partition. Eine Partition, die im Zeitfenster mehrfach fertiggestellt wurde, zählt nur einmal. Wird sie nach der Fertigstellung erneut invalidiert, zählt sie im Zeitfenster weiterhin als fertiggestellt. Die Raten geben daher an, wie viele Partitionen erfasst wurden, nicht wie oft Writer tatsächlich ausgeführt wurden.</p>
+<p>Wenn keine Arbeit aussteht, beträgt der Schätzwert 0. Ist die Rate der Neuregistrierungen mindestens so hoch wie die Abschlussrate oder ist der Runner bei noch ausstehender Arbeit gestoppt, lautet der Schätzwert NULL. Der unterschiedliche Aufwand pro Partition und das gleitende Zeitfenster beeinflussen den Schätzwert.</p>
+<p>Anhand der Fortschrittssicht lässt sich nicht feststellen, ob eine bestimmte Abfrage bereit ist. Die Sicht liest den festgeschriebenen Zustand. Veröffentlichungstransaktionen können kurze Wartezeiten verursachen. Die Sicht stellt keine partitionsübergreifende Momentaufnahme bereit. Für ein anderes Zeitfenster kann die eigenständige Java-Hilfsmethode <code>MazRunner.progressSql("mssql", 300)</code> eine reine Leseabfrage in SQL für die letzten fünf Minuten erzeugen. Wer dieses SQL direkt ausführt, benötigt Leseberechtigung für STATE.</p>
+</details>
+
+<h2 id="interruption-and-retry">Unterbrechung und erneuter Versuch <a class="section-link" aria-label="Link zum Abschnitt" href="#interruption-and-retry">#</a></h2>
+<p>Die anfängliche Invalidierung und die Registrierung des Aktualisierungsbedarfs werden in einer gemeinsamen Metadatentransaktion festgeschrieben oder zurückgesetzt. Anschließend wird der Aufbau für jede Partition einzeln festgeschrieben. STATE speichert dauerhaft, für welche Partitionen eine aktive Aktualisierung aussteht und welche konkreten Parameter dafür gelten. Bei einer Unterbrechung bleiben festgeschriebene Partitionen erhalten, der Aufbau der aktuellen Partition wird zurückgesetzt, und offene Anforderungen warten bis zum nächsten Aufruf.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Maßnahme</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fehler beim Aufbau durch den Runner oder Verbindungsabbruch</td>
+<td>Beheben Sie die Ursache. Führen Sie dann die normale Vorbereitung (prepare) oder DML_REFRESH_MAZ ohne Parameter aus, um die ausstehenden Arbeiten systemweit fortzusetzen.</td>
+</tr>
+<tr>
+<td>Nur die bereits registrierten ausstehenden Arbeiten fortsetzen</td>
+<td>Führen Sie die folgende Aktualisierung ohne Parameter aus. Geben Sie den Aktualisierungsbereich nicht erneut an.</td>
+</tr>
+<tr>
+<td>force_update=1 oder eine Standardaktualisierung erneut senden</td>
+<td>Wird als neuer Aktualisierungsbedarf behandelt. Fertiggestellte Partitionen können als ungültig markiert und neu aufgebaut werden.</td>
+</tr>
+<tr>
+<td>Reguläres Ergebnis ungültig oder neuer Aktualisierungsbedarf noch nicht erfasst</td>
+<td>Führen Sie für die betreffende Abfrage die reguläre Vorbereitung aus und prüfen Sie anschließend die Bereitschaft.</td>
+</tr>
+<tr>
+<td>Antwort auf den Commit verloren</td>
+<td>Der Ausgang ist unbekannt. Prüfen Sie den Status erneut, statt davon auszugehen, dass der Commit nicht erfolgt ist.</td>
+</tr>
+</tbody></table>
+<pre><code class="language-sql">-- Continue the current database's registered backlog without
+-- re-invalidating completed partitions.
+EXEC dbo.DML_REFRESH_MAZ;
+</code></pre>
+<p>Ein clientseitiger Abbruch oder eine Zeitüberschreitung kann den CATCH-Block von SQL Server umgehen. Dadurch kann die Sitzungssperre des Runners auf der weiterhin offenen Verbindung bestehen bleiben. Schließen Sie nach einem Abbruch diese physische Verbindung und lassen Sie sie vom Verbindungspool verwerfen. ROLLBACK allein reicht nicht aus. Sobald die Verbindung getrennt ist, kann ein weiterer Aufruf die dauerhaft gespeicherten ausstehenden Aufgaben weiter abarbeiten. Ein regulärer SQL-Benutzer kann nach der Prüfung, dass der Runner beendet ist, die offene Transaktion auf der ursprünglichen Verbindung zurückrollen und anschließend die Sitzungssperre DML_MAZ_RUNNER explizit freigeben.</p>
+<p>Ein Aufruf von refresh() ohne Parameter setzt nur ausstehende Arbeiten fort. Er baut nicht die gesamte Historie neu auf und akzeptiert weder Datumsangaben noch Optionen für like, für die reine Invalidierung oder für die Parameterbindung. Um alle Mazes auszuwählen, müssen Sie bei like weiterhin ausdrücklich % angeben. Der reguläre Ungültigkeitszustand state=0 löst für sich genommen keine Aktion aus. Bei state=3 ist das Ergebnis ungültig und eine aktive Aktualisierung steht aus. state=1 steht für ein vollständiges, veröffentlichtes Ergebnis. state=2 tritt nur innerhalb der Veröffentlichungstransaktion auf. Zwischen dem Commit an der Quelle und der Benachrichtigung bleibt ein Zeitfenster. Ladeprozesse müssen die Benachrichtigung zuverlässig senden und den Versand bei Bedarf wiederholen.</p>
+<h2 id="execution-conditions-and-result-boundaries">Ausführungsbedingungen und Geltungsbereich der Ergebnisse <a class="section-link" aria-label="Link zum Abschnitt" href="#execution-conditions-and-result-boundaries">#</a></h2>
+<p>Verwenden Sie eine Verbindung im Autocommit-Modus mit IMPLICIT_TRANSACTIONS OFF und ohne aktive Transaktion. Der Einstiegspunkt prüft die Berechtigungen für die Ziele dieser Anforderung und die betroffenen Schreibprozeduren. Der Runner arbeitet die global ausstehenden Aufgaben im Berechtigungskontext des Aufrufers ab. Das ausführende Konto benötigt daher auch die Berechtigungen für die Schreibprozeduren aller ausstehenden Aufgaben. Fehlen Berechtigungen, gibt der Runner den ursprünglichen Fehler zurück und lässt den Aktualisierungsbedarf bestehen.</p>
+<details><summary>Betriebsreferenz für Laufzeitobjekte und Berechtigungen</summary>
+
+<table>
+<thead>
+<tr>
+<th>Objekt</th>
+<th>Geltungsbereich</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Ergebnistabelle und Schreibprozedur (PROC_M__...) jedes Maz</td>
+<td>Einzelnes Maz</td>
+</tr>
+<tr>
+<td>prepare_sql, prepare_status_sql, fachliches SQL</td>
+<td>Aktuelle Abfrage und Parameter dieser Anforderung</td>
+</tr>
+<tr>
+<td>DML_MATERIALIZE_DEFINITION, DML_MATERIALIZE_DEPENDENCY, DML_MATERIALIZE_STATE</td>
+<td>Gemeinsam genutzte Laufzeittabellen mit Datensätzen je Maz und Partition</td>
+</tr>
+<tr>
+<td>DML_PREPARE_MAZ, DML_REFRESH_MAZ, DML_RUN_MAZ</td>
+<td>Gemeinsam genutzte Laufzeitprozeduren</td>
+</tr>
+<tr>
+<td>DML_MAZ_IS_READY</td>
+<td>Gemeinsam genutzte Funktion zur Bereitschaftsprüfung</td>
+</tr>
+<tr>
+<td>DML_MAZ_PROGRESS</td>
+<td>Gemeinsam genutzte Sicht auf den systemweiten Fortschritt</td>
+</tr>
+</tbody></table>
+<p>Das Systemsetup installiert den Kalender und die zugehörigen Wartungsroutinen. Nehmen Sie vor der erneuten Bereitstellung keine neuen Anforderungen mehr an und vergewissern Sie sich, dass der Runner beendet ist. Führen Sie anschließend das generierte Setup aus.</p>
+</details>
+
+<p>Verwenden Sie dieselben Umsatzdaten in der <a href="maz-sqlserver.de.html">Übung zur Aggregation von Monats- zu Quartalswerten</a>.</p>
+</main></body></html>

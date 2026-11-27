@@ -1,0 +1,64 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ウィンドウ計算の配置 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="ウィンドウ計算の結果は、評価段階で利用できる行によって決まります。明細ウィンドウは後続の指標集計より前に処理されます。複合式のウィンドウは、集計済みの指標の結果を入力とします。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="ウィンドウ計算の配置 · DML"><meta property="og:description" content="ウィンドウ計算の結果は、評価段階で利用できる行によって決まります。明細ウィンドウは後続の指標集計より前に処理されます。複合式のウィンドウは、集計済みの指標の結果を入力とします。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--window-placement.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="explanation--window-placement.de.html">Deutsch</a> <a lang="en" hreflang="en" href="explanation--window-placement.html">English</a> <a lang="zh" hreflang="zh" href="explanation--window-placement.zh.html">中文</a></header><main><h1 id="window-placement">ウィンドウ計算の配置</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#supported-placements">サポートされる配置</a></li><li><a href="#detail-window">明細ウィンドウ</a></li><li><a href="#post-aggregation-window">集計後のウィンドウ</a></li><li><a href="#row-windows-and-calendar-periods">行ベースのウィンドウと暦上の期間</a></li></ul></details>
+<p>ウィンドウ計算の結果は、評価段階で利用できる行によって決まります。明細ウィンドウは後続の指標集計より前に処理されます。複合式のウィンドウは、集計済みの指標の結果を入力とします。</p>
+<h2 id="supported-placements">サポートされる配置 <a class="section-link" aria-label="この節へのリンク" href="#supported-placements">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>計算</th>
+<th>配置</th>
+<th>入力行</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>各ソース行の属性</td>
+<td>データセットの <code>columns:</code> に定義した計算列</td>
+<td>明細行</td>
+</tr>
+<tr>
+<td>グループ別に集計した指標の順位または割合</td>
+<td><code>dataset:</code> を含まない複合式</td>
+<td>集計後の行</td>
+</tr>
+<tr>
+<td><code>OVER</code> を含むアトミック指標</td>
+<td>検証したビルドでは拒否される</td>
+<td>サポートされる配置なし</td>
+</tr>
+</tbody></table>
+<p>生成された SQL を確認し、各ウィンドウがどの段階で評価されるかを確かめてください。コンパイル、データベースでの実行、結果の比較は、それぞれ別の検証項目です。</p>
+<h2 id="detail-window">明細ウィンドウ <a class="section-link" aria-label="この節へのリンク" href="#detail-window">#</a></h2>
+<pre><code class="language-yaml">fact:
+  type: dataset
+  table: FACT_SALES
+  dimension: [id]
+  columns:
+    id:
+    customer:
+    region:
+    amount:
+    customer_amount: 'SUM({amount}) OVER (PARTITION BY {customer})'
+  measures:
+    repeated_customer_amount: 'SUM({customer_amount})'
+</code></pre>
+<p>このウィンドウは、顧客ごとの合計を、その顧客のすべての明細行に表示します。計算列を合計すると、同じ顧客の合計がソース行ごとに1回ずつ加算されます。結果は顧客ごとの合計を重複排除したものではありません。この例はウィンドウの配置を示すためのもので、推奨される売上指標ではありません。</p>
+<p>行の順序に依存するウィンドウの結果は、並べ替え順、ウィンドウフレーム、同順位を解消するキー、対象となるソース行の集合にも左右されます。フィルターを適用する段階を変えると、パーティション内のすべてのウィンドウ結果が変わることがあります。</p>
+<p>明細ウィンドウでは、集計前に最後の観測値を選ぶこともできます。<code>dt_month</code> と <code>revenue_amount</code> があるソースでは、検証済みのパターンで次の列と指標を追加します。</p>
+<pre><code class="language-yaml"># Under the dataset's columns:
+is_last_month: 'IIF({dt_month} = MAX({dt_month}) OVER (), 1, 0)'
+# Under the same dataset's measures:
+last_month_revenue: 'SUM({revenue_amount} * {is_last_month})'
+</code></pre>
+<p><code>MAX(...) OVER ()</code> は、明細ウィンドウの入力から最新の月を1つ選びます。指標は、その月の金額だけを合計します。エンティティ単位のパーティションはありません。あるエンティティにその月の観測値がなければ、そのエンティティの直近の残高は繰り越されません。在庫や口座残高に式を採用する前に、「最後」をエンティティごとに決めるのか全体で決めるのか、観測値がない場合にどう扱うのか、どのフィルターでウィンドウの対象を絞るのかを定義してください。</p>
+<h2 id="post-aggregation-window">集計後のウィンドウ <a class="section-link" aria-label="この節へのリンク" href="#post-aggregation-window">#</a></h2>
+<p>アトミック指標 <code>sales: SUM({amount})</code> をもとに、この複合式は集計後の売上額に順位を付けます。</p>
+<pre><code class="language-yaml">customer_rank:
+  type: measure
+  formula: 'rank() over (partition by {-d: customer} order by {sales} desc)'
+</code></pre>
+<p>クエリの行を <code>[region, customer]</code> の粒度で定義すると、パーティション式にはクエリのほかのフィールド（ここでは <code>region</code>）が残ります。検証した SQL は、地域と顧客でグループ化した後、地域ごとに <code>SUM(amount)</code> に順位を付けます。ファクトデータの物理行は、順位付けの入力にはなりません。</p>
+<p><code>+d</code> により、より細かい粒度で集計する段階が設けられます。これによってグループ化された値が明細ウィンドウの属性に変わることはありません。ソースのフィルター、ウィンドウ結果に対するフィルター、最終レポートのフィルターでは、選択される行の集合が異なることがあります。</p>
+<p>Model Query は、検証済みのウィンドウ式を直接記述する形式も受け付けます。利用できるクエリのインターフェースについては、<a href="reference--model-query-sql.ja.html">クエリリファレンス</a>を参照してください。ある形式が受け付けられても、任意のウィンドウフレームや方言がサポートされるとは限りません。</p>
+<h2 id="row-windows-and-calendar-periods">行ベースのウィンドウと暦上の期間 <a class="section-link" aria-label="この節へのリンク" href="#row-windows-and-calendar-periods">#</a></h2>
+<p>集計後の行ベースのウィンドウは、その評価段階に残っている行を並べ替え順に使用します。累計売上のクエリをウィンドウの評価前に2月に絞り込むと、1月の行は除外されます。<a href="examples--running-total.ja.html">累計を求める名前付きクエリの例</a>では、このフィルター適用時の動作と、再利用可能なウィンドウ指標を検証しています。</p>
+<p>業務上の定義が、明示的に指定した終了日までの暦上の期間であれば、<code>ytd</code> などの時間マクロを使用します。選択した行を並べ替え、その順序に基づく範囲で計算する定義であれば、行ベースのウィンドウを使用します。欠けている月、フィルターを適用する段階、同順位の行の並べ方によって、フレームに含まれる行が変わることがあります。SUM ウィンドウが機能しても、累積の重複排除件数や累積比率が機能するとは限りません。それぞれの定義を個別にテストしてください。</p>
+</main></body></html>

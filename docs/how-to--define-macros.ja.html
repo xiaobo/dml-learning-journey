@@ -1,0 +1,118 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>カスタム修飾子とデータベース関数でDMLを拡張する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="DMLは、2 つの異なるレイヤーで拡張できます。DMLで再利用可能な指標や時間の変換を定義するか、対象データベースにインストールされたスカラー関数を呼び出します。カスタム修飾子は指標の参照と組み合わせて使えます。データベース関数の計算処理は、そのデータベース側で実装します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="カスタム修飾子とデータベース関数でDMLを拡張する · DML"><meta property="og:description" content="DMLは、2 つの異なるレイヤーで拡張できます。DMLで再利用可能な指標や時間の変換を定義するか、対象データベースにインストールされたスカラー関数を呼び出します。カスタム修飾子は指標の参照と組み合わせて使えます。データベース関数の計算処理は、そのデータベース側で実装します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--define-macros.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--define-macros.html">English</a> <a lang="zh" hreflang="zh" href="how-to--define-macros.zh.html">中文</a></header><main><h1 id="extend-dml-with-custom-modifiers-and-database-functions">カスタム修飾子とデータベース関数でDMLを拡張する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#custom-macro-definitions-dt-macro-and-fn-macro">カスタムマクロの定義（dt-macro と fn-macro）</a></li><li><a href="#choose-the-extension-point">拡張方法を選ぶ</a></li><li><a href="#a-verified-composition-example">検証済みの組み合わせ例</a></li><li><a href="#calling-a-function-defined-in-your-database">データベースで定義された関数を呼び出す</a></li><li><a href="#validate-the-function-on-the-intended-connection">使用予定の接続で関数を検証する</a></li><li><a href="#what-was-verified">検証した内容</a></li></ul></details>
+<p><strong>DMLは、2 つの異なるレイヤーで拡張できます。</strong>DMLで再利用可能な指標や時間の変換を定義するか、対象データベースにインストールされたスカラー関数を呼び出します。カスタム修飾子は指標の参照と組み合わせて使えます。データベース関数の計算処理は、そのデータベース側で実装します。</p>
+<p>時間変換や、呼び出し元が選んだ指標に適用する数式を再利用するには、カスタムマクロを使用します。呼び出しと組み合わせのルールは、<a href="reference--modifiers.ja.html">修飾子リファレンス</a>を参照してください。</p>
+<p><a id="27-custom-macro-definitions-dt-macro-and-fn-macro"></a></p>
+<h2 id="custom-macro-definitions-dt-macro-and-fn-macro">カスタムマクロの定義（dt-macro と fn-macro） <a class="section-link" aria-label="この節へのリンク" href="#custom-macro-definitions-dt-macro-and-fn-macro">#</a></h2>
+<p><code>.dml</code>では、<code>dt-macro</code>（時間範囲をずらす）と<code>fn-macro</code>（指標を数式で包む）の両方を独自に定義できます。一度定義すれば、組み込みの修飾子と同じように、任意の指標やクエリから名前で参照できます。</p>
+<p><strong>2 種類のマクロ</strong></p>
+<table>
+<thead>
+<tr>
+<th>種類</th>
+<th>用途</th>
+<th>主なプロパティ</th>
+<th>プレースホルダー <code>{measure}</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt-macro</code></td>
+<td>時間ウィンドウをずらす、または広げる</td>
+<td><code>value:</code>（単一の時点をずらす）または <code>range:</code> <code>[start, end]</code></td>
+<td>いいえ。時間コンテキストに対して処理を行います。</td>
+</tr>
+<tr>
+<td><code>fn-macro</code></td>
+<td>指標を派生数式に組み込む</td>
+<td><code>{measure}</code>を使う<code>formula:</code></td>
+<td>はい。呼び出し元の指標に置き換わります。</td>
+</tr>
+</tbody></table>
+<p>時点をずらすには<code>value:</code>を、時間ウィンドウを指定するには<code>range: [start, end]</code>を使用します。<code>fn-macro</code>は呼び出し元の指標を参照するために<code>{measure}</code>を使い、<code>dt-macro</code>は解決された時間フィールドを参照するために<code>{dim_dt}</code>を使います。オプションの<code>prerequisite:</code>で、評価対象の行や集計値を定義できる粒度を制限できます。</p>
+<h2 id="choose-the-extension-point">拡張方法を選ぶ <a class="section-link" aria-label="この節へのリンク" href="#choose-the-extension-point">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>やりたいこと</th>
+<th>使用するもの</th>
+<th>管理するもの</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同じ計算を複数の指標に適用する</td>
+<td><code>fn-macro</code></td>
+<td><code>{measure}</code>を使うDMLの数式</td>
+</tr>
+<tr>
+<td>時間のシフトや時間ウィンドウを再利用する</td>
+<td><code>dt-macro</code></td>
+<td>DMLの時間変換</td>
+</tr>
+<tr>
+<td>データベースにある既存の計算を再利用する</td>
+<td>データベースのスカラー関数の呼び出し</td>
+<td>データベース関数と、その権限およびデプロイ</td>
+</tr>
+</tbody></table>
+<p>カスタム修飾子を使うと、分析の意図をモデルに記述できます。呼び出し構文は組み込みの修飾子と同じです。データベース関数を使うと、データがある場所でロジックを再利用できますが、そのデータベースでの関数の実装に依存します。どちらを使う場合も、評価対象の行や集計値を定義する粒度を適切に選ぶ必要があります。</p>
+<h2 id="a-verified-composition-example">検証済みの組み合わせ例 <a class="section-link" aria-label="この節へのリンク" href="#a-verified-composition-example">#</a></h2>
+<p>カスタム修飾子は組み込みの修飾子と同じ形式で参照します。コンパイラを変更する必要はありません。</p>
+<p>独立した練習用のDuckDBデータベースに、次の 2 件の売上データを用意します。</p>
+<pre><code class="language-sql">CREATE TABLE sales(id INTEGER, dt_month DATE, amount DECIMAL(12,2));
+INSERT INTO sales VALUES
+  (1, DATE '2025-01-01', 20),
+  (2, DATE '2025-02-01', 30);
+</code></pre>
+<p>このモデル全体を<code>model.dml</code>として保存します。</p>
+<pre><code class="language-yaml">dialect: duckdb
+S:
+  type: dataset
+  table: sales
+  dimension: [id]
+  columns:
+    id:
+    dt_month:
+    amount:
+  measures:
+    sales: SUM({amount})
+double_value:
+  type: fn-macro
+  formula: '{measure} * 2'
+prior_month:
+  type: dt-macro
+  value: date({dim_dt}, '-1 month')
+</code></pre>
+<p>1 月の売上が20、2 月の売上が30の場合：</p>
+<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
+       AGG({sales: prior_month}) AS previous,
+       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>クエリを<code>query.sql</code>として保存します。練習用データベースを<code>default</code>として設定した状態で、次を実行します。</p>
+<pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --json
+dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default
+</code></pre>
+<p>実行結果は<strong>60、20、40</strong>でした。確認に使用したDuckDB接続では、厳格モードでのコンパイル、validate-only、実行のすべてが成功しました。モデルには、<code>dialect: duckdb</code>、ソースで一意の<code>id</code>、<code>dt_month</code>、<code>sales: SUM({amount})</code>が宣言されていました。</p>
+<p>これは、言語レベルで再利用できる組み合わせです。マクロは呼び出し元の指標とその評価コンテキストを受け取ります。任意のコンパイラプラグインを実装するためのAPIではありません。粒度のルール、時間に関する前提条件、修飾子の適用順序は引き続き適用されます。独自の名前を付けても、これらのルールは回避できません。</p>
+<h2 id="calling-a-function-defined-in-your-database">データベースで定義された関数を呼び出す <a class="section-link" aria-label="この節へのリンク" href="#calling-a-function-defined-in-your-database">#</a></h2>
+<p><strong>DMLでは、生成されたSQLにスカラー関数の呼び出しを残すことができます。関数の実装はデータベースが提供します。</strong>たとえば、DMLを実行する前に、練習用のDuckDBデータベースに次の関数をインストールします。</p>
+<pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
+</code></pre>
+<p>DuckDBはこの形式を永続的なSQLスカラーマクロとして実装します。この例で検証するのは、データベースで定義されたスカラー関数の呼び出しです。Python UDFの登録、集約 UDF、テーブル値関数は検証の対象外です。</p>
+<p>集計前に元データの値に対して関数を呼び出すには、<code>S.measures</code>の下で<code>sales</code>と同じ階層に次の項目を追加します。</p>
+<pre><code class="language-yaml"># Under the sales dataset's measures:
+net_sales: SUM(business_net({amount}))
+</code></pre>
+<p>次に、その指標を、集計結果に対して関数を呼び出した場合と比較します。</p>
+<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>2 月の売上が30の場合、どちらも<strong>24</strong>を返しました。生成されたSQLには、<code>SUM(business_net(amount))</code>と<code>business_net(SUM(amount))</code>がそのまま含まれていました。2 つの呼び出しは異なる段階で評価されます。ここで結果が等しいのは、関数が線形だからです。丸め、しきい値による処理、その他の非線形関数では結果が異なる場合があるため、どの段階で評価するかを意識して選んでください。</p>
+<h3 id="validate-the-function-on-the-intended-connection">使用予定の接続で関数を検証する <a class="section-link" aria-label="この節へのリンク" href="#validate-the-function-on-the-intended-connection">#</a></h3>
+<p>DMLは関数をインストールせず、別のデータベース向けに実装を変換することもありません。関数は実行に使用する接続から参照でき、生成された引数の型を受け付ける必要があります。また、そのデータベースユーザーに関数の実行権限が必要です。関数名、スキーマによる修飾、デプロイ、移植性はデータベースによって異なります。</p>
+<p>意図的に用意しなかった関数の呼び出しは、<strong>厳格モードでのコンパイルに成功</strong>しましたが、その後の validate-only はEXPLAINの段階で失敗しました（終了コード 65）。直接実行しても失敗しました（終了コード 70）。したがって、コンパイルに成功しただけでは、UDFが存在することや呼び出せることは確認できません。<a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a>を行い、その後で実際の結果を比較してください。</p>
+<h3 id="what-was-verified">検証した内容 <a class="section-link" aria-label="この節へのリンク" href="#what-was-verified">#</a></h3>
+<p>上記の例は、dmlc 0.3.16（実行ファイルの SHA-256 は <code>c019a84c3208aee31cb5fa068232fa24d3258e9cdc83dfc2a91584a86a5ba091</code>）と DuckDB 1.5.5 で実行しました。検証したのは、カスタムの<code>fn-macro</code>と<code>dt-macro</code>、それらの組み合わせ、元データの値と集計結果に対するスカラー関数の呼び出し、および関数が存在しない場合の診断です。他のデータベースエンジン、スキーマ修飾名、手続き型またはネイティブの UDF、集約 UDF、テーブル関数は、ここではテストしていません。</p>
+</main></body></html>

@@ -1,0 +1,346 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMX の式と関数 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、参照形式と組み込み関数について説明します。修飾子の動作については、指標の修飾子を参照してください。クエリの文法とエイリアスについては、Model Query SQLを参照してください。例の関数は式の構文で記述しています。生成される SQL は、選択した方言によって異なります。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--expressions.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DMX の式と関数 · DML"><meta property="og:description" content="このページでは、参照形式と組み込み関数について説明します。修飾子の動作については、指標の修飾子を参照してください。クエリの文法とエイリアスについては、Model Query SQLを参照してください。例の関数は式の構文で記述しています。生成される SQL は、選択した方言によって異なります。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--expressions.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--expressions.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--expressions.html">English</a> <a lang="zh" hreflang="zh" href="reference--expressions.zh.html">中文</a></header><main><h1 id="dmx-expressions-and-functions">DMX の式と関数</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#reference-syntax">参照構文</a></li><li><a href="#in-dml-formulas"><code>.dml</code> の式</a></li><li><a href="#in-model-query-sql">Model Query SQL 内</a></li><li><a href="#pk-lookups"><code>pk(...)</code> によるルックアップ</a></li><li><a href="#compound-and-effective-date-keys">複合キーと有効期間付きキー</a></li><li><a href="#functions">関数</a></li><li><a href="#core-aggregation-functions">基本的な集計関数</a></li><li><a href="#dml-specific-functions">DML 固有の関数</a></li><li><a href="#conditional-and-utility-functions">条件関数とユーティリティ関数</a></li><li><a href="#date-functions-sqlite-dialect">日付関数（SQLite 方言）</a></li><li><a href="#modifier-syntax-in-model-query-sql">Model Query SQL の修飾子構文</a></li><li><a href="#runtime-variables">実行時変数</a></li><li><a href="#database-defined-scalar-functions">データベースで定義されたスカラー関数</a></li><li><a href="#complete-lookup-examples">ルックアップの完全な例</a></li></ul></details>
+<p>このページでは、参照形式と組み込み関数について説明します。修飾子の動作については、<a href="reference--modifiers.ja.html">指標の修飾子</a>を参照してください。クエリの文法とエイリアスについては、<a href="reference--model-query-sql.ja.html">Model Query SQL</a>を参照してください。例の関数は式の構文で記述しています。生成される SQL は、選択した方言によって異なります。</p>
+<p><a id="1-reference-syntax"></a></p>
+<h2 id="reference-syntax">参照構文 <a class="section-link" aria-label="この節へのリンク" href="#reference-syntax">#</a></h2>
+<h3 id="in-dml-formulas"><code>.dml</code> の式 <a class="section-link" aria-label="この節へのリンク" href="#in-dml-formulas">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>参照の種類</th>
+<th>構文</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>列</td>
+<td><code>{column_name}</code></td>
+<td><code>SUM({amount})</code></td>
+</tr>
+<tr>
+<td>指標</td>
+<td><code>{measure_name}</code></td>
+<td><code>DIVIDE({sales}, {count})</code></td>
+</tr>
+<tr>
+<td>別のデータセットの列</td>
+<td><code>{DATASET}.column</code></td>
+<td><code>{products}.price</code></td>
+</tr>
+<tr>
+<td>修飾子付きの指標</td>
+<td><code>{measure: modifier}</code></td>
+<td><code>{sales: yoy}</code></td>
+</tr>
+<tr>
+<td>入れ子になった修飾子を持つ指標</td>
+<td><code>{measure: {modifier: sub}}</code></td>
+<td><code>{sales: {+d: customer}}</code></td>
+</tr>
+</tbody></table>
+<h3 id="in-model-query-sql">Model Query SQL 内 <a class="section-link" aria-label="この節へのリンク" href="#in-model-query-sql">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>参照の種類</th>
+<th>構文</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>列（ディメンション）</td>
+<td>名前のみ</td>
+<td><code>SELECT product, dt_month</code></td>
+</tr>
+<tr>
+<td>指標</td>
+<td><code>AGG(measure_name)</code></td>
+<td><code>AGG(sales)</code></td>
+</tr>
+<tr>
+<td>修飾子付きの指標</td>
+<td><code>AGG({measure: modifier})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+<tr>
+<td>修飾子を位置引数で指定する指標</td>
+<td><code>AGG(measure, 'modifier')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
+</tr>
+</tbody></table>
+<p><strong>基本ルール</strong>：波括弧 <code>{...}</code> は <code>.dml</code> 専用です。Model Query SQL では、ディメンションには名前だけを、指標には <code>AGG(...)</code> を使用します。唯一の例外は、修飾子を指定する形式 <code>AGG({measure: modifier})</code> です。</p>
+<h3 id="pk-lookups"><code>pk(...)</code> によるルックアップ <a class="section-link" aria-label="この節へのリンク" href="#pk-lookups">#</a></h3>
+<p>ルックアップでは、単一キー、複合キー、有効期間付きキーを使用できます。ルックアップを使うクエリのグループ化フィールドではなく、参照先のキー全体を指定してください。このような属性のルックアップは、データセットの SQL でリレーションを準備する処理や、個別に集計した指標を組み合わせる処理とは異なります。詳しくは、<a href="explanation--core-concepts.ja.html#2-source-relations-lookups-and-metric-composition">ソースリレーション、ルックアップ、指標の合成</a>を参照してください。</p>
+<p><code>.dml</code> の式で別のデータセットの列をルックアップする方法：</p>
+<pre><code class="language-yaml"># Single PK
+formula: 'SUM({amount} * pk(customer_id).{customers}.tier_discount)'
+
+# Composite PK
+formula: 'SUM(pk(brand_id, tag_id).{DATASET_PRODUCTS}.state)'
+</code></pre>
+<p>参照先のディメンションフィールドごとに 1 つの式を、宣言順に指定します。<code>pk(1, tag_id)</code> の引数の数は <code>[brand_id, tag_id]</code> に合っています。この例では意図的に <code>brand_id</code> を 1 に固定しています。このルックアップが正しいかどうかは、意図したキーと、ソースでそのキーが一意かどうかによって決まります。</p>
+<h3 id="compound-and-effective-date-keys">複合キーと有効期間付きキー <a class="section-link" aria-label="この節へのリンク" href="#compound-and-effective-date-keys">#</a></h3>
+<p>参照先の <code>dimension:</code> は、レポートのグループ化ではなく、ソースの完全なキーを表します。次の 2 つのルックアップパターンでは、参照先のフィールドを宣言順に指定します。</p>
+<pre><code class="language-yaml"># Target with a compound key:
+dimension: [id, region]
+# Column in the referring dataset:
+label: 'pk({id}, {region}).{D}.label'
+</code></pre>
+<pre><code class="language-yaml"># Target with an object key and validity interval:
+dimension: [id, 'range(valid_from, valid_to)']
+# Column in the referring dataset:
+label: 'pk({id}, {event_date}).{D}.label'
+</code></pre>
+<p>カンマが YAML リストの 1 つの項目内に収まるように、<code>'range(valid_from, valid_to)'</code> の引用符を残してください。イベントの日付は <code>[valid_from, valid_to)</code> と照合されます。開始日は含まれ、終了日は含まれません。そのため、2 月 1 日のイベントは、2 月 1 日に始まる期間に一致し、その日に終わる期間には一致しません。これは、配列を生成するデータベース関数 <code>range()</code> とは別のものです。</p>
+<p>複合キー全体が一意であれば、同じ ID が複数の地域に存在しても問題ありません。同じ ID の有効期間は重複してはいけません。コンパイルが成功しても、参照先の重複や有効期間の重なりによってクエリ結果の行が増えることがあります。<code>--validate</code> は、確認時点のデータがキーの要件を満たすかを検証します。データの修復や、後続の実行と同じスナップショットを使用することの保証は行いません。</p>
+<p><a href="examples--compound-key.ja.html">複合キー</a>と<a href="examples--range-lookup.ja.html">有効期間付きキー</a>の演習には、完全なモデル、境界の日付、意図的に発生させた検証エラー、修正後の結果が含まれます。演習で扱うのは、有限で互いに隣接する区間です。片側に境界がない区間や、一般的な多対多の配分ルールは扱いません。ブリッジテーブルを使う分析や配分分析では、完全なキー、重み、想定される合計を別途定義してください。ルックアップの引数の数に関するエラーだけでは、その分析を表現できるかどうかは判断できません。</p>
+<hr>
+<p><a id="3-functions"></a></p>
+<h2 id="functions">関数 <a class="section-link" aria-label="この節へのリンク" href="#functions">#</a></h2>
+<p><a id="31-core-aggregation-functions"></a></p>
+<h3 id="core-aggregation-functions">基本的な集計関数 <a class="section-link" aria-label="この節へのリンク" href="#core-aggregation-functions">#</a></h3>
+<p>これらの関数は <code>.dml</code> と Model Query SQL の両方で使用できます。<code>.dml</code> では、元の列（<code>SUM({amount})</code>）または集計結果より細かい粒度の指標（<code>SUM({sales: {+d: product}})</code>）を集計します。Model Query SQL では、集計結果より細かい粒度の指標だけを集計できます。たとえば、<code>SUM(AGG({sales: {+d: product}}))</code> は製品ごとの売上を合算して総売上を求めます。指標を単に参照する場合は、<code>AGG(measure)</code> だけを使用します。</p>
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>構文</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SUM</code></td>
+<td><code>SUM({column})</code></td>
+<td>合計</td>
+</tr>
+<tr>
+<td><code>COUNT</code></td>
+<td><code>COUNT({column})</code></td>
+<td>NULL 以外の値の件数</td>
+</tr>
+<tr>
+<td><code>COUNT(DISTINCT ...)</code></td>
+<td><code>COUNT(DISTINCT {column})</code></td>
+<td>重複を除いた件数</td>
+</tr>
+<tr>
+<td><code>MAX</code></td>
+<td><code>MAX({column})</code></td>
+<td>最大値</td>
+</tr>
+<tr>
+<td><code>MIN</code></td>
+<td><code>MIN({column})</code></td>
+<td>最小値</td>
+</tr>
+<tr>
+<td><code>AVG</code></td>
+<td><code>AVG({column})</code></td>
+<td>平均値</td>
+</tr>
+</tbody></table>
+<p><a id="32-dml-specific-functions"></a></p>
+<h3 id="dml-specific-functions">DML 固有の関数 <a class="section-link" aria-label="この節へのリンク" href="#dml-specific-functions">#</a></h3>
+<p>コンテキスト列は、有効な指標式の中で関数を使用できる箇所を示します。Model Query SQL では、引き続き <code>AGG(...)</code> を通じて指標を集計する必要があります。これらの関数を使っても、<code>SELECT</code> で元の列を集計することはできません。</p>
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>構文</th>
+<th>コンテキスト</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AGG()</code></td>
+<td><code>AGG(measure)</code></td>
+<td>Model Query SQL のみ</td>
+<td>クエリ内で指標を参照する（集計関数ではない）</td>
+</tr>
+<tr>
+<td><code>DIVIDE()</code></td>
+<td><code>DIVIDE({num}, {den})</code></td>
+<td>両方</td>
+<td>安全な除算（ゼロで除算すると NULL を返す）</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNT()</code></td>
+<td><code>DISTINCTCOUNT({column})</code></td>
+<td>両方</td>
+<td>重複を除いて値の件数を数える</td>
+</tr>
+<tr>
+<td><code>SUMIF</code></td>
+<td><code>SUMIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件付き合計</td>
+</tr>
+<tr>
+<td><code>COUNTIF</code></td>
+<td><code>COUNTIF({condition})</code> / <code>COUNTIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件に一致する行／条件に一致する NULL 以外の値</td>
+</tr>
+<tr>
+<td><code>AVGIF</code></td>
+<td><code>AVGIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件付き平均</td>
+</tr>
+<tr>
+<td><code>MAXIF</code></td>
+<td><code>MAXIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件付き最大値</td>
+</tr>
+<tr>
+<td><code>MINIF</code></td>
+<td><code>MINIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件付き最小値</td>
+</tr>
+<tr>
+<td><code>DISTINCTCOUNTIF</code></td>
+<td><code>DISTINCTCOUNTIF({val}, {condition})</code></td>
+<td>両方</td>
+<td>条件付きの重複除外カウント</td>
+</tr>
+</tbody></table>
+<p><strong>条件付き集計の例</strong>：</p>
+<pre><code class="language-yaml"># In .dml
+completed_sales:
+    type: measure
+    formula: SUMIF({amount}, {status} = 'completed')
+
+high_value_customers:
+    type: measure
+    formula: 'DISTINCTCOUNTIF({customer_id}, {sales: {+d: customer_id}} &gt; 1000)'
+</code></pre>
+<pre><code class="language-sql">-- In Model Query SQL (modifier form)
+SELECT AGG(sales, '+f', region = 'North') FROM MODEL
+</code></pre>
+<p><a id="33-conditional-and-utility-functions"></a></p>
+<h3 id="conditional-and-utility-functions">条件関数とユーティリティ関数 <a class="section-link" aria-label="この節へのリンク" href="#conditional-and-utility-functions">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>構文</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IIF</code></td>
+<td><code>IIF(condition, true_val, false_val)</code></td>
+<td>インライン条件式</td>
+</tr>
+<tr>
+<td><code>ISNULL</code> / <code>IFNULL</code> / <code>COALESCE</code></td>
+<td><code>ISNULL({expr}, default)</code></td>
+<td>最初の NULL 以外の値を返す</td>
+</tr>
+<tr>
+<td><code>NULLIF</code></td>
+<td><code>NULLIF({a}, {b})</code></td>
+<td>a = b の場合は NULL を返す</td>
+</tr>
+</tbody></table>
+<p>ユーティリティ関数は SQL の式レイヤーを使用します。式の構文として有効ですが、DML の正式な組み込みシンボルには含まれません。DML の関数カタログでは、この扱いは <code>AGG</code>、<code>DIVIDE</code>、<code>SUMIF</code> など、DML 自体が定義する関数に限られます。</p>
+<p>指標の式の最外層が NULL 合体で、代替値がリテラルの場合、その指標を使用する箇所で<a href="reference--measures.ja.html#fill-default-when-row-missing">欠落行の補完</a>が有効になります。</p>
+<pre><code class="language-yaml">daily_sales:
+    type: measure
+    formula: SUM(ISNULL({sales: {+d: dt_date}}, 0))
+</code></pre>
+<p><a id="34-date-functions-sqlite-dialect"></a></p>
+<h3 id="date-functions-sqlite-dialect">日付関数（SQLite 方言） <a class="section-link" aria-label="この節へのリンク" href="#date-functions-sqlite-dialect">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>構文</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>date()</code></td>
+<td><code>date(current_date)</code></td>
+<td>現在の日付</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of month')</code></td>
+<td>—</td>
+<td>今月の初日</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of month', '-1 month')</code></td>
+<td>—</td>
+<td>先月の初日</td>
+</tr>
+<tr>
+<td><code>date(current_date, 'start of year')</code></td>
+<td>—</td>
+<td>今年の初日</td>
+</tr>
+<tr>
+<td><code>date(current_date, '-N days')</code></td>
+<td>—</td>
+<td>N 日前</td>
+</tr>
+</tbody></table>
+<p><strong>方言に関する注意</strong>：対象の方言に合わせて日付関数を選択してください。DML は SQLite 形式の日付式をサポートし、対応する式を選択した方言に変換します。生成された SQL を確認してください。対象のデータベースが元の式をそのまま受け付けるとは限りません。</p>
+<hr>
+<p><a id="4-modifier-syntax-in-model-query-sql"></a></p>
+<h2 id="modifier-syntax-in-model-query-sql">Model Query SQL の修飾子構文 <a class="section-link" aria-label="この節へのリンク" href="#modifier-syntax-in-model-query-sql">#</a></h2>
+<p>Model Query SQL では、次の 2 つの形式が等価です。</p>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>構文</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>位置引数形式</td>
+<td><code>AGG(measure, 'mod1', 'mod2')</code></td>
+<td><code>AGG(sales, 'yoy')</code></td>
+</tr>
+<tr>
+<td>波括弧形式</td>
+<td><code>AGG({measure: mod})</code></td>
+<td><code>AGG({sales: yoy})</code></td>
+</tr>
+</tbody></table>
+<p><strong>エイリアスのルール</strong>：正式なルールの一覧は、<a href="reference--model-query-sql.ja.html#33-alias-rules">Model Query のエイリアスルール</a>を参照してください。<code>AGG(sales)</code> にはエイリアスが自動で付き、<code>AGG({sales: yoy})</code> には <code>AS</code> が必要です。</p>
+<hr>
+<h2 id="runtime-variables">実行時変数 <a class="section-link" aria-label="この節へのリンク" href="#runtime-variables">#</a></h2>
+<p>これらの変数は評価コンテキストのプレースホルダーであり、呼び出し元が指定するクエリパラメーターではありません。アプリケーションでのバインドについては、<a href="reference--model-query-sql.ja.html#jdbc-parameters-and-query-kind">JDBC パラメーターとクエリの種類</a>を参照してください。物理 SQL レベルでバインドを検証しても、Model Query のセマンティックレベルでバインドされるわけではありません。</p>
+<table>
+<thead>
+<tr>
+<th>変数</th>
+<th>コンテキスト</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{dim_dt}</code></td>
+<td>時間を考慮する式と修飾子</td>
+<td>現在の評価コンテキストで解決された標準時間フィールド</td>
+</tr>
+<tr>
+<td><code>{measure}</code></td>
+<td><code>fn-macro</code> の式</td>
+<td>マクロがラップする呼び出し元の指標</td>
+</tr>
+<tr>
+<td><code>{dt_date}</code>, <code>{dt_week}</code>, <code>{dt_month}</code>, <code>{dt_quarter}</code>, <code>{dt_year}</code></td>
+<td>標準時間フィールドの参照</td>
+<td>名前で指定された標準時間フィールド</td>
+</tr>
+</tbody></table>
+<p><a href="reference--semantics.ja.html#24-dim_dt--the-time-dimension">時間コンテキスト</a>では、時間の分解能と期間の扱いを定めます。<a href="how-to--define-macros.ja.html">マクロの定義</a>では、マクロの宣言と変数の使い方を説明します。</p>
+<h2 id="database-defined-scalar-functions">データベースで定義されたスカラー関数 <a class="section-link" aria-label="この節へのリンク" href="#database-defined-scalar-functions">#</a></h2>
+<p>スカラー関数の呼び出しは、アトミックな指標の内部にある場合や、集計済みの指標の結果に適用される場合も、生成されるSQLに残すことができます。指標のコンテキストはDMLが管理し、関数の実装と利用可否は対象データベースによって決まります。動作する例、評価段階の違い、検証要件については、<a href="how-to--define-macros.ja.html#calling-a-function-defined-in-your-database">検証済みのカスタム修飾子とデータベース関数</a>を参照してください。この説明は、集約 UDF やテーブル値 UDF 全般に当てはまるわけではありません。</p>
+<h2 id="complete-lookup-examples">ルックアップの完全な例 <a class="section-link" aria-label="この節へのリンク" href="#complete-lookup-examples">#</a></h2>
+<p><code>pk()</code>は対象データセットのディメンション順に引数を取り、単一のキーに限定されません。<a href="examples--compound-key.ja.html">複合キーの例</a>では、<code>[id, region]</code>を宣言し、validate-only を使って対象データセット内にキーの組み合わせの重複がないか確認します。<a href="examples--range-lookup.ja.html">範囲の例</a>では、<code>[id, 'range(valid_from, valid_to)']</code>を使い、そのテストデータで開始値が範囲に含まれ、終了値が含まれず、互いに重なる範囲が拒否されることを検証します。これらの例は、任意の多対多の配分がサポートされることを示すものではありません。</p>
+</main></body></html>

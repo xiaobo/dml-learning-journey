@@ -1,0 +1,59 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Eine Kennzahl für den in festgelegter Reihenfolge kumulierten Umsatz wiederverwenden · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Definieren Sie die Kumulation in festgelegter Reihenfolge als benannte Kennzahl und geben Sie an, auf welcher Ebene sie verwendet werden darf. In diesem Beispiel werden Umsätze kumuliert, keine Bruttomargen ode"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--running-total.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Eine Kennzahl für den in festgelegter Reihenfolge kumulierten Umsatz wiederverwenden · DML"><meta property="og:description" content="Definieren Sie die Kumulation in festgelegter Reihenfolge als benannte Kennzahl und geben Sie an, auf welcher Ebene sie verwendet werden darf. In diesem Beispiel werden Umsätze kumuliert, keine Bruttomargen ode"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--running-total.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="examples--running-total.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--running-total-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--running-total-zh.html">中文</a></header><main><h1 id="reuse-an-ordered-running-sales-measure">Eine Kennzahl für den in festgelegter Reihenfolge kumulierten Umsatz wiederverwenden</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#inspect-the-definition-and-result">Definition und Ergebnis prüfen</a></li><li><a href="#filtering-before-the-window-changes-its-starting-point">Filtern vor der Fensterberechnung verschiebt den Startpunkt der Kumulation</a></li><li><a href="#run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen</a></li></ul></details>
+<p>Definieren Sie die Kumulation in festgelegter Reihenfolge als benannte Kennzahl und geben Sie an, auf welcher Ebene sie verwendet werden darf. In diesem Beispiel werden Umsätze kumuliert, keine Bruttomargen oder monatlichen Anzahlen unterschiedlicher Kunden.</p>
+<h2 id="inspect-the-definition-and-result">Definition und Ergebnis prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-definition-and-result">#</a></h2>
+<p>Der Monatsumsatz beträgt im Januar 40 und im Februar 20. <code>running_sales</code> liefert für Januar 40 und für Februar 60.</p>
+<pre><code class="language-yaml">running_sales:
+  type: measure
+  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  dimensions:
+    - [month]
+</code></pre>
+<p><code>ORDER BY month</code> legt die zeitliche Reihenfolge fest. <code>ROWS</code> kumuliert die Werte von der ersten bis einschließlich der aktuellen Zeile. Da es keine Partitionierung gibt, werden die Umsätze aller Regionen zunächst zu Monatsumsätzen zusammengefasst. <code>dimensions: [[month]]</code> erlaubt die Verwendung der Kennzahl nur auf Monatsebene. Die Sortierung der Monatsangaben im ISO-Format ergibt die chronologische Reihenfolge.</p>
+<details><summary>Vollständige Datei: fixed/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+F:
+  type: dataset
+  table: FACT
+  dimension: [id]
+  columns:
+    id:
+    region:
+    month:
+    amount:
+  measures:
+    sales: SUM({amount})
+region_selected:
+  type: measure
+  formula: '{sales: {-d: month}}'
+region_all_months:
+  type: measure
+  formula: '{sales: {-df: month}}'
+running_sales:
+  type: measure
+  formula: 'SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)'
+  dimensions:
+    - [month]
+</code></pre>
+</details>
+<details><summary>Vollständige Datei: fixed/running.sql</summary>
+
+<pre><code class="language-sql">SELECT month, AGG(sales), AGG(running_sales) FROM MODEL GROUP BY month ORDER BY month
+</code></pre>
+</details>
+
+<p>Andere Abfragen können dieselbe Kennzahl <code>running_sales</code> referenzieren. Wenn Sie die Umsätze je Region separat kumulieren möchten, definieren Sie die Partitionierung und die zulässige Aggregationsebene. Prüfen Sie anschließend die Ergebnisse. Wenn Sie einer Abfrage lediglich die Region hinzufügen, werden die Umsätze dadurch noch nicht je Region separat kumuliert.</p>
+<h2 id="filtering-before-the-window-changes-its-starting-point">Filtern vor der Fensterberechnung verschiebt den Startpunkt der Kumulation <a class="section-link" aria-label="Link zum Abschnitt" href="#filtering-before-the-window-changes-its-starting-point">#</a></h2>
+<details><summary>Vollständige Datei: fixed/running_february.sql</summary>
+
+<pre><code class="language-sql">SELECT month, AGG(sales), AGG(running_sales) FROM MODEL WHERE month='2024-02-01' GROUP BY month ORDER BY month
+</code></pre>
+</details>
+
+<p>Wenn nur der Februar ausgewählt ist, betragen sowohl der Umsatz als auch der kumulierte Umsatz 20. Der Januarwert von 40 wird nicht automatisch übernommen. Die Kumulation erfolgt über die ausgewählten Ergebniszeilen. Für die Kumulation vom Jahresbeginn bis einschließlich Februar geben Sie den Zeitraum ausdrücklich mit YTD an und prüfen die einbezogenen Eingabedaten. Siehe <a href="examples--time-context.de.html">kumulierte KPI</a>.</p>
+<p>Ein kumulativer Rang, der nach dem Kennzahlwert sortiert ist, ist kein chronologisch kumulierter Gesamtwert. Die Sortierreihenfolge ist Teil der Definition. Eine leere Auswertungsebene wie <code>{sales: {dimension: []}}</code> fordert einen Gesamtwert an, keine Kumulation in festgelegter Reihenfolge.</p>
+<p><a hreflang="zh" href="examples--running-total-zh.html">中文</a> · <a href="examples--index.de.html">Beispiele</a> · <a href="how-to--compile-and-validate.de.html">Kompilieren und prüfen</a></p>
+<h2 id="run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen <a class="section-link" aria-label="Link zum Abschnitt" href="#run-and-interpret-the-checks">#</a></h2>
+<p><a href="task-examples.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.py</code> wie in der Datei README beschrieben aus. Sie benötigen dmlc, Python und DuckDB. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner Ihrer Wahl an. Dort speichert es auch die Ergebnisse und die Diagnosemeldungen.</p>
+<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-13) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
+</main></body></html>

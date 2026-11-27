@@ -1,0 +1,61 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>累積KPIの集計終了日を明示する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="累積指標には時間コンテキストが必要です。同じクエリの日付フィルターは、そのクエリ内の他の非累積指標にも適用されます。DMLが当日やファクトデータ内の最新日を暗黙に選ぶことはありません。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="累積KPIの集計終了日を明示する · DML"><meta property="og:description" content="累積指標には時間コンテキストが必要です。同じクエリの日付フィルターは、そのクエリ内の他の非累積指標にも適用されます。DMLが当日やファクトデータ内の最新日を暗黙に選ぶことはありません。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--time-context.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="examples--time-context.de.html">Deutsch</a> <a lang="en" hreflang="en" href="examples--time-context-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--time-context-zh.html">中文</a></header><main><h1 id="give-a-cumulative-kpi-an-explicit-cutoff">累積KPIの集計終了日を明示する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#compare-two-scopes-in-one-result">1つの結果で2つの集計期間を比較する</a></li><li><a href="#observe-missing-context">時間コンテキストがない場合の動作を確認する</a></li><li><a href="#grouped-months-can-exist-without-sales">月別の集計結果には売上のない月も含まれることがある</a></li><li><a href="#run-and-interpret-the-checks">検証を実行して結果を確認する</a></li></ul></details>
+<p>累積指標には時間コンテキストが必要です。同じクエリの日付フィルターは、そのクエリ内の他の非累積指標にも適用されます。DMLが当日やファクトデータ内の最新日を暗黙に選ぶことはありません。</p>
+<h2 id="compare-two-scopes-in-one-result">1つの結果で2つの集計期間を比較する <a class="section-link" aria-label="この節へのリンク" href="#compare-two-scopes-in-one-result">#</a></h2>
+<p>1月の売上高は10、利益は3です。2月の売上高は20、利益は3です。2月のクエリでは、YTDの利益率は<code>(3+3)/(10+20)=20%</code>です。非累積の売上高は20で、累積売上高の30ではありません。</p>
+<details><summary>ファイル全体: ytd/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+F:
+  type: dataset
+  table: YTD_FACT
+  dimension: [id]
+  columns:
+    id:
+    dt_month:
+    revenue_amount:
+    profit_amount:
+  measures:
+    revenue: SUM({revenue_amount})
+    profit: SUM({profit_amount})
+margin:
+  type: measure
+  formula: 'DIVIDE({profit} * 1.0, {revenue})'
+margin_ytd:
+  type: measure
+  formula: '{margin: ytd}'
+</code></pre>
+</details>
+<details><summary>ファイル全体: ytd/setup.sql</summary>
+
+<pre><code class="language-sql">CREATE TABLE YTD_FACT(id INTEGER, dt_month DATE,revenue_amount INTEGER,profit_amount INTEGER); INSERT INTO YTD_FACT VALUES (1,'2024-01-01',10,3),(2,'2024-02-01',20,3);
+</code></pre>
+</details>
+<details><summary>ファイル全体: ytd/february.sql</summary>
+
+<pre><code class="language-sql">SELECT AGG(margin_ytd), AGG(revenue) FROM MODEL WHERE dt_month='2024-02-01'
+</code></pre>
+</details>
+
+<p>モデルでは<code>margin_ytd</code>を<code>'{margin: ytd}'</code>として定義しています。分子と分母をそれぞれ累積期間全体で集計してから割り算します。30%と15%の平均は、別の問いに答える値です。</p>
+<h2 id="observe-missing-context">時間コンテキストがない場合の動作を確認する <a class="section-link" aria-label="この節へのリンク" href="#observe-missing-context">#</a></h2>
+<details><summary>ファイル全体: ytd/missing_context.sql</summary>
+
+<pre><code class="language-sql">SELECT AGG(margin_ytd) FROM MODEL
+</code></pre>
+</details>
+
+<p>このクエリはコンパイルに失敗し、<code>dim_dt</code>がないことを示すエラーが出ます。2月のフィルターを追加すると、20%が返ります。このフィルターは独立した集計終了日のパラメーターではありません。同じクエリ内の非累積の売上高も2月分だけになります。レポートで異なる期間の指標が必要な場合は、指標ごとに集計期間を定義して確認してください。</p>
+<h2 id="grouped-months-can-exist-without-sales">月別の集計結果には売上のない月も含まれることがある <a class="section-link" aria-label="この節へのリンク" href="#grouped-months-can-exist-without-sales">#</a></h2>
+<details><summary>ファイル全体: ytd/months.sql</summary>
+
+<pre><code class="language-sql">SELECT dt_month, AGG(margin_ytd), AGG(revenue) FROM MODEL GROUP BY dt_month ORDER BY dt_month
+</code></pre>
+</details>
+
+<p>このテストデータでクエリを実行すると、12か月分の結果が返ります。1月の累積利益率は30%、売上高は10です。2月の累積利益率は20%、売上高は20です。3月から12月までは、各月の累積利益率が20%、非累積の売上高がNULLです。クエリの累積計算を行う部分では、カレンダーから生成した月を使用します。これらの行は新しい取引を示すものではなく、NULLは測定値のゼロを意味しません。</p>
+<p>レポートで集計の終了月を1つに絞る必要がある場合は、フィルターで明示的に指定してください。期間を変更した後は、結果に含まれる月と、各指標の計算に使われるデータの期間を確認してください。</p>
+<p><a hreflang="zh" href="examples--time-context-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
+<h2 id="run-and-interpret-the-checks">検証を実行して結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#run-and-interpret-the-checks">#</a></h2>
+<p><a href="task-examples.zip">プロジェクト一式をダウンロード</a>し、README の手順に従って <code>verify.py</code> を実行します。必要なものは dmlc、Python、DuckDB です。練習用データベースは指定した新しい出力フォルダーに作成されます。実行結果と診断内容も同じ場所に保存されます。</p>
+<p>この例は DuckDB 上で dmlc 0.3.16（ビルド 2026-11-13）を使って確認しました。実行ファイルのフィンガープリントと各検証ケースのステータスは、ダウンロードに含まれる <code>verification-summary.json</code> に記載されています。データベースでの検証とその後の実行は独立した処理です。両方が同じスナップショットを使用する保証はありません。他のデータベースエンジンでは個別に確認してください。</p>
+</main></body></html>

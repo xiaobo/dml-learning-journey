@@ -1,0 +1,337 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abfragedeklarationen in YAML · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Seite beschreibt type: query, Spalten, Filter, die Auswahl der Materialisierung und after:. Die Abfrage verwendet dieselben Modellkennzahlen wie die Modellabfrage in SQL."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Abfragedeklarationen in YAML · DML"><meta property="og:description" content="Diese Seite beschreibt type: query, Spalten, Filter, die Auswahl der Materialisierung und after:. Die Abfrage verwendet dieselben Modellkennzahlen wie die Modellabfrage in SQL."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--query-yaml.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--query-yaml.html">English</a> <a lang="zh" hreflang="zh" href="reference--query-yaml.zh.html">中文</a></header><main><h1 id="yaml-query-declarations">Abfragedeklarationen in YAML</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#basic-structure">Grundstruktur</a></li><li><a href="#detail-vs-aggregation">Detail und Aggregation</a></li><li><a href="#auto-join-of-multi-dataset-measures">Automatische Joins für Kennzahlen aus mehreren Datasets</a></li><li><a href="#column-references-in-dml-format">Spaltenreferenzen im DML-Format</a></li><li><a href="#auto-aliasing-and-direct-reference">Automatische Aliaszuordnung und direkte Referenz</a></li><li><a href="#visibility-hidden"><code>visibility: hidden</code></a></li><li><a href="#query-dimension-format">Format für Abfragedimensionen</a></li><li><a href="#filter-placement-hierarchy">Ebenen für die Platzierung von Filtern</a></li><li><a href="#pk-chaining">Verkettung mit <code>pk</code></a></li><li><a href="#after-clause"><code>after:</code>-Klausel</a></li><li><a href="#allows-all"><code>allows: ALL</code></a></li><li><a href="#yaml-syntax-pitfalls">Häufige Fehler in der YAML-Syntax</a></li><li><a href="#yaml-查询速查">Kurzreferenz für YAML-Abfragen</a></li></ul></details>
+<p>Diese Seite beschreibt <code>type: query</code>, Spalten, Filter, die Auswahl der Materialisierung und <code>after:</code>. Die Abfrage verwendet dieselben Modellkennzahlen wie <a href="reference--model-query-sql.de.html">die Modellabfrage in SQL</a>.</p>
+<blockquote>
+<p><strong>Vorgabe für Dateinamen:</strong> Beim Kompilieren einer <code>.dml</code>-Datei mit <code>dmlc -c</code> muss der Name des <code>type: query</code>-Blocks mit dem Dateinamen ohne die Endung <code>.dml</code> übereinstimmen. Die Datei <code>my_report.dml</code> muss zum Beispiel <code>my_report: type: query</code> statt <code>some_other_name: type: query</code> enthalten. Bei abweichenden Namen bricht der Compiler mit folgender Meldung ab: <code>query name should be &lt;filename&gt; (the same as filename) instead of &lt;block_name&gt;</code>.</p>
+</blockquote>
+<p><a id="41-basic-structure"></a></p>
+<h2 id="basic-structure">Grundstruktur <a class="section-link" aria-label="Link zum Abschnitt" href="#basic-structure">#</a></h2>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL              # optional: consider compatible materializations
+
+    columns:
+        dimension:
+            - dt_month
+            - product
+        sales:               # measure reference (no AGG needed)
+        sales_yoy:
+            formula: '{sales: yoy}'
+</code></pre>
+<p><code>columns:</code> ist erforderlich. Die Schlüssel, die keine Dimension angeben, benennen die Ausgabespalten. Ihre Werte sind Formeln oder direkte Kennzahlreferenzen. Der optionale Schlüssel <code>dataset:</code> wählt die Dataset-Abfrageform und kann nicht mit <code>columns.dimension</code> kombiniert werden.</p>
+<p>Abfragefilter haben die folgenden Formen. Jeder Schlüssel benennt einen Filter, den Modifikatoren in Kennzahlreferenzen ansprechen können.</p>
+<table>
+<thead>
+<tr>
+<th>Form des Werts</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td>Gleichheitsprüfung für die gleichnamige Spalte</td>
+</tr>
+<tr>
+<td><code>&lt;column&gt;: [a, b]</code></td>
+<td>Prüfung, ob der Wert in der Liste enthalten ist</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td>Benannter Gleichheitsfilter für eine explizit angegebene Spalte</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, range: [lo, hi]}</code></td>
+<td>Benannter Bereichsfilter für eine explizit angegebene Spalte, einschließlich beider Grenzen</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {visibility: hidden, default: on}</code></td>
+<td>Ausgeblendeter Filter mit aktiviertem Standardwert</td>
+</tr>
+</tbody></table>
+<p>Die <a href="#48-filter-placement-hierarchy">Regeln zur Filterplatzierung</a> legen fest, welcher Verarbeitungsstufe die einzelnen Prädikate zugeordnet werden.</p>
+<p><a id="42-detail-vs-aggregation"></a></p>
+<h2 id="detail-vs-aggregation">Detail und Aggregation <a class="section-link" aria-label="Link zum Abschnitt" href="#detail-vs-aggregation">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Modus</th>
+<th>Angabe</th>
+<th>Einschränkungen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Aggregation</td>
+<td>Kein Schlüssel <code>dataset:</code></td>
+<td>Kennzahlen sind zulässig. Der Compiler aggregiert sie.</td>
+</tr>
+<tr>
+<td>Detail</td>
+<td><code>dataset: DATASET_NAME</code></td>
+<td>Keine Kennzahlen. Nur unverarbeitete Spalten sind zulässig.</td>
+</tr>
+</tbody></table>
+<pre><code class="language-yaml"># Detail query
+product_list:
+    type: query
+    dataset: DATASET_PRODUCTS
+    columns:
+        dimension:
+            - product
+</code></pre>
+<p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
+<h2 id="auto-join-of-multi-dataset-measures">Automatische Joins für Kennzahlen aus mehreren Datasets <a class="section-link" aria-label="Link zum Abschnitt" href="#auto-join-of-multi-dataset-measures">#</a></h2>
+<p>Wenn eine Aggregatabfrage Kennzahlen aus <strong>verschiedenen Datasets</strong> referenziert, werden diese nach den Regeln eines <strong>FULL OUTER JOIN</strong> über die gemeinsamen Dimensionsfelder zusammengeführt. Zeilen, die nur in einem Dataset vorkommen, erscheinen ebenfalls. Die Kennzahlen des jeweils anderen Datasets haben den Wert NULL.</p>
+<p>Der <strong>generierte</strong> Join-Typ richtet sich danach, welche Zeilen nachweislich im Ergebnis bleiben müssen. Der Compiler geht von <code>FULL OUTER JOIN</code> aus und verwendet für jeden Join den restriktivsten Typ, der sich aus den Abfragefiltern ableiten lässt. <code>"{primary_measure} is not null":</code> unter <code>filters:</code> entfernt Zeilen, die nur auf der Sekundärseite vorkommen, und ändert den generierten Join-Typ zu <code>LEFT JOIN</code>. Wenn Filterbedingungen auf beiden Seiten einen vorhandenen Wert verlangen, ergibt sich <code>INNER JOIN</code>. Die Bedingung liefert nur dann dasselbe Ergebnis wie ein <code>LEFT JOIN</code> in der SQL-Referenzabfrage, wenn die primäre Kennzahl in gültigen Primärgruppen nie NULL sein kann. Weisen Sie diese Annahme für NULL und leere Gruppen nach und prüfen Sie die generierten Join-Typen und die Ausgabe. Andernfalls entfernt der Filter auch gültige Gruppen. Platzieren Sie die Bedingung außerhalb von <code>after:</code>, damit sie bei der Analyse der Datenherkunft, bei der Prüfung und bei der Wiederverwendung sichtbar bleibt.</p>
+<p>Der Ausdruck muss als Schlüssel angegeben werden: <code>"{expr}":</code> mit leerem Wert. <code>name: {condition: …}</code> entspricht nicht dem Schema.</p>
+<p><a id="44-column-references-in-dml-format"></a></p>
+<h2 id="column-references-in-dml-format">Spaltenreferenzen im DML-Format <a class="section-link" aria-label="Link zum Abschnitt" href="#column-references-in-dml-format">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Spaltentyp</th>
+<th>Syntax</th>
+<th>Beispiel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dimensionsfeld aus demselben Dataset</td>
+<td>Nur der Name</td>
+<td><code>product:</code></td>
+</tr>
+<tr>
+<td>Dimensionsfeld aus einem anderen Dataset</td>
+<td><code>"{DATASET}.column"</code></td>
+<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+</tr>
+<tr>
+<td>Kennzahl</td>
+<td>Nur der Name</td>
+<td><code>sales:</code></td>
+</tr>
+<tr>
+<td>Kennzahl mit Modifikator</td>
+<td><code>formula:</code></td>
+<td><code>sales_yoy: {sales: yoy}</code></td>
+</tr>
+</tbody></table>
+<p><strong>Achtung</strong>: In einer Aggregatabfrage ohne <code>dataset:</code> führt ein unqualifizierter Spaltenname zu einem Fehler, wenn die Spalte zu einem bestimmten Dataset gehört. Verwenden Sie die Form <code>"{DATASET}.column"</code>.</p>
+<p><a id="45-auto-aliasing-and-direct-reference"></a></p>
+<h2 id="auto-aliasing-and-direct-reference">Automatische Aliaszuordnung und direkte Referenz <a class="section-link" aria-label="Link zum Abschnitt" href="#auto-aliasing-and-direct-reference">#</a></h2>
+<p>Eine Abfragespalte ohne Formel kann anhand ihres Namens einer gleichnamigen Kennzahl oder Dataset-Spalte zugeordnet werden. Dies heißt <strong>automatische Aliaszuordnung</strong>. Es gibt drei Ebenen:</p>
+<table>
+<thead>
+<tr>
+<th>Ebene</th>
+<th>Mechanismus</th>
+<th>Beispiel</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>column</code> (direkte Referenz)</strong></td>
+<td>Eintrag ohne Formel unter <code>columns:</code> im Dataset. Der DML-Name entspricht dem Namen der Tabellenspalte.</td>
+<td><code>prod_amount:</code></td>
+<td><code>SUM(prod_amount)</code> — der Name wird unverändert und ohne Alias übernommen</td>
+</tr>
+<tr>
+<td><strong>Abfragespalte → Kennzahl (automatische Aliaszuordnung)</strong></td>
+<td>Abfragespalte ohne Formel. Der Spaltenname entspricht dem Namen der Kennzahl.</td>
+<td><code>revenue:</code> (die Kennzahl <code>revenue</code> ist vorhanden)</td>
+<td>Der Compiler setzt den Ausdruck aus <code>formula:</code> der Kennzahl ein.</td>
+</tr>
+<tr>
+<td><strong>Abfragespalte → Dataset-Spalte (automatische Aliaszuordnung)</strong></td>
+<td>Abfragespalte ohne Formel. Der Spaltenname entspricht dem Namen der Dataset-Spalte. Die Dataset-Spalte muss <strong>aus der Abfragedimension ableitbar</strong> sein.</td>
+<td><code>prod_name:</code> (Dataset-Spalte über die Kette <code>pk({prod_id})</code>)</td>
+<td>Der Compiler löst die Spalte anhand der Dataset-Definition auf.</td>
+</tr>
+</tbody></table>
+<p><strong>Verhalten im Detail:</strong></p>
+<ul>
+<li><code>dmlc -c</code> prüft nicht anhand des Tabellenschemas, ob Dataset-Spalten vorhanden sind. Die Kompilierung gelingt auch bei einem abweichenden Namen, bei der Ausführung treten jedoch SQL-Fehler auf. Verwenden Sie <code>validateOnly</code>, um abweichende Namen zu erkennen. Dazu ist eine Datenbankverbindung erforderlich.</li>
+<li>Wenn der Name einer Abfragespalte weder mit einer Kennzahl noch mit einer ableitbaren Dataset-Spalte übereinstimmt, wird der Fehler <code>not defined, add formula?</code> ausgegeben.</li>
+<li>Wenn sich der Name der Abfragespalte vom Namen der Kennzahl unterscheidet, geben Sie eine explizite Formel an (<code>display_name: '{measure_name}'</code>) oder benennen Sie die Kennzahl mit <code>abbr:</code> um.</li>
+<li>Eine Dataset-Spalte, die sich <strong>nicht aus der Abfragedimension ableiten lässt</strong>, führt zum Fehler <code>cannot be derived from dimension [store_id]</code>. Dies betrifft beispielsweise eine unverarbeitete Faktenspalte ohne Abhängigkeit von einem Dimensionsfeld.</li>
+<li>Eine unverändert übernommene Spalte (ohne <code>formula:</code>) kann in Objektform die Metadateneigenschaften <code>description:</code> und <code>visibility:</code> enthalten, ohne dass <code>formula:</code> erforderlich ist. Beispiel: <code>revenue: { description: 'Total revenue' }</code> ordnet die Spalte automatisch der Kennzahl <code>revenue</code> zu und fügt die Beschreibung hinzu.</li>
+</ul>
+<p><a id="46-visibility-hidden"></a></p>
+<h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#visibility-hidden">#</a></h2>
+<p>Blendet eine Spalte in der endgültigen Abfrageausgabe aus. In temporären Zwischentabellen bleibt sie verfügbar.</p>
+<table>
+<thead>
+<tr>
+<th>Aspekt</th>
+<th>Verhalten</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Abschließendes SELECT</td>
+<td>Ausgeblendete Spalten fehlen normalerweise in der Ausgabe. Wenn ein Filter oder eine HAVING-Klausel eine ausgeblendete Spalte referenziert, kann sie in die endgültige Ausgabe übernommen werden. Prüfen Sie das generierte SQL, bevor Sie angeben, welche Spalten die Ausgabe genau enthält.</td>
+</tr>
+<tr>
+<td>Temporäre Zwischentabellen</td>
+<td>Ausgeblendete Spalten <strong>bleiben</strong> für JOIN-Bedingungen und <code>filters:</code> verfügbar</td>
+</tr>
+<tr>
+<td><code>filters:</code> mit Referenzen auf ausgeblendete Dimensionsfelder</td>
+<td>Die Kompilierung gelingt, kann aber zu restriktiveren Join-Typen bei optionalen Joins führen und die Materialisierung von Hilfsergebnissen erzwingen. Prüfen Sie das generierte SQL.</td>
+</tr>
+<tr>
+<td>SQL unter <code>after:</code> mit namentlichen Referenzen auf ausgeblendete Dimensionsfelder</td>
+<td><strong>Schlägt fehl</strong> — <code>query columns refer to nonexistence source column</code></td>
+</tr>
+<tr>
+<td>PK-Kette</td>
+<td><strong>Bleibt intakt</strong> — <code>visibility: hidden</code> allein löst keine PK-Warnung aus</td>
+</tr>
+</tbody></table>
+<p><strong>Hinweis:</strong> Entfernen Sie <code>visibility: hidden</code>, wenn <code>after:</code> das Dimensionsfeld namentlich referenziert. Behalten Sie die Einstellung bei, wenn <code>after:</code> ausschließlich Kennzahlenspalten verwendet. Kompilieren Sie bei Ausgaben mit einem Ausgabevertrag die Abfrage und prüfen Sie, dass keine ausgeblendete Hilfsspalte im Endergebnis erscheint. Zusätzliche Spalten sind nur zulässig, wenn der Ausgabevertrag sie ausdrücklich erlaubt.</p>
+<p><strong>Gültige YAML-Schreibweisen:</strong> <code>- dim: {visibility: hidden}</code> oder eine verschachtelte Map, deren Schlüssel <strong>unter</strong> dem dim-Eintrag stehen. Steht <code>visibility:</code> auf derselben Einrückungsebene wie der dim-Schlüssel, meldet die Schemaprüfung einen Fehler wegen zu geringer Einrückung. Verwenden Sie die Inline-Form oder die verschachtelte Form. Prüfen Sie bei alleiniger Verwendung von <code>dmlc -c</code> immer das kompilierte SELECT (die Schemaprüfung läuft im Editor oder mit <code>dmlc --lint</code>).</p>
+<p><a id="47-query-dimension-format"></a></p>
+<h2 id="query-dimension-format">Format für Abfragedimensionen <a class="section-link" aria-label="Link zum Abschnitt" href="#query-dimension-format">#</a></h2>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - dt_month
+        - product
+        # Correct: list dimension field names only
+</code></pre>
+<p><strong>Falsch</strong>: Nehmen Sie datensatzübergreifende <strong>Spaltenzuordnungen</strong> nicht in die Dimensionsfelder der Abfrage auf. Definieren Sie diese Formeln als separate Abfragespalten:</p>
+<pre><code class="language-yaml"># Wrong
+columns:
+    dimension:
+        - f_tag_id: {DATASET_PT}.id
+
+# Correct
+columns:
+    dimension:
+        - f_tag_id
+    f_tag_id: "{DATASET_PT}.id"
+</code></pre>
+<p><strong>Ausnahme – Kennzahl als Dimension:</strong> Ein Eintrag für eine Abfragedimension kann eine <strong>Kennzahl</strong> binden (in der Regel mit <code>+d</code>). Die Abfrage gruppiert die Zeilen dann nach dem Wert dieser Kennzahl:</p>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
+    sales:
+</code></pre>
+<p>Deklarieren Sie den Schlüssel der Klassifizierungsentität explizit mit <code>+d</code> (bevorzugt) oder <code>dimension:</code>. Mehrere unabhängige Felder sind zulässig, wenn ihre vollständigen Schlüssel übereinstimmen. Reguläre Ausgabekennzahlen müssen sich ausgehend von <code>Q ∪ K</code> korrekt auf einer gröberen Ebene aggregieren lassen. Filter auf dem Label (<code>filters:</code> in der Formel oder <code>HAVING</code> in einer Model Query) greifen <strong>erst dann</strong>, wenn das Label vorliegt. Siehe <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>. Verwenden Sie diese Ausnahme nicht für physische Zuordnungen oder <code>{DATASET}.col</code>-Zuordnungen.</p>
+<p><a id="48-filter-placement-hierarchy"></a></p>
+<h2 id="filter-placement-hierarchy">Ebenen für die Platzierung von Filtern <a class="section-link" aria-label="Link zum Abschnitt" href="#filter-placement-hierarchy">#</a></h2>
+<p>Wo Sie einen Filter platzieren, hat semantische Auswirkungen und ist keine Frage des Syntaxstils:</p>
+<table>
+<thead>
+<tr>
+<th>Ebene</th>
+<th>Ort</th>
+<th>Was hier angegeben wird</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filters:</code> der Abfrage</td>
+<td>Abfrageblock</td>
+<td>Berichtsspezifische Datenausschnitte (Kanal, Marke, Datumsbereich)</td>
+</tr>
+<tr>
+<td>Zwischenspalte oder Zwischenkennzahl</td>
+<td><code>.dml</code>-Datensatz oder Kennzahl auf oberster Ebene</td>
+<td>Kennzahlspezifische Auswahlkriterien, wenn ausgeschlossene Zeilen in Gruppen mit NULL-Kennzahlwerten verbleiben dürfen</td>
+</tr>
+<tr>
+<td><code>sql:</code> im Dataset</td>
+<td>Dataset-Definition</td>
+<td>Dauerhafte Invarianten für die Menge der Quellzeilen oder Konstrukte, die sich in DML nicht deklarativ ausdrücken lassen</td>
+</tr>
+</tbody></table>
+<p>Wenn Sie eine <code>WHERE</code>-Bedingung auf Quelldaten als Auswahlbedingung für die Eingabe einer Kennzahl formulieren, ändert sich, welche Ergebniszeilen vorhanden sind. Ausgenommen sind Fälle, in denen Gruppen, die ausschließlich ausgeschlossene Zeilen enthalten, unmöglich sind oder laut Vertrag mit vorhandenen Gruppen mit NULL-Kennzahlwerten gleichwertig sind. Weisen Sie ausdrücklich nach, dass diese Ausnahme greift. Wenn sie nicht greift oder unklar ist, ob sie greift, behalten Sie eine Formulierung bei, die Zeilen entfernt.</p>
+<p><strong>Semantik strukturierter Bereiche:</strong> <code>range: [start, end]</code> in <code>filters:</code> der Abfrage schließt auf der mit <code>dt_&lt;grain&gt;</code> deklarierten Ebene beide Grenzwerte ein. Verwenden Sie für Tagesdaten aus 2025 den Bereich <code>['2025-01-01', '2025-12-31']</code> und für Monatsdaten den Bereich <code>['2025-01-01', '2025-12-01']</code>. Ein SQL-Dialekt kann den Bereich mit einer exklusiven physischen Obergrenze wie <code>&lt; dateadd(day, 1, end)</code> umsetzen. Der als Ende eingegebene DML-Wert bleibt der letzte eingeschlossene Wert.</p>
+<p><strong>Liste oder Bereich – ein häufiger Fehler:</strong> Ein einfacher Listenwert <code>dim: ['a', 'b']</code> wird zu <code>WHERE dim IN ('a', 'b')</code> kompiliert (exakte Übereinstimmung mit einem der beiden Werte), <strong>nicht</strong> zu einem Bereich mit eingeschlossenen Grenzwerten. Bei Datumsdimensionen kann das unbemerkt Daten auslassen. <code>dt_date: ['2024-01-01', '2025-12-31']</code> liefert nur Zeilen für diese beiden Tage und deckt nicht den gesamten Zeitraum von 2 Jahren ab. Verwenden Sie für Intervalle mit eingeschlossenen Grenzwerten immer <code>range: [start, end]</code>:</p>
+<pre><code class="language-yaml"># Wrong — only 2 days of data
+filters:
+    dt_date: ['2024-01-01', '2025-12-31']
+
+# Right — full inclusive range
+filters:
+    dt_date:
+        range: ['2024-01-01', '2025-12-31']
+</code></pre>
+<p><strong>Häufige Fehler bei Filtern</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Lösung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td>In <code>filters:</code> der Abfrage, in die Kennzahlenformel oder in die WHERE-Klausel unter <code>sql:</code> verschieben</td>
+</tr>
+<tr>
+<td><code>referred column {DATASET}.col is undefined</code> im Abfragefilter</td>
+<td>Zeichenfolgenform verwenden: <code>"{DATASET}.col = value":</code></td>
+</tr>
+<tr>
+<td>Eine Liste mit zwei Elementen für eine Datumsdimension liefert nur Daten für 2 Tage</td>
+<td>Verwenden Sie <code>range: [start, end]</code> anstelle einer einfachen Liste. <code>dim: [a, b]</code> wird zu <code>IN (a, b)</code> kompiliert, nicht zu <code>BETWEEN</code>.</td>
+</tr>
+<tr>
+<td>Komplexe EXISTS-/PK-Kette in <code>filters:</code> der Abfrage</td>
+<td>Filtern Sie die Eingabe einer Kennzahl nur anhand kennzahlspezifischer Auswahlkriterien. Wenn die Bedingung Quellzeilen auswählt, lassen Sie sie auf der Verarbeitungsstufe für Quellzeilen. Wird sie in eine Kennzahl verschoben, kann sich die Grundgesamtheit des Berichts ändern. Prüfen Sie die erzeugten Prädikate und Joins.</td>
+</tr>
+</tbody></table>
+<p><a id="49-pk-chaining"></a></p>
+<h2 id="pk-chaining">Verkettung mit <code>pk</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#pk-chaining">#</a></h2>
+<pre><code class="language-yaml"># Single PK lookup
+formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+
+# Composite PK — all columns required
+formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
+</code></pre>
+<p><strong>Regel für die Schlüsselanzahl</strong>: Die Anzahl der Schlüssel in <code>pk(...)</code> muss der Anzahl der Dimensionsfelder unter <code>dimension:</code> im Zieldatensatz entsprechen. Andernfalls erscheint <code>expect N expr(s) to query dataset X using pk, but got M</code> (siehe <a href="reference--troubleshooting--README.de.html">Index zur Fehlerbehebung</a>, P65).</p>
+<p><strong>Verschachtelte Ketten</strong>: Eine aus einer <code>pk()</code>-Kette abgeleitete Spalte kann als Schlüssel in einer anderen <code>pk()</code>-Kette dienen. Der Compiler verfolgt die Ableitungskette und erzeugt die entsprechenden verschachtelten <code>LEFT JOIN</code>-Verknüpfungen. So können Sie direkt modellieren, dass ein Attribut nachgeschlagen und anschließend zum Nachschlagen eines weiteren Attributs verwendet wird, ohne <code>sql:</code> oder <code>after:</code> zu verwenden.</p>
+<pre><code class="language-yaml"># fact dataset
+columns:
+    store_id:
+    # First hop: store_id → Dim Customer → hq_id
+    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
+    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
+    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+</code></pre>
+<p>Im geprüften Build werden Vorwärtsreferenzen innerhalb derselben Datei unterstützt, auch für Spaltenabhängigkeiten und <code>pk()</code>-Ziele. Führen Sie Abhängigkeiten zur besseren Lesbarkeit zuerst auf. Für eingebundene Dateien gelten eigene Sichtbarkeitsgrenzen. Siehe <a href="reference--model-composition.de.html">Modellkomposition</a>.</p>
+<p><a id="410-after-clause"></a></p>
+<h2 id="after-clause"><code>after:</code>-Klausel <a class="section-link" aria-label="Link zum Abschnitt" href="#after-clause">#</a></h2>
+<p><code>after:</code> ist optional. Ohne diese Klausel sortiert der Compiler aufsteigend nach den <strong>sichtbaren Ausgabespalten</strong>, die er den Dimensionsfeldern der Abfrage zuordnet. Dabei folgt er der aufgelösten Reihenfolge der Dimensionsfelder. Bei einem ausgeblendeten Dimensionsfeld kann für die Sortierung daher der Alias einer sichtbaren Abfragespalte anstelle des in der Definition angegebenen Feldnamens verwendet werden. Wenn in der Ausgabe keine Dimension wirksam ist, ist keine Zeilenreihenfolge garantiert. Fehlt die Sortierangabe für NULL, gilt der Standard des Zieldialekts.</p>
+<p>Sobald ein <code>after:</code>-Block vorhanden ist, bestimmt er die Reihenfolge des Endergebnisses. Insbesondere hebt <code>select * from {QUERY}</code> ohne eigenes <code>ORDER BY</code> die Standardsortierung des Compilers auf. Verwenden Sie <code>after:</code> nur, wenn eine fachlich relevante Sortiervorgabe vom Standard abweicht: die Sortierrichtung, die Position von NULL, ein Kriterium bei gleichen Sortierwerten, die Sortierung nach einer Kennzahl oder einem Ausdruck oder die Verwendung von TOP oder LIMIT. Aggregieren Sie nicht erneut:</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    columns:
+        dimension: [product]
+        sales:
+    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+</code></pre>
+<p>Wenn <code>after:</code> vorhanden ist, ist <code>{QUERY}</code> erforderlich. Damit wird das Ergebnis der kompilierten Abfrage bezeichnet, das die nachgelagerte Anweisung verwendet. „Nur Sortierung“ bedeutet, dass der Block außer dieser Klammerung und ORDER BY/TOP/LIMIT keine fachliche Logik enthält. Der vorgelagerte Compiler gibt die Warnung <code>redundant ORDER BY</code> aus, wenn die angegebene Sortierung der Standardreihenfolge der Abfrageausgabe entspricht. Beachten Sie den Hinweis zur jeweiligen Stelle. Entfernen Sie nur die redundante <code>ORDER BY</code>-Klausel, wenn unter <code>after:</code> noch andere wichtige Verarbeitungsschritte stehen. Entfernen Sie den gesamten Block nur, wenn keine weiteren Verarbeitungsschritte übrig bleiben.</p>
+<p><strong>Falsch</strong>: Bei einer Standardabfrage für Kennzahlen unter <code>after:</code> mit <code>group by</code> erneut aggregieren. Lassen Sie die Kennzahlen im Abfrageblock aggregieren.</p>
+<p><a id="411-allows-all"></a></p>
+<h2 id="allows-all"><code>allows: ALL</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#allows-all">#</a></h2>
+<p>Damit der Compiler alle kompatiblen Materialisierungen berücksichtigen kann:</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - dt_date
+        sales:
+</code></pre>
+<p><code>allows:</code> legt fest, welche Materialisierungen infrage kommen. <code>ALL</code> lässt Kandidaten zu, <code>NONE</code> deaktiviert die Verwendung von Materialisierungen. Explizit angegebene Namen schränken die Auswahl ein. Ob eine Materialisierung infrage kommt, hängt weiterhin davon ab, ob die Ebene, auf der Zeilen oder Summen definiert sind, und die Filter kompatibel sind. Die Einstellung lockert weder die Vorgaben unter <code>dimensions:</code> für Kennzahlen noch erlaubt sie eine beliebige Granularität der Abfrage. Siehe <a href="reference--materialization.de.html">Materialisierungsdeklarationen</a>.</p>
+<p><a id="412-yaml-syntax-pitfalls"></a></p>
+<h2 id="yaml-syntax-pitfalls">Häufige Fehler in der YAML-Syntax <a class="section-link" aria-label="Link zum Abschnitt" href="#yaml-syntax-pitfalls">#</a></h2>
+<ul>
+<li><strong>Setzen Sie Formeln in Anführungszeichen</strong>, wenn sie <code>:</code>, <code>{</code> oder <code>-</code> enthalten: <code>formula: 'SUMIF(...)'</code></li>
+<li><strong>Dimensionsfeld unter <code>measures:</code></strong>: Falsch. Deklarieren Sie es ausschließlich unter <code>dimension:</code>.</li>
+<li><strong><code>dataset:</code> bei zusammengesetzten Kennzahlen</strong>: Falsch. Lassen Sie <code>dataset:</code> weg, wenn die Formel auf andere Kennzahlen verweist.</li>
+<li><strong>Unterschiedliche Namen für ein Dimensionsfeld in verschiedenen Datensätzen</strong>: Verwenden Sie einen einheitlichen Namen (z. B. <code>tag_id</code>) und hinterlegen Sie die Zuordnung unter <code>columns:</code>.</li>
+</ul>
+<h2 id="yaml-查询速查">Kurzreferenz für YAML-Abfragen <a class="section-link" aria-label="Link zum Abschnitt" href="#yaml-查询速查">#</a></h2>
+<p>Definieren Sie die Abfrage mit <code>type: query</code>. Geben Sie mit <code>dimension:</code> die Gruppierung des Ergebnisses und mit <code>columns:</code> die Ausgabe an. Wo eine Filterbedingung steht, bestimmt, ob sie auf Quellzeilen, eine einzelne Kennzahl oder das aggregierte Ergebnis angewendet wird. Prüfen Sie beim Kombinieren von Datensätzen zuerst die Verknüpfungsschlüssel, Schlüssel mit dem Wert NULL und Gruppen, die nur auf einer Seite vorkommen. Verwenden Sie <code>after:</code> für Abfrageoperationen wie die abschließende Sortierung.</p>
+</main></body></html>

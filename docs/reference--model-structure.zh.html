@@ -1,0 +1,192 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>模型结构 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页介绍模型级字段、数据集、列宏和通用元数据。有关包含文件的可见性和名称解析，请参阅模型组合。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="模型结构 · DML"><meta property="og:description" content="本页介绍模型级字段、数据集、列宏和通用元数据。有关包含文件的可见性和名称解析，请参阅模型组合。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--model-structure.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--model-structure.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--model-structure.html">English</a></header><main><h1 id="model-structure">模型结构</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#model-level-fields">模型级字段</a></li><li><a href="#sql-dialect">SQL 方言</a></li><li><a href="#dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a></li><li><a href="#column-macros">列宏</a></li><li><a href="#common-metadata-fields">通用元数据字段</a></li><li><a href="#column-metadata-is-not-a-sql-type-declaration">列元数据不是 SQL 类型声明</a></li><li><a href="#system-calendar">系统日历</a></li></ul></details>
+<p>本页介绍模型级字段、数据集、列宏和通用元数据。有关包含文件的可见性和名称解析，请参阅<a href="reference--model-composition.zh.html">模型组合</a>。</p>
+<p><a id="51-model-level-fields"></a></p>
+<h2 id="model-level-fields">模型级字段 <a class="section-link" aria-label="本节链接" href="#model-level-fields">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>includes</code></td>
+<td><code>string[]</code></td>
+<td>要合并的其他 <code>.dml</code> 文件的路径（对各文件的符号取并集）</td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td><code>string</code></td>
+<td>目标 SQL 方言。请显式设置。有关可识别的名称、默认值和执行支持范围，请参阅 <a href="#sql-dialect">SQL 方言</a>。</td>
+</tr>
+<tr>
+<td><code>column-macros</code></td>
+<td><code>object</code></td>
+<td>多个数据集共享的列定义</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td><code>object</code> | <code>string</code></td>
+<td>数据集、指标、dt-macro、fn-macro、materialize 或查询</td>
+</tr>
+</tbody></table>
+<p><strong>对象名称规则</strong>：可使用除保留关键字以外的任意字符串。保留关键字包括 <code>includes</code>、<code>column-macros</code>、<code>datasets</code>、<code>measures</code>、<code>columns</code>、<code>dimensions[dt]</code>、<code>dt-macros</code>、<code>fn-macros</code>、<code>materializes</code>、<code>queries</code>、<code>dialects</code> 及其单数形式。</p>
+<p><strong>指标定义的简写</strong>：如果顶层映射项的值只是一个字符串，则将该值视为指标公式的简写：</p>
+<pre><code class="language-yaml">sales: SUM({amount})
+# equivalent to:
+sales:
+    type: measure
+    formula: SUM({amount})
+</code></pre>
+<h3 id="sql-dialect">SQL 方言 <a class="section-link" aria-label="本节链接" href="#sql-dialect">#</a></h3>
+<p>经检查的编译器可识别 <code>adb_mysql</code>、<code>duckdb</code>、<code>mssql</code>、<code>mysql</code>、<code>postgres</code> 和 <code>sqlite</code>。如果被检查的模型未声明方言，当前编译器会拒绝该模型。请显式声明目标方言。配置 DuckDB 连接不会改变模型的目标方言。以 DuckDB 为目标时，请声明 <code>dialect: duckdb</code>。</p>
+<p>在这项检查中，BigQuery、Snowflake、Databricks 和 ClickHouse 均无法识别为目标。如果部署要求使用无法识别的引擎，必须先解决该要求，再在该部署中使用 dmlc。</p>
+<p>方言识别与执行验证覆盖范围是两回事。可运行的示例主要验证 DuckDB 的结果，概述中另行记录了面向 SQL Server 的编译情况。这些检查无法证明全部六种引擎的功能一致。请验证生成的 SQL，并在目标数据库上比较结果。生成的 SQL 可能需要多条语句、中间关系和日历对象。</p>
+<p><a id="52-dataset-definition-type-dataset"></a></p>
+<h2 id="dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>） <a class="section-link" aria-label="本节链接" href="#dataset-definition-type-dataset">#</a></h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: dataset
+    table: &lt;table_name&gt;          # required (or sql:)
+    # sql: &lt;SELECT ...&gt;          # alternative to table: — derived dataset
+    dimension: [col1, col2]      # dataset grain dimensions
+    materialize: &lt;name&gt;          # optional, declare a materialize table for this dataset
+    # or:
+    # materialize:
+    #     name: &lt;name&gt;
+    #     parameters:
+    #         &lt;param&gt;: &lt;value&gt;
+    columns:                     # required
+        col1:                    # direct column (pass-through)
+        col2: expr               # calculated column (inline expression)
+        col3:                    # full column definition
+            abbr: &lt;short&gt;        # abbreviation for display
+            description: &lt;text&gt;
+            formula: expr        # calculated column (block form)
+            # source: expr       # alternative to formula: data-source verification formula
+            prerequisite: &lt;expr&gt; # column-level grain constraint
+    dimensions[dt]:              # optional explicit time metadata; coarser standard dt_* fields may be system-derived
+        dt_date: date
+        dt_month: month
+    measures:                    # atomic measures (inherit enclosing dataset; no dataset:)
+        &lt;measure_name&gt;: &lt;formula or full definition&gt;
+            abbr: &lt;short&gt;
+            description: &lt;text&gt;
+</code></pre>
+<p><strong>约束</strong>：</p>
+<ul>
+<li>必须且只能指定 <code>table:</code> 和 <code>sql:</code> 中的一项（两者互斥）。</li>
+<li><strong><code>table:</code> 声明独占的表归属。</strong> <code>table: policy</code> 表示该物理表归数据集 <code>Policy</code> 所有。其他数据集不得在 <code>sql:</code> 中通过 <code>FROM</code> 或 <code>JOIN</code> 引用物理表名。请写成 <code>from {Policy}</code> 或 <code>join {Policy}</code>（编译器会替换为数据集的查询名称），也可以使用 <code>pk(...).{Policy}.Col</code> 查询属性并省去该连接。要共享表而不声明归属，请用 <code>sql: select * from &lt;table&gt;</code> 代替 <code>table:</code>。</li>
+<li><strong>事实表模式：</strong> 维度数据集（<code>Claim</code>、<code>Policy</code>）使用 <code>table:</code>。仅需要这些属性的事实数据集可以继续使用未声明归属的源表，通过 <code>pk()</code> 查询属性，无需在 <code>sql:</code> 中连接已有归属的表。</li>
+<li><strong>可见性：</strong> 经检查的构建版本支持在同一文件中向前引用后续定义的数据集、指标和列。被包含的文件必须通过自己的定义或包含项解析名称，不能依赖包含它的父文件。请参阅<a href="reference--model-composition.zh.html">模型组合</a>。</li>
+<li>直接编译文件时，请使用去掉扩展名的文件名作为查询名称（<code>report.dml</code> → <code>report</code>）。</li>
+<li><code>allows:</code> 用于指定哪些物化项可以使用（<code>ALL</code>、<code>NONE</code> 或显式指定的名称）。它不会覆盖指标的维度。</li>
+<li>示例所示的指标查询形式必须指定 <code>columns:</code>。</li>
+<li><code>dimensions[dt]</code> 的值为枚举值：<code>year</code>、<code>quarter</code>、<code>month</code>、<code>week</code>、<code>date</code>、<code>hour</code>。</li>
+<li><code>materialize:</code> 接受标量名称，也接受包含必填项 <code>name:</code> 和可选项 <code>parameters:</code> 的对象。两种写法在同一数据集内标识同一个物化项。</li>
+</ul>
+<p>数据集的 SQL 可以在计算指标前通过受支持的连接、集合合并和子查询来准备数据。<code>UNION ALL</code> 保留每行出现的次数。在各个输入中能唯一标识行的键，在合并后的结果中未必仍然唯一。请为合并后的关系定义行标识，不要假定某个分支原有的键仍然唯一。经检查的示例通过 <code>{DATASET}</code> 引用使用仅定义了列的源数据集。当前可执行程序可以验证这些派生关系，无需依赖不可用的中间表。请检查派生关系的完整键。键唯一时验证通过；键重复时，验证报告会通过 <code>data.issues[].kind: duplicate_key</code> 标明违规；补上缺失的键组成部分后，验证可重新通过。物理数据源缺失会产生 <code>EXECUTION_ERROR</code>，不会报告为键重复。验证不能替代对业务结果的检查。</p>
+<p><strong>列定义形式</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>YAML</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>直接引用</td>
+<td><code>amount:</code>（null）</td>
+<td>直接使用底层表中的列</td>
+</tr>
+<tr>
+<td>计算（行内）</td>
+<td><code>net: amount - discount</code>（字符串）</td>
+<td>通过表达式派生的列</td>
+</tr>
+<tr>
+<td>计算（块）</td>
+<td><code>net: { formula: amount - discount }</code></td>
+<td>带元数据的派生列</td>
+</tr>
+<tr>
+<td>带验证公式</td>
+<td><code>net: { source: amount - discount }</code></td>
+<td>声明用于验证数据源的公式。仅凭编译无法确认源数据值相等。</td>
+</tr>
+</tbody></table>
+<p><strong>公式中花括号对名称绑定的影响</strong>：</p>
+<table>
+<thead>
+<tr>
+<th><code>formula:</code> 中的写法</th>
+<th>绑定为</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>仅 <code>amount</code></td>
+<td><strong>物理</strong>（原生）表列。编译器将名称原样传入 SQL。</td>
+<td>两列均为直接引用时的 <code>net: amount - discount</code></td>
+</tr>
+<tr>
+<td><code>{calc_amt}</code></td>
+<td><strong>计算</strong>列（或指标、列宏）。DMX 会展开其定义。</td>
+<td><code>doubled: '{calc_amt} * 2'</code></td>
+</tr>
+</tbody></table>
+<p>在计算列的公式中，不加花括号的名称会被视为原生 SQL 列。SELECT 中别名的顺序可能让这种写法看起来有效，但它<strong>不会</strong>展开计算列的定义。要在公式中复用该定义，请用花括号括住名称。</p>
+<p>先定义被依赖的对象是为了便于阅读。在经检查的版本中，使用 <code>pk()</code> 引用同一文件中稍后定义的目标可以成功编译。名称无法解析可能是因为缺少包含项、名称拼写有误，或违反了包含文件的可见性规则。请参阅<a href="reference--model-composition.zh.html">模型组合</a>。</p>
+<p><a id="56-column-macros"></a></p>
+<h2 id="column-macros">列宏 <a class="section-link" aria-label="本节链接" href="#column-macros">#</a></h2>
+<p>列宏定义多个数据集共用的列：</p>
+<pre><code class="language-yaml">column-macros:
+    datasets: [tx, orders]       # scoped datasets
+    columns:                     # shared column definitions
+        region: '{stores}.region'  # cross-dataset lookup
+    dimensions[dt]:
+        dt_month: month
+
+    # OR per-dataset scope:
+    &lt;dataset_name&gt;:
+        &lt;col&gt;: &lt;formula&gt;
+</code></pre>
+<p><a id="57-common-metadata-fields"></a></p>
+<h2 id="common-metadata-fields">通用元数据字段 <a class="section-link" aria-label="本节链接" href="#common-metadata-fields">#</a></h2>
+<p>支持的元数据因对象类型而异。请参阅相应的架构定义：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>abbr</code></td>
+<td><code>string</code></td>
+<td>可在 SQL 中安全使用的简称，仅供内部使用，用于临时表、联接和 <code>materialize</code> 的输出。该简称绝不会用作最终查询结果的列别名。列别名使用业务名称键或通过 <code>AS</code> 显式指定的别名。</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>string</code></td>
+<td>便于阅读的说明</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>可自由指定的标签</td>
+</tr>
+<tr>
+<td><code>prerequisite</code></td>
+<td><code>string</code>（公式）</td>
+<td>限制可在哪些层级定义行或汇总值（适用于度量值、列、dt 宏和 fn 宏）</td>
+</tr>
+</tbody></table>
+<h2 id="column-metadata-is-not-a-sql-type-declaration">列元数据不是 SQL 类型声明 <a class="section-link" aria-label="本节链接" href="#column-metadata-is-not-a-sql-type-declaration">#</a></h2>
+<p>列属性必须符合 DML 架构。请将属性嵌套在目标列下。如果在 <code>columns:</code> 中将 <code>type: text</code> 写在与目标列同级的位置，就会定义另一个名为 <code>type</code> 的列。因此，即使模型通过验证，也无法据此判断目标列的类型。在已验证的构建版本中，写在列下的 <code>type: text</code> 和 <code>type: banana</code> 都会因属性不受支持而被拒绝。这属于元数据架构验证，无法证明系统会对表达式执行完整的静态类型检查。请在数据库中定义物理列的类型。需要转换类型时，请使用受支持的表达式或类型转换。顶层的 <code>type: dataset</code> 和 <code>type: measure</code> 用于标识 DML 对象的种类，并不声明 SQL 值的类型。</p>
+<h2 id="system-calendar">系统日历 <a class="section-link" aria-label="本节链接" href="#system-calendar">#</a></h2>
+<p>对于某些连接，首次使用该连接进行需要访问数据库的验证，或首次使用该连接执行查询时，会初始化 <code>DML_CALENDAR</code>，即使查询中没有时间修饰符也是如此。试用的 DuckDB 连接为 2016 年至 2036 年的每一天初始化了一行，包含起止年份（共 7,671 行）。用于初始化的账户需要有权在目标架构中创建表并写入数据。后续查询需要对该表的读取权限。</p>
+<p>如果运行时账户无法创建表，请先让数据库管理员使用相同的 dmlc 构建版本、连接方言和架构初始化日历，再使用运行时账户执行验证。请确认日历覆盖报表期间和比较期间。</p>
+</main></body></html>

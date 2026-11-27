@@ -1,0 +1,31 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DuckDB で固定のタイムゾーンを使って営業日を定義する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="日付や日の境界を求める前に、時点を業務で使用するタイムゾーンに変換します。この例では America/New_York を使用し、DuckDB の物理 SQL を検証します。この例は、DML がユーザーごとのタイムゾーンやデータベースをまたぐタイムゾーン処理に自動で対応することを示すものではありません。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="DuckDB で固定のタイムゾーンを使って営業日を定義する · DML"><meta property="og:description" content="日付や日の境界を求める前に、時点を業務で使用するタイムゾーンに変換します。この例では America/New_York を使用し、DuckDB の物理 SQL を検証します。この例は、DML がユーザーごとのタイムゾーンやデータベースをまたぐタイムゾーン処理に自動で対応することを示すものではありません。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--duckdb-timezone.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="examples--duckdb-timezone.de.html">Deutsch</a> <a lang="en" hreflang="en" href="examples--duckdb-timezone-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--duckdb-timezone-zh.html">中文</a></header><main><h1 id="define-a-business-day-in-a-fixed-duckdb-timezone">DuckDB で固定のタイムゾーンを使って営業日を定義する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#identify-what-the-input-represents">入力値が何を表すかを確認する</a></li><li><a href="#bound-a-day-with-two-local-midnights">現地時刻の午前0時を2つ使って1日の範囲を定める</a></li><li><a href="#preserve-distinct-instants-during-a-repeated-local-hour">現地時刻で同じ時間帯が繰り返される場合に異なる時点を区別する</a></li><li><a href="#replay-and-adapt-the-recipe">例を再実行して調整する</a></li></ul></details>
+<p>日付や日の境界を求める前に、時点を業務で使用するタイムゾーンに変換します。この例では America/New_York を使用し、DuckDB の物理 SQL を検証します。この例は、DML がユーザーごとのタイムゾーンやデータベースをまたぐタイムゾーン処理に自動で対応することを示すものではありません。</p>
+<h2 id="identify-what-the-input-represents">入力値が何を表すかを確認する <a class="section-link" aria-label="この節へのリンク" href="#identify-what-the-input-represents">#</a></h2>
+<p>入力値は、UTC オフセットが明示された <code>TIMESTAMPTZ</code> 型の時点です。接続のセッションタイムゾーンは UTC、業務で使用するタイムゾーンは America/New_York です。オフセットのないタイムスタンプが自動的に UTC として扱われるわけではありません。まず、データソースでの記録方法を確認します。</p>
+<pre><code class="language-sql">SET TimeZone = 'UTC';
+SELECT timezone('America/New_York', TIMESTAMPTZ '2024-01-01 02:00:00+00');
+</code></pre>
+<p>現地時刻は 2023-12-31 21:00:00 なので、営業日の日付は前日になります。グループ化に使う日付を取り出す前に、時点を業務で使用するタイムゾーンに変換します。</p>
+<h2 id="bound-a-day-with-two-local-midnights">現地時刻の午前0時を2つ使って1日の範囲を定める <a class="section-link" aria-label="この節へのリンク" href="#bound-a-day-with-two-local-midnights">#</a></h2>
+<pre><code class="language-sql">SELECT count(*)
+FROM (VALUES
+  (TIMESTAMPTZ '2024-03-10 04:59:59+00'),
+  (TIMESTAMPTZ '2024-03-10 05:00:00+00'),
+  (TIMESTAMPTZ '2024-03-11 03:59:59+00'),
+  (TIMESTAMPTZ '2024-03-11 04:00:00+00')
+) events(ts)
+WHERE ts &gt;= timezone('America/New_York', TIMESTAMP '2024-03-10 00:00:00')
+  AND ts &lt; timezone('America/New_York', TIMESTAMP '2024-03-11 00:00:00');
+</code></pre>
+<p>結果は 2 です。範囲には開始時点を含め、終了時点は含めません。終了時点が常に開始時点の 24 時間後になるわけではありません。検証プログラムは、春の時刻切り替えで 23 時間になる日と、秋の時刻切り替えで 25 時間になる日を検証します。</p>
+<h2 id="preserve-distinct-instants-during-a-repeated-local-hour">現地時刻で同じ時間帯が繰り返される場合に異なる時点を区別する <a class="section-link" aria-label="この節へのリンク" href="#preserve-distinct-instants-during-a-repeated-local-hour">#</a></h2>
+<p>2024-11-03 05:30 UTC と 06:30 UTC は、どちらも現地時刻の 01:30 に対応します。この2つは異なる時点です。現地時刻のタイムスタンプだけで重複を除外せず、イベントキーと元の時点を保持します。</p>
+<h2 id="replay-and-adapt-the-recipe">例を再実行して調整する <a class="section-link" aria-label="この節へのリンク" href="#replay-and-adapt-the-recipe">#</a></h2>
+<p><a href="task-examples.zip">プロジェクトをダウンロード</a>し、README に記載されている JDBC の手順に従って <code>jdbc/VerifyJdbc.java</code> を実行します。既存の JDK とインストール済みの対応する JAR ファイルを使い、展開したプロジェクトのディレクトリから次のコマンドを実行します。</p>
+<pre><code class="language-powershell">java -cp "C:/path/to/dmlc-assembly.jar;C:/path/to/duckdb-jdbc.jar" jdbc/VerifyJdbc.java "$PWD/jdbc" C:/path/to/driver-directory
+</code></pre>
+<p>パスを置き換えます。他のシステムでは、クラスパスの区切りにセミコロンではなくコロンを使います。プログラムは、物理クエリとセマンティッククエリのパラメータバインドも検証します。最後に表示される成功メッセージと、プロセスの終了コードを確認します。プログラムがサードパーティのランタイムをダウンロードすることはありません。</p>
+<p>検証プログラムは、午前0時、繰り返される時間帯、23 時間および 25 時間の日、半開区間による絞り込みを検証します。検証に失敗すると、プログラムはゼロ以外のコードで終了します。</p>
+<p>検証対象の JDBC ディストリビューションでは、DuckDB 1.5.4 のドライバーを使用します。DML で営業日の日付を再利用するには、データベースビューで先にタイムスタンプを正規化し、営業日の日付をモデルの列として公開できます。使用するモデルと接続で、この連携が機能することを確認してください。この物理 SQL の例は、タイムゾーンを扱う任意のモデルへの対応を示すものではありません。</p>
+<p><a hreflang="zh" href="examples--duckdb-timezone-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
+</main></body></html>

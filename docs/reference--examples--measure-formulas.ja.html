@@ -1,0 +1,62 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指標の計算式の例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="各式を使うには、式に出てくるデータセット、列、指標の定義が必要です。ここでは式の書き方を示します。テストとして実行するには、モデルとテストデータを用意してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="指標の計算式の例 · DML"><meta property="og:description" content="各式を使うには、式に出てくるデータセット、列、指標の定義が必要です。ここでは式の書き方を示します。テストとして実行するには、モデルとテストデータを用意してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--measure-formulas.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--examples--measure-formulas.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--examples--measure-formulas.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--measure-formulas.zh.html">中文</a></header><main><h1 id="measure-formula-examples">指標の計算式の例</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#business-metric-examples">業務で使う指標の例</a></li><li><a href="#financial-metrics">財務指標</a></li><li><a href="#transaction-counts">取引件数</a></li><li><a href="#common-patterns">よく使う計算式</a></li><li><a href="#average-calculations">平均</a></li><li><a href="#frequency-calculations">頻度</a></li><li><a href="#average-annual-revenue">年間売上高の平均</a></li></ul></details>
+<p>各式を使うには、式に出てくるデータセット、列、指標の定義が必要です。ここでは式の書き方を示します。テストとして実行するには、モデルとテストデータを用意してください。</p>
+<p><a id="business-metrics-examples"></a></p>
+<h2 id="business-metric-examples">業務で使う指標の例 <a class="section-link" aria-label="この節へのリンク" href="#business-metric-examples">#</a></h2>
+<h3 id="financial-metrics">財務指標 <a class="section-link" aria-label="この節へのリンク" href="#financial-metrics">#</a></h3>
+<pre><code class="language-yaml">account_receivable:
+    type: measure
+    formula: |-
+        {amount: {+f: {account: 'Accounts Receivable (A/R)'}}}
+
+outstanding:
+    type: measure
+    description: All unpaid amounts (including not yet due)
+    formula: |-
+        {open_balance}
+
+balance_due:
+    type: measure
+    description: Amounts due today or earlier
+    formula: |-
+        {open_balance: {+f: 'due_date &lt;= date(current_date)'}}
+</code></pre>
+<h3 id="transaction-counts">取引件数 <a class="section-link" aria-label="この節へのリンク" href="#transaction-counts">#</a></h3>
+<pre><code class="language-yaml">number_of_invoices:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : 'invoice'}}}
+
+number_of_checks:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {transaction_type : 'check'}}}
+
+number_of_received_checks:
+    type: measure
+    formula: |-
+        {number_of_checks: {+f: 'customer is not null'}}
+</code></pre>
+<hr>
+<p>名前の付け方、<code>description:</code>、<code>abbr</code>については<a href="how-to--review-model.ja.html">モデルの確認</a>を参照してください。よくある問題は<a href="reference--troubleshooting--README.ja.html">トラブルシューティング</a>の P1 と P25 で確認できます。</p>
+<hr>
+<h2 id="common-patterns">よく使う計算式 <a class="section-link" aria-label="この節へのリンク" href="#common-patterns">#</a></h2>
+<h3 id="average-calculations">平均 <a class="section-link" aria-label="この節へのリンク" href="#average-calculations">#</a></h3>
+<pre><code class="language-yaml">avg_invoice_value:
+    type: measure
+    formula: |-
+        divide({amount: {+f: {transaction_type: 'invoice'}}}, {number_of_invoices})
+</code></pre>
+<h3 id="frequency-calculations">頻度 <a class="section-link" aria-label="この節へのリンク" href="#frequency-calculations">#</a></h3>
+<pre><code class="language-yaml">avg_bill_frequency:
+    type: measure
+    formula: |-
+        divide(sum({number_of_invoices: {+d: dt_date}}), datediff(day, min({dt_date}), max({dt_date})) + 1)
+</code></pre>
+<p><a id="year-over-year-metrics"></a></p>
+<h3 id="average-annual-revenue">年間売上高の平均 <a class="section-link" aria-label="この節へのリンク" href="#average-annual-revenue">#</a></h3>
+<pre><code class="language-yaml">annual_avg_revenue:
+    type: measure
+    formula: |-
+        divide(sum({revenue: {+d: dt_year}}), distinctcount({dt_year}))
+</code></pre>
+</main></body></html>

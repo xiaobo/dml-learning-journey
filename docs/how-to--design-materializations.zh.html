@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择物化粒度 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="如果重复执行的查询可以复用按固定粒度存储的聚合结果，请使用物化。声明语法和适用条件以物化参考文档为准。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="选择物化粒度 · DML"><meta property="og:description" content="如果重复执行的查询可以复用按固定粒度存储的聚合结果，请使用物化。声明语法和适用条件以物化参考文档为准。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--design-materializations.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--design-materializations.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--design-materializations.html">English</a></header><main><h1 id="choose-a-materialization-grain">选择物化粒度</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#performance-amp-materialize-design-principles">查询性能与 <code>materialize</code> 设计原则</a></li></ul></details>
+<p>如果重复执行的查询可以复用按固定粒度存储的聚合结果，请使用物化。声明语法和适用条件以<a href="reference--materialization.zh.html">物化参考文档</a>为准。</p>
+<h2 id="performance-amp-materialize-design-principles">查询性能与 <code>materialize</code> 设计原则 <a class="section-link" aria-label="本节链接" href="#performance-amp-materialize-design-principles">#</a></h2>
+<p>提升查询性能的简明检查清单：</p>
+<ul>
+<li>确保时间列遵循 <code>dt_date/dt_week/dt_month/dt_quarter/dt_year</code> 约定（取周期的第一天）。</li>
+<li>优先使用少量可复用的指标（例如 sales、qty），避免为单次用途创建大量指标。</li>
+<li>让 Model Query 的 SQL 保持简单：使用 <code>FROM MODEL</code>，选择查询的维度字段和 <code>AGG(measure)</code>，再使用 <code>GROUP BY</code> 分组。</li>
+<li>如果重复聚合导致查询变慢，请在合适的粒度上添加 <code>materialize</code>。</li>
+</ul>
+<p><strong>何时使用 <code>materialize</code>：</strong>查询反复按固定粒度聚合相同的基础数据（例如按商品、门店或类别做月度汇总），且数据仅追加或可按周期刷新。如果数据量很小、粒度按查询临时确定，或模型语义仍在探索中，请避免使用。</p>
+<p><strong>粒度设计原则：</strong></p>
+<ol>
+<li><strong>粒度</strong>决定了数据行或汇总值在哪个层级定义。粒度应足够细，以支持后续向上汇总，同时避免因过细而导致行数激增。常见粒度包括 DWD（按天加键字段）、DWS（按月或季度加分析维度）和 ADS（可直接用于报表）。</li>
+<li>存储销售额、数量等可加指标，以便后续向上汇总。除非各组的客户集合互不重叠，否则不要将各组的去重客户数相加。保留实体键，或确认存在可用于预期汇总的受支持的数据表示形式。</li>
+<li>将唯一标识数据行的字段放在 <code>dimension:</code> 中。将具有函数依赖关系的属性放在 <code>dimension_columns:</code> 中，例如由 <code>category_id</code> 派生的 <code>category_name</code>。请参阅<a href="reference--materialization.zh.html">物化声明规则</a>。</li>
+</ol>
+<pre><code class="language-yaml">DWS_SALES_DATE_CATEGORY:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension:
+        - dt_date
+        - category_id
+        - cust_id
+    measures:
+        - 销售额
+        - 销售量
+</code></pre>
+<blockquote>
+<p><code>materialize</code> 是建模阶段的优化概念。将数据集作为物理表持久化到 DuckDB 是一项独立操作。有关完整示例，请参阅<a href="reference--examples--models.zh.html#materialize">物化示例</a>。</p>
+</blockquote>
+<p>请按照<a href="materialization-workflow.html">物化工作流程</a>进行设置、验证查询是否命中物化结果、执行刷新并检查结果。</p>
+</main></body></html>

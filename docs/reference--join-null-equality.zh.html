@@ -1,0 +1,37 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>连接中的 NULL 等值规则 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="DML 根据完整的分组键对齐各自独立聚合的指标。对齐时，分组键中相同位置的 NULL 值视为相等。因此，报表可以将多个来源中未分类的数据呈现在同一个分组中。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="连接中的 NULL 等值规则 · DML"><meta property="og:description" content="DML 根据完整的分组键对齐各自独立聚合的指标。对齐时，分组键中相同位置的 NULL 值视为相等。因此，报表可以将多个来源中未分类的数据呈现在同一个分组中。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--join-null-equality.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--join-null-equality.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--join-null-equality.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--join-null-equality.html">English</a></header><main><h1 id="join-null-equality">连接中的 NULL 等值规则</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#equality-by-join-purpose">按连接用途划分的等值规则</a></li><li><a href="#output-with-null-alignment-keys">使用含 NULL 的键对齐时的输出</a></li><li><a href="#population-fill-and-densification">总体、填充和行密集化</a></li><li><a href="#build-evidence">编译器构建版本的验证结果</a></li></ul></details>
+<p>DML 根据完整的分组键对齐各自独立聚合的指标。对齐时，分组键中相同位置的 NULL 值视为相等。因此，报表可以将多个来源中未分类的数据呈现在同一个分组中。</p>
+<h2 id="equality-by-join-purpose">按连接用途划分的等值规则 <a class="section-link" aria-label="本节链接" href="#equality-by-join-purpose">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>典型的 SQL 写法</th>
+<th><code>ON</code> 中的等值规则</th>
+<th>含有 NULL 的键如何处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>合并各自独立的指标结果中的键，这种方式称为键并集组合。</td>
+<td><code>FULL OUTER JOIN</code>，或使用 <code>UNION</code> 和 <code>LEFT JOIN</code> 的去重键集合</td>
+<td>NULL 安全的等值比较</td>
+<td>完整键的值一致且 NULL 出现在相同位置时，这些键会在不同来源之间对齐。</td>
+</tr>
+<tr>
+<td>在保留驱动行的同时附加属性，包括通过内部 <code>nullpk</code> 附加属性。</td>
+<td><code>LEFT JOIN</code></td>
+<td>NULL 安全的等值比较</td>
+<td>结构键匹配时，即使其中一个组成部分为 NULL，也可以附加属性。</td>
+</tr>
+</tbody></table>
+<p>NULL 安全的等值比较可以使用 <code>&lt;=&gt;</code>、<code>IS NOT DISTINCT FROM</code>，或使用包含显式分支的等值判断来处理两侧均为 NULL 的情况，具体取决于所用方言。显式 SQL 谓词（如 <code>a.region = b.region</code>）遵循数据库的常规等值语义。明细连接使用各自键的等值规则。</p>
+<h2 id="output-with-null-alignment-keys">使用含 NULL 的键对齐时的输出 <a class="section-link" aria-label="本节链接" href="#output-with-null-alignment-keys">#</a></h2>
+<p>假设未分类地区的销售总额为 50，退款总额为 8。按 <code>region</code> 分组会返回一行 <code>(NULL, 50, 8)</code>，其中包含两个指标。这一行代表报表中的一个分组。底层销售记录和退款记录各自保留其标识。即使两个指标值都是 NULL，该分组仍会对齐。</p>
+<p>对于 <code>(region, channel)</code> 这样的复合键，<code>(NULL, 'online')</code> 与 <code>(NULL, 'online')</code> 对齐。<code>(NULL, 'retail')</code> 仍是单独的分组。期间计算对非时间分组键应用相同的规则，并沿用自身的时间匹配规则。</p>
+<p>如果报表需要一个带标签的分组，请使用 <code>coalesce(region, 'UNKNOWN')</code> 这样的显式分组表达式。该表达式也会将数据中实际存在的 <code>'UNKNOWN'</code> 值归入同一分组。</p>
+<h2 id="population-fill-and-densification">总体、填充和行密集化 <a class="section-link" aria-label="本节链接" href="#population-fill-and-densification">#</a></h2>
+<p>使用基于未填充的存在性指标的筛选器，可以将报表限定为来自指定来源的分组。即使对应分组在来源中存在，允许空值的业务指标也可能是 NULL。</p>
+<p>缺失行填充为指标提供备用值。行密集化补齐缺失的实体行或日历行。这两项操作都无法确定某个分组是否属于来源总体。</p>
+<h2 id="build-evidence">编译器构建版本的验证结果 <a class="section-link" aria-label="本节链接" href="#build-evidence">#</a></h2>
+<p>这项规则适用于包含 2026 年 11 月 19 日分组变更的编译器构建版本。在已检查的跨数据集示例中，2026 年 10 月 16 日的构建版本使用了常规等值运算符 <code>=</code>。检查使用旧版编译器构建版本编译的报表时，请查看生成的谓词，并使用键中含有 NULL 的示例比较结果。后来检查的另一个示例也生成了常规等值比较，并通过了严格模式编译。请使用自己的编译器和数据检查结果。</p>
+<p><a href="reference--semantics.zh.html#34-cross-dataset-auto-join">核心规范中的跨数据集自动连接</a>定义了组合方式。<a href="how-to--review-model.zh.html">模型审查</a>列出了查询变更后的检查项。</p>
+</main></body></html>

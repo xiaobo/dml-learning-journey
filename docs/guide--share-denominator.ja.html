@@ -1,0 +1,31 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>地域フィルターによって売上構成比の分母が変わる理由 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="売上構成比を求めるには、部分と全体の両方が必要です。分母の計算から地域によるグループ化を外しても、地域フィルターも外れるとは限りません。選択した地域と全地域のどちらを全体とするかを決めます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="地域フィルターによって売上構成比の分母が変わる理由 · DML"><meta property="og:description" content="売上構成比を求めるには、部分と全体の両方が必要です。分母の計算から地域によるグループ化を外しても、地域フィルターも外れるとは限りません。選択した地域と全地域のどちらを全体とするかを決めます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="guide--share-denominator.de.html">Deutsch</a> <a lang="en" hreflang="en" href="guide--share-denominator-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--share-denominator-zh.html">中文</a></header><main><h1 id="why-a-region-filter-changes-the-sales-share-denominator">地域フィルターによって売上構成比の分母が変わる理由</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#keep-the-question-fixed">問いはそのままにする</a></li><li><a href="#try-both-meanings">全体の定義を両方試す</a></li><li><a href="#choose-the-business-meaning-first">まず業務上の意味を決める</a></li></ul></details>
+<p>売上構成比を求めるには、部分と全体の両方が必要です。分母の計算から地域によるグループ化を外しても、地域フィルターも外れるとは限りません。選択した地域と全地域のどちらを全体とするかを決めます。</p>
+<h2 id="keep-the-question-fixed">問いはそのままにする <a class="section-link" aria-label="この節へのリンク" href="#keep-the-question-fixed">#</a></h2>
+<p>2月の売上は North が 30、South が 70 です。North のみを対象とするレポートでは、分母を変更しても North が表示されます。</p>
+<table>
+<thead>
+<tr>
+<th>分母の計算方法</th>
+<th align="right">全体の売上</th>
+<th align="right">North の売上構成比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>地域によるグループ化を外し、関連するフィルターを維持する</td>
+<td align="right">30</td>
+<td align="right">100%</td>
+</tr>
+<tr>
+<td>地域によるグループ化と関連するフィルターを外す</td>
+<td align="right">100</td>
+<td align="right">30%</td>
+</tr>
+</tbody></table>
+<p>DMX では、d はディメンション、f はフィルターを表します。参照 {sales: {-d: region}} は、地域によるグループ化を外し、関連するフィルターを維持します。参照 {sales: {-df: region}} は、そのフィルターも外します。これらの設定は、それぞれの参照に適用されます。元の指標、ソースキー、レポートの GROUP BY 句は変更されません。</p>
+<h2 id="try-both-meanings">全体の定義を両方試す <a class="section-link" aria-label="この節へのリンク" href="#try-both-meanings">#</a></h2>
+<p><a href="journey.ja.html#shares">分母の演習を開きます</a>。North を選択したまま、-d から -df に切り替えます。分母は 30 から 100 に変わり、表示される構成比は 100% から 30% に変わります。どちらの計算でも対象は2月のままです。関連する地域フィルターがない場合、この例ではどちらの設定でも分母は同じです。</p>
+<h2 id="choose-the-business-meaning-first">まず業務上の意味を決める <a class="section-link" aria-label="この節へのリンク" href="#choose-the-business-meaning-first">#</a></h2>
+<p>全地域の売上に対する構成比を求める場合は、分母の計算から関連する地域フィルターを外します。選択した範囲内での構成比を求める場合は、そのフィルターを維持します。どちらの設定が適切かは問いによって異なります。レポートには、どの範囲を全体とするかを明記する必要があります。他のフィルターは自動的には外れません。</p>
+<p>ブラウザーは架空のデータを使ってローカルで計算します。モデルとコンパイラーでの確認結果を記録した資料を参照するには、<a href="lesson-files.zip">既存のレッスンプロジェクトをダウンロードしてください</a>。対話型の表はデータベースの結果ではありません。<a href="reference--modifiers.ja.html">修飾子の厳密なルールを確認する</a>。</p>
+<p><a hreflang="zh" href="guide--share-denominator-zh.html">中文</a> · <a href="journey.ja.html#shares">対話型ガイド</a></p>
+</main></body></html>

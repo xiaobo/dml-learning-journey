@@ -1,0 +1,37 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ディメンションキーが重複するとルックアップ後の売上合計が倍になることがある理由 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="1 件のファクト行が 2 件のディメンション行に一致すると、結合結果に同じファクト行が 2 回現れることがあります。結合後の金額を合計すると、一致した両方の行が集計に含まれます。ルックアップを安全に使えるのは、宣言した参照先キーが実データで一意な場合に限られます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="ディメンションキーが重複するとルックアップ後の売上合計が倍になることがある理由 · DML"><meta property="og:description" content="1 件のファクト行が 2 件のディメンション行に一致すると、結合結果に同じファクト行が 2 回現れることがあります。結合後の金額を合計すると、一致した両方の行が集計に含まれます。ルックアップを安全に使えるのは、宣言した参照先キーが実データで一意な場合に限られます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--duplicate-lookup.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="guide--duplicate-lookup.de.html">Deutsch</a> <a lang="en" hreflang="en" href="guide--duplicate-lookup-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a></header><main><h1 id="why-duplicate-dimension-keys-can-double-sales-after-a-lookup">ディメンションキーが重複するとルックアップ後の売上合計が倍になることがある理由</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#one-region-two-matches">1 つの地域に 2 件が一致</a></li><li><a href="#inspect-the-rows">行を確認する</a></li><li><a href="#validate-the-real-connection">実際に使用する接続で検証する</a></li></ul></details>
+<p>1 件のファクト行が 2 件のディメンション行に一致すると、結合結果に同じファクト行が 2 回現れることがあります。結合後の金額を合計すると、一致した両方の行が集計に含まれます。ルックアップを安全に使えるのは、宣言した参照先キーが実データで一意な場合に限られます。</p>
+<h2 id="one-region-two-matches">1 つの地域に 2 件が一致 <a class="section-link" aria-label="この節へのリンク" href="#one-region-two-matches">#</a></h2>
+<p>このレッスンには、金額が 10 と 20 の 2 件の North の売上があります。ディレクトリに North の項目が 1 件だけある場合、一致した売上の合計は 30 です。North の項目をもう 1 件追加すると、各売上が 2 件に一致します。</p>
+<table>
+<thead>
+<tr>
+<th>元の売上</th>
+<th align="right">一致件数</th>
+<th align="right">結合後に合計に加わる金額</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North、金額 10</td>
+<td align="right">2</td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>North、金額 20</td>
+<td align="right">2</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>合計</td>
+<td align="right">結合結果は 4 行</td>
+<td align="right">60</td>
+</tr>
+</tbody></table>
+<p>元の売上データは変わっていません。結合結果の行数が増えています。その後に集計すると、増えた行が見えなくなっても、過大になった金額は残ることがあります。</p>
+<h2 id="inspect-the-rows">行を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-rows">#</a></h2>
+<p><a href="journey.ja.html#lookups">ルックアップの演習を開き</a>、無効な North の重複項目を有効にします。ディレクトリ、一致した行、North の合計を比較します。論理データセット DIM_REGION では dimension: [region] が宣言されています。物理データソースは TABLE_REGION です。North が複数回現れると、このソースキーの宣言に違反します。</p>
+<h2 id="validate-the-real-connection">実際に使用する接続で検証する <a class="section-link" aria-label="この節へのリンク" href="#validate-the-real-connection">#</a></h2>
+<p>レポートを実行する前に、使用予定の接続で <code>dmlc --validate</code> を実行します。このコマンドは、クエリが参照する各データセットについて、宣言された全ディメンションを一つの複合キーとして扱い、その値が実データで一意かどうかを確認します。この例では、North の項目が 2 件あるため、<code>DIM_REGION</code> の検証で <code>VALIDATION_ERROR</code> が報告されます。<a href="journey.ja.html#lookups">演習のコマンドとクエリをそのまま使用し</a>、宣言またはソースデータを修正して、実行前に再検証してください。これにより、ルックアップ結果の重複を防げます。</p>
+<p>モデル、クエリ、接続、ソースデータのいずれかに検証に関わる変更を加えた場合は、再検証してください。正当な 1 対多の関係がある場合は、その関係を明示的に考慮して計算を設計する必要があります。</p>
+<p>ブラウザーの切り替え設定が影響するのは、ブラウザー内の架空データだけです。検証ではソースキーとクエリの実行計画を確認します。レポートを実行した結果の比較は行いません。詳しくは、<a href="reference--troubleshooting--grain-and-joins.ja.html">行や合計を定義する粒度と結合</a>を参照してください。</p>
+<p><a hreflang="zh" href="guide--duplicate-lookup-zh.html">中文</a> · <a href="lesson-files.zip">レッスンのプロジェクトをダウンロード</a></p>
+</main></body></html>

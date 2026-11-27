@@ -1,6 +1,6 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择 Maz prepare 与 refresh · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="prepare 为本次查询准备所需数据，refresh 处理源数据变化。部署时执行 setup_sql，Query 的准备执行单元检查就绪后再查询，运维时通过 DML_MAZ_PROGRESS 查看全局进展。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><meta property="og:type" content="website"><meta property="og:title" content="选择 Maz prepare 与 refresh · DML"><meta property="og:description" content="prepare 为本次查询准备所需数据，refresh 处理源数据变化。部署时执行 setup_sql，Query 的准备执行单元检查就绪后再查询，运维时通过 DML_MAZ_PROGRESS 查看全局进展。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.html">搜索文档</a><a href="maz-prepare-refresh-en.html" hreflang="en" lang="en" rel="alternate">English</a></header><main><h1 id="选择-maz-prepare-与-refresh">选择 Maz prepare 与 refresh</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#根据任务选择入口">根据任务选择入口</a></li><li><a href="#准备好本次数据再查询">准备好本次数据再查询</a></li><li><a href="#prepare-参数">prepare 参数</a></li><li><a href="#refresh-参数与全匹配">refresh 参数与全匹配</a></li><li><a href="#从-maz-或源表选择变化范围">从 Maz 或源表选择变化范围</a></li><li><a href="#查看全局-runner-进展">查看全局 runner 进展</a></li><li><a href="#中断与重试">中断与重试</a></li><li><a href="#执行条件与结果边界">执行条件与结果边界</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择 Maz prepare 与 refresh · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="prepare 为本次查询准备所需数据，refresh 处理源数据变化。部署时执行 setup_sql，Query 的准备执行单元检查就绪后再查询，运维时通过 DML_MAZ_PROGRESS 查看全局进展。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="选择 Maz prepare 与 refresh · DML"><meta property="og:description" content="prepare 为本次查询准备所需数据，refresh 处理源数据变化。部署时执行 setup_sql，Query 的准备执行单元检查就绪后再查询，运维时通过 DML_MAZ_PROGRESS 查看全局进展。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="maz-prepare-refresh.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="maz-prepare-refresh.ja.html">日本語</a> <a lang="en" hreflang="en" href="maz-prepare-refresh-en.html">English</a></header><main><h1 id="选择-maz-prepare-与-refresh">选择 Maz prepare 与 refresh</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#根据任务选择入口">根据任务选择入口</a></li><li><a href="#准备好本次数据再查询">准备好本次数据再查询</a></li><li><a href="#prepare-参数">prepare 参数</a></li><li><a href="#refresh-参数与全匹配">refresh 参数与全匹配</a></li><li><a href="#从-maz-或源表选择变化范围">从 Maz 或源表选择变化范围</a></li><li><a href="#查看全局-runner-进展">查看全局 runner 进展</a></li><li><a href="#中断与重试">中断与重试</a></li><li><a href="#执行条件与结果边界">执行条件与结果边界</a></li></ul></details>
 <p>prepare 为本次查询准备所需数据，refresh 处理源数据变化。部署时执行 <code>setup_sql</code>，Query 的准备执行单元检查就绪后再查询，运维时通过 <code>DML_MAZ_PROGRESS</code> 查看全局进展。</p>
-<h2 id="根据任务选择入口">根据任务选择入口 <a class="section-link" aria-label="Link to section" href="#根据任务选择入口">#</a></h2>
+<h2 id="根据任务选择入口">根据任务选择入口 <a class="section-link" aria-label="本节链接" href="#根据任务选择入口">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -42,7 +42,7 @@
 </tbody></table>
 <p>prepare 向上准备依赖，只接受精确名称。refresh 从变化入口向下处理影响，支持精确名称和 SQL LIKE。源变化未通知时可能复用旧数据；有效不等于源数据绝对最新。</p>
 <p>差异刷新按分片选择工作，不是源行级 CDC。全量刷新指本次指定范围的强制重建，不是全部历史。每片的业务数据和成功状态共同提交，后片失败不撤销已提交片。</p>
-<h2 id="准备好本次数据再查询">准备好本次数据再查询 <a class="section-link" aria-label="Link to section" href="#准备好本次数据再查询">#</a></h2>
+<h2 id="准备好本次数据再查询">准备好本次数据再查询 <a class="section-link" aria-label="本节链接" href="#准备好本次数据再查询">#</a></h2>
 <p>共享 prepare 和带目标的 refresh 先提交刷新需求，再同步调用共享过程 <code>DML_RUN_MAZ</code>。仅失效分支提交后直接返回。取得执行权的调用处理全局待办；已有 runner 时，本次调用直接返回，不等待对方完成。普通 prepare 也可能因其他调用的全局工作而持续执行。</p>
 <p>同一数据库最多一个 runner 执行实际构建。runner 负责依赖顺序、writer 调用和逐片提交。默认实现无需 Service Broker、SQL Server Agent 或后台应用服务；它不承诺调用返回或连接断开后继续在后台工作。</p>
 <p>按同一请求及其参数执行以下顺序：</p>
@@ -54,7 +54,7 @@
 <p>准备执行单元每 100 毫秒重试普通准备，五秒重试判断期限到且仍未就绪时抛错。这个期限不会中途打断已经执行的同步 writer 或目标锁等待；客户端超时与连接取消由集成端处理。重试不会自动改成强制刷新。</p>
 <p>等待期间，可从另一连接执行同一请求的 <code>prepare_status_sql</code>，只观察本次 Query 的分片、日期和参数绑定。它不新增需求，也不要求普通调用方自己编写轮询。结果列为 <code>data_ready</code>。就绪检查与随后 SELECT 不提供共同快照。</p>
 <p>直接调用低层共享 prepare 时仍可能返回 2，表示已登记但 runner 忙；1 表示本轮完成。refresh 的结果包括 <code>accepted</code>、<code>runner_busy</code> 和受影响分片。刷新受理或全局待办为零不能代替 Query 的实际就绪检查；Query 的生成准备单元会执行该检查。</p>
-<h2 id="prepare-参数">prepare 参数 <a class="section-link" aria-label="Link to section" href="#prepare-参数">#</a></h2>
+<h2 id="prepare-参数">prepare 参数 <a class="section-link" aria-label="本节链接" href="#prepare-参数">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -84,7 +84,7 @@
     @_materialize=N&#39;SALES_QUARTERLY&#39;,
     @_range_start=&#39;20250101&#39;, @_range_end=&#39;20250331&#39;, @_force_update=1;
 </code></pre>
-<h2 id="refresh-参数与全匹配">refresh 参数与全匹配 <a class="section-link" aria-label="Link to section" href="#refresh-参数与全匹配">#</a></h2>
+<h2 id="refresh-参数与全匹配">refresh 参数与全匹配 <a class="section-link" aria-label="本节链接" href="#refresh-参数与全匹配">#</a></h2>
 <table>
 <thead>
 <tr>
@@ -152,7 +152,7 @@ EXEC dbo.DML_REFRESH_MAZ
     @_materialize=N&#39;%&#39;, @_match=N&#39;like&#39;, @_invalidate_only=1;
 </code></pre>
 <p><code>invalidate_only=1</code> 不由本次调用执行 writer。其他连接已经运行的 runner 可以继续处理既有待办。</p>
-<h2 id="从-maz-或源表选择变化范围">从 Maz 或源表选择变化范围 <a class="section-link" aria-label="Link to section" href="#从-maz-或源表选择变化范围">#</a></h2>
+<h2 id="从-maz-或源表选择变化范围">从 Maz 或源表选择变化范围 <a class="section-link" aria-label="本节链接" href="#从-maz-或源表选择变化范围">#</a></h2>
 <p>知道源表时可按已登记来源选择全部直接入口：</p>
 <pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
     @_source=N&#39;dbo.TABLE_SALES&#39;,
@@ -164,7 +164,7 @@ EXEC dbo.DML_REFRESH_MAZ
 <p>有日期的默认 refresh 可以首次构建显式选中的 Maz；仅传播发现的冷下游不自动预建。缺状态的中间 Maz 不阻断已有下游传播。无日期只处理已有范围；全库首次预热需显式给出有限日期。整表型 Maz 按一个物理分片处理，传入日期也会扩大到整表。</p>
 <p>日期分片不支持附带非日期值参数；整表只有一个当前参数绑定证明。</p>
 <p><a id="runner-progress"></a></p>
-<h2 id="查看全局-runner-进展">查看全局 runner 进展 <a class="section-link" aria-label="Link to section" href="#查看全局-runner-进展">#</a></h2>
+<h2 id="查看全局-runner-进展">查看全局 runner 进展 <a class="section-link" aria-label="本节链接" href="#查看全局-runner-进展">#</a></h2>
 <p>执行当前构建生成的 <code>setup_sql</code> 后，查询共享视图：</p>
 <pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
 FROM dbo.DML_MAZ_PROGRESS;
@@ -218,7 +218,7 @@ FROM dbo.DML_MAZ_PROGRESS;
 <p>进展视图不能判断某个 Query 是否就绪。它读取已提交状态，发布事务可能造成短暂等待，不提供跨分片快照。需要其他窗口时，独立 Java 接口 <code>MazRunner.progressSql(&quot;mssql&quot;, 300)</code> 可生成最近五分钟的只读 SQL；直接执行该 SQL 需要 STATE 读取权限。</p>
 </details>
 
-<h2 id="中断与重试">中断与重试 <a class="section-link" aria-label="Link to section" href="#中断与重试">#</a></h2>
+<h2 id="中断与重试">中断与重试 <a class="section-link" aria-label="本节链接" href="#中断与重试">#</a></h2>
 <p>初始失效和需求登记在元数据事务提交或回滚，构建随后逐片提交。STATE 持久保留待主动刷新的分片及实际参数。中断时已提交片保留，当前片回滚，未完成需求等待下次调用。</p>
 <table>
 <thead>
@@ -253,7 +253,7 @@ EXEC dbo.DML_REFRESH_MAZ;
 </code></pre>
 <p>客户端取消或超时可能绕过 SQL Server 的 CATCH，并在活连接上留下会话级 runner 锁。取消后关闭该物理连接，连接池应丢弃它；仅 ROLLBACK 不够。断开连接后，再次调用可推进持久待办。普通 SQL 用户也可在确认 runner 停止后，于原连接先回滚未结束事务，再显式释放 DML_MAZ_RUNNER 会话锁。</p>
 <p>无参 refresh() 只继续待办，不表示全部历史重算；它不接受日期、like、仅失效或参数绑定选项。全部 Maz 仍用显式 % 和 like 选择。普通无效 state=0 不主动执行，state=3 表示无效且待主动刷新，state=1 表示已发布有效结果；state=2 只在发布事务内部暂存。源提交和通知之间仍有窗口，加载方需可靠执行通知并重试。</p>
-<h2 id="执行条件与结果边界">执行条件与结果边界 <a class="section-link" aria-label="Link to section" href="#执行条件与结果边界">#</a></h2>
+<h2 id="执行条件与结果边界">执行条件与结果边界 <a class="section-link" aria-label="本节链接" href="#执行条件与结果边界">#</a></h2>
 <p>使用自动提交连接，IMPLICIT_TRANSACTIONS OFF 且无活动事务。入口检查本次目标和受影响 writer 的权限。runner 以调用者身份处理全局待办，因此执行账号也需具备其他待办涉及的 writer 权限；权限不足返回原始错误并保留需求。</p>
 <details><summary>运维参考：运行时对象与权限</summary>
 

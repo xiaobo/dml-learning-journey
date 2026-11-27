@@ -1,0 +1,142 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML, DMX und Model Query · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Ein Bericht verbindet fachliche Definitionen mit Festlegungen zu Gruppierung, Filtern und Darstellung. DML hält wiederverwendbare Definitionen in einem Modell vor. Berichte können so dieselben Kennzahlen verwen"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML, DMX und Model Query · DML"><meta property="og:description" content="Ein Bericht verbindet fachliche Definitionen mit Festlegungen zu Gruppierung, Filtern und Darstellung. DML hält wiederverwendbare Definitionen in einem Modell vor. Berichte können so dieselben Kennzahlen verwen"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="explanation--core-concepts.ja.html">日本語</a> <a lang="en" hreflang="en" href="explanation--core-concepts.html">English</a> <a lang="zh" hreflang="zh" href="explanation--core-concepts.zh.html">中文</a></header><main><h1 id="dml-dmx-and-model-query">DML, DMX und Model Query</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#1-the-model-query-and-expression-layers">1. Die Ebenen für Modell, Abfrage und Ausdruck</a></li><li><a href="#2-source-relations-lookups-and-metric-composition">2. Quellrelationen, Suchzugriffe und Kombination von Kennzahlen</a></li><li><a href="#3-dimension-roles-and-grain">3. Rollen von Dimensionen und Granularität</a></li><li><a href="#4-time-context-and-dim_dt">4. Zeitkontext und <code>dim_dt</code></a></li><li><a href="#5-reuse-and-integration">5. Wiederverwendung und Integration</a></li><li><a href="#time-comparisons-and-row-membership">Zeitvergleiche und Auswahl der Ergebniszeilen</a></li></ul></details>
+<p>Ein Bericht verbindet fachliche Definitionen mit Festlegungen zu Gruppierung, Filtern und Darstellung. DML hält wiederverwendbare Definitionen in einem Modell vor. Berichte können so dieselben Kennzahlen verwenden, wenn die Ebenen, auf denen Zeilen oder Summen definiert sind, zueinander passen.</p>
+<p>Kennzahlen können auf andere Kennzahlen verweisen. Der analytische Kontext bestimmt, wie jeder Verweis ausgewertet wird. So lässt sich dieselbe Margendefinition in einem regionalen Bericht und für einen KPI verwenden, der den Zeitraum vom Jahresbeginn bis zum Auswertungsstichtag abdeckt. Die Zeittransformation berechnet Gewinn und Umsatz vor der Division neu, statt den Durchschnitt der Monatsmargen zu bilden. Auch Kennzahlen aus verschiedenen Datensätzen lassen sich kombinieren, wenn die Ebenen, auf denen Zeilen oder Summen definiert sind, zueinander passen. Die Ausgabeschlüssel und die Gruppen, die auf einer Seite fehlen, müssen weiterhin zur vorgesehenen Grundgesamtheit des Berichts passen. Das <a href="reference--examples--composable-metrics.de.html">Rentabilitätsbeispiel</a> zeigt dies anhand von Kombination, Kumulation und Vergleich. DML-Modelle, DMX-Ausdrücke und der Compiler können den Berechnungskern einer analytischen semantischen Schicht bilden. Die fachlichen Definitionen müssen die Beteiligten weiterhin selbst abstimmen.</p>
+<p>Der bebilderte <a href="explanation--visual-introduction.de.html">kurze Rundgang durch DML</a> führt anhand von vier Beispielverkäufen und einem Werkzeug zum Erkunden von Gruppierungen in diese Konzepte ein.</p>
+<p>Ein vollständiges ausführbares Beispiel finden Sie unter <a href="tutorials--first-query.de.html">Erste Modellabfrage kompilieren</a>. Die <a href="reference--semantics.de.html">DML-Kernspezifikation</a> legt die verbindlichen Regeln der Sprache fest.</p>
+<h2 id="1-the-model-query-and-expression-layers">1. Die Ebenen für Modell, Abfrage und Ausdruck <a class="section-link" aria-label="Link zum Abschnitt" href="#1-the-model-query-and-expression-layers">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Ebene</th>
+<th>Sprache</th>
+<th>Inhalt</th>
+<th>Speicherort</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modell</td>
+<td>DML, Dato Measure Language</td>
+<td>Datensätze, Kennzahlen und Spaltenmakros</td>
+<td><code>.dml</code> YAML</td>
+</tr>
+<tr>
+<td>Abfrage</td>
+<td>Model Query</td>
+<td>Kennzahlauswahl, Gruppierung und Berichtsfilter</td>
+<td><code>.sql</code> oder DML mit <code>type: query</code></td>
+</tr>
+<tr>
+<td>Ausdruck</td>
+<td>DMX, Dato Measure eXpression</td>
+<td>Formeln, Referenzen und Modifikatoren</td>
+<td>Modellformeln und Abfrageausdrücke</td>
+</tr>
+</tbody></table>
+<p>DML ist ein eigenständiger Compiler für eine semantische Schicht. Er verarbeitet Modelldateien und erzeugt SQL, das die Datenbank ausführt. Datenbankberechtigungen und die Autorisierung in der Anwendung regeln den Zugriff. Dashboards und die zeitgesteuerte Ausführung sind Aufgaben des umgebenden Systems. Ein Modellfilter allein ist keine Zugriffskontrollrichtlinie.</p>
+<p>DML prüft die Struktur von Deklarationen und die analytische Kompatibilität, etwa im Hinblick auf die Ebene, auf der Zeilen oder Summen definiert sind, und auf den Zeitkontext. Der Compiler bietet keine vollständige statische Typprüfung für SQL-Ausdrücke. Die physischen Werttypen liegen in der Zuständigkeit der Datenbank, und das bei der Prüfung verwendete Modellschema weist <code>type:</code>-Deklarationen für Spalten zurück. Eine fehlerhafte Typkonvertierung oder ein ungültiges Funktionsargument kann daher die Kompilierung passieren und erst in der Datenbank zu einem Fehler führen. Siehe <a href="reference--model-structure.de.html#column-metadata-is-not-a-sql-type-declaration">Spaltenmetadaten und Werttypen</a>.</p>
+<p>Ein Datensatz bindet Spalten an eine physische Tabelle oder eine SQL-Relation. Seine Deklaration <code>dimension:</code> legt den vollständigen Schlüssel der Quellzeilen fest.</p>
+<pre><code class="language-yaml">transactions:
+  type: dataset
+  table: fact_transactions
+  dimension: [transaction_id]
+  columns:
+    transaction_id:
+    amount:
+    discount:
+    net_amount: amount - discount
+  measures:
+    sales: SUM({net_amount})
+    number_of_transactions: COUNT(1)
+
+avg_transaction_value:
+  type: measure
+  formula: 'DIVIDE({sales}, {number_of_transactions})'
+</code></pre>
+<p><code>sales</code> und <code>number_of_transactions</code> sind atomare Kennzahlen. Sie übernehmen den Datensatz, in dem sie definiert sind, und aggregieren dessen Zeilen oder Spaltenausdrücke direkt, ohne auf andere Kennzahlen zu verweisen. <code>avg_transaction_value</code> ist eine zusammengesetzte Kennzahl, weil ihre Formel auf andere Kennzahlen verweist, obwohl beide atomaren Kennzahlen <code>transactions</code> verwenden. Eine zusammengesetzte Kennzahl hat keine Eigenschaft <code>dataset:</code>.</p>
+<p>In einer Modellformel bezeichnet <code>amount</code> ohne geschweifte Klammern eine physische SQL-Spalte. <code>{net_amount}</code> wird durch den Ausdruck der berechneten Modellspalte ersetzt. Die geschweiften Klammern machen den Unterschied auch dann deutlich, wenn der logische und der physische Name übereinstimmen.</p>
+<p>Spaltenmakros definieren wiederverwendbare Spaltenausdrücke oder Suchzugriffe auf andere Datensätze. So können sie Attribute für Kennzahlen bereitstellen, ohne dass jede Abfrage, die diese Kennzahlen verwendet, einen Join enthalten muss. Der vollständige Schlüssel des Zieldatensatzes bestimmt die Suchargumente. Siehe <a href="#2-source-relations-lookups-and-metric-composition">Quellrelationen und Suchzugriffe</a>.</p>
+<p>Model Query verweist über <code>AGG(...)</code> auf Kennzahlen. Modellformeln verwenden Aggregatfunktionen wie <code>SUM</code> und <code>COUNT</code> direkt. <code>AGG</code> ist die Abfrageschnittstelle für eine Kennzahl und ersetzt <code>SUM</code> innerhalb einer Modellformel nicht.</p>
+<p>Eine einmalig benötigte Kennzahl kann zunächst in einem <a href="reference--model-query-sql.de.html#312-inline-measures--dml--">eingebetteten DML-Block</a> in der Abfragedatei definiert werden. Zum Ausprobieren muss das gemeinsame Modell nicht zuerst geändert werden. Prüfen Sie brauchbare Definitionen, bevor Sie sie als gemeinsame Kennzahlen übernehmen.</p>
+<h2 id="2-source-relations-lookups-and-metric-composition">2. Quellrelationen, Suchzugriffe und Kombination von Kennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#2-source-relations-lookups-and-metric-composition">#</a></h2>
+<p>DML kombiniert Daten in verschiedenen Verarbeitungsschritten. Welchen Schritt Sie wählen, bestimmt, welche Schlüssel, Filter und Zeilenmengen Sie prüfen müssen.</p>
+<table>
+<thead>
+<tr>
+<th>Aufgabe</th>
+<th>Mechanismus</th>
+<th>Regeln für das Ergebnis</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Ein Attribut über seinen vollständigen Schlüssel wiederverwenden</td>
+<td>Suchzugriff mit <code>pk(...)</code> in einer Modellformel</td>
+<td>Genau eine Zielzeile pro Suchschlüssel. Einfache und zusammengesetzte Schlüssel werden unterstützt.</td>
+</tr>
+<tr>
+<td>Das am Ereignisdatum gültige Attribut ermitteln</td>
+<td><code>pk(id, event_date)</code> mit <code>[id, 'range(valid_from, valid_to)']</code> als Zielschlüssel</td>
+<td>Die geprüften endlichen Intervalle entsprechen <code>[start,end)</code>. Intervalle für dieselbe id dürfen sich nicht überschneiden.</td>
+</tr>
+<tr>
+<td>Unabhängige Fakten wie Umsatz und Budget vergleichen</td>
+<td>Kennzahlen, die anhand aufeinander abgestimmter Dimensionen ausgewertet werden</td>
+<td>Bei der üblichen Kombination über die Vereinigung der Schlüssel bleiben alle Gruppen erhalten, die auf mindestens einer Seite vorkommen. Kommt eine Gruppe nur auf einer Seite vor, bleiben die Werte auf der anderen Seite fehlend.</td>
+</tr>
+<tr>
+<td>Eine Relation als Brücke, Join, Union oder Unterabfrage vorbereiten</td>
+<td><code>sql:</code> des Datensatzes oder eine Datenbanksicht</td>
+<td>Die vorbereitete Relation benötigt einen eigenen vollständigen Schlüssel. Legen Sie Verteilungsgewichte fest und prüfen Sie die Gesamtsummen, wenn eine Quellzeile mehreren Zeilen entsprechen kann.</td>
+</tr>
+</tbody></table>
+<p>Das SQL einer Model Query, die das Modell nutzt, unterstützt JOIN, UNION und Unterabfragen nicht direkt. Unterstützte Relationen lassen sich dennoch im SQL eines Datensatzes vorbereiten. Im Quell-SQL definierte Filter schränken weiterhin die Zeilenmenge der Quellrelation ein. Sie werden nicht automatisch zu Regeln, die auf jeden Kontext reagieren, in dem die Quellrelation verwendet wird.</p>
+<p>Aus Suchzugriffen über zusammengesetzte Schlüssel oder anhand des am Ereignisdatum gültigen Intervalls lässt sich weder auf einen allgemeinen Beziehungsgraphen mit frei wählbaren Pfaden noch auf eine automatische Viele-zu-viele-Verteilung schließen. Auch die unabhängige Aggregation von Kennzahlen behebt weder doppelte Suchschlüssel noch fehlerhafte Vorgaben dafür, wie die Ergebnisse aufeinander abgestimmt werden. Die Beispiele zu <a href="examples--compound-key.de.html">zusammengesetzten Schlüsseln</a> und zur <a href="examples--range-lookup.de.html">Suche über Gültigkeitsintervalle</a> zeigen vollständige Modelle, absichtlich herbeigeführte Schlüsselfehler und deren Behebung. Informationen zu Gruppen ohne Entsprechung und zu NULL-Schlüsseln finden Sie unter <a href="reference--semantics.de.html#34-cross-dataset-auto-join">Semantik der Kennzahlenkombination</a>. Wie Quellen zugeordnet und abgeleitete Relationen geprüft werden, erfahren Sie unter <a href="reference--model-structure.de.html#52-dataset-definition-type-dataset">Datensatz-SQL</a>.</p>
+<p><a id="2-dimension-roles-and-grain"></a></p>
+<h2 id="3-dimension-roles-and-grain">3. Rollen von Dimensionen und Granularität <a class="section-link" aria-label="Link zum Abschnitt" href="#3-dimension-roles-and-grain">#</a></h2>
+<p>Ein Dimensionsfeld ist ein einzelnes benanntes DML-Feld. Eine Dimension ist eine Liste von Feldern. Wo sie deklariert wird, bestimmt ihre Rolle.</p>
+<table>
+<thead>
+<tr>
+<th>Deklaration</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dimension:</code> im Dataset</td>
+<td>Vollständige Identifikation einer Quellzeile</td>
+</tr>
+<tr>
+<td>Dimensionsmodifikatoren in Formeln</td>
+<td>Auswertungsdimension einer einzelnen Kennzahlreferenz</td>
+</tr>
+<tr>
+<td><code>GROUP BY</code> oder <code>columns.dimension</code> in der Abfrage</td>
+<td>Gruppierung des Ergebnisses</td>
+</tr>
+<tr>
+<td><code>dimension:</code> in der Materialisierung</td>
+<td>Gespeicherte Gruppierung und gespeicherter Schlüssel</td>
+</tr>
+<tr>
+<td><code>dimensions:</code> in der Kennzahl</td>
+<td>Zulässige Alternativen für die Auswertungsdimension, eine pro innerer Liste</td>
+</tr>
+</tbody></table>
+<p>Die Granularität beschreibt, wofür eine Zeile im jeweiligen Kontext steht. Beispielsweise identifiziert <code>[transaction_id]</code> eine Transaktion, während <code>[region, dt_month]</code> einen Bericht nach Region und Monat gruppiert. Eine Berichtsgruppe kann viele Quellzeilen enthalten und daher den Quellschlüssel nicht ersetzen.</p>
+<p>Der Modifikator <code>dimension: []</code> leert die Auswertungsdimension, um einen Gesamtwert ohne Gruppierung zu berechnen. Er deklariert keinen Schlüssel zur Identifikation von Dataset-Zeilen. <code>+d</code> fügt Felder für eine Zwischenberechnung hinzu. Wenn eine Formel ein Ergebnis auf einer gröberen Ebene benötigt, fasst eine explizite äußere Aggregation diese Zwischenwerte zusammen.</p>
+<p>Der Compiler verlässt sich auf den deklarierten Quellschlüssel. Gibt es im Ziel einer <code>pk(...)</code>-Referenz mehrere Zeilen mit demselben Schlüssel, können sich Zeilen auch bei erfolgreicher Kompilierung vervielfachen. Die Validierung anhand der tatsächlichen Daten prüft, ob die vorhandenen Schlüsselwerte eindeutig sind. Ergebnisvergleiche zeigen, ob die Abfrage das beabsichtigte Ergebnis liefert.</p>
+<p><a href="explanation--dimensions.de.html">Semantik von Dimensionen</a> erläutert diese Rollen und ihre Auswirkungen genauer.</p>
+<p><a id="3-time-context-and-dim_dt"></a></p>
+<h2 id="4-time-context-and-dim_dt">4. Zeitkontext und <code>dim_dt</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#4-time-context-and-dim_dt">#</a></h2>
+<p><code>dim_dt</code> steht für das aktive Zeitfeld im Abfragekontext einer Kennzahl. Damit kann eine Formel auf die aktuelle zeitliche Granularität Bezug nehmen, ohne <code>dt_date</code>, <code>dt_month</code> oder <code>dt_quarter</code> direkt zu nennen. Welche Granularitäten ein Makro akzeptiert, hängt weiterhin von seinen Voraussetzungen ab.</p>
+<p>Ein Zeitfeld, nach dem gruppiert wird, oder ein Zeitfilter kann den Kontext liefern. Prüfen Sie die Diagnosemeldungen im strikten Modus und die generierten Joins getrennt davon, ob die Syntax akzeptiert wird. Ein Zeitvergleich oder ein Join über die Vereinigung von Schlüsseln führt für sich genommen nicht zwingend zu einer Warnung im strikten Modus.</p>
+<p>Wenn Sie ein feingranulares Standardzeitfeld wie <code>dt_date</code> deklarieren, stellt der Systemkalender die unterstützten gröberen Zeitfelder bereit. Diese virtuellen Felder benötigen keine zusätzlichen physischen Deklarationen. Wenn Sie für ein abgeleitetes <code>dt_month</code> im Editor zur Definition springen, gelangen Sie zur explizit deklarierten Zeitspalte der Quelle.</p>
+<p>Auch für einen einzelnen KPI muss das Ende des Auswertungszeitraums ausdrücklich festgelegt werden. Im <a href="examples--time-context.de.html">ausführbaren Beispiel</a> ergibt ein Filter auf Februar für Januar und Februar zusammen eine YTD-Marge von 20%. Die reguläre Umsatzkennzahl in derselben Abfrage berücksichtigt dagegen nur Februar. Ohne Zeitkontext schlägt die Abfrage fehl. Kalenderabfragen mit Gruppierung können auch Monate mit kumulierten Werten zurückgeben, deren Monatsumsatz NULL ist. Wählen Sie deshalb die Ausgabezeiträume gezielt aus. Der Kalender muss auf der Verbindung, über die die Abfrage ausgeführt wird, die vorgesehenen Datumswerte abdecken.</p>
+<p>Die <a href="reference--semantics.de.html">Spezifikation zum Zeitkontext</a> definiert <code>dim_dt</code> und die Standardzeitfelder. Unter <a href="02-syntax--system_macros.dml">Systemmakros</a> finden Sie die Definitionen der Zeit- und Formelmakros zum Nachschlagen.</p>
+<h2 id="5-reuse-and-integration">5. Wiederverwendung und Integration <a class="section-link" aria-label="Link zum Abschnitt" href="#5-reuse-and-integration">#</a></h2>
+<p>Benutzerdefinierte <code>fn-macro</code>-Definitionen umschließen die Kennzahlformel des Aufrufers. <code>dt-macro</code>-Definitionen ändern den Zeitkontext der Formel. Beide lassen sich über die Modifikatorsyntax kombinieren, ohne den Compiler zu ändern. Aufrufe skalarer Datenbankfunktionen greifen auf Funktionen zurück, die auf der ausführenden Verbindung installiert sind. Der <a href="how-to--define-macros.de.html">Leitfaden zu Erweiterungen</a> zeigt Beispiele, die tatsächlich ausgeführt wurden, darunter einen Aufruf, der wegen einer fehlenden Funktion fehlschlägt. Diese Mechanismen stellen kein allgemeines Modulsystem bereit und bieten keine umgebungsübergreifende Unterstützung für alle Arten von UDF.</p>
+<p>Legen Sie den <a href="reference--model-structure.de.html#sql-dialect">SQL-Dialekt</a> des Modells explizit fest. Wenn das System einen Dialekt erkennt, belegt das nicht, dass jede Funktion erfolgreich mit dieser Datenbank-Engine ausgeführt wurde. Generiertes SQL kann mehrere Anweisungen, Zwischenrelationen und Abhängigkeiten vom Kalender enthalten. Prüfen Sie daher auch die Ausführungsumgebung.</p>
+<p>Der geprüfte JDBC-Treiber bindet Positionsparameter in physischem SQL sowie in Filtern und Kennzahlausdrücken von Model Query. Siehe <a href="reference--model-query-sql.de.html#jdbc-parameters-and-query-kind">Beispiele für JDBC-Parameter</a>. Materialisierungsparameter und die interne Parametrisierung von Literalen sind eigenständige Mechanismen.</p>
+<p><a href="how-to--compile-and-validate.de.html">Kompilierung, Validierung und Ausführung</a> weisen jeweils etwas anderes nach. Die Schlüsselvalidierung anhand der tatsächlichen Daten kann Duplikate erkennen, bevor ein Lookup Zeilen vervielfacht. Es ist jedoch nicht garantiert, dass die Validierung und die anschließende Ausführung denselben Daten-Snapshot verwenden. Wenn die Datenbank EXPLAIN akzeptiert, belegt das nicht, dass die zurückgegebenen Zahlen stimmen. Vergleichen Sie im vorgesehenen Datenbereich die vollständigen Schlüssel, die Anzahl der Vorkommen jeder Zeile, NULL-Werte und ungerundete Werte mit einem unabhängig ermittelten Ergebnis.</p>
+<h2 id="time-comparisons-and-row-membership">Zeitvergleiche und Auswahl der Ergebniszeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#time-comparisons-and-row-membership">#</a></h2>
+<p>Ein Abfragezweig für den vorherigen Zeitraum kann mithilfe des Kalenders eine Gruppe aus diesem Zeitraum in einen Monat übernehmen, für den keine Faktendaten vorliegen. Das Zeitfenster der Abfrage und der Filter auf vorhandene Daten im aktuellen Zeitraum bestimmen, ob die Gruppe im Bericht erscheint. Siehe <a href="reference--troubleshooting--time.de.html#extra-month-after-the-latest-source-data">zusätzliche Monate bei Vergleichen</a>.</p>
+</main></body></html>

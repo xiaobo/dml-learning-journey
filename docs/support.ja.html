@@ -1,0 +1,35 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>トラブルシューティング：まず失敗した手順を特定する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="まず診断情報をすべて保存してから、調査対象を1つの指標に絞り込みます。 コンパイルが成功しても、ソースのキーがデータと一致しているとは限りません。検証に合格しても、結果が業務上正しいかどうかは別途確認が必要です。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/support.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/support.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/support-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/support.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/support.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="トラブルシューティング：まず失敗した手順を特定する · DML"><meta property="og:description" content="まず診断情報をすべて保存してから、調査対象を1つの指標に絞り込みます。 コンパイルが成功しても、ソースのキーがデータと一致しているとは限りません。検証に合格しても、結果が業務上正しいかどうかは別途確認が必要です。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/support.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="support.de.html">Deutsch</a> <a lang="en" hreflang="en" href="support-en.html">English</a> <a lang="zh" hreflang="zh" href="support.html">中文</a></header><main><h1 id="troubleshooting-first-locate-the-failing-step">トラブルシューティング：まず失敗した手順を特定する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#prepare-reproducible-material">再現に必要な情報をまとめる</a></li><li><a href="#versions-and-known-limits">バージョンと既知の制限事項</a></li></ul></details>
+<p><strong>まず診断情報をすべて保存してから、調査対象を1つの指標に絞り込みます。</strong> コンパイルが成功しても、ソースのキーがデータと一致しているとは限りません。検証に合格しても、結果が業務上正しいかどうかは別途確認が必要です。</p>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>次の手順</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>モデルが見つからない</td>
+<td>ファイル名と<code>FROM</code>で指定した名前を確認します。<a href="reference--model-query-sql.ja.html">クエリの検出ルール</a>を参照してください。</td>
+</tr>
+<tr>
+<td>コンパイルエラー</td>
+<td>終了コードとJSONを保存します。<a href="reference--error-codes.ja.html">エラーコードリファレンス</a>を参照してください。</td>
+</tr>
+<tr>
+<td>VALIDATION_ERROR</td>
+<td>キーまたはデータを修正し、再テストします。<a href="guide--duplicate-lookup.ja.html">キーの重複チェック</a>を参照してください。</td>
+</tr>
+<tr>
+<td>合計値、割合、または過去の値が正しくないように見える</td>
+<td>入力行、フィルター、グループ化を確認します。<a href="reference--modifiers.ja.html">修飾子</a>を参照してください。</td>
+</tr>
+<tr>
+<td>マテリアライズされた結果が古い</td>
+<td><a href="materialization-workflow.ja.html">マテリアライズのライフサイクル</a></td>
+</tr>
+</tbody></table>
+<h2 id="prepare-reproducible-material">再現に必要な情報をまとめる <a class="section-link" aria-label="この節へのリンク" href="#prepare-reproducible-material">#</a></h2>
+<p><code>dmlc --version</code>の出力、実行したコマンド、終了コード、すべての診断情報、最小構成のモデルまたはクエリ、機密情報を除いた入力データ、期待される結果を保存します。パスワード、トークン、実際の接続文字列、個人情報は削除してください。フィードバックは、その製品についてすでにお持ちの連絡先にお寄せください。このサイトには公開サポート窓口がまだ掲載されていないため、無関係なリポジトリに非公開データを送信しないでください。</p>
+<h2 id="versions-and-known-limits">バージョンと既知の制限事項 <a class="section-link" aria-label="この節へのリンク" href="#versions-and-known-limits">#</a></h2>
+<p>特定のビルドで確認した挙動は、記録されたそのビルドと、そのテストデータに限って当てはまります。過去の問題は、現行バージョンの不具合一覧ではありません。差異が見つかった場合は、現行のコンパイラで再現し、生成されたSQLを保存します。まず<a href="checked-exercise-ja.html">売上データの演習</a>の検証状況を確認してください。他の方言や未実行のシナリオには「not verified」と記載します。</p>
+</main></body></html>

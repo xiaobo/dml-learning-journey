@@ -1,0 +1,250 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC エラーコードリファレンス · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="これらのコードを使って、どの段階で失敗したかを特定し、対処方法を選びます。プロセスの終了コードに加え、診断情報と生成された SQL も確認してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DMLC エラーコードリファレンス · DML"><meta property="og:description" content="これらのコードを使って、どの段階で失敗したかを特定し、対処方法を選びます。プロセスの終了コードに加え、診断情報と生成された SQL も確認してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--error-codes.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--error-codes.html">English</a> <a lang="zh" hreflang="zh" href="reference--error-codes.zh.html">中文</a></header><main><h1 id="dmlc-error-codes-reference">DMLC エラーコードリファレンス</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#path-display-convention">パスの表示規則</a></li><li><a href="#error-code-categories">エラーコードのカテゴリ</a></li><li><a href="#error-codes">エラーコード</a></li><li><a href="#file-io-errors">ファイル入出力エラー</a></li><li><a href="#connection-errors">接続エラー</a></li><li><a href="#query-execution-errors">クエリ実行エラー</a></li><li><a href="#compilation-errors">コンパイルエラー</a></li><li><a href="#generation-errors">生成エラー</a></li><li><a href="#dimension-validation-errors">ディメンションの検証エラー</a></li><li><a href="#workspaceoperation-errors">ワークスペースと操作のエラー</a></li><li><a href="#general-errors">一般的なエラー</a></li></ul></details>
+<p>これらのコードを使って、どの段階で失敗したかを特定し、対処方法を選びます。プロセスの終了コードに加え、診断情報と生成された SQL も確認してください。</p>
+<h2 id="path-display-convention">パスの表示規則 <a class="section-link" aria-label="この節へのリンク" href="#path-display-convention">#</a></h2>
+<p>ユーザーに表示されるファイルパスでは、どのプラットフォームでも <strong>スラッシュ</strong>（<code>/</code>）を使用します。</p>
+<ul>
+<li>エラーメッセージでは、<code>..\data</code> や <code>../data</code> などの入力は <code>../data</code> に正規化されます。</li>
+<li>ワークスペースのプレースホルダーを含むパスは <code>&lt;workspaceFolder&gt;/relative/path</code> の形式で表示します。プレースホルダー以降にはバックスラッシュを使用しません。</li>
+<li>解決済みのファイルシステムパスは、可能な限りカレントディレクトリからの相対パスで表示します。</li>
+</ul>
+<h2 id="error-code-categories">エラーコードのカテゴリ <a class="section-link" aria-label="この節へのリンク" href="#error-code-categories">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>カテゴリ</th>
+<th>説明</th>
+<th>CLI の終了コード</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INVALID_INPUT</td>
+<td>入力の検証に失敗しました。入力を修正して再試行できます。</td>
+<td>64</td>
+</tr>
+<tr>
+<td>VALIDATION</td>
+<td>ユーザーレベルの検証に失敗しました（構文解析結果は OK ですが、引数が無効です）</td>
+<td>65</td>
+</tr>
+<tr>
+<td>NOT_FOUND</td>
+<td>要求されたリソースが見つかりません</td>
+<td>66</td>
+</tr>
+<tr>
+<td>CONFIG</td>
+<td>構成エラー（構成がないか無効、接続 ID が不明など）</td>
+<td>78</td>
+</tr>
+<tr>
+<td>TIMEOUT</td>
+<td>操作がタイムアウトしました。パラメーターを変更して再試行してください。</td>
+<td>69</td>
+</tr>
+<tr>
+<td>COMPILE</td>
+<td>コンパイルに失敗しました（構文エラーまたはモデルエラー）</td>
+<td>2</td>
+</tr>
+<tr>
+<td>EXECUTION</td>
+<td>実行に失敗しました。再試行すると成功する場合があります。</td>
+<td>70</td>
+</tr>
+<tr>
+<td>INTERNAL</td>
+<td>予期しない内部エラーです。このエラーは報告してください。</td>
+<td>70</td>
+</tr>
+<tr>
+<td>BLOCKED</td>
+<td>ポリシーまたは現在の状態により操作がブロックされました</td>
+<td>77</td>
+</tr>
+</tbody></table>
+<h2 id="error-codes">エラーコード <a class="section-link" aria-label="この節へのリンク" href="#error-codes">#</a></h2>
+<h3 id="file-io-errors">ファイル入出力エラー <a class="section-link" aria-label="この節へのリンク" href="#file-io-errors">#</a></h3>
+<h4 id="file_not_found">FILE_NOT_FOUND</h4>
+<ul>
+<li><strong>カテゴリ</strong>：NOT_FOUND</li>
+<li><strong>コード</strong>：FILE_NOT_FOUND</li>
+<li><strong>よくある原因</strong>：ファイルパスが正しくない、ファイルが存在しない、またはファイルがワークスペースフォルダーの外にあります。</li>
+<li><strong>推奨される対処方法</strong>：ファイルパスが正しく、ワークスペースフォルダー内を指していることを確認してください。</li>
+<li><strong>例</strong>：<code>File not found: /path/to/file.dml</code></li>
+</ul>
+<h4 id="file_already_exists">FILE_ALREADY_EXISTS</h4>
+<ul>
+<li><strong>カテゴリ</strong>：BLOCKED</li>
+<li><strong>コード</strong>：FILE_ALREADY_EXISTS</li>
+<li><strong>よくある原因</strong>：上書きを指定せずに、すでに存在するファイルを作成しようとしました。</li>
+<li><strong>対処方法</strong>：新しい出力ファイル名を指定してください。既存ファイルを置き換えたい場合は、そのコマンドの上書きオプションを使います。</li>
+<li><strong>例</strong>：<code>File already exists: /path/to/file.csv</code></li>
+</ul>
+<h4 id="unsupported_file_type">UNSUPPORTED_FILE_TYPE</h4>
+<ul>
+<li><strong>カテゴリ</strong>：INVALID_INPUT</li>
+<li><strong>コード</strong>：UNSUPPORTED_FILE_TYPE</li>
+<li><strong>よくある原因</strong>：サポートされていないファイル形式を使用しようとしました。</li>
+<li><strong>推奨される対処方法</strong>：サポートされているファイル形式（parquet, csv, xlsx）を使用してください。</li>
+<li><strong>例</strong>：<code>Unsupported file type: .txt. Supported types: .csv, .xlsx, .parquet</code></li>
+</ul>
+<h4 id="path_outside_workspace">PATH_OUTSIDE_WORKSPACE</h4>
+<ul>
+<li><strong>カテゴリ</strong>：BLOCKED</li>
+<li><strong>コード</strong>：PATH_OUTSIDE_WORKSPACE</li>
+<li><strong>よくある原因</strong>：ファイルパスがワークスペースフォルダーの外を指しています。これには、<code>../</code> でフォルダーの外に出るパス、別のドライブ上の絶対パス、ワークスペース外を指すシンボリックリンクが含まれます。</li>
+<li><strong>推奨される対処方法</strong>：ワークスペースフォルダー内を指す相対パスを使用してください。</li>
+<li><strong>例</strong>：<code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code></li>
+<li><strong>パスの表示</strong>：エラーメッセージや CLI の出力に表示されるパスでは、どのプラットフォームでもスラッシュ（<code>/</code>）を使用します。<code>&lt;workspaceFolder&gt;/relative/path</code> のようにプレースホルダーを含むパスも同様です。</li>
+<li><strong>注記</strong>：CLI で <code>WORKSPACE_FOLDER</code> が設定されている場合、入出力ファイルはそのディレクトリ内に置く必要があります。</li>
+</ul>
+<h4 id="no_sheets_in_excel">NO_SHEETS_IN_EXCEL</h4>
+<ul>
+<li><strong>カテゴリ</strong>：INVALID_INPUT</li>
+<li><strong>コード</strong>：NO_SHEETS_IN_EXCEL</li>
+<li><strong>よくある原因</strong>：Excel ファイルにシートがないか、ファイルが破損しています。</li>
+<li><strong>推奨される対処方法</strong>：シートを 1 枚以上含む有効な Excel ファイルを指定してください。</li>
+<li><strong>例</strong>：<code>Excel file has no sheets: /path/to/file.xlsx</code></li>
+</ul>
+<h3 id="connection-errors">接続エラー <a class="section-link" aria-label="この節へのリンク" href="#connection-errors">#</a></h3>
+<h4 id="connection_not_found">CONNECTION_NOT_FOUND</h4>
+<ul>
+<li><strong>カテゴリ</strong>：CONFIG</li>
+<li><strong>コード</strong>：CONNECTION_NOT_FOUND</li>
+<li><strong>よくある原因</strong>：接続 ID が connections.json に存在しません。</li>
+<li><strong>推奨される対処方法</strong>：利用可能な接続を一覧表示して有効な接続 ID を選ぶか、接続を connections.json に追加してください。</li>
+<li><strong>例</strong>：<code>Connection not found: production. Available connections: [dev, staging]</code></li>
+</ul>
+<h4 id="list_connections_error">LIST_CONNECTIONS_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：EXECUTION</li>
+<li><strong>コード</strong>：LIST_CONNECTIONS_ERROR</li>
+<li><strong>よくある原因</strong>：データベースまたは構成のエラーにより、利用可能な接続を一覧表示できませんでした。</li>
+<li><strong>推奨される対処方法</strong>：接続構成と、データベースにアクセスできるかどうかを確認してください。</li>
+<li><strong>例</strong>：<code>Failed to list connections: Connection refused</code></li>
+</ul>
+<h3 id="query-execution-errors">クエリ実行エラー <a class="section-link" aria-label="この節へのリンク" href="#query-execution-errors">#</a></h3>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：EXECUTION</li>
+<li><strong>コード</strong>：EXECUTION_ERROR</li>
+<li><strong>よくある原因</strong>：SQL エラー、データの問題、データベースの問題、またはモデル変更後に materialize のキャッシュが古くなったことにより、クエリの実行に失敗しました。</li>
+<li><strong>推奨される対処方法</strong>：クエリの構文、データ型、データベースへの接続を確認してください。メッセージに materialize の semver が古いこと、または <code>pls re-setup related model</code> が示されている場合は、<code>dmlc -s &lt;model.dml&gt; --connection=&lt;id&gt;</code> を実行し、同じ <code>--model</code> の値でクエリを再試行してください。</li>
+<li><strong>例</strong>：<code>Execution failed: Column 'invalid_column' does not exist</code></li>
+<li><strong>例（materialize が古い場合）</strong>：<code>materialize abort: procedure PROC_M__CACHED_SALES is obsolete since semver (...) is different from expect: ..., pls re-setup related model</code></li>
+</ul>
+<h4 id="execution_interrupted">EXECUTION_INTERRUPTED</h4>
+<ul>
+<li><strong>カテゴリ</strong>：EXECUTION</li>
+<li><strong>コード</strong>：EXECUTION_INTERRUPTED</li>
+<li><strong>よくある原因</strong>：ユーザーまたはシステムがクエリを中断しました。</li>
+<li><strong>推奨される対処方法</strong>：クエリを再試行してください。</li>
+<li><strong>例</strong>：<code>Query execution interrupted</code></li>
+</ul>
+<h4 id="timeout_error">TIMEOUT_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：TIMEOUT</li>
+<li><strong>コード</strong>：TIMEOUT_ERROR</li>
+<li><strong>よくある原因</strong>：クエリの実行に時間がかかりすぎました。</li>
+<li><strong>推奨される対処方法</strong>：timeoutSeconds パラメーターの値を大きくするか、クエリを簡素化してください。パフォーマンスを改善するために materialize の追加も検討してください。</li>
+<li><strong>例</strong>：<code>Query timed out after 30 seconds</code></li>
+</ul>
+<h3 id="compilation-errors">コンパイルエラー <a class="section-link" aria-label="この節へのリンク" href="#compilation-errors">#</a></h3>
+<h4 id="compile_error">COMPILE_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：VALIDATION</li>
+<li><strong>コード</strong>：COMPILE_ERROR</li>
+<li><strong>よくある原因</strong>：DML の構文エラー、モデルの検証エラー、SQL の生成エラー、または無効な修飾子の組み合わせです。たとえば、1 つの修飾子オブジェクト内で同じディメンションに <code>+d</code> と <code>-d</code>/<code>-df</code> を指定する場合です。言語仕様では、このような組み合わせに対して明示的にエラーを返すことになっています。<a href="reference--semantics.ja.html#45-modifier-composition">修飾子の組み合わせ</a>と注意点 P79 を参照してください。</li>
+<li><strong>推奨される対処方法</strong>：コンパイルエラーを修正し、model.dml がワークスペースフォルダーにあることを確認してください。error.details.generatedSql にある生成済みの SQL も確認してください。<code>+d</code>/<code>-d</code>/<code>-df</code> が競合する場合は、修飾子が互いに相殺されることに頼らず、意図する指定を 1 つに絞って明示してください。</li>
+<li><strong>例</strong>：<code>Compilation failed — see details.compilationErrors</code></li>
+<li><strong>注記</strong>：今回確認したビルドでは、検証対象とした同一フィールド上の <code>+d</code> の競合でエラーは発生しません。評価段階を 1 つ明示し、生成された SQL を確認してください。指定が相殺されることに頼らないでください。</li>
+</ul>
+<h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
+<ul>
+<li><strong>カテゴリ</strong>：TIMEOUT</li>
+<li><strong>コード</strong>：COMPILE_TIMEOUT</li>
+<li><strong>よくある原因</strong>：コンパイルの完了までに時間がかかりすぎました。</li>
+<li><strong>推奨される対処方法</strong>：DML モデルを簡素化し、複雑さを抑え、タイムアウトを延長してください。</li>
+<li><strong>例</strong>：<code>Compilation timed out after 30 seconds</code></li>
+</ul>
+<h4 id="validation_error">VALIDATION_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：VALIDATION</li>
+<li><strong>コード</strong>：VALIDATION_ERROR</li>
+<li><strong>よくある原因</strong>：宣言されたディメンション制約に違反しています。<code>data.status</code> と <code>data.issues</code> を確認してください。</li>
+<li><strong>推奨される対処方法</strong>：無効なパラメーターまたは構成を修正してください。</li>
+<li><strong>例</strong>：<code>Declared dimension constraints were violated; see data.issues.</code></li>
+</ul>
+<h3 id="generation-errors">生成エラー <a class="section-link" aria-label="この節へのリンク" href="#generation-errors">#</a></h3>
+<h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：NOT_FOUND</li>
+<li><strong>コード</strong>：MODEL_RESOLUTION_ERROR</li>
+<li><strong>よくある原因</strong>：<code>&lt;FROM&gt;.dml</code> が SQL ファイルと同じディレクトリ、<code>--model=&lt;dir&gt;</code> の配下、モデルの検索パスのいずれにも見つかりません。ほかに、<code>--model=acme.dml</code> を <code>FROM MODEL</code> と併用した（ファイルと FROM が不一致で、終了コードは 65）、またはファイルのみを受け付ける操作にディレクトリを指定した可能性があります。</li>
+<li><strong>推奨される対処方法</strong>：query、compile、validate コマンドには、対応する <code>.dml</code> ファイルを含むディレクトリ、または名前が <code>FROM</code> と一致するファイルを渡します。setup コマンドには <code>.dml</code> ファイルを渡します。</li>
+<li><strong>例</strong>：<code>model file "acme.dml" does not match FROM "MODEL" (expected "MODEL.dml").</code></li>
+</ul>
+<h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：VALIDATION</li>
+<li><strong>コード</strong>：FILTER_VALIDATION_ERROR</li>
+<li><strong>よくある原因</strong>：フィルターの構文エラー、または無効なフィールド名</li>
+<li><strong>推奨される対処方法</strong>：フィルターのフィールド名または構文を修正します。</li>
+<li><strong>例</strong>：<code>Filter validation failed: invalid field 'dt_invalid'</code></li>
+</ul>
+<h3 id="dimension-validation-errors">ディメンションの検証エラー <a class="section-link" aria-label="この節へのリンク" href="#dimension-validation-errors">#</a></h3>
+<p><a id="dimension-not-unique"></a>
+<a id="dimension_not_unique"></a></p>
+<h4 id="duplicate-keys-and-overlapping-ranges">重複するキーと重なり合う範囲</h4>
+<ul>
+<li><strong>カテゴリ</strong>：VALIDATION</li>
+<li><strong>コード</strong>：VALIDATION_ERROR。<code>data.issues</code> で問題の種類を確認します。</li>
+<li><strong>よくある原因</strong>：データセットのディメンション値の完全な組み合わせが複数回出現するか、範囲に基づく検索で範囲が重複する複数のソース行が一致する可能性があります。</li>
+<li><strong>推奨される対処方法</strong>：ソースキー、データセットの <code>dimension:</code> のフィールドリスト、重複する範囲、またはソースデータを修正してから、<code>--validate</code> を再実行します。コンパイル済みの SQL に含まれる <code>DISTINCT</code>/<code>GROUP BY</code> を使っても、<code>DISTINCTCOUNT</code> 指標を使っても、<code>pk(...)</code> による検索結果が一意にならない問題は解消できません。</li>
+<li><strong>例</strong>：<code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+</ul>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error-1">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：EXECUTION</li>
+<li><strong>コード</strong>：EXECUTION_ERROR</li>
+<li><strong>よくある原因</strong>：検証クエリの実行に失敗しました。</li>
+<li><strong>推奨される対処方法</strong>：接続構成と、データベースにアクセスできるかどうかを確認してください。</li>
+<li><strong>例</strong>：<code>Validation query failed: Connection refused</code></li>
+</ul>
+<h3 id="workspaceoperation-errors">ワークスペースと操作のエラー <a class="section-link" aria-label="この節へのリンク" href="#workspaceoperation-errors">#</a></h3>
+<h4 id="no_workspace">NO_WORKSPACE</h4>
+<ul>
+<li><strong>カテゴリ</strong>：BLOCKED</li>
+<li><strong>コード</strong>：NO_WORKSPACE</li>
+<li><strong>よくある原因</strong>：ワークスペースのフォルダーが設定されていないか、ワークスペースにアクセスできません。</li>
+<li><strong>推奨される対処方法</strong>：ワークスペースのフォルダーを設定するか、ワークスペースへのアクセス権限を確認します。</li>
+<li><strong>例</strong>：<code>No workspace folder configured</code></li>
+</ul>
+<h4 id="invalid_params">INVALID_PARAMS</h4>
+<ul>
+<li><strong>カテゴリ</strong>：VALIDATION</li>
+<li><strong>コード</strong>：INVALID_PARAMS</li>
+<li><strong>よくある原因</strong>：パラメーター名または値が無効です。</li>
+<li><strong>推奨される対処方法</strong>：パラメーター名または値を修正し、そのパラメーターで指定できるオプションを確認します。</li>
+<li><strong>例</strong>：<code>Invalid parameter: 'invalid_param'. Valid options: ['param1', 'param2']</code></li>
+</ul>
+<h4 id="file_export_error">FILE_EXPORT_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：EXECUTION</li>
+<li><strong>コード</strong>：FILE_EXPORT_ERROR</li>
+<li><strong>よくある原因</strong>：データをファイルにエクスポートできませんでした。</li>
+<li><strong>対処方法</strong>：出力先のパスと書き込み権限を確認してから、エクスポートを再試行します。出力先に同名のファイルがある場合は、別の名前を指定するか、置き換えたい場合に限り上書きを有効にしてください。</li>
+<li><strong>例</strong>：<code>File export failed: Permission denied</code></li>
+</ul>
+<h3 id="general-errors">一般的なエラー <a class="section-link" aria-label="この節へのリンク" href="#general-errors">#</a></h3>
+<h4 id="unexpected_error">UNEXPECTED_ERROR</h4>
+<ul>
+<li><strong>カテゴリ</strong>：INTERNAL</li>
+<li><strong>コード</strong>：UNEXPECTED_ERROR</li>
+<li><strong>よくある原因</strong>：予期しない内部エラーが発生しました。</li>
+<li><strong>推奨される対処方法</strong>：<a href="support.ja.html">サポート用チェックリスト</a>に沿って最小限の再現例を用意し、普段利用している製品の窓口を通じて送付します。一般公開のサポート窓口はまだ掲載されていません。</li>
+<li><strong>例</strong>：<code>Unexpected error: NullPointerException</code></li>
+</ul>
+</main></body></html>

@@ -1,0 +1,57 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>モデル作成時によくある誤り · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="再利用する定義はモデルに置き、表示方法はクエリ層またはレポート層で指定します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="モデル作成時によくある誤り · DML"><meta property="og:description" content="再利用する定義はモデルに置き、表示方法はクエリ層またはレポート層で指定します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--troubleshooting--migration.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--troubleshooting--migration.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--migration.zh.html">中文</a></header><main><h1 id="model-authoring-pitfalls">モデル作成時によくある誤り</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#p1-including-presentation-logic-in-dml">P1. 表示ロジックをDMLに含める</a></li><li><a href="#p2-including-query-only-derived-columns-in-dml">P2. 特定のクエリでしか使わない派生列をDMLに含める</a></li><li><a href="#p5-not-verifying-compiled-sql-matches-golden-sql">P5. コンパイルで生成されたSQLと基準となるSQLの結果が一致するか確認しない</a></li><li><a href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. フィルターやクエリ内のディメンションの組み合わせごとに専用の指標を作る</a></li><li><a href="#p7-duplicating-aggregation-formulas">P7. 同じ集計式を重複して定義する</a></li><li><a href="#category-model-query-sql">カテゴリ：Model Query のSQL</a></li><li><a href="#sql-accepted-by-draft-conversion">変換で下書きを生成できたSQL</a></li></ul></details>
+<p>再利用する定義はモデルに置き、表示方法はクエリ層またはレポート層で指定します。</p>
+<p><a id="p1"></a></p>
+<h2 id="p1-including-presentation-logic-in-dml">P1. 表示ロジックをDMLに含める <a class="section-link" aria-label="この節へのリンク" href="#p1-including-presentation-logic-in-dml">#</a></h2>
+<p><strong>誤り</strong>：指標の式に<code>FORMAT(...)</code>、<code>CONCAT(...)</code>、<code>CAST(... AS VARCHAR)</code>を含める。<strong>修正</strong>：<code>.dml</code>から書式設定を取り除き、ダッシュボードまたは描画層で行います。</p>
+<p><a id="p2"></a></p>
+<h2 id="p2-including-query-only-derived-columns-in-dml">P2. 特定のクエリでしか使わない派生列をDMLに含める <a class="section-link" aria-label="この節へのリンク" href="#p2-including-query-only-derived-columns-in-dml">#</a></h2>
+<p><strong>誤り</strong>：特定のクエリでしか意味を持たない計算を指標として定義する。<strong>修正</strong>：クエリ固有の式は<code>.dml</code>に記述せず、Model Query のSQLに記述します。</p>
+<p><a id="p5"></a></p>
+<h2 id="p5-not-verifying-compiled-sql-matches-golden-sql">P5. コンパイルで生成されたSQLと基準となるSQLの結果が一致するか確認しない <a class="section-link" aria-label="この節へのリンク" href="#p5-not-verifying-compiled-sql-matches-golden-sql">#</a></h2>
+<p><strong>誤り</strong>：コンパイルが成功しただけで<code>-c</code>の出力は正しいと判断する。<strong>修正</strong>：元のSQLとコンパイルで生成されたSQLを両方実行し、結果セットを比較します。</p>
+<p><a id="p6"></a></p>
+<h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. フィルターやクエリ内のディメンションの組み合わせごとに専用の指標を作る <a class="section-link" aria-label="この節へのリンク" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
+<p><strong>誤り</strong>：<code>sales_north</code>、<code>sales_south</code>、<code>sales_east</code>を個別に作る。または、<code>WHERE region = 'North'</code>で十分な場合に<code>sales_north</code>を作る。<strong>修正</strong>：共通の指標<code>sales</code>を1つ定義し、クエリで<code>WHERE region = 'North'</code>を使用します。</p>
+<p><a id="p7"></a></p>
+<h2 id="p7-duplicating-aggregation-formulas">P7. 同じ集計式を重複して定義する <a class="section-link" aria-label="この節へのリンク" href="#p7-duplicating-aggregation-formulas">#</a></h2>
+<p><strong>誤り</strong>：<code>revenue: SUM({amount})</code>と<code>total_revenue: SUM({amount})</code>を定義する。<strong>修正</strong>：最小単位の指標を1つだけ定義し、すべての箇所でその指標を参照します。</p>
+<hr>
+<h2 id="category-model-query-sql">カテゴリ：Model Query のSQL <a class="section-link" aria-label="この節へのリンク" href="#category-model-query-sql">#</a></h2>
+<h2 id="sql-accepted-by-draft-conversion">変換で下書きを生成できたSQL <a class="section-link" aria-label="この節へのリンク" href="#sql-accepted-by-draft-conversion">#</a></h2>
+<p>2026年11月の試行では、<code>--to-dml</code>により、標準的な<code>CAST(... AS type)</code>、<code>CASE</code>を含む<code>GROUP BY</code>、CTE内の<code>ROW_NUMBER()</code>、<code>LIMIT/OFFSET</code>、<code>EXTRACT</code>、<code>DATE_TRUNC</code>、<code>ILIKE</code>、<code>GENERATE_SERIES</code>、<code>NULLS LAST</code>、<code>EXCEPT</code>の下書きが生成されました。下書きの生成後も、コンパイルと結果の比較が必要です。</p>
+<table>
+<thead>
+<tr>
+<th>試行で変換に失敗した入力</th>
+<th>変換前の書き換え</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sale_date::date AS d</code>, <code>DATE '2025-01-01'</code></td>
+<td><code>CAST(sale_date AS date) AS d</code>または<code>CAST('2025-01-01' AS date)</code>を使用します。</td>
+</tr>
+<tr>
+<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
+<td><code>SUM(CASE WHEN paid THEN amount END)</code>を使用します。</td>
+</tr>
+<tr>
+<td><code>QUALIFY ROW_NUMBER() ... = 1</code>または<code>DISTINCT ON</code></td>
+<td>同じパーティション分けと並び順を使い、CTE内で<code>ROW_NUMBER()</code>を計算します。外側のクエリで<code>rn = 1</code>を条件に絞り込みます。</td>
+</tr>
+<tr>
+<td><code>$$hello$$</code></td>
+<td>文字列を単一引用符で囲み、文字列内の単一引用符は2つ重ねて記述します。</td>
+</tr>
+<tr>
+<td><code>INTERVAL '1 day'</code>、<code>LATERAL</code>、<code>STRING_AGG(... ORDER BY ...)</code>、またはJSONの<code>-&gt;&gt;</code></td>
+<td>使用するパーサーと方言に合わせて式を正規化するか、ソースビューから列として取得します。変換前に、行の並び順、NULLの扱い、結果に含まれる行を確認します。</td>
+</tr>
+</tbody></table>
+<p>変換後の作業</p>
+<ol>
+<li>下書きに<code>dialect:</code>の項目がなければ、対象データベースに合わせて追加します。</li>
+<li>拡張子を除いたファイル名を、ファイル内に記述されたクエリ名と一致させます。2つの定義で同じ指標名を使っている場合は、定義を1つだけ残すか、クエリ内の計算の名前を変更し、その計算への参照を更新します。</li>
+<li>レポート対象期間の範囲はクエリで指定します。<code>pp</code>、<code>pop</code>、または<code>ytd</code>に必要な元データの履歴を指標から参照できるようにしておきます。</li>
+</ol>
+<p>編集した下書きに対してリントと厳格モードでのコンパイルを実行し、同じデータで実行した場合の結果を元のSQLの実行結果と比較します。</p>
+</main></body></html>

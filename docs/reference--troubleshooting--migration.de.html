@@ -1,0 +1,57 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Typische Fehler bei der Modellerstellung · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Legen Sie wiederverwendbare Definitionen im Modell ab und treffen Sie Entscheidungen zur Darstellung in der Abfrage- oder Berichtsschicht."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Typische Fehler bei der Modellerstellung · DML"><meta property="og:description" content="Legen Sie wiederverwendbare Definitionen im Modell ab und treffen Sie Entscheidungen zur Darstellung in der Abfrage- oder Berichtsschicht."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--migration.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--troubleshooting--migration.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--migration.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--migration.zh.html">中文</a></header><main><h1 id="model-authoring-pitfalls">Typische Fehler bei der Modellerstellung</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#p1-including-presentation-logic-in-dml">P1. Darstellungslogik in DML aufnehmen</a></li><li><a href="#p2-including-query-only-derived-columns-in-dml">P2. Abgeleitete Spalten, die nur eine Abfrage benötigt, in DML aufnehmen</a></li><li><a href="#p5-not-verifying-compiled-sql-matches-golden-sql">P5. Nicht prüfen, ob das Ergebnis des kompilierten SQL mit dem Ergebnis des Referenz-SQL übereinstimmt</a></li><li><a href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. Eigene Kennzahlen für einzelne Filter oder Kombinationen von Abfragedimensionen anlegen</a></li><li><a href="#p7-duplicating-aggregation-formulas">P7. Aggregationsformeln mehrfach definieren</a></li><li><a href="#category-model-query-sql">Kategorie: Model Query SQL</a></li><li><a href="#sql-accepted-by-draft-conversion">SQL, für das sich Entwürfe erzeugen lassen</a></li></ul></details>
+<p>Legen Sie wiederverwendbare Definitionen im Modell ab und treffen Sie Entscheidungen zur Darstellung in der Abfrage- oder Berichtsschicht.</p>
+<p><a id="p1"></a></p>
+<h2 id="p1-including-presentation-logic-in-dml">P1. Darstellungslogik in DML aufnehmen <a class="section-link" aria-label="Link zum Abschnitt" href="#p1-including-presentation-logic-in-dml">#</a></h2>
+<p><strong>Fehler</strong>: <code>FORMAT(...)</code>, <code>CONCAT(...)</code> und <code>CAST(... AS VARCHAR)</code> in Kennzahlformeln verwenden. <strong>Korrektur</strong>: Entfernen Sie die Formatierung aus <code>.dml</code>. Nehmen Sie sie im Dashboard oder in der Darstellungsschicht vor.</p>
+<p><a id="p2"></a></p>
+<h2 id="p2-including-query-only-derived-columns-in-dml">P2. Abgeleitete Spalten, die nur eine Abfrage benötigt, in DML aufnehmen <a class="section-link" aria-label="Link zum Abschnitt" href="#p2-including-query-only-derived-columns-in-dml">#</a></h2>
+<p><strong>Fehler</strong>: Kennzahlen für Berechnungen anlegen, die nur in einer bestimmten Abfrage sinnvoll sind. <strong>Korrektur</strong>: Legen Sie abfragespezifische Ausdrücke im Model Query SQL ab, nicht in <code>.dml</code>.</p>
+<p><a id="p5"></a></p>
+<h2 id="p5-not-verifying-compiled-sql-matches-golden-sql">P5. Nicht prüfen, ob das Ergebnis des kompilierten SQL mit dem Ergebnis des Referenz-SQL übereinstimmt <a class="section-link" aria-label="Link zum Abschnitt" href="#p5-not-verifying-compiled-sql-matches-golden-sql">#</a></h2>
+<p><strong>Fehler</strong>: Allein aus der erfolgreichen Kompilierung schließen, dass die Ausgabe von <code>-c</code> korrekt ist. <strong>Korrektur</strong>: Führen Sie sowohl das ursprüngliche SQL als auch das kompilierte SQL aus und vergleichen Sie die Ergebnismengen.</p>
+<p><a id="p6"></a></p>
+<h2 id="p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">P6. Eigene Kennzahlen für einzelne Filter oder Kombinationen von Abfragedimensionen anlegen <a class="section-link" aria-label="Link zum Abschnitt" href="#p6-creating-one-off-measures-for-filters-or-query-dimension-combinations">#</a></h2>
+<p><strong>Fehler</strong>: <code>sales_north</code>, <code>sales_south</code> und <code>sales_east</code> anlegen oder <code>sales_north</code> anlegen, obwohl <code>WHERE region = 'North'</code> ausreicht. <strong>Korrektur</strong>: Definieren Sie eine allgemeine Kennzahl <code>sales</code> und verwenden Sie <code>WHERE region = 'North'</code> in den Abfragen.</p>
+<p><a id="p7"></a></p>
+<h2 id="p7-duplicating-aggregation-formulas">P7. Aggregationsformeln mehrfach definieren <a class="section-link" aria-label="Link zum Abschnitt" href="#p7-duplicating-aggregation-formulas">#</a></h2>
+<p><strong>Fehler</strong>: <code>revenue: SUM({amount})</code> und <code>total_revenue: SUM({amount})</code> definieren. <strong>Korrektur</strong>: Definieren Sie eine einzige atomare Kennzahl und referenzieren Sie sie überall.</p>
+<hr>
+<h2 id="category-model-query-sql">Kategorie: Model Query SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#category-model-query-sql">#</a></h2>
+<h2 id="sql-accepted-by-draft-conversion">SQL, für das sich Entwürfe erzeugen lassen <a class="section-link" aria-label="Link zum Abschnitt" href="#sql-accepted-by-draft-conversion">#</a></h2>
+<p>Im Testlauf im November 2026 erzeugte <code>--to-dml</code> Entwürfe für standardkonformes <code>CAST(... AS type)</code>, <code>GROUP BY</code> mit <code>CASE</code>, <code>ROW_NUMBER()</code> in einem CTE, <code>LIMIT/OFFSET</code>, <code>EXTRACT</code>, <code>DATE_TRUNC</code>, <code>ILIKE</code>, <code>GENERATE_SERIES</code>, <code>NULLS LAST</code> und <code>EXCEPT</code>. Jeder Entwurf muss noch kompiliert werden. Anschließend müssen die Ergebnisse verglichen werden.</p>
+<table>
+<thead>
+<tr>
+<th>Eingaben, die sich im Testlauf nicht konvertieren ließen</th>
+<th>Vor der Konvertierung umschreiben</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sale_date::date AS d</code>, <code>DATE '2025-01-01'</code></td>
+<td>Verwenden Sie <code>CAST(sale_date AS date) AS d</code> oder <code>CAST('2025-01-01' AS date)</code>.</td>
+</tr>
+<tr>
+<td><code>SUM(amount) FILTER (WHERE paid)</code></td>
+<td>Verwenden Sie <code>SUM(CASE WHEN paid THEN amount END)</code>.</td>
+</tr>
+<tr>
+<td><code>QUALIFY ROW_NUMBER() ... = 1</code> oder <code>DISTINCT ON</code></td>
+<td>Berechnen Sie <code>ROW_NUMBER()</code> in einem CTE mit derselben Partitionierung und Sortierung. Filtern Sie in der äußeren Abfrage nach <code>rn = 1</code>.</td>
+</tr>
+<tr>
+<td><code>$$hello$$</code></td>
+<td>Schließen Sie die Zeichenfolge in einfache Anführungszeichen ein und verdoppeln Sie jedes einfache Anführungszeichen innerhalb der Zeichenfolge.</td>
+</tr>
+<tr>
+<td><code>INTERVAL '1 day'</code>, <code>LATERAL</code>, <code>STRING_AGG(... ORDER BY ...)</code> oder JSON <code>-&gt;&gt;</code></td>
+<td>Passen Sie den Ausdruck an den vorgesehenen Parser und Dialekt an oder stellen Sie ihn als Spalte einer Quellansicht bereit. Prüfen Sie vor der Konvertierung die Sortierung, das Verhalten bei NULL und welche Zeilen im Ergebnis enthalten sind.</td>
+</tr>
+</tbody></table>
+<p>Nach der Konvertierung</p>
+<ol>
+<li>Fügen Sie den Eintrag <code>dialect:</code> für die Zieldatenbank hinzu, falls er im Entwurf fehlt.</li>
+<li>Der Dateiname ohne Erweiterung und der in der Datei angegebene Abfragename müssen übereinstimmen. Wenn zwei Definitionen denselben Kennzahlnamen verwenden, behalten Sie eine Definition bei oder benennen Sie die abfragelokale Berechnung um und aktualisieren ihre Referenzen.</li>
+<li>Setzen Sie die Grenzen des Berichtszeitraums in der Abfrage. Stellen Sie sicher, dass der Kennzahl die von <code>pp</code>, <code>pop</code> oder <code>ytd</code> benötigten historischen Quelldaten zur Verfügung stehen.</li>
+</ol>
+<p>Prüfen Sie den bearbeiteten Entwurf mit dem Linter und kompilieren Sie ihn im strikten Modus. Vergleichen Sie anschließend seine Ergebnisse mit denen des ursprünglichen SQL auf denselben Daten.</p>
+</main></body></html>

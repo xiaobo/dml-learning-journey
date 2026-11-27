@@ -1,0 +1,142 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML、DMX和 Model Query · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="报表将业务定义与分组、筛选和呈现方式的选择结合起来。DML 将可复用的定义保存在模型中。只要定义行或汇总值的层级（粒度）彼此相容，报表就可以使用相同的指标。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML、DMX和 Model Query · DML"><meta property="og:description" content="报表将业务定义与分组、筛选和呈现方式的选择结合起来。DML 将可复用的定义保存在模型中。只要定义行或汇总值的层级（粒度）彼此相容，报表就可以使用相同的指标。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="explanation--core-concepts.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="explanation--core-concepts.ja.html">日本語</a> <a lang="en" hreflang="en" href="explanation--core-concepts.html">English</a></header><main><h1 id="dml-dmx-and-model-query">DML、DMX和 Model Query</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#1-the-model-query-and-expression-layers">1. 模型层、查询层和表达式层</a></li><li><a href="#2-source-relations-lookups-and-metric-composition">2. 源关系、查找与指标组合</a></li><li><a href="#3-dimension-roles-and-grain">3. 维度的作用与粒度</a></li><li><a href="#4-time-context-and-dim_dt">4. 时间上下文与 <code>dim_dt</code></a></li><li><a href="#5-reuse-and-integration">5. 复用与集成</a></li><li><a href="#time-comparisons-and-row-membership">时间比较与结果行的纳入条件</a></li></ul></details>
+<p>报表将业务定义与分组、筛选和呈现方式的选择结合起来。DML 将可复用的定义保存在模型中。只要定义行或汇总值的层级（粒度）彼此相容，报表就可以使用相同的指标。</p>
+<p>指标可以引用其他指标，每处引用的求值方式取决于分析上下文。因此，同一个利润率定义既可用于地区报表，也可用于统计当年年初至分析截止日的 KPI。时间转换会重新计算利润和收入，再做除法，而不是对各月的利润率取平均值。来自不同数据集的指标也可以在行或汇总值的粒度相容时组合。输出键和仅在一侧有数据的分组仍须符合报表预期覆盖的数据范围。<a href="reference--examples--composable-metrics.zh.html">盈利能力示例</a>通过组合、累积和比较展示了这一过程。DML 模型、DMX 表达式和编译器可以构成分析语义层的计算核心。业务定义仍由相关人员协商确定。</p>
+<p>图解<a href="explanation--visual-introduction.zh.html">DML 简明入门</a>使用四笔销售示例和一个分组探索工具介绍这些概念。</p>
+<p>如需完整的可执行示例，请参阅<a href="tutorials--first-query.zh.html">编译第一个模型查询</a>。<a href="reference--semantics.zh.html">DML 核心规范</a>定义了该语言的规则。</p>
+<h2 id="1-the-model-query-and-expression-layers">1. 模型层、查询层和表达式层 <a class="section-link" aria-label="本节链接" href="#1-the-model-query-and-expression-layers">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>语言</th>
+<th>内容</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模型</td>
+<td>DML（Dato Measure Language）</td>
+<td>数据集、指标和列宏</td>
+<td><code>.dml</code> YAML</td>
+</tr>
+<tr>
+<td>查询</td>
+<td>Model Query</td>
+<td>指标选择、分组和报表筛选条件</td>
+<td><code>.sql</code> 或指定了 <code>type: query</code> 的 DML</td>
+</tr>
+<tr>
+<td>表达式</td>
+<td>DMX（Dato Measure eXpression）</td>
+<td>公式、引用和修饰符</td>
+<td>模型公式和查询表达式</td>
+</tr>
+</tbody></table>
+<p>DML 是独立的语义层编译器。它处理模型文件，并生成由数据库执行的 SQL。数据库权限和应用授权负责控制访问，仪表板和调度由外围系统负责。模型筛选条件本身不能作为访问控制策略。</p>
+<p>DML 检查声明结构和分析兼容性，例如粒度和时间上下文。它不会对 SQL 表达式进行完整的静态类型检查。物理值类型由数据库负责，模型校验所用的模式会拒绝列的 <code>type:</code> 声明。因此，无效的类型转换或函数参数可能通过编译，却在数据库执行时出错。请参阅<a href="reference--model-structure.zh.html#column-metadata-is-not-a-sql-type-declaration">列元数据和值类型</a>。</p>
+<p>数据集将列绑定到物理表或 SQL 关系。数据集的 <code>dimension:</code> 声明源行的完整键。</p>
+<pre><code class="language-yaml">transactions:
+  type: dataset
+  table: fact_transactions
+  dimension: [transaction_id]
+  columns:
+    transaction_id:
+    amount:
+    discount:
+    net_amount: amount - discount
+  measures:
+    sales: SUM({net_amount})
+    number_of_transactions: COUNT(1)
+
+avg_transaction_value:
+  type: measure
+  formula: 'DIVIDE({sales}, {number_of_transactions})'
+</code></pre>
+<p><code>sales</code> 和 <code>number_of_transactions</code> 是原子指标。它们继承定义所在的数据集，直接聚合其中的行或列表达式，且不引用其他指标。虽然这两个原子指标都使用 <code>transactions</code>，但 <code>avg_transaction_value</code> 的公式引用了其他指标，因此它是复合指标。复合指标没有 <code>dataset:</code> 属性。</p>
+<p>在模型公式中，不带花括号的 <code>amount</code> 指向物理 SQL 列。<code>{net_amount}</code> 则展开为模型中计算列的表达式。即使逻辑名称和物理名称相同，花括号也能区分这两种引用。</p>
+<p>列宏定义可复用的列表达式或跨数据集查找。列宏可以让指标访问属性，无需在每个使用该指标的查询中编写联接。查找参数由目标数据集的完整键决定。请参阅<a href="#2-source-relations-lookups-and-metric-composition">源关系与查找</a>。</p>
+<p>Model Query 通过 <code>AGG(...)</code> 引用指标。模型公式直接使用 <code>SUM</code> 和 <code>COUNT</code> 等聚合函数。<code>AGG</code> 是查询引用指标的接口，不能替代模型公式中的 <code>SUM</code>。</p>
+<p>一次性使用的指标可以先定义在查询文件的<a href="reference--model-query-sql.zh.html#312-inline-measures--dml--">内联 DML 块</a>中。探索时无需先修改共享模型。将有用的定义纳入共享指标之前，请先审查这些定义。</p>
+<h2 id="2-source-relations-lookups-and-metric-composition">2. 源关系、查找与指标组合 <a class="section-link" aria-label="本节链接" href="#2-source-relations-lookups-and-metric-composition">#</a></h2>
+<p>DML 在不同阶段组合数据。所选阶段决定了需要检查哪些键、筛选条件和行集合。</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>机制</th>
+<th>结果约定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>通过完整键复用属性</td>
+<td>在模型公式中使用 <code>pk(...)</code> 查找</td>
+<td>每个查找键对应一条目标行。支持单列键和复合键。</td>
+</tr>
+<tr>
+<td>查找在事件日期有效的属性</td>
+<td>使用 <code>pk(id, event_date)</code> 对照 <code>[id, 'range(valid_from, valid_to)']</code> 查找</td>
+<td>校验的有限区间采用 <code>[start,end)</code> 的形式。同一 id 的区间不得重叠。</td>
+</tr>
+<tr>
+<td>比较销售额和预算等独立的事实数据</td>
+<td>按对齐的维度求值的指标</td>
+<td>常规组合使用两侧键的并集，保留任一侧出现的所有组。仅在一侧出现的组，其另一侧的值仍为缺失。</td>
+</tr>
+<tr>
+<td>准备桥接、联接、并集或子查询关系</td>
+<td>数据集的 <code>sql:</code> 或数据库视图</td>
+<td>预先准备的关系需要有自己的完整键。如果一条源行可能匹配多条记录，请定义分摊权重并核对总计。</td>
+</tr>
+</tbody></table>
+<p>使用模型的 Model Query 中，SQL 不直接支持 JOIN、UNION 或子查询。这项限制并不妨碍在数据集的 SQL 中准备受支持的关系。源 SQL 中的筛选条件仍会限制源关系包含的行，不会自动变成能响应每个使用方上下文的规则。</p>
+<p>支持复合键查找和按指定日期查找当日有效的值，并不意味着存在可以任意选择路径的通用关系图，也不意味着支持自动多对多分摊。独立聚合指标也无法修复重复的查找键或错误的对齐规则。<a href="examples--compound-key-zh.html">复合键查找</a>和<a href="examples--range-lookup-zh.html">按指定日期查找有效值</a>的示例提供了完整模型，并展示如何故意触发和修复键错误。有关未匹配的组和 NULL 键，请参阅<a href="reference--semantics.zh.html#34-cross-dataset-auto-join">组合语义</a>。有关源关系的归属和派生关系的验证，请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集 SQL</a>。</p>
+<p><a id="2-dimension-roles-and-grain"></a></p>
+<h2 id="3-dimension-roles-and-grain">3. 维度的作用与粒度 <a class="section-link" aria-label="本节链接" href="#3-dimension-roles-and-grain">#</a></h2>
+<p>维度字段是一个有名称的 DML 字段。维度是一个字段列表。维度的作用取决于它在何处声明。</p>
+<table>
+<thead>
+<tr>
+<th>声明</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据集中的 <code>dimension:</code></td>
+<td>完整标识源行的信息</td>
+</tr>
+<tr>
+<td>公式中的维度修饰符</td>
+<td>单个指标引用的求值维度</td>
+</tr>
+<tr>
+<td>查询中的 <code>GROUP BY</code> 或 <code>columns.dimension</code></td>
+<td>结果分组</td>
+</tr>
+<tr>
+<td>物化中的 <code>dimension:</code></td>
+<td>存储的分组和键</td>
+</tr>
+<tr>
+<td>指标中的 <code>dimensions:</code></td>
+<td>允许使用的备选求值维度，每个内层列表对应一个维度</td>
+</tr>
+</tbody></table>
+<p>粒度描述在特定上下文中一行代表什么。例如，<code>[transaction_id]</code> 标识一笔交易，<code>[region, dt_month]</code> 则按地区和月份对报表分组。一个报表分组可以包含许多源行，因此不能替代源键。</p>
+<p>修饰符 <code>dimension: []</code> 清空求值维度，以计算总计。它不声明用于标识数据集行的键。<code>+d</code> 为中间计算添加字段。当公式需要更粗粒度的结果时，由显式指定的外层聚合汇总这些中间值。</p>
+<p>编译器依赖已声明的源键。即使编译成功，如果 <code>pk(...)</code> 的参照表中有重复键，同一条源记录也可能在关联时被匹配多次。校验可以检查当前数据中的键是否唯一。要确认查询结果是否符合预期，还需另行核对结果。</p>
+<p><a href="explanation--dimensions.zh.html">维度语义</a>更详细地介绍了这些作用及其影响。</p>
+<p><a id="3-time-context-and-dim_dt"></a></p>
+<h2 id="4-time-context-and-dim_dt">4. 时间上下文与 <code>dim_dt</code> <a class="section-link" aria-label="本节链接" href="#4-time-context-and-dim_dt">#</a></h2>
+<p><code>dim_dt</code> 表示指标的查询上下文中当前生效的时间字段。公式可以用它引用当前时间粒度，无需直接指定 <code>dt_date</code>、<code>dt_month</code> 或 <code>dt_quarter</code>。宏接受的粒度仍受该宏的前置条件限制。</p>
+<p>用于分组的时间字段或时间筛选条件都可以提供上下文。请查看严格模式的诊断信息并检查生成的连接，这两项检查应独立于语法是否被接受。仅有时间比较或基于键并集的连接，并不意味着严格模式会发出警告。</p>
+<p>声明 <code>dt_date</code> 等细粒度的标准时间字段后，便可通过系统日历使用受支持的更粗粒度时间字段。这些虚拟字段无需另行声明为物理字段。在编辑器中对派生字段 <code>dt_month</code> 使用“转到定义”，会跳转到显式声明的源时间列。</p>
+<p>单个 KPI 仍需要明确指定统计截止点。在<a href="examples--time-context-zh.html">可运行示例</a>中，按二月筛选时，基于一月和二月数据计算的 YTD 利润率为 20%，而同一查询中的普通收入指标只计算二月。缺少时间上下文时，查询会失败。使用日历分组的查询也可能返回有累计值但当月收入为 NULL 的月份，因此请根据需要选择输出期间。执行查询的连接所使用的日历必须覆盖目标日期。</p>
+<p><a href="reference--semantics.zh.html">时间上下文规范</a>定义了 <code>dim_dt</code> 和标准时间字段。<a href="02-syntax--system_macros.dml">系统宏</a>提供时间宏和公式宏的定义供参考。</p>
+<h2 id="5-reuse-and-integration">5. 复用与集成 <a class="section-link" aria-label="本节链接" href="#5-reuse-and-integration">#</a></h2>
+<p>自定义 <code>fn-macro</code> 定义会包裹调用方的指标公式，而 <code>dt-macro</code> 定义会改变该公式的时间上下文。两者可以通过修饰符语法组合使用，无需修改编译器。数据库标量函数调用复用执行连接上已安装的函数。<a href="how-to--define-macros.zh.html">扩展指南</a>展示了实际执行的示例和因缺少函数而失败的示例。这些机制既不构成通用模块系统，也不为所有类型的 UDF 提供跨环境支持。</p>
+<p>请显式设置模型的 <a href="reference--model-structure.zh.html#sql-dialect">SQL 方言</a>。方言能被识别，并不能证明所有功能都已在该数据库引擎上成功执行。生成的 SQL 可能包含多条语句、中间关系和日历依赖项，因此也要验证执行环境。</p>
+<p>经过验证的 JDBC 驱动程序会在物理 SQL 中绑定位置参数。对于 Model Query，该驱动程序会在筛选条件和指标表达式中绑定位置参数。请参阅 <a href="reference--model-query-sql.zh.html#jdbc-parameters-and-query-kind">JDBC 参数示例</a>。物化参数和内部字面量参数化是不同的机制。</p>
+<p><a href="how-to--compile-and-validate-zh.html">编译、验证和执行</a>各自检查不同的事情。在实际数据上校验键，可以提前发现会让同一条记录在关联时被匹配多次的重复键。校验和随后的执行可能读到不同的数据快照。数据库接受 EXPLAIN 并不能证明数值正确。请在相同的数据范围内，与独立得出的结果逐项核对完整键、每行出现的次数、NULL 和舍入前的数值。</p>
+<h2 id="time-comparisons-and-row-membership">时间比较与结果行的纳入条件 <a class="section-link" aria-label="本节链接" href="#time-comparisons-and-row-membership">#</a></h2>
+<p>查询中处理上一期的分支可以借助日历，将上一期的分组带入没有当月事实数据的月份。该分组是否纳入报表，取决于查询的时间窗口以及仅保留当期有数据的分组的筛选条件。请参阅<a href="reference--troubleshooting--time.zh.html#extra-month-after-the-latest-source-data">比较中额外出现的月份</a>。</p>
+</main></body></html>

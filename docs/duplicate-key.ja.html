@@ -1,0 +1,27 @@
+<!doctype html><html lang="ja" data-course-locale="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>重複したキーを調べる · duplicate_key</title><link rel="stylesheet" href="official.css?v=eb688f6e71"><meta name="description" content="地域テーブルのキーを調べ、売上が二重に集計された原因を確認します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.ja.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/duplicate-key.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="重複したキーを調べる · duplicate_key"><meta property="og:description" content="地域テーブルのキーを調べ、売上が二重に集計された原因を確認します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/duplicate-key.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><a class="skip" href="#main">本文へ</a><header><div class="bar"><a class="brand" href="index.ja.html">DML</a><nav><a data-text="docs" href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a></nav><div class="tools"><a href="search.ja.html">ドキュメントを検索</a><a lang="en" hreflang="en" href="duplicate-key.en.html">English</a><a lang="zh" hreflang="zh" href="duplicate-key.zh.html">中文</a><a lang="de" hreflang="de" href="duplicate-key.de.html">Deutsch</a></div></div></header><main id="main"><div class="layout">
+<aside>
+<div>ドキュメント</div><a href="docs.ja.html#start" class="">はじめに</a><a href="docs.ja.html#guides" class="">操作ガイド</a><a href="docs.ja.html#reference" class="">言語リファレンス</a><a href="docs.ja.html#errors" class="">トラブルシューティング</a><a href="docs.ja.html#verify" class="">結果の確認</a></aside>
+<article><p class="crumb"><a href="docs.ja.html" class="">ドキュメント</a> / トラブルシューティング</p>
+<h1><code>duplicate_key</code><br>重複したキーを調べる</h1>
+<p>検証結果にあるデータセット名とキーを確認します。モデルでは一意と定義されていますが、実際のデータに同じキーの行が複数あります。</p>
+<section>
+<h2>重複しているキーを探す</h2>
+<p>地域テーブル DIM のキーは id と region の組み合わせです。東部と西部で ID 1 が 1 回ずつ使われていても問題ありません。同じ組み合わせが複数ないか調べます。</p>
+<pre><code>SELECT id, region, COUNT(*) AS matches
+FROM DIM
+GROUP BY id, region
+HAVING COUNT(*) &gt; 1;</code></pre>
+<table>
+<thead><tr><th>id</th><th>region</th><th>matches</th></tr></thead>
+<tbody><tr><td>1</td><td>east</td><td>2</td></tr></tbody></table>
+</section>
+<section>
+<h2>レポートの数字はどう変わる？</h2>
+<p>東部の売上は 10 の 1 件だけです。地域テーブルに (1, east) が 2 行あると、SQL で結合したときに両方が同じ売上に一致し、合計が 20 になります。西部の合計は 20 のままです。</p>
+</section>
+<section>
+<h2>修正後にもう一度確認する</h2>
+<p>まず 2 行とも必要な記録かを確認します。両方とも正しければ、モデルで指定したキーに不足がないかを調べます。この例では東部の 2 行目は誤って追加されたものです。地域テーブルを修正して再検証し、レポートを実行します。東部が 10、西部が 20 になれば、元の売上と一致します。</p><a href="examples--compound-key.ja.html" class="">モデル、コマンド、サンプルデータを見る</a>
+</section>
+</article></div>
+</main></body></html>

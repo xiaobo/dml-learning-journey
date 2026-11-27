@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>构建分析 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="按照此流程添加可复用的度量及使用这些度量的查询。首次编译时，请按照编译第一个模型查询中的步骤操作。查询语法请参阅模型查询。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="构建分析 · DML"><meta property="og:description" content="按照此流程添加可复用的度量及使用这些度量的查询。首次编译时，请按照编译第一个模型查询中的步骤操作。查询语法请参阅模型查询。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--build-analysis.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--build-analysis.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--build-analysis.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--build-analysis.html">English</a></header><main><h1 id="build-an-analysis">构建分析</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#phase-1-define-the-required-answer">第 1 阶段：明确所需结果</a></li><li><a href="#phase-2-draft-the-consumer-query">第 2 阶段：起草使用度量的查询</a></li><li><a href="#phase-3-find-missing-measure-definitions">第 3 阶段：查找缺失的度量定义</a></li><li><a href="#phase-4-extend-the-model">第 4 阶段：扩展模型</a></li><li><a href="#phase-5-validate-the-model-and-query">第 5 阶段：验证模型和查询</a></li><li><a href="#phase-6-review-the-final-artifacts">第 6 阶段：审查最终交付物</a></li><li><a href="#deliver-the-model-and-query">交付模型和查询</a></li></ul></details>
+<p>按照此流程添加可复用的度量及使用这些度量的查询。首次编译时，请按照<a href="tutorials--first-query.zh.html">编译第一个模型查询</a>中的步骤操作。查询语法请参阅<a href="reference--model-query-sql.zh.html">模型查询</a>。</p>
+<h2 id="phase-1-define-the-required-answer">第 1 阶段：明确所需结果 <a class="section-link" aria-label="本节链接" href="#phase-1-define-the-required-answer">#</a></h2>
+<p>编写 SQL 之前，先记录报表要求。</p>
+<ol>
+<li>确定结果需要源数据行还是分组计算的度量。</li>
+<li>列出用于标识一条结果行的字段。</li>
+<li>明确时间范围、对比期间和报表筛选条件。</li>
+<li>区分报表筛选条件和定义业务度量的条件。</li>
+<li>记录源数据的总体范围、NULL 的处理方式和必需的输出列。</li>
+<li>列出可能改变结论的假设。</li>
+</ol>
+<p>在建模前和执行后检查业务假设，包括源数据的总体范围、报告期、缺失值和分母。</p>
+<h2 id="phase-2-draft-the-consumer-query">第 2 阶段：起草使用度量的查询 <a class="section-link" aria-label="本节链接" href="#phase-2-draft-the-consumer-query">#</a></h2>
+<p>添加度量前，先编写计划使用的 <code>SELECT</code>、<code>WHERE</code> 和 <code>GROUP BY</code> 子句。尽可能使用已有的业务名称。</p>
+<pre><code class="language-sql">SELECT
+	dt_month,
+	渠道,
+	AGG(销售额),
+	AGG({销售额: yoy}) AS 销售额_yoy,
+	AGG(同店销售额)
+FROM MODEL
+WHERE dt_month = '2025-03-01'
+GROUP BY dt_month, 渠道
+</code></pre>
+<p>将报表分组、时间窗口和按渠道筛选的条件保留在查询中。将同店纳入条件等可复用定义放在模型中。如果所需结果取决于排序或行数上限，请添加相应设置。谓词顺序不影响查询能否通过语法检查。</p>
+<p>为每个带修饰符的度量引用使用不同的别名。检查编译器生成的输出列，因为编译器可能调整列顺序，也可能在采用已知有缺陷的查询结构时省略所请求的时间字段。</p>
+<h2 id="phase-3-find-missing-measure-definitions">第 3 阶段：查找缺失的度量定义 <a class="section-link" aria-label="本节链接" href="#phase-3-find-missing-measure-definitions">#</a></h2>
+<p>针对查询草稿中的每个 <code>AGG(...)</code>，检查目标模型。</p>
+<ol>
+<li>如果现有度量的定义与所需指标一致，请复用该度量。</li>
+<li>如果相似度量的业务含义不同，请在其名称和描述中保留这一区别。</li>
+<li>如果查询草稿需要可复用的业务定义，请添加度量。</li>
+<li>仅用于报表的筛选条件应保留在查询中，除非该条件本身定义了指标。</li>
+</ol>
+<p>沿依赖关系追溯到原子度量。同店指标的依赖项可能包括按客户和月份计算的金额、按客户和月份判断是否符合纳入条件的计算，以及外层汇总。</p>
+<h2 id="phase-4-extend-the-model">第 4 阶段：扩展模型 <a class="section-link" aria-label="本节链接" href="#phase-4-extend-the-model">#</a></h2>
+<p>如果能提高可读性，请先定义依赖项，再定义使用它们的内容。在已检查的情形中，支持引用同一文件中稍后定义的内容。</p>
+<ol>
+<li>在每个数据集中声明能唯一标识源数据行的所有字段。</li>
+<li>使用数据集的列定义原子度量。</li>
+<li>如果业务计算需要特定的求值维度，请在度量定义中添加 <code>dimensions:</code>。</li>
+<li>在需要更细求值维度的引用处添加 <code>+d</code>。</li>
+<li>使用显式的外层聚合来合并中间值。</li>
+<li>使用所需的组成项定义复合比率。</li>
+<li>在描述中写明总体范围、粒度（定义行或汇总值的层级）以及 NULL 的处理方式。</li>
+</ol>
+<p>使用包含必需字段的查询测试受维度约束的度量。仅对 <code>dt_month</code> 应用筛选条件，无法满足封闭求值维度 <code>[customer, dt_month]</code> 的要求。</p>
+<p>有关建模模式，请参阅<a href="reference--measures.zh.html">度量</a>。编写描述和命名时，请遵循<a href="how-to--write-model-metadata.zh.html">编写模型元数据</a>中的说明。</p>
+<h2 id="phase-5-validate-the-model-and-query">第 5 阶段：验证模型和查询 <a class="section-link" aria-label="本节链接" href="#phase-5-validate-the-model-and-query">#</a></h2>
+<p>如果对行为有疑问，以所选 <code>dmlc.exe</code> 的实际行为为准。记录其路径、版本、构建时间戳和方言。</p>
+<ol>
+<li>对修改后的模型运行 lint 检查。</li>
+<li>针对每个新计算，在严格模式下编译一条最小查询。</li>
+<li>在严格模式下编译使用度量的完整查询。</li>
+<li>检查诊断信息、提示、SQL、分组、联接、筛选条件、别名和输出顺序。</li>
+<li>如果有可用的相关连接，请先运行仅验证（validate-only），再进行用于获取可信结果的执行。</li>
+<li>选取有代表性的数据子集执行查询，并将结果与报表要求对照。</li>
+<li>如果有独立的 SQL 查询或报表结果，请基于同一份源数据快照比较每行的出现次数、键、NULL 值和所有度量。</li>
+</ol>
+<pre><code class="language-powershell">dmlc --lint model.dml --json
+dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+dmlc --validate query.sql --model=model.dml --connection=default --json
+</code></pre>
+<p>仅当 <code>default</code> 是预期使用的已配置连接时，才运行最后一条命令。<a href="how-to--compile-and-validate-zh.html">使用 dmlc CLI</a>介绍如何捕获输出以及如何处理验证失败。</p>
+<p>根据实际公式核对每条语义规则。如果同店计数和可比的总计数基于同一总体，同店计数就不能超过总计数。如果被排除的行含有负值，子集金额可能超过总金额。如果缺少上年输入数据，结果可能是 NULL、零或其他已声明的回退值。不要假设所有同比指标都返回零。</p>
+<p>如果严格模式下仍有警告，请保留该问题及其对应的 SQL。生成了查询并不表示通过了严格编译。如果无法通过实际连接进行检查，请记录 <code>not run</code> 和缺少的前提条件。</p>
+<p>针对每项主要分析结论，运行可能推翻该结论的查询。将相关证据与报表一同保存。</p>
+<h2 id="phase-6-review-the-final-artifacts">第 6 阶段：审查最终交付物 <a class="section-link" aria-label="本节链接" href="#phase-6-review-the-final-artifacts">#</a></h2>
+<p>第 5 阶段的适用检查通过后，按照<a href="how-to--review-model.zh.html">第 6 阶段的技术审查</a>中的说明操作。提供模型、使用度量的查询、原始报表要求、用于标识编译器的信息和验证证据。</p>
+<p>修复后重新运行受影响的检查。明确标注业务定义的变更。如果拟议的优化会改变指标，请返回第 4 阶段。</p>
+<h2 id="deliver-the-model-and-query">交付模型和查询 <a class="section-link" aria-label="本节链接" href="#deliver-the-model-and-query">#</a></h2>
+<p>将可复用的模型、使用度量的 SQL 和验证证据一同保存。记录尚未解决的问题和未运行的检查。</p>
+</main></body></html>

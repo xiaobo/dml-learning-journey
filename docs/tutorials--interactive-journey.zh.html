@@ -1,0 +1,101 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>使用交互式教程创建区域报表 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="我们将创建一份 2 月销售报表，其中包含已完成交易的销售额、与上月的对比、每位客户的平均销售额以及各区域的销售额占比。在浏览器中打开一段探索 DML 的小小旅程。如需离线使用，请将页面及其同级文件保存在同一目录中。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="使用交互式教程创建区域报表 · DML"><meta property="og:description" content="我们将创建一份 2 月销售报表，其中包含已完成交易的销售额、与上月的对比、每位客户的平均销售额以及各区域的销售额占比。在浏览器中打开一段探索 DML 的小小旅程。如需离线使用，请将页面及其同级文件保存在同一目录中。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/tutorials--interactive-journey.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="tutorials--interactive-journey.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="tutorials--interactive-journey.ja.html">日本語</a> <a lang="en" hreflang="en" href="tutorials--interactive-journey.html">English</a></header><main><h1 id="build-a-regional-report-with-the-interactive-tutorial">使用交互式教程创建区域报表</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#1-identify-each-source-row">1. 标识每条源数据行</a></li><li><a href="#2-find-an-atomic-measure">2. 找出原子指标</a></li><li><a href="#3-reuse-measures-in-a-formula">3. 在公式中复用指标</a></li><li><a href="#4-change-the-grouping">4. 更改分组</a></li><li><a href="#5-separate-compilation-from-execution">5. 区分编译和执行</a></li><li><a href="#6-compare-report-filters-and-measure-filters">6. 比较报表筛选条件和指标筛选条件</a></li><li><a href="#7-choose-a-denominator">7. 选择分母</a></li><li><a href="#8-calculate-at-customer-grain">8. 按客户粒度计算</a></li><li><a href="#9-compare-adjacent-months">9. 比较相邻月份</a></li><li><a href="#10-break-and-repair-a-lookup-key">10. 制造并修复重复的查找键</a></li><li><a href="#11-make-missing-value-behavior-explicit">11. 明确如何处理缺失值</a></li><li><a href="#12-build-and-download-the-final-report">12. 构建并下载最终报表</a></li><li><a href="#compile-the-downloaded-project">编译下载的项目</a></li><li><a href="#resume-or-restart">继续学习或重新开始</a></li></ul></details>
+<p>我们将创建一份 2 月销售报表，其中包含已完成交易的销售额、与上月的对比、每位客户的平均销售额以及各区域的销售额占比。在浏览器中打开<a href="journey.zh.html">一段探索 DML 的小小旅程</a>。如需离线使用，请将页面及其同级文件保存在同一目录中。</p>
+<p>使用简介下方的按钮开始教程，或从下一个未完成的章节继续。</p>
+<p>教程在浏览器中使用虚构的数据行进行计算。它不会编译任意 DML，也不会连接数据库。预先记录的配套查询包含编译器的实际输出。最后，我们将下载一个完整的项目。</p>
+<p>选择答案后，点击<strong>提交答案</strong>。仅选择选项不会完成该章节。将指针悬停在带点线标记的代码名称或结果标题上，或用键盘将焦点移到这些元素上，即可查看简短提示。点击或轻触这些元素可查看其定义。</p>
+<h2 id="1-identify-each-source-row">1. 标识每条源数据行 <a class="section-link" aria-label="本节链接" href="#1-identify-each-source-row">#</a></h2>
+<p>查看第 1 章中的四笔销售记录，找出 North 对应的两行。选择 <code>[id]</code> 作为源维度，然后检查答案。</p>
+<p>反馈会说明为什么区域是分组字段，无法用作唯一源键。进度指示器现在显示已完成一章。</p>
+<h2 id="2-find-an-atomic-measure">2. 找出原子指标 <a class="section-link" aria-label="本节链接" href="#2-find-an-atomic-measure">#</a></h2>
+<p>阅读第 2 章的模型声明。选出对源列求和的指标，然后检查答案。现在，我们有了可复用的销售额和行数定义。</p>
+<h2 id="3-reuse-measures-in-a-formula">3. 在公式中复用指标 <a class="section-link" aria-label="本节链接" href="#3-reuse-measures-in-a-formula">#</a></h2>
+<p>查看第 3 章中的 <code>DIVIDE({sales}, {cnt})</code>。对 North 计算 30 ÷ 2 = 15，然后检查答案。将四笔销售记录作为一组，用同一公式计算，得到 100 ÷ 4 = 25。指标引用的值取决于报表当前的分组和筛选条件。</p>
+<p>展开完整声明，查看复合指标如何在自身不声明 <code>dataset:</code> 属性的情况下复用原子指标。</p>
+<h2 id="4-change-the-grouping">4. 更改分组 <a class="section-link" aria-label="本节链接" href="#4-change-the-grouping">#</a></h2>
+<p>在第 4 章中依次选择<strong>全部销售</strong>、<strong>按地区</strong>和<strong>按销售记录</strong>。观察查询、结果表和平均值计算如何同步变化。选择“全部销售”时，销售总额为 100，平均值为 25。按区域查看时，North 为 30，South 为 70。</p>
+<p>点击查询中的 <code>average_sale</code>，查看其模型声明。在<strong>引用</strong>下，依次打开 <code>sales</code> 和 <code>amount</code> 可追溯到源列，打开 <code>cnt</code> 可查看行数计算公式。点击分组字段可查看它映射到哪一列。点击<strong>×</strong>或按 Escape 键可关闭定义。后续章节的公式和结果标题也提供这些提示。</p>
+<p>回答关于源维度的问题。源维度始终是 <code>[id]</code>。当结果行定义在源键层级时，用于验证的编译器会指出聚合可以简化。此简化以声明的键具有唯一性为前提。</p>
+<h2 id="5-separate-compilation-from-execution">5. 区分编译和执行 <a class="section-link" aria-label="本节链接" href="#5-separate-compilation-from-execution">#</a></h2>
+<p>沿着第 5 章的模型与查询示意图查看流程。选出编译成功时生成的内容，然后检查答案。接着逐项查看各项检查：检查编译生成的 SQL，通过连接验证查询所涉及的源键和 SQL 执行计划，并将执行结果与独立得出的答案进行比较。</p>
+<h2 id="6-compare-report-filters-and-measure-filters">6. 比较报表筛选条件和指标筛选条件 <a class="section-link" aria-label="本节链接" href="#6-compare-report-filters-and-measure-filters">#</a></h2>
+<p>打开第 6 章中包含八行数据的源表。原来的四笔销售现在归入 2 月。1 月的四行数据用于历史对比。查看扩展后的完整模型。</p>
+<p>选择 <strong>North</strong> 作为报表区域。结果显示 <code>sales = 30</code> 和 <code>completed_sales = 10</code>，North 的两笔销售中有一笔是退货（returned）。在 <code>completed_sales</code> 的定义中找到 <code>+f</code>，然后检查本章练习的答案。</p>
+<p>在 <code>{sales: ...}</code> 中，冒号前的名称表示指标，冒号后的设置会调整本次引用的计算方式。<code>f</code> 表示筛选。<code>+f</code> 为本次引用添加筛选条件，同时保留 <code>sales</code> 的原始定义。展开<strong>修饰符的两种写法</strong>，比较命名修饰符和配置对象。</p>
+<h2 id="7-choose-a-denominator">7. 选择分母 <a class="section-link" aria-label="本节链接" href="#7-choose-a-denominator">#</a></h2>
+<p>在第 7 章中选择 <strong>North</strong>。使用 <code>-d: region</code> 时，分母为 30，占比为 100%。切换到 <code>-df: region</code> 后，分母变为 100，占比变为 30%。</p>
+<p><code>d</code> 表示维度，<code>f</code> 表示筛选。<code>-d</code> 从本次引用求值时使用的分组中移除一个字段。<code>-df</code> 还会移除与该字段相关的筛选条件。月份筛选条件、源键和报表分组保持不变。在此示例中，如果没有相关的区域筛选条件，两种修饰符得到的分母相同。</p>
+<p>查看记录中由编译器生成的查询，以及关于如何分组和纳入哪些行的说明。检查有关如何让分母继续涵盖所有区域的练习答案。报表仍选中 North，分母中的指标引用使用不同的筛选上下文。</p>
+<h2 id="8-calculate-at-customer-grain">8. 按客户粒度计算 <a class="section-link" aria-label="本节链接" href="#8-calculate-at-customer-grain">#</a></h2>
+<p>在第 8 章中选择 <strong>AVG</strong>。在阶段 1 中找到 South 区域客户 C 的销售总额 70。阶段 2 对这一个客户的总额求平均，得到 70。平均交易金额为 35，因为它是对源数据中两笔交易的金额求平均。</p>
+<p>将外层聚合切换为 <strong>SUM</strong>，再切换为 <strong>MAX</strong>。观察两个阶段以及公式。切回 <strong>AVG</strong>，然后检查练习答案。</p>
+<p><code>+d: customer</code> 将客户加入求值维度。外层聚合显式地将各客户的总额汇总回查询维度所定义的粒度。源维度仍用于标识源行，查询维度仍用于对结果行分组。</p>
+<h2 id="9-compare-adjacent-months">9. 比较相邻月份 <a class="section-link" aria-label="本节链接" href="#9-compare-adjacent-months">#</a></h2>
+<p>阅读第 9 章中显示的两个模型定义。<code>previous_sales</code> 使用 <code>{sales: pp}</code> 获取上月值，<code>sales_change</code> 使用 <code>{sales: pop}</code> 计算增长率。选择 <strong>2025 年 2 月</strong>。North 的销售额为 30，上月销售额为 20，增长率为 50%。South 的销售额为 70，上月销售额为 50，增长率为 40%。</p>
+<p>将 <code>{sales: pp}</code> 理解为“上一期间的销售额”。这里以月份为单位，因此指上月的销售额。<code>pop</code> 返回小数形式的增长率，页面将 0.5 显示为 50%。</p>
+<p>选择<strong>2025 年 1 月</strong>。示例中没有 12 月的事实记录，因此上一期间的销售额和增长率均为 NULL。检查 <code>pp</code> 请求的是哪个期间。</p>
+<p>调整查询时，请设置报表涵盖的月份范围。要完整比较两个期间，请保留在任一期间有销售额的所有地区，这样每列的合计就等于对应期间的销售总额。参见<a href="reference--troubleshooting--time.zh.html#extra-month-after-the-latest-source-data">月环比示例</a>。</p>
+<h2 id="10-break-and-repair-a-lookup-key">10. 制造并修复重复的查找键 <a class="section-link" aria-label="本节链接" href="#10-break-and-repair-a-lookup-key">#</a></h2>
+<p>在第 10 章中，启用<strong>加入一条无效的重复 North 目录记录</strong>。四条事实记录联接后变为六行。此时 North 的金额合计为 60。</p>
+<p>禁用重复记录。四条事实记录联接后恢复为四行，North 的合计为 30。查看有关源数据唯一性的练习。编译器快照不会检查这些实际存储的记录。</p>
+<p>要通过数据库连接检查键，请展开第 10 章中的<strong>用 dmlc 检出重复键</strong>。将其中用于查找经理的查询保存为 <code>lookup.sql</code>，与下载的模型放在同一目录。只有查询能够通过其依赖关系到达 <code>DIM_REGION</code>，验证才会检查该维度。将 <code>default</code> 替换为包含示例表的连接，然后运行以下命令：</p>
+<pre><code class="language-powershell">dmlc.exe --validate lookup.sql --model=model.dml --connection=default --json
+</code></pre>
+<p>如果该连接中的 <code>TABLE_REGION</code> 同时包含两条 North 记录，则应看到针对 <code>DIM_REGION</code> 的 <code>DIMENSION_NOT_UNIQUE</code>。修正数据集的维度声明或源数据，然后重新运行验证。浏览器中的开关只会更改本页虚构的示例数据。验证会读取连接中的数据，检查查询通过依赖关系到达的数据集维度，并用 EXPLAIN 检查主查询，而不会执行主查询来获取结果行。</p>
+<h2 id="11-make-missing-value-behavior-explicit">11. 明确如何处理缺失值 <a class="section-link" aria-label="本节链接" href="#11-make-missing-value-behavior-explicit">#</a></h2>
+<p>在第 11 章中，从<strong>保留 NULL</strong>切换到<strong>用字面量 0 填补</strong>。1 月的结果分组保持不变。只有上一期间的值从 NULL 变为 0。</p>
+<p>查看补全后的指标公式，检查 1 月的结果有何变化。备用值会在使用该指标的地方提供一个值。它不会生成新的日历行，也不会决定历史数据缺失在业务上意味着什么。</p>
+<h2 id="12-build-and-download-the-final-report">12. 构建并下载最终报表 <a class="section-link" aria-label="本节链接" href="#12-build-and-download-the-final-report">#</a></h2>
+<p>在第 12 章的<strong>试一试</strong>练习中，为两个地区做一张二月报表。选择“2025 年 2 月”“按地区”和“全部地区”。勾选 <code>completed_sales</code>、<code>previous_sales</code>、<code>average_customer_sales</code> 和 <code>all_region_share</code>。<code>sales</code> 已经选中。</p>
+<p>在报表控件下方，对照查看<strong>模型笔记 · model.dml</strong>和<strong>报表问题 · query.sql</strong>。笔记本摘录显示所选指标及其依赖项。展开完整笔记本或下载 <code>model.dml</code>，查看源数据集的声明。结果表位于这两个窗格下方。</p>
+<p>选择报表控件旁的<strong>提交答案</strong>。如果缺少某项设置，请按反馈调整后重试，或选择<strong>查看提示</strong>获取指导。完成此练习后，教程的第 12 步会标记为已完成。配置完成后，报表将显示以下预期示例值：</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>sales</th>
+<th>completed_sales</th>
+<th>previous_sales</th>
+<th>average_customer_sales</th>
+<th>all_region_share</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td>30</td>
+<td>10</td>
+<td>20</td>
+<td>15</td>
+<td>0.3</td>
+</tr>
+<tr>
+<td>South</td>
+<td>70</td>
+<td>70</td>
+<td>50</td>
+<td>70</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+<p>浏览器将占比显示为百分比。模型和下载的预期结果 CSV 文件均以小数表示占比。</p>
+<p>选择<strong>下载已检查的项目</strong>。将<a href="lesson-files.zip">项目压缩包</a>解压到可写目录，然后打开其中的 <code>START-HERE.txt</code>。压缩包包含完整模型、最终查询、源 CSV 文件、预期结果、已记录的编译器输出，以及包含日历表的可选 SQL Server 设置。</p>
+<p>要保存其他报表配置，请选择<strong>下载我的 query.sql</strong>。随附的编译记录仅适用于已记录的配套查询。对于在构建器中选择的其他组合，仍需编译并检查生成的 SQL。</p>
+<h2 id="compile-the-downloaded-project">编译下载的项目 <a class="section-link" aria-label="本节链接" href="#compile-the-downloaded-project">#</a></h2>
+<p>确保 <code>dmlc.exe</code> 可用后，在解压目录中打开终端并运行以下命令：</p>
+<pre><code class="language-powershell">dmlc.exe --lint model.dml --json
+dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen
+</code></pre>
+<p>检查诊断信息和生成的 SQL。在经过检查的构建中，综合练习返回 <code>status: ok</code>，退出码为 0。关于键并集的诊断是提示信息。联接结果可能包含只在对比月份出现的地区。检查这些地区是否应纳入报表，再检查客户级别的汇总和最终投影。生成 SQL 并不能证明数据库结果正确。</p>
+<p>如果要做可选的数据库练习，请使用一个新建的空 SQL Server 数据库，并查看 <code>setup-mssql.sql</code>。该脚本会创建源表以及期间比较 SQL 所需的日历表。通过该连接运行模型查询（Model Query）并启用验证，然后将每个结果值与 <code>expected.csv</code> 对照。</p>
+<pre><code class="language-powershell">dmlc.exe --query query.sql --model=model.dml --connection=default --with-validation --json
+</code></pre>
+<p>将 <code>default</code> 替换为练习用连接的 ID。文档检查期间未在实际数据库上运行此练习。</p>
+<p>有关连接和验证命令，请参阅<a href="how-to--compile-and-validate-zh.html">编译并验证查询</a>。完成此入门项目后，可查阅<a href="reference--README.zh.html">语言参考</a>，进一步了解窗口、分类器、物化和模型组合。</p>
+<p>要用同一份示例数据完成一次独立的 DuckDB 运行，请参照<a href="checked-exercise.html">已检查的销售额练习</a>。</p>
+<p>完成第 12 章后，如需尝试在 SQL Server 中进行物化，请参照<a href="maz-sqlserver.html">从月度切换到季度的 Maz 练习</a>。此练习包含查询就绪检查和运行器的全局进度视图。<a href="maz-prepare-refresh.html">准备和刷新约定</a>说明了调用返回后在哪些情况下仍可能有待处理的工作。</p>
+<h2 id="resume-or-restart">继续学习或重新开始 <a class="section-link" aria-label="本节链接" href="#resume-or-restart">#</a></h2>
+<p>使用固定页眉中的地球图标和语言选择器，可在 English、中文、日本語和 Deutsch 之间切换。每种语言都以该语言的名称显示，即使看不懂当前页面的语言，也能找到所需的选项。全部 12 节课程以及题目、讲解、导航和反馈会同步切换语言。你的答案、报表设置和章节完成状态都会保留。浏览器会分别保存语言设置和学习进度。代码、字段名称、源数据值和可下载的项目均保留原有标识符。</p>
+<p>固定页眉会显示当前章节。使用页眉中的箭头可以切换课程，点击章节标题可以查看全部 12 章和已完成的章节数。已完成的章节带有勾选标记。在最后一章，点击返回箭头会打开导言。</p>
+<p>在该菜单中打开<strong>符号速查</strong>，可查阅修饰符以及源维度、查询维度和求值维度各自的作用。指南位于第 12 章之后，不计为额外章节。示例模型使用 <code>FACT_SALES</code> 和 <code>DIM_REGION</code> 作为逻辑数据集名称，使用 <code>TABLE_SALES</code> 和 <code>TABLE_REGION</code> 作为物理表名称，并使用 lower_snake_case 为字段和指标命名。</p>
+<p>如果浏览器的本地存储可用，答对练习题后，学习进度会保存在当前浏览器中。在章节菜单中选择<strong>继续学习</strong>，即可找到下一个尚未完成的章节。学习进度保留在此设备上，页面不会向服务器发送任何学习者数据。</p>
+<p>在章节菜单底部选择<strong>重置进度</strong>，即可清除练习完成记录。如果浏览器存储不可用，当前页面会话期间仍可正常学习课程。</p>
+</main></body></html>

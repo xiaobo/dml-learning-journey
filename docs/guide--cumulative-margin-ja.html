@@ -1,0 +1,80 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>月ごとの粗利率を平均しても、期間全体の粗利率にならない理由 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="期間全体の売上と原価をそれぞれ合計し、粗利の合計を売上の合計で割ります。月ごとの粗利率を単純平均すると、売上が違っても各月の重みが同じになります。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-ja.html"><meta property="og:type" content="website"><meta property="og:title" content="月ごとの粗利率を平均しても、期間全体の粗利率にならない理由 · DML"><meta property="og:description" content="期間全体の売上と原価をそれぞれ合計し、粗利の合計を売上の合計で割ります。月ごとの粗利率を単純平均すると、売上が違っても各月の重みが同じになります。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="guide--cumulative-margin-de.html">Deutsch</a> <a lang="en" hreflang="en" href="guide--cumulative-margin-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--cumulative-margin-zh.html">中文</a></header><main><h1 id="月ごとの粗利率を平均しても期間全体の粗利率にならない理由">月ごとの粗利率を平均しても、期間全体の粗利率にならない理由</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#北部の売上を使った例">北部の売上を使った例</a></li><li><a href="#計算の流れを確認する">計算の流れを確認する</a></li><li><a href="#パーセントとポイントの違い">パーセントとポイントの違い</a></li></ul></details>
+<p>期間全体の売上と原価をそれぞれ合計し、粗利の合計を売上の合計で割ります。月ごとの粗利率を単純平均すると、売上が違っても各月の重みが同じになります。</p>
+<h2 id="北部の売上を使った例">北部の売上を使った例 <a class="section-link" aria-label="この節へのリンク" href="#北部の売上を使った例">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>期間</th>
+<th align="right">売上</th>
+<th align="right">原価</th>
+<th align="right">粗利率</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2025 年 1 月</td>
+<td align="right">100</td>
+<td align="right">60</td>
+<td align="right">40%</td>
+</tr>
+<tr>
+<td>2025 年 2 月</td>
+<td align="right">300</td>
+<td align="right">240</td>
+<td align="right">20%</td>
+</tr>
+<tr>
+<td>1 月と 2 月の合計</td>
+<td align="right">400</td>
+<td align="right">300</td>
+<td align="right">25%</td>
+</tr>
+</tbody></table>
+<p><a href="profitability-data.json">サンプルデータ</a>で計算すると、累計粗利率は (400 − 300) / 400 = <strong>25%</strong> です。40% と 20% の単純平均は 30% です。毎月の売上が等しい場合などは一致しますが、一般には異なります。</p>
+<h2 id="計算の流れを確認する">計算の流れを確認する <a class="section-link" aria-label="この節へのリンク" href="#計算の流れを確認する">#</a></h2>
+<p><a href="learn.ja.html#gross-margin">粗利率のアニメーション</a>で North を選び、4 番目のステップを開きます。月別から年初以降の累計に切り替えると、売上は 300 から 400、原価は 240 から 300、粗利率は 20% から 25% に変わります。</p>
+<p>定義済みの粗利率に <code>formula: &#39;{gross_margin: ytd}&#39;</code> を指定すると、累計額から粗利率を計算し直します。この記法は DuckDB で実行し、独立の SQL と結果を照合済みです。SQL Server についてはコンパイル結果を確認しています。</p>
+<details><summary>DML モデルの全体を見る</summary>
+
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: &#39;{net_revenue} - {sales_cost}&#39;
+
+gross_margin:
+  type: measure
+  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+
+gross_margin_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+
+margin_change_pp:
+  type: measure
+  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+</code></pre>
+</details>
+
+<h2 id="パーセントとポイントの違い">パーセントとポイントの違い <a class="section-link" aria-label="この節へのリンク" href="#パーセントとポイントの違い">#</a></h2>
+<p>北部の前年同期の累計粗利率は 20% です。20% から 25% への上昇幅は <strong>5 ポイント</strong>、相対的な増加率は (25% / 20%) − 1 = 25% です。レポートではどちらを示すかを明記してください。</p>
+<p><a href="reference--examples--composable-metrics.ja.html">モデルと計算例</a>、<a href="profitability-comparison.sql">比較用クエリ</a>、<a href="profitability-compiler-observations.json">コンパイル記録</a>も参照してください。記録の対象は厳密モードでのコンパイルと生成された SQL の確認です。元テーブルの金額には小数型を使います。売上が 0 の場合は NULL になり、前年データがなければ欠損のままです。</p>
+<p><a href="journey.ja.html#expressions">定義済みの指標を再利用する</a> · <a href="journey.ja.html#time">期間を切り替える</a></p>
+</main></body></html>

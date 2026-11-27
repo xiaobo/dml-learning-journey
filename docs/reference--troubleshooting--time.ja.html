@@ -1,0 +1,65 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>時間コンテキストの注意点 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="ここでは、期間の値、比較コンテキスト、過去データの欠落を扱います。時間コンテキストの規則は評価セマンティクスで定義されています。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="時間コンテキストの注意点 · DML"><meta property="og:description" content="ここでは、期間の値、比較コンテキスト、過去データの欠落を扱います。時間コンテキストの規則は評価セマンティクスで定義されています。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--troubleshooting--time.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--troubleshooting--time.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--time.zh.html">中文</a></header><main><h1 id="time-context-pitfalls">時間コンテキストの注意点</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#p29-non-first-day-time-filters">P29. 期間の初日以外を指定する時間フィルター</a></li><li><a href="#p30-missing-current-day-in-past-n-days">P30. 直近 N 日間に今日が含まれない</a></li><li><a href="#p31-including-current-period-in-past-n-months">P31. 直近 N か月に当月を含めている</a></li><li><a href="#p32-using-ytd-modifier-with-full-period-group-by">P32. 期間全体を単位とする GROUP BY で ytd 修飾子を使用している</a></li><li><a href="#p33-period-to-date-with-date-range">P33. 期間の初日から基準日までの累計に日付範囲を指定している</a></li><li><a href="#category-compilation-and-validation">カテゴリ：コンパイルと検証</a></li><li><a href="#p59-yoy-without-column-probe">P59. 比較対象の列を確認せずに前年同期比を求める</a></li><li><a href="#extra-month-after-the-latest-source-data">ソースデータの最終月より後の月が結果に含まれる</a></li><li><a href="#reconcile-both-periods-by-category">両期間の売上高をカテゴリ別に照合する</a></li></ul></details>
+<p>ここでは、期間の値、比較コンテキスト、過去データの欠落を扱います。時間コンテキストの規則は<a href="reference--semantics.ja.html">評価セマンティクス</a>で定義されています。</p>
+<p><a id="p29"></a></p>
+<h2 id="p29-non-first-day-time-filters">P29. 期間の初日以外を指定する時間フィルター <a class="section-link" aria-label="この節へのリンク" href="#p29-non-first-day-time-filters">#</a></h2>
+<p><strong>誤り</strong>: <code>dt_month = '2024-01-15'</code> または <code>dt_month = 'Jan 2024'</code>。<strong>修正</strong>: <code>dt_month = '2024-01-01'</code>。必ず期間の初日を指定します。</p>
+<p><a id="p30"></a></p>
+<h2 id="p30-missing-current-day-in-past-n-days">P30. 直近 N 日間に今日が含まれない <a class="section-link" aria-label="この節へのリンク" href="#p30-missing-current-day-in-past-n-days">#</a></h2>
+<p><strong>誤り</strong>: <code>dt_date BETWEEN date(current_date, '-7 days') AND date(current_date, '-1 day')</code>。<strong>修正</strong>: <code>dt_date BETWEEN date(current_date, '-6 days') AND date(current_date)</code>。今日を含む 7 日間になります。</p>
+<p><a id="p31"></a></p>
+<h2 id="p31-including-current-period-in-past-n-months">P31. 直近 N か月に当月を含めている <a class="section-link" aria-label="この節へのリンク" href="#p31-including-current-period-in-past-n-months">#</a></h2>
+<p><strong>誤り</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>。<strong>修正</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>。まだ終了していない当月を除外します。</p>
+<p><a id="p32"></a></p>
+<h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. 期間全体を単位とする GROUP BY で ytd 修飾子を使用している <a class="section-link" aria-label="この節へのリンク" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
+<p><strong>誤り</strong>: <code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>: <code>ytd</code> は累計値を返します。<code>dt_date</code> 単位で集計します。<code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code></p>
+<p><a id="p33"></a></p>
+<h2 id="p33-period-to-date-with-date-range">P33. 期間の初日から基準日までの累計に日付範囲を指定している <a class="section-link" aria-label="この節へのリンク" href="#p33-period-to-date-with-date-range">#</a></h2>
+<p><strong>誤り</strong>: YTD に <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> を使用する。<strong>修正</strong>: <code>WHERE dt_date = date(current_date)</code> と <code>AGG(sales, 'ytd')</code> を組み合わせます。日付範囲は修飾子が決定します。</p>
+<hr>
+<h2 id="category-compilation-and-validation">カテゴリ：コンパイルと検証 <a class="section-link" aria-label="この節へのリンク" href="#category-compilation-and-validation">#</a></h2>
+<p><a id="p59"></a></p>
+<h2 id="p59-yoy-without-column-probe">P59. 比較対象の列を確認せずに前年同期比を求める <a class="section-link" aria-label="この節へのリンク" href="#p59-yoy-without-column-probe">#</a></h2>
+<p><strong>誤り</strong>: <code>去年同期出厂价金额</code> の合計がゼロのときに <code>AGG(销售额, 'yoy')</code> を使用する。<strong>修正</strong>: 前年同期比について説明できると伝える前に、詳細クエリで <code>SUM(去年同期出厂价金额)</code> を確認します。</p>
+<h2 id="extra-month-after-the-latest-source-data">ソースデータの最終月より後の月が結果に含まれる <a class="section-link" aria-label="この節へのリンク" href="#extra-month-after-the-latest-source-data">#</a></h2>
+<p>期間を比較する場合は、レポートの対象月の範囲を明示的に指定します。完全外部結合では、どちらか一方の期間にだけ存在するグループも残ることがあります。12 月の売上が 1 月の前期売上として対応付けられると、日付範囲を制限していないクエリの結果には、レポートの対象外でも 1 月が含まれることがあります。</p>
+<p>この例では、2024 年 1 月から 2025 年 12 月までのデータを使用します。毎月、5 つのカテゴリすべてに売上があります。モデルには、<code>revenue: SUM({amount})</code>、<code>dt_month</code> という名前の月ディメンション、<code>revenue_mom: '{revenue: pop}'</code> が定義されています。</p>
+<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+FROM MODEL
+WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
+GROUP BY dt_month, category
+</code></pre>
+<p>サンプルデータでは、このクエリは 120 行を返し、手書きの SQL の結果と一致します。日付フィルターを外すと、検証対象のクエリは 125 行を返します。追加された 2026 年 1 月の 5 行には 12 月の売上だけが集計されるため、当期売上高と伸び率はいずれも NULL になります。</p>
+<h3 id="reconcile-both-periods-by-category">両期間の売上高をカテゴリ別に照合する <a class="section-link" aria-label="この節へのリンク" href="#reconcile-both-periods-by-category">#</a></h3>
+<p>期間ごとの売上高合計を比較するレポートでは、レポートの対象月の範囲内で、どちらかの期間に売上高があるカテゴリを残します。両方の値を表示するには、SELECT リストに <code>AGG({revenue: pp}) AS previous_revenue</code> を追加します。</p>
+<table>
+<thead>
+<tr>
+<th>カテゴリ</th>
+<th align="right">当期売上高</th>
+<th align="right">前期売上高</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td align="right">120</td>
+<td align="right">100</td>
+</tr>
+<tr>
+<td>B</td>
+<td align="right">NULL</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>C</td>
+<td align="right">30</td>
+<td align="right">NULL</td>
+</tr>
+<tr>
+<td><strong>合計</strong></td>
+<td align="right"><strong>150</strong></td>
+<td align="right"><strong>140</strong></td>
+</tr>
+</tbody></table>
+<p>この例で当期に売上があるカテゴリだけに絞ると、B が除外され、表示される前期売上高の合計は 100 に減ります。当期に売上があるカテゴリを対象とするレポートにはこのフィルターを使用し、合計にも同じカテゴリの絞り込みを適用します。全体の比較を確認するには、売上高の各列をレポートの月ごとに合計し、それぞれ対応する月のソースデータの合計と照合します。全体の伸び率は、両期間の売上高合計から計算します。</p>
+<p>対象期間のデータがそろっていて、売上がない場合を業務上ゼロとして扱うときに限り、欠損値をゼロとして表示します。ゼロで補完すると、表示値が変わります。</p>
+</main></body></html>

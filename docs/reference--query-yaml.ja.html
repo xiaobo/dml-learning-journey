@@ -1,0 +1,337 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YAML でのクエリ宣言 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、type: query、列、フィルター、マテリアライズ方式の選択、after:を扱います。このクエリでは、SQL でのモデルクエリと同じモデル指標を使用します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="YAML でのクエリ宣言 · DML"><meta property="og:description" content="このページでは、type: query、列、フィルター、マテリアライズ方式の選択、after:を扱います。このクエリでは、SQL でのモデルクエリと同じモデル指標を使用します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--query-yaml.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--query-yaml.html">English</a> <a lang="zh" hreflang="zh" href="reference--query-yaml.zh.html">中文</a></header><main><h1 id="yaml-query-declarations">YAML でのクエリ宣言</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#basic-structure">基本構造</a></li><li><a href="#detail-vs-aggregation">明細と集計</a></li><li><a href="#auto-join-of-multi-dataset-measures">複数のデータセットの指標の自動結合</a></li><li><a href="#column-references-in-dml-format">DML 形式での列参照</a></li><li><a href="#auto-aliasing-and-direct-reference">自動エイリアスと直接参照</a></li><li><a href="#visibility-hidden"><code>visibility: hidden</code></a></li><li><a href="#query-dimension-format">クエリディメンションの形式</a></li><li><a href="#filter-placement-hierarchy">フィルターを配置する階層</a></li><li><a href="#pk-chaining"><code>pk</code> の連鎖</a></li><li><a href="#after-clause"><code>after:</code> 句</a></li><li><a href="#allows-all"><code>allows: ALL</code></a></li><li><a href="#yaml-syntax-pitfalls">YAML 構文でよくある間違い</a></li><li><a href="#yaml-查询速查">YAML クエリ早見表</a></li></ul></details>
+<p>このページでは、<code>type: query</code>、列、フィルター、マテリアライズ方式の選択、<code>after:</code>を扱います。このクエリでは、<a href="reference--model-query-sql.ja.html">SQL でのモデルクエリ</a>と同じモデル指標を使用します。</p>
+<blockquote>
+<p><strong>ファイル名の制約：</strong><code>.dml</code> ファイルを <code>dmlc -c</code> でコンパイルする場合、<code>type: query</code> ブロックの名前はファイル名から拡張子 <code>.dml</code> を除いた部分と一致する必要があります。たとえば、<code>my_report.dml</code> には <code>my_report: type: query</code> を記述する必要があり、<code>some_other_name: type: query</code> は使用できません。名前が一致しない場合、コンパイラは次のエラーを返します：<code>query name should be &lt;filename&gt; (the same as filename) instead of &lt;block_name&gt;</code>。</p>
+</blockquote>
+<p><a id="41-basic-structure"></a></p>
+<h2 id="basic-structure">基本構造 <a class="section-link" aria-label="この節へのリンク" href="#basic-structure">#</a></h2>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL              # optional: consider compatible materializations
+
+    columns:
+        dimension:
+            - dt_month
+            - product
+        sales:               # measure reference (no AGG needed)
+        sales_yoy:
+            formula: '{sales: yoy}'
+</code></pre>
+<p><code>columns:</code> は必須です。ディメンションを指定するキー以外は出力列の名前を表し、その値には式または指標への直接参照を指定します。オプションの <code>dataset:</code> はデータセットクエリ形式を選択するもので、<code>columns.dimension</code> とは併用できません。</p>
+<p>クエリフィルターには次の形式があります。各キーはフィルターの名前を表し、指標参照の修飾子からその名前で指定できます。</p>
+<table>
+<thead>
+<tr>
+<th>値の形式</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td>同名の列に対する等価条件</td>
+</tr>
+<tr>
+<td><code>&lt;column&gt;: [a, b]</code></td>
+<td>指定した値のリストに含まれるかどうかの判定</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td>明示的に指定した列に対する名前付き等価フィルター</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, range: [lo, hi]}</code></td>
+<td>明示的に指定した列に対する名前付き範囲フィルター。両端の値を含む</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {visibility: hidden, default: on}</code></td>
+<td>デフォルト値が有効な非表示フィルター</td>
+</tr>
+</tbody></table>
+<p>各述語を適用する処理段階は、<a href="#48-filter-placement-hierarchy">フィルターの配置ルール</a>で決まります。</p>
+<p><a id="42-detail-vs-aggregation"></a></p>
+<h2 id="detail-vs-aggregation">明細と集計 <a class="section-link" aria-label="この節へのリンク" href="#detail-vs-aggregation">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>モード</th>
+<th>指定方法</th>
+<th>制約</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>集計</td>
+<td><code>dataset:</code> キーなし</td>
+<td>指標を使用できます。コンパイラが集計を行います。</td>
+</tr>
+<tr>
+<td>明細</td>
+<td><code>dataset: DATASET_NAME</code></td>
+<td>指標は使用できず、元の列のみ使用できます。</td>
+</tr>
+</tbody></table>
+<pre><code class="language-yaml"># Detail query
+product_list:
+    type: query
+    dataset: DATASET_PRODUCTS
+    columns:
+        dimension:
+            - product
+</code></pre>
+<p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
+<h2 id="auto-join-of-multi-dataset-measures">複数のデータセットの指標の自動結合 <a class="section-link" aria-label="この節へのリンク" href="#auto-join-of-multi-dataset-measures">#</a></h2>
+<p>集計クエリが<strong>異なるデータセット</strong>の指標を参照する場合、共通のディメンションフィールドを使い、<strong>FULL OUTER JOIN</strong>の規則に従って結合します。一方のデータセットにしか存在しない行も結果に含まれ、もう一方のデータセットの指標は NULL になります。</p>
+<p><strong>生成される</strong>結合タイプは、結果に残ることが保証される行に応じて決まります。コンパイラは <code>FULL OUTER JOIN</code> を起点として、クエリフィルターから導ける最も制約の強い結合タイプを各結合に適用します。<code>filters:</code> に <code>"{primary_measure} is not null":</code> を指定すると、副側にしか存在しない行が除外され、生成される結合は <code>LEFT JOIN</code> になります。両側で値の存在を要求する条件がある場合は <code>INNER JOIN</code> になります。この条件を適用した結果が、基準となる SQL の <code>LEFT JOIN</code> の結果と一致するのは、有効な主側グループで主指標が NULL になり得ない場合に限ります。NULL と空グループに関するこの前提が成り立つことを確認し、生成された結合タイプと出力を検証してください。前提が成り立たない場合、フィルターは有効なグループも除外します。データリネージ、レビュー、再利用時にこの条件を確認できるよう、<code>after:</code> の外に記述してください。</p>
+<p>式をキーにする形式が必須です。<code>"{expr}":</code> と記述し、値は空にします。<code>name: {condition: …}</code> はスキーマに適合しません。</p>
+<p><a id="44-column-references-in-dml-format"></a></p>
+<h2 id="column-references-in-dml-format">DML 形式での列参照 <a class="section-link" aria-label="この節へのリンク" href="#column-references-in-dml-format">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>列の種類</th>
+<th>構文</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同じデータセットのディメンションフィールド</td>
+<td>名前のみ</td>
+<td><code>product:</code></td>
+</tr>
+<tr>
+<td>別のデータセットのディメンションフィールド</td>
+<td><code>"{DATASET}.column"</code></td>
+<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+</tr>
+<tr>
+<td>指標</td>
+<td>名前のみ</td>
+<td><code>sales:</code></td>
+</tr>
+<tr>
+<td>修飾子付きの指標</td>
+<td><code>formula:</code></td>
+<td><code>sales_yoy: {sales: yoy}</code></td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：<code>dataset:</code> を指定していない集計クエリで、特定のデータセットに属する列を単独の列名で参照するとエラーになります。<code>"{DATASET}.column"</code> の形式を使用してください。</p>
+<p><a id="45-auto-aliasing-and-direct-reference"></a></p>
+<h2 id="auto-aliasing-and-direct-reference">自動エイリアスと直接参照 <a class="section-link" aria-label="この節へのリンク" href="#auto-aliasing-and-direct-reference">#</a></h2>
+<p>式のないクエリ列は、名前の一致によって指標またはデータセットの列に解決できる場合があります。この仕組みを<strong>自動エイリアス</strong>と呼びます。次の 3 つのレベルがあります。</p>
+<table>
+<thead>
+<tr>
+<th>レベル</th>
+<th>仕組み</th>
+<th>例</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>column</code>（直接参照）</strong></td>
+<td>データセットの <code>columns:</code> に式のない項目を指定します。DML での名前はテーブルの列名と一致します。</td>
+<td><code>prod_amount:</code></td>
+<td><code>SUM(prod_amount)</code>。エイリアスを付けず、名前をそのまま使用します。</td>
+</tr>
+<tr>
+<td><strong>クエリ列 → 指標（自動エイリアス）</strong></td>
+<td>式のないクエリ列で、列名が指標名と一致します。</td>
+<td><code>revenue:</code>（指標 <code>revenue</code> が存在する場合）</td>
+<td>コンパイラが指標の <code>formula:</code> に指定された式を代入します。</td>
+</tr>
+<tr>
+<td><strong>クエリ列 → データセットの列（自動エイリアス）</strong></td>
+<td>式のないクエリ列で、列名がデータセットの列名と一致し、そのデータセットの列を<strong>クエリのディメンションから導出できる</strong>必要があります。</td>
+<td><code>prod_name:</code>（<code>pk({prod_id})</code> の連鎖をたどって参照するデータセットの列）</td>
+<td>コンパイラがデータセットの定義から列を解決します。</td>
+</tr>
+</tbody></table>
+<p><strong>主な動作：</strong></p>
+<ul>
+<li><code>dmlc -c</code> は、データセットの列がテーブルスキーマに存在するかどうかを検証しません。列名が一致していなくてもコンパイルは成功しますが、実行時に SQL エラーが発生します。列名の不一致を検出するには <code>validateOnly</code> を使用してください。データベース接続が必要です。</li>
+<li>クエリ列の名前が指標名にも導出可能なデータセットの列名にも一致しない場合、<code>not defined, add formula?</code> エラーが発生します。</li>
+<li>クエリ列の名前が指標名と異なる場合は、式（<code>display_name: '{measure_name}'</code>）を明示的に指定するか、<code>abbr:</code> で指標名を変更してください。</li>
+<li>クエリのディメンションから<strong>導出できない</strong>データセットの列を参照すると、<code>cannot be derived from dimension [store_id]</code> エラーが発生します。たとえば、ディメンションフィールドに依存しない元のファクト列がこれに該当します。</li>
+<li>そのまま渡す列（<code>formula:</code> なし）は、オブジェクト形式でメタデータプロパティ（<code>description:</code>、<code>visibility:</code>）を指定できます。この場合、<code>formula:</code> は不要です。たとえば、<code>revenue: { description: 'Total revenue' }</code> は自動エイリアスによって指標 <code>revenue</code> に対応付けられ、説明が追加されます。</li>
+</ul>
+<p><a id="46-visibility-hidden"></a></p>
+<h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="この節へのリンク" href="#visibility-hidden">#</a></h2>
+<p>列を最終的なクエリ出力から非表示にし、中間の一時テーブルでは引き続き使用できるようにします。</p>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>動作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最終 SELECT</td>
+<td>非表示列は通常、出力に含まれません。ただし、フィルターまたは HAVING 句から参照される非表示列は、最終出力に含まれる場合があります。出力列を確定する前に、生成された SQL を確認してください。</td>
+</tr>
+<tr>
+<td>中間の一時テーブル</td>
+<td>非表示列は、JOIN 条件と <code>filters:</code> で<strong>引き続き</strong>使用できます。</td>
+</tr>
+<tr>
+<td>非表示のディメンションフィールドを参照する <code>filters:</code></td>
+<td>コンパイルは成功しますが、オプションの結合がより制約の強い結合に変わったり、補助結果のマテリアライズが強制されたりする場合があります。生成された SQL を確認してください。</td>
+</tr>
+<tr>
+<td>非表示のディメンションフィールドを名前で参照する <code>after:</code> の SQL</td>
+<td><strong>失敗</strong> — <code>query columns refer to nonexistence source column</code></td>
+</tr>
+<tr>
+<td>PK の連鎖</td>
+<td><strong>維持される</strong> — <code>visibility: hidden</code> だけでは PK の警告は発生しません。</td>
+</tr>
+</tbody></table>
+<p><strong>指針:</strong> <code>after:</code> がディメンションフィールドを名前で参照する場合は、<code>visibility: hidden</code> を削除します。<code>after:</code> が指標列のみを使用する場合は、その設定を残します。出力契約がある場合は、コンパイルして、非表示の補助列が最終結果に含まれないことを確認します。追加の列が許可されるのは、出力契約で明示的に認められている場合に限ります。</p>
+<p><strong>有効な YAML の書き方:</strong> <code>- dim: {visibility: hidden}</code>、またはキーを dim エントリの<strong>配下</strong>に置いたネストされたマップを使用します。<code>visibility:</code> を dim キーと同じインデントで並べると、インデント不足でスキーマの lint エラーになります。インライン形式またはネスト形式で記述してください。<code>dmlc -c</code> だけを使う場合は、コンパイルで生成された SELECT を必ず確認します（スキーマの lint はエディターまたは <code>dmlc --lint</code> で実行されます）。</p>
+<p><a id="47-query-dimension-format"></a></p>
+<h2 id="query-dimension-format">クエリディメンションの形式 <a class="section-link" aria-label="この節へのリンク" href="#query-dimension-format">#</a></h2>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - dt_month
+        - product
+        # Correct: list dimension field names only
+</code></pre>
+<p><strong>誤り</strong>: データセットをまたぐ列の<strong>マッピング</strong>をクエリのディメンションフィールドに含めないでください。これらの式は個別のクエリ列として定義します。</p>
+<pre><code class="language-yaml"># Wrong
+columns:
+    dimension:
+        - f_tag_id: {DATASET_PT}.id
+
+# Correct
+columns:
+    dimension:
+        - f_tag_id
+    f_tag_id: "{DATASET_PT}.id"
+</code></pre>
+<p><strong>例外：指標をディメンションとして使う場合</strong>、クエリディメンションのエントリに<strong>指標</strong>をバインドできます（通常は <code>+d</code> を使用します）。この場合、クエリはその指標値を単位として行をグループ化します。</p>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
+    sales:
+</code></pre>
+<p>分類対象のエンティティのキーは、<code>+d</code>（推奨）または <code>dimension:</code> で明示します。完全なキーが一致する場合は、複数の独立したフィールドを使用できます。通常の出力指標は、<code>Q ∪ K</code> のレベルから上位のレベルに正しく集計できる必要があります。ラベルに対するフィルター（式の <code>filters:</code> または Model Query の <code>HAVING</code>）は、ラベルが存在するようになった<strong>後</strong>に適用されます。<a href="explanation--measure-as-dimension.ja.html">指標をディメンションとして使う</a>を参照してください。物理マッピングや <code>{DATASET}.col</code> マッピングにはこの例外を使用しないでください。</p>
+<p><a id="48-filter-placement-hierarchy"></a></p>
+<h2 id="filter-placement-hierarchy">フィルターを配置する階層 <a class="section-link" aria-label="この節へのリンク" href="#filter-placement-hierarchy">#</a></h2>
+<p>フィルターの配置は処理の意味を決めるもので、構文上の好みで選ぶものではありません。</p>
+<table>
+<thead>
+<tr>
+<th>レイヤー</th>
+<th>配置場所</th>
+<th>ここで指定する内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>クエリの <code>filters:</code></td>
+<td>クエリブロック</td>
+<td>レポートごとの絞り込み（チャネル、ブランド、日付範囲）</td>
+</tr>
+<tr>
+<td>中間列または中間指標</td>
+<td><code>.dml</code> のデータセットまたはトップレベルの指標</td>
+<td>除外された行が指標値が NULL のグループに残ってもよい場合の、指標固有の採用条件</td>
+</tr>
+<tr>
+<td>データセットの <code>sql:</code></td>
+<td>データセット定義</td>
+<td>ソース行の集合に常に成り立つ不変条件、または DML で宣言的に表現できない構造</td>
+</tr>
+</tbody></table>
+<p>ソースの <code>WHERE</code> 条件を指標の入力条件に移すと、結果に行が存在するかどうかが変わります。ただし、除外された行だけで構成されるグループが生じ得ない場合、またはそのようなグループが、指標値が NULL で結果に存在するグループと契約上同等である場合は例外です。例外に該当することを明示的に証明してください。該当しない場合や判断できない場合は、行を除外する形式を維持します。</p>
+<p><strong>構造化範囲のセマンティクス:</strong> クエリの <code>filters:</code> に指定する <code>range: [start, end]</code> は、宣言された <code>dt_&lt;grain&gt;</code> の粒度で両端の値を含みます。2025 年の日次データには <code>['2025-01-01', '2025-12-31']</code>、月次データには <code>['2025-01-01', '2025-12-01']</code> を使用します。SQL 方言によっては <code>&lt; dateadd(day, 1, end)</code> のように上限を含まない条件で実装されますが、DML の入力で指定した終了値は、範囲に含まれる最後の値です。</p>
+<p><strong>リストと範囲でよくある間違い:</strong> 値を単にリストで <code>dim: ['a', 'b']</code> と指定すると、<code>WHERE dim IN ('a', 'b')</code>（2 つの値のいずれかに完全一致）にコンパイルされ、両端を含む範囲には<strong>なりません</strong>。日付ディメンションでは、これによりデータが気付かないうちに欠落します。<code>dt_date: ['2024-01-01', '2025-12-31']</code> が返すのは指定した 2 日の行だけで、2 年間全体の行は返しません。両端を含む区間を指定するときは、必ず <code>range: [start, end]</code> を使用します。</p>
+<pre><code class="language-yaml"># Wrong — only 2 days of data
+filters:
+    dt_date: ['2024-01-01', '2025-12-31']
+
+# Right — full inclusive range
+filters:
+    dt_date:
+        range: ['2024-01-01', '2025-12-31']
+</code></pre>
+<p><strong>フィルターでよくある問題</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>対処方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td>クエリの <code>filters:</code>、指標の式、または <code>sql:</code> の WHERE に移動する</td>
+</tr>
+<tr>
+<td>クエリフィルターで <code>referred column {DATASET}.col is undefined</code> が発生する</td>
+<td>文字列形式を使用する: <code>"{DATASET}.col = value":</code></td>
+</tr>
+<tr>
+<td>日付ディメンションに要素が 2 つのリストを指定すると、2 日分の行しか返らない</td>
+<td>単なるリストではなく <code>range: [start, end]</code> を使用する。<code>dim: [a, b]</code> は <code>IN (a, b)</code> にコンパイルされ、<code>BETWEEN</code> にはならない。</td>
+</tr>
+<tr>
+<td>クエリの <code>filters:</code> 内の複雑な EXISTS / PK の連鎖</td>
+<td>指標の入力を絞り込むのは、指標固有の採用条件に限ります。条件がソース行を選択する場合は、ソース行を処理する段階に残します。条件を指標に移すと、レポートの対象となる行の集合が変わることがあります。生成された述語と結合を確認してください。</td>
+</tr>
+</tbody></table>
+<p><a id="49-pk-chaining"></a></p>
+<h2 id="pk-chaining"><code>pk</code> の連鎖 <a class="section-link" aria-label="この節へのリンク" href="#pk-chaining">#</a></h2>
+<pre><code class="language-yaml"># Single PK lookup
+formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+
+# Composite PK — all columns required
+formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
+</code></pre>
+<p><strong>キーの個数に関するルール</strong>: <code>pk(...)</code> 内のキーの数は、対象データセットの <code>dimension:</code> にあるディメンションフィールドの数と一致する必要があります。一致しない場合は <code>expect N expr(s) to query dataset X using pk, but got M</code> が発生します（<a href="reference--troubleshooting--README.ja.html">トラブルシューティング索引</a>の P65 を参照）。</p>
+<p><strong>連鎖の入れ子</strong>: ある <code>pk()</code> の連鎖から導出した列を、別の <code>pk()</code> の連鎖のキーとして使用できます。コンパイラは導出の連鎖をたどり、対応する入れ子の <code>LEFT JOIN</code> を生成します。この方法を使うと、属性を検索し、その属性を使って別の属性を検索する処理を、<code>sql:</code> や <code>after:</code> を使わずに直接モデル化できます。</p>
+<pre><code class="language-yaml"># fact dataset
+columns:
+    store_id:
+    # First hop: store_id → Dim Customer → hq_id
+    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
+    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
+    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+</code></pre>
+<p>確認済みのビルドでは、列の依存関係や <code>pk()</code> の参照先を含め、同じファイル内の前方参照がサポートされます。読みやすくするため、依存先を先に記述します。インクルードには別の可視性境界があります。<a href="reference--model-composition.ja.html">モデルの合成</a>を参照してください。</p>
+<p><a id="410-after-clause"></a></p>
+<h2 id="after-clause"><code>after:</code> 句 <a class="section-link" aria-label="この節へのリンク" href="#after-clause">#</a></h2>
+<p><code>after:</code> は省略できます。省略すると、コンパイラはクエリのディメンションフィールドに対応する<strong>可視の出力列</strong>を解決し、解決後のディメンションフィールドの順にその出力列をソートキーとして使い、結果の行を昇順に並べ替えます。そのため、非表示のディメンションフィールドについては、定義に記述されたフィールド名の代わりに、可視のクエリ列のエイリアスが並べ替えに使われることがあります。出力に有効なディメンションがなければ、行の順序は保証されません。NULL の並び順の指定を省略すると、対象の SQL 方言の既定値が使われます。</p>
+<p><code>after:</code> ブロックを指定すると、最終結果の並び順はそのブロックで決まります。特に、<code>select * from {QUERY}</code> に独自の <code>ORDER BY</code> がない場合、コンパイラの既定の並び順は解除されます。<code>after:</code> は、業務上意味のある指定が既定と異なる場合にのみ使用します。該当する指定は、並べ替えの方向、NULL の位置、同値の場合に順序を決める基準、指標や式による並べ替え、TOP または LIMIT です。再集計は行わないでください。</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    columns:
+        dimension: [product]
+        sales:
+    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+</code></pre>
+<p><code>after:</code> を指定する場合は、<code>{QUERY}</code> が必須です。これは、クエリ後の文が参照する、コンパイル済みクエリの結果を表します。「並べ替えのみ」とは、このラッパーと ORDER BY/TOP/LIMIT 以外に業務ロジックがないことを意味します。明示した並べ替え順がクエリの既定の出力順と一致すると、前段のコンパイラが <code>redundant ORDER BY</code> 警告を出します。該当箇所のヒントに従ってください。<code>after:</code> にほかの重要な処理が残る場合は、冗長な <code>ORDER BY</code> 句だけを削除します。ブロック全体を削除するのは、ほかに処理が残らない場合だけです。</p>
+<p><strong>誤り</strong>：標準の指標クエリで、<code>after:</code> 内の <code>group by</code> を使って再集計する。指標の集計はクエリブロックで行います。</p>
+<p><a id="411-allows-all"></a></p>
+<h2 id="allows-all"><code>allows: ALL</code> <a class="section-link" aria-label="この節へのリンク" href="#allows-all">#</a></h2>
+<p>互換性のあるマテリアライゼーションをすべてコンパイラの検討対象にするには、次のように指定します。</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - dt_date
+        sales:
+</code></pre>
+<p><code>allows:</code> は、使用候補となるマテリアライゼーションを指定します。<code>ALL</code> は候補の使用を許可し、<code>NONE</code> はマテリアライゼーションの使用を無効にします。名前を明示すると、その名前のものに候補が絞られます。候補を使用できるかどうかは、行や集計値を定義する粒度とフィルターが、それぞれクエリに適合するかどうかで決まります。この設定で指標の <code>dimensions:</code> の制約が緩和されたり、クエリの粒度を任意に指定できるようになったりすることはありません。<a href="reference--materialization.ja.html">マテリアライゼーションの宣言</a>を参照してください。</p>
+<p><a id="412-yaml-syntax-pitfalls"></a></p>
+<h2 id="yaml-syntax-pitfalls">YAML 構文でよくある間違い <a class="section-link" aria-label="この節へのリンク" href="#yaml-syntax-pitfalls">#</a></h2>
+<ul>
+<li><code>:</code>、<code>{</code>、<code>-</code> のいずれかを含む<strong>数式は引用符で囲みます</strong>。例：<code>formula: 'SUMIF(...)'</code></li>
+<li><strong><code>measures:</code> 配下のディメンションフィールド</strong>：誤りです。宣言できるのは <code>dimension:</code> の配下だけです。</li>
+<li><strong>複合指標での <code>dataset:</code> の指定</strong>：誤りです。数式がほかの指標を参照する場合は、<code>dataset:</code> を省略します。</li>
+<li><strong>データセット間でディメンションフィールド名が異なる場合</strong>：名前を 1 つ（例：<code>tag_id</code>）に統一し、<code>columns:</code> で対応付けます。</li>
+</ul>
+<h2 id="yaml-查询速查">YAML クエリ早見表 <a class="section-link" aria-label="この節へのリンク" href="#yaml-查询速查">#</a></h2>
+<p><code>type: query</code> でクエリを定義します。<code>dimension:</code> で結果のグループ化を指定し、<code>columns:</code> で出力を指定します。フィルター条件を記述する位置によって、条件がソース行、個々の指標、集計後の結果のいずれに適用されるかが決まります。データセットを組み合わせる場合は、結合キー、値が NULL のキー、片側にだけ存在するグループを先に確認します。最終的な並べ替えなどのクエリ操作には <code>after:</code> を使用します。</p>
+</main></body></html>

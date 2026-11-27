@@ -1,0 +1,118 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>使用自定义修饰符和数据库函数扩展 DML · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="DML 可在两个不同的层面扩展：可以在 DML 中定义可复用的指标或时间转换，也可以调用目标数据库中已安装的标量函数。自定义修饰符可与指标引用组合使用。数据库函数的计算逻辑由相应的数据库实现。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="使用自定义修饰符和数据库函数扩展 DML · DML"><meta property="og:description" content="DML 可在两个不同的层面扩展：可以在 DML 中定义可复用的指标或时间转换，也可以调用目标数据库中已安装的标量函数。自定义修饰符可与指标引用组合使用。数据库函数的计算逻辑由相应的数据库实现。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--define-macros.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--define-macros.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--define-macros.html">English</a></header><main><h1 id="extend-dml-with-custom-modifiers-and-database-functions">使用自定义修饰符和数据库函数扩展 DML</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#custom-macro-definitions-dt-macro-and-fn-macro">自定义宏定义（dt-macro 和 fn-macro）</a></li><li><a href="#choose-the-extension-point">选择扩展方式</a></li><li><a href="#a-verified-composition-example">经过验证的组合示例</a></li><li><a href="#calling-a-function-defined-in-your-database">调用数据库中定义的函数</a></li><li><a href="#validate-the-function-on-the-intended-connection">在计划使用的连接上验证函数</a></li><li><a href="#what-was-verified">验证范围</a></li></ul></details>
+<p><strong>DML 可在两个不同的层面扩展：</strong>可以在 DML 中定义可复用的指标或时间转换，也可以调用目标数据库中已安装的标量函数。自定义修饰符可与指标引用组合使用。数据库函数的计算逻辑由相应的数据库实现。</p>
+<p>要复用时间转换，或复用应用于调用方所选指标的公式，请使用自定义宏。有关调用和组合规则，请参阅<a href="reference--modifiers.zh.html">修饰符参考</a>。</p>
+<p><a id="27-custom-macro-definitions-dt-macro-and-fn-macro"></a></p>
+<h2 id="custom-macro-definitions-dt-macro-and-fn-macro">自定义宏定义（dt-macro 和 fn-macro） <a class="section-link" aria-label="本节链接" href="#custom-macro-definitions-dt-macro-and-fn-macro">#</a></h2>
+<p>用户可以在 <code>.dml</code> 中定义自己的宏，包括 <code>dt-macro</code>（用于偏移时间范围）和 <code>fn-macro</code>（用于将指标嵌入公式）。只需定义一次，即可像引用内置修饰符一样，在任意指标或查询中按名称引用。</p>
+<p><strong>两种宏类型</strong></p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>用途</th>
+<th>关键属性</th>
+<th><code>{measure}</code> 占位符</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt-macro</code></td>
+<td>偏移或扩大时间窗口</td>
+<td><code>value:</code>（单点偏移）或 <code>range:</code> <code>[start, end]</code></td>
+<td>否。宏作用于时间上下文。</td>
+</tr>
+<tr>
+<td><code>fn-macro</code></td>
+<td>将指标嵌入派生公式</td>
+<td>使用 <code>{measure}</code> 的 <code>formula:</code></td>
+<td>是。占位符会替换为调用方提供的指标。</td>
+</tr>
+</tbody></table>
+<p>使用 <code>value:</code> 偏移时间点，使用 <code>range: [start, end]</code> 指定时间窗口。<code>fn-macro</code> 使用 <code>{measure}</code> 引用调用方提供的指标，<code>dt-macro</code> 使用 <code>{dim_dt}</code> 引用解析得到的时间字段。可通过可选的 <code>prerequisite:</code> 限制求值时允许在哪些层级定义行或汇总值。</p>
+<h2 id="choose-the-extension-point">选择扩展方式 <a class="section-link" aria-label="本节链接" href="#choose-the-extension-point">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>使用方式</th>
+<th>维护内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>将同一计算应用于多个指标</td>
+<td><code>fn-macro</code></td>
+<td>基于 <code>{measure}</code> 的 DML 公式</td>
+</tr>
+<tr>
+<td>复用时间偏移或时间窗口</td>
+<td><code>dt-macro</code></td>
+<td>DML 时间转换</td>
+</tr>
+<tr>
+<td>复用数据库中的现有计算</td>
+<td>数据库标量函数调用</td>
+<td>数据库函数及其权限和部署</td>
+</tr>
+</tbody></table>
+<p>自定义修饰符将分析逻辑保留在模型中，调用语法与内置修饰符相同。数据库函数可在数据所在的数据库中复用逻辑，但会引入对该数据库函数实现的依赖。无论使用哪种方式，都需要正确选择求值时定义行或汇总值的层级。</p>
+<h2 id="a-verified-composition-example">经过验证的组合示例 <a class="section-link" aria-label="本节链接" href="#a-verified-composition-example">#</a></h2>
+<p>自定义修饰符的引用形式与内置修饰符相同，无需修改编译器。</p>
+<p>先在隔离的 DuckDB 练习数据库中准备两条销售记录：</p>
+<pre><code class="language-sql">CREATE TABLE sales(id INTEGER, dt_month DATE, amount DECIMAL(12,2));
+INSERT INTO sales VALUES
+  (1, DATE '2025-01-01', 20),
+  (2, DATE '2025-02-01', 30);
+</code></pre>
+<p>将以下完整模型保存为 <code>model.dml</code>：</p>
+<pre><code class="language-yaml">dialect: duckdb
+S:
+  type: dataset
+  table: sales
+  dimension: [id]
+  columns:
+    id:
+    dt_month:
+    amount:
+  measures:
+    sales: SUM({amount})
+double_value:
+  type: fn-macro
+  formula: '{measure} * 2'
+prior_month:
+  type: dt-macro
+  value: date({dim_dt}, '-1 month')
+</code></pre>
+<p>当 1 月销售额为 20、2 月销售额为 30 时：</p>
+<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
+       AGG({sales: prior_month}) AS previous,
+       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>将查询保存为 <code>query.sql</code>。将练习数据库配置为 <code>default</code> 后，运行：</p>
+<pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --json
+dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default
+</code></pre>
+<p>执行得到的值为 <strong>60、20、40</strong>。在所检查的 DuckDB 连接上，严格编译、validate-only 和执行均成功。模型声明了 <code>dialect: duckdb</code>、源数据中唯一的 <code>id</code>、<code>dt_month</code> 和 <code>sales: SUM({amount})</code>。</p>
+<p>这是语言层面可复用的组合方式。宏接收调用方提供的指标及其求值上下文。这并不是可任意扩展编译器的插件 API。粒度规则、时间前提条件和修饰符顺序仍然适用。自定义名称无法绕过这些规则。</p>
+<h2 id="calling-a-function-defined-in-your-database">调用数据库中定义的函数 <a class="section-link" aria-label="本节链接" href="#calling-a-function-defined-in-your-database">#</a></h2>
+<p><strong>DML 可以在生成的 SQL 中保留标量函数调用，函数由数据库实现。</strong>例如，在运行 DML 之前，先在 DuckDB 练习数据库中安装以下函数：</p>
+<pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
+</code></pre>
+<p>DuckDB 将这种形式实现为持久化的 SQL 标量宏。此示例验证的是数据库中定义的标量函数调用，不涉及 Python UDF 注册、聚合 UDF 或表值函数。</p>
+<p>在 <code>S.measures</code> 下添加以下条目，使其与 <code>sales</code> 并列，以便在聚合前对源数据值调用该函数：</p>
+<pre><code class="language-yaml"># Under the sales dataset's measures:
+net_sales: SUM(business_net({amount}))
+</code></pre>
+<p>然后，将该指标与对聚合结果调用函数所得到的值进行比较：</p>
+<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>2 月销售额为 30 时，两种方式均返回 <strong>24</strong>。生成的 SQL 保留了 <code>SUM(business_net(amount))</code> 和 <code>business_net(SUM(amount))</code>。两种方式在不同阶段求值。此处结果相同，是因为函数是线性的。舍入、阈值判断或其他非线性函数可能产生不同的结果，因此请根据所需结果选择求值阶段。</p>
+<h3 id="validate-the-function-on-the-intended-connection">在计划使用的连接上验证函数 <a class="section-link" aria-label="本节链接" href="#validate-the-function-on-the-intended-connection">#</a></h3>
+<p>DML 不会安装函数，也不会在不同数据库之间转换其实现。执行查询的连接必须能够访问该函数，函数必须接受生成的参数类型，且该数据库用户必须有权调用函数。函数命名、架构限定、部署和可移植性仍取决于具体数据库。</p>
+<p>对一个故意未提供的函数的调用<strong>通过了严格编译</strong>，但随后在 validate-only 的 EXPLAIN 阶段失败（退出码 65）；直接执行也失败了（退出码 70）。因此，仅凭编译成功无法确认 UDF 是否存在或能否调用。请先<a href="how-to--compile-and-validate-zh.html">编译和验证</a>，再比较实际结果。</p>
+<h3 id="what-was-verified">验证范围 <a class="section-link" aria-label="本节链接" href="#what-was-verified">#</a></h3>
+<p>以上示例使用 dmlc 0.3.16（可执行文件的 SHA-256 校验值为 <code>c019a84c3208aee31cb5fa068232fa24d3258e9cdc83dfc2a91584a86a5ba091</code>）和 DuckDB 1.5.5 运行。验证范围包括自定义 <code>fn-macro</code>、自定义 <code>dt-macro</code>、两者的组合、对源数据值和聚合结果的标量函数调用，以及缺失函数的诊断。此处未测试其他数据库引擎、架构限定名称、过程式或原生 UDF、聚合 UDF 和表函数。</p>
+</main></body></html>

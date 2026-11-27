@@ -1,0 +1,436 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>トラブルシューティング索引 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="以下で症状を探すか、既知の落とし穴を固定の ID で探してください。診断手順は「クエリのトラブルシューティング」を、構造化された診断情報は「エラーコード」を参照してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="トラブルシューティング索引 · DML"><meta property="og:description" content="以下で症状を探すか、既知の落とし穴を固定の ID で探してください。診断手順は「クエリのトラブルシューティング」を、構造化された診断情報は「エラーコード」を参照してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--troubleshooting--README.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--troubleshooting--README.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--README.zh.html">中文</a></header><main><h1 id="troubleshooting-index">トラブルシューティング索引</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#error--fix-quick-reference">エラーと対処方法の早見表</a></li><li><a href="#find-a-pitfall-by-id">ID で落とし穴を探す</a></li></ul></details>
+<p>以下で症状を探すか、既知の落とし穴を固定の ID で探してください。診断手順は「<a href="how-to--troubleshoot-query.ja.html">クエリのトラブルシューティング</a>」を、構造化された診断情報は「<a href="reference--error-codes.ja.html">エラーコード</a>」を参照してください。</p>
+<h2 id="error--fix-quick-reference">エラーと対処方法の早見表 <a class="section-link" aria-label="この節へのリンク" href="#error--fix-quick-reference">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>エラーまたは症状</th>
+<th>対処方法</th>
+<th>落とし穴</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UNION is not supported</code></td>
+<td>別々のクエリ、またはフィルターが異なる指標</td>
+<td><a href="reference--troubleshooting--queries.ja.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>aggregation is not possible with MODEL.DATASET_*</code></td>
+<td><code>FROM MODEL</code> + <code>AGG(measure)</code></td>
+<td><a href="reference--troubleshooting--queries.ja.html#p8">P8</a>, <a href="reference--troubleshooting--queries.ja.html#p45">P45</a></td>
+</tr>
+<tr>
+<td><code>subquery is not supported</code></td>
+<td>DML の指標、または <code>AGG()</code> を使った <code>+f</code> / <code>HAVING</code></td>
+<td><a href="reference--troubleshooting--queries.ja.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>JOIN is not supported</code></td>
+<td>列マクロ内の <code>{DATASET}.column</code></td>
+<td><a href="reference--troubleshooting--queries.ja.html#p11">P11</a></td>
+</tr>
+<tr>
+<td><code>ref {...} not defined</code></td>
+<td>モデルで定義し、SQL では名前だけを使う</td>
+<td><a href="reference--troubleshooting--models.ja.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>measure cannot be redefined</code></td>
+<td><code>AGG(measure_name)</code> から <code>AS measure_name</code> を削除する</td>
+<td><a href="reference--troubleshooting--models.ja.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>use existing measure "X" instead of recreating…</code></td>
+<td><code>AGG(X)</code> のみ</td>
+<td><a href="reference--troubleshooting--models.ja.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>... was referenced but not defined in sql</code></td>
+<td>モデルクエリの SQL から <code>{...}</code> を削除する（<code>AGG({…})</code> 内の修飾子形式を除く）</td>
+<td><a href="reference--troubleshooting--models.ja.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>file not found: SELECT ...</code>（Windows）</td>
+<td>CLI に直接入力するモデルクエリの SQL では、演算子 <code>/</code> を <code>DIVIDE()</code> に置き換える</td>
+<td><a href="reference--troubleshooting--tooling.ja.html#p63">P63</a></td>
+</tr>
+<tr>
+<td><code>table … is owned by dataset …</code></td>
+<td><code>from {Dataset}</code> / <code>join {Dataset}</code>、または <code>pk(...).{Dataset}.Col</code></td>
+<td><a href="reference--troubleshooting--models.ja.html#p22b">P22b</a></td>
+</tr>
+<tr>
+<td>指標をディメンションとして使用する場合に、<code>+d</code> がない、ラベルのキーに互換性がない、または同じ階層の別の指標を正しくロールアップできない</td>
+<td>ディメンションとして使う各指標に、完全な <code>+d</code> キーを明示する。互換性のあるキーと、集計可能な出力指標を使う。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p66">P66</a>–<a href="reference--troubleshooting--grain-and-joins.ja.html#p68">P68</a></td>
+</tr>
+<tr>
+<td>同じオブジェクトに対する <code>{+d:x,-d:x}</code> / <code>{+d:x,-df:x}</code> が、通知なしに <code>{m}</code> または <code>{-f:x}</code> だけになる</td>
+<td>無効な指定であり、明示的なエラーにする必要がある。意図した操作を直接指定する形に書き換える。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p79">P79</a></td>
+</tr>
+<tr>
+<td><code>-f</code> / <code>-df</code> の分岐がグループ化の粒度に関係しないクエリフィルターを外すため、FOJ の相手側の行が結果に混入する</td>
+<td>レポートの対象範囲を引き続き絞り込む（<code>EXISTS</code> / セミジョイン）。<code>-f</code> でグループ化は変わらない。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p80">P80</a></td>
+</tr>
+<tr>
+<td>月単位のクエリで <code>{m:{dimension:[dt_quarter]}}</code> がスカラー値として、または誤った粒度で結合される</td>
+<td>粗い粒度の CTE をカレンダー経由で結合し、四半期の値をその四半期に属する各行に展開する</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p81">P81</a></td>
+</tr>
+<tr>
+<td>細かい粒度の CTE 内の <code>WHERE</code> と外側の <code>SUM</code> が、粗い粒度の <code>filters: "cnt &gt; 3"</code> に書き換えられる</td>
+<td>指標の中で、対応する <code>{+d: …}</code> とともに <code>SUMIF</code> / <code>SUM(iif)</code> を使う</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p69">P69</a></td>
+</tr>
+<tr>
+<td><code>window functions are not allowed in atomic measures</code> / <code>GROUP BY</code> と <code>OVER</code> の無効な組み合わせ</td>
+<td>明細レベルの <code>OVER</code> は <code>columns:</code> に置く。<code>GROUP-BY</code> の後は複合指標または <code>{-d:}</code> を使う。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p70">P70</a>–<a href="reference--troubleshooting--grain-and-joins.ja.html#p71">P71</a></td>
+</tr>
+<tr>
+<td><code>… reference is not allowed in PARTITION BY</code></td>
+<td>指標のウィンドウ関数で、ウィンドウ定義に <code>{col}</code> を直接指定している場合は、明細の計算を <code>columns:</code> に移すか、<code>{-d:}</code> / <code>{dimension:}</code> を使う。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p71">P71</a></td>
+</tr>
+<tr>
+<td>ロールアップ時に比率の分母が誤って計算される（<code>left × right</code> ではなく <code>left²</code>）。診断メッセージは出ない。</td>
+<td>粒度を定める 2 つのフィールドが同じ列を参照する。<code>-df</code>/<code>dimension:</code> は 2 番目の役割を最初のキーに結び付けた。<code>pk()</code> を使って、ディメンションを宣言した <code>sql:</code> データセットを参照する。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p72">P72</a></td>
+</tr>
+<tr>
+<td>ロールアップする複合指標から余分な行や、本来存在しない <code>left = right</code> の行が出力される</td>
+<td>データセットをまたぐ <code>-df</code> は <code>FULL OUTER JOIN</code> を生成する。<code>'{primary_measure} is not null':</code> で結果を絞り込む。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p73">P73</a></td>
+</tr>
+<tr>
+<td><code>-df</code> のロールアップが粒度を定めるフィールドを除外し、警告は「skip dimension column」のみ</td>
+<td>同じ物理テーブルを参照する 2 つの <code>table:</code> データセットで列の集合が異なる。列の集合を同一にするか、同じテーブルを異なる役割で参照するデータセットを避ける。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p74">P74</a></td>
+</tr>
+<tr>
+<td>ディメンションの名前を変更した後、<code>-df</code> で <code>column(s) [x] … not in dimension</code> が発生する</td>
+<td><code>-df</code> の引数には、粒度を定めるフィールドの宣言名を指定する。ソース列の名前は指定しない。</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p76">P76</a></td>
+</tr>
+<tr>
+<td><code>MAX(pk(…))</code> で <code>dataset must be specified … did you mean X</code> が発生する</td>
+<td><code>dataset:</code> に<strong>参照先を利用する側</strong>のデータセットを指定する</td>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p77">P77</a></td>
+</tr>
+</tbody></table>
+<h2 id="find-a-pitfall-by-id">ID で落とし穴を探す <a class="section-link" aria-label="この節へのリンク" href="#find-a-pitfall-by-id">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>トピック</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="reference--troubleshooting--migration.ja.html#p1">P1</a></td>
+<td>表示用のロジックを DML に含める</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.ja.html#p2">P2</a></td>
+<td>クエリでのみ使う派生列を DML に含める</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.ja.html#p5">P5</a></td>
+<td>コンパイルされた SQL が基準となる SQL と一致するか確認しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.ja.html#p6">P6</a></td>
+<td>フィルターやクエリのディメンションの組み合わせごとに使い捨ての指標を作る</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.ja.html#p7">P7</a></td>
+<td>集計式を重複して定義する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p8">P8</a></td>
+<td>集計クエリで AGG() を指定し忘れる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p9">P9</a></td>
+<td>AGG() に不要な別名を付ける</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p10">P10</a></td>
+<td>サブクエリを使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p11">P11</a></td>
+<td>JOIN を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p12">P12</a></td>
+<td>時間修飾子に必要な時間のコンテキストがない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p13">P13</a></td>
+<td>異なる時間粒度を混在させる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p14">P14</a></td>
+<td>NULL 値に対する不要なフィルターを追加する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p15">P15</a></td>
+<td>単一の期間に BETWEEN を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p16">P16</a></td>
+<td>時間フィルターの順序は記述上の慣例</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p17">P17</a></td>
+<td>必要がないのに ORDER BY を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p18">P18</a></td>
+<td>増加率を手動で計算する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p20">P20</a></td>
+<td>存在確認に DISTINCT だけを使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p21">P21</a></td>
+<td>指標の式の中で AGG() を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p22">P22</a></td>
+<td>ルックアップなしでデータセットをまたいで参照する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p22b">P22b</a></td>
+<td><code>table:</code> で別のデータセットに割り当てられた物理テーブルを、他のデータセットの <code>sql:</code> で結合する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p23">P23</a></td>
+<td>アトミック指標に <code>dataset:</code> がない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p24">P24</a></td>
+<td>用途を限定しすぎた指標名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p25">P25</a></td>
+<td>エッジケースを文書化しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p27">P27</a></td>
+<td>ディメンションで制約された指標を互換性のないクエリと組み合わせる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p28">P28</a></td>
+<td><code>GROUP BY</code> で十分な場合に <code>+d</code> を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p28b">P28b</a></td>
+<td>結合先に対応する行がないと NULL が伝播する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p28c">P28c</a></td>
+<td>データセットをまたぐ合成での NULL のグループ化キー</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p29">P29</a></td>
+<td>期間の初日以外を指定する時間フィルター</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p30">P30</a></td>
+<td>過去 N 日間の範囲に当日が含まれていない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p31">P31</a></td>
+<td>過去 N か月間に現在の期間を含める</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p32">P32</a></td>
+<td>期間全体を単位とする GROUP BY と ytd 修飾子を組み合わせる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p33">P33</a></td>
+<td>期間の開始から基準日までの集計に日付範囲を組み合わせる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p34">P34</a></td>
+<td>結果を信頼して利用する前に validateOnly を実行しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p35">P35</a></td>
+<td>列の説明を無視する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p36">P36</a></td>
+<td>方言が一致しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p37">P37</a></td>
+<td>列に修飾子を指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p38">P38</a></td>
+<td>引用符で囲まれていない YAML の式</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p39">P39</a></td>
+<td>複合指標に <code>dataset:</code> を指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p40">P40</a></td>
+<td>指標は再定義できない / 式が重複している</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p41">P41</a></td>
+<td>モデルクエリの SQL に DML の <code>{...}</code> 構文を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.ja.html#p42">P42</a></td>
+<td><code>.dml</code> の式で名前だけを使う場合と <code>{col}</code> を使う場合</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p43">P43</a></td>
+<td><code>{dimension: [...]}</code> と <code>{-d: dim_dt}</code> の比較（SQL の構造が異なる）</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p44">P44</a></td>
+<td>ウィンドウ内の構成比と <code>{-d: dim}</code> の違い</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p45">P45</a></td>
+<td>明細クエリで指標を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p46">P46</a></td>
+<td>集計クエリで列名だけを指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p47">P47</a></td>
+<td>データセット間でディメンションフィールド名が一致しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p48">P48</a></td>
+<td><code>dimension:</code> でマッピングをディメンションフィールドとして使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p49">P49</a></td>
+<td><code>measures:</code> の下にディメンションフィールドを定義する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p50">P50</a></td>
+<td>クエリの <code>filters:</code> に複雑なフィルターを指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p51">P51</a></td>
+<td>PK の連結でパラメーターの数が一致しない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p52">P52</a></td>
+<td><code>after:</code> に GROUP BY を手動で記述する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p53">P53</a></td>
+<td>PowerShell で <code>&amp;&amp;</code> を使ってコマンドを連結する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p53b">P53b</a></td>
+<td><code>FROM</code> の名前 ≠ <code>--model=</code> の<strong>ファイル</strong>名</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p63">P63</a></td>
+<td>Windows の CLI に直接入力するモデルクエリの SQL で演算子 <code>/</code> を使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.ja.html#p54">P54</a></td>
+<td>CJK 文字を含む JSON を PowerShell のパイプで渡す</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.ja.html#p59">P59</a></td>
+<td>列を事前に確認せずに前年比を求める</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p60">P60</a></td>
+<td>集計クエリで日付の MAX を求めるためにサブクエリを使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.ja.html#p61">P61</a></td>
+<td>データセットを GROUP BY で直接集計する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p62">P62</a></td>
+<td>指標の <code>dimensions:</code> をデータセットの識別やクエリのグループ化に使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p64">P64</a></td>
+<td>指標に <code>materialize: true</code> を指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p66">P66</a></td>
+<td>エンティティのキーを明示せずに指標をディメンションとして使う</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p67">P67</a></td>
+<td>指標から派生したディメンションに互換性がない、または依存関係がある</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p68">P68</a></td>
+<td>分類を定義した粒度から、出力指標をより粗い粒度にロールアップできない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p69">P69</a></td>
+<td>細かい粒度の <code>WHERE</code> を、粗い粒度のクエリの <code>filters:</code> に指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p70">P70</a></td>
+<td>アトミック指標に <code>OVER</code> を指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p71">P71</a></td>
+<td>指標の <code>PARTITION BY</code> に <code>{col}</code> を直接指定する</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p72">P72</a></td>
+<td>粒度を定める 2 つのフィールドが同じ列を参照すると、データセットをまたぐロールアップが誤ったキーに結び付く</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p73">P73</a></td>
+<td><code>-df</code> でロールアップする複合指標は、相手側にしかない行も出力し、実在しないキー値を生成することがある</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p74">P74</a></td>
+<td>1 つの物理テーブルを使う 2 つの <code>table:</code> データセット ― マージ時の注意点と、<code>-df</code> で指定した粒度が通知なしに失われる問題</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p75">P75</a></td>
+<td>クエリの <code>filters:</code> で指標を保護するフィルター ― 記述形式と失敗時の挙動</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p76">P76</a></td>
+<td><code>-df</code> と <code>-d</code> の引数は、粒度を定義するために宣言したフィールド名であり、ソース列名ではない</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p77">P77</a></td>
+<td>集約リレーションに対する <code>pk()</code> ― 対象は <code>sql:</code>、ラッパーには <code>dataset:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p79">P79</a></td>
+<td>同じディメンションに対する <code>+d</code> と <code>-d</code> または <code>-df</code> の併用</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p80">P80</a></td>
+<td><code>-f</code> または <code>-df</code> を使用すると、粒度を構成しないフィールドに対するクエリフィルターがレポートの行集合に適用されなくなる</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p81">P81</a></td>
+<td>カレンダー全体に値を展開せずに、<code>dimension:</code> で異なる粒度の時間ディメンションに置き換える</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.ja.html#p78">P78</a></td>
+<td><code>sql:</code> によるエスケープには、対象データの集合とウィンドウを絞り込む条件を明示的に組み込む必要がある</td>
+</tr>
+</tbody></table>
+</main></body></html>

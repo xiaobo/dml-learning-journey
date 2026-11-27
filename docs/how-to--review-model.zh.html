@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>审查DML模型 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="正向分析第 5 阶段中适用的检查通过后，再进行此项技术审查。检查模型的复用情况、查询结构、计算粒度和验证证据。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="审查DML模型 · DML"><meta property="og:description" content="正向分析第 5 阶段中适用的检查通过后，再进行此项技术审查。检查模型的复用情况、查询结构、计算粒度和验证证据。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--review-model.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--review-model.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--review-model.html">English</a></header><main><h1 id="review-a-dml-model">审查DML模型</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#prepare-an-independent-review">准备独立审查</a></li><li><a href="#61-reconcile-the-report-contract">6.1 核对报表约定</a></li><li><a href="#62-review-model-definitions">6.2 审查模型定义</a></li><li><a href="#63-review-consumer-queries">6.3 审查使用模型的查询</a></li><li><a href="#64-check-results-against-explicit-assumptions">6.4 根据明确的假设检查结果</a></li><li><a href="#65-recheck-affected-artifacts">6.5 重新检查受影响的产物</a></li><li><a href="#66-deliver-the-artifacts-and-review-evidence">6.6 交付产物和审查证据</a></li><li><a href="#67-resolve-findings">6.7 处理审查发现</a></li><li><a href="#68-check-analytical-claims-separately">6.8 单独核实分析中的各项主张</a></li></ul></details>
+<p><a href="how-to--build-analysis.zh.html#phase-5-validate-the-model-and-query">正向分析第 5 阶段</a>中适用的检查通过后，再进行此项技术审查。检查模型的复用情况、查询结构、计算粒度和验证证据。</p>
+<h2 id="prepare-an-independent-review">准备独立审查 <a class="section-link" aria-label="本节链接" href="#prepare-an-independent-review">#</a></h2>
+<p>向审查人员提供一套聚焦于审查所需内容的材料。其中应包含最终产物和报表约定，无需提供完整的对话记录。</p>
+<p>材料包括以下内容。</p>
+<ul>
+<li>模型及其包含的文件，并标明已更改的定义。</li>
+<li>使用该模型的查询和原始报表约定。</li>
+<li>可执行文件的路径、版本、构建时间戳、指纹和方言。</li>
+<li>编译、实际运行验证和结果比较的证据。</li>
+<li>必需的语义检查及其假设。</li>
+<li>已知的审查发现和缺失的先决条件。</li>
+</ul>
+<p>对于大规模变更，将模型复用、使用模型的查询和结果检查分别交给不同的审查人员。明确每个人的职责。作者负责实施已接受的修复，并作出最终交付决定。</p>
+<h2 id="61-reconcile-the-report-contract">6.1 核对报表约定 <a class="section-link" aria-label="本节链接" href="#61-reconcile-the-report-contract">#</a></h2>
+<p>将每条使用模型的查询与第 2 阶段的草稿进行比较。</p>
+<ol>
+<li>检查结果中每行所对应的粒度，以及结果涵盖的总体。</li>
+<li>确认所有必需的指标都解析到预期的定义。</li>
+<li>检查时间范围、对比期间和报表切片。</li>
+<li>检查输出列、别名、类型和实际顺序。</li>
+<li>移除交付报表不需要的调试列。</li>
+</ol>
+<h2 id="62-review-model-definitions">6.2 审查模型定义 <a class="section-link" aria-label="本节链接" href="#62-review-model-definitions">#</a></h2>
+<p>逐一检查每个新指标能否在其他报表中复用。</p>
+<ul>
+<li>仅当总体、粒度、筛选条件和 NULL 的处理行为均一致时，才合并重复公式。</li>
+<li>将报表特有的切片移到查询中，除非该切片定义了业务指标。</li>
+<li>保留体现必要计算维度的中间指标。</li>
+<li>如果具名派生指标是可复用的业务指标，或物化过程依赖该指标，则保留它。</li>
+<li>检查名称、描述和公式是否一致。</li>
+<li>在判定两个定义冗余之前，先检查有关相似指标的警告。</li>
+</ul>
+<p>合并或重命名后，对更改的模型运行 lint 检查，并以严格模式编译受影响的查询。</p>
+<h2 id="63-review-consumer-queries">6.3 审查使用模型的查询 <a class="section-link" aria-label="本节链接" href="#63-review-consumer-queries">#</a></h2>
+<p>确认分组方式和指标修饰符能够表达所要求的报表。</p>
+<ul>
+<li>为每个带修饰符的指标引用保留各自独立的显式别名。</li>
+<li>如果下游使用方不需要这些别名，请移除未加修饰的 <code>AGG(measure)</code> 上的冗余别名。</li>
+<li>如果结果含义或下游使用方的约定依赖于 <code>ORDER BY</code> 和 <code>LIMIT</code>，请保留它们。</li>
+<li>检查解析后的时间上下文和宏的先决条件。</li>
+<li>检查连接的等值条件、数据的来源归属、填充行为和投影列。</li>
+<li>在保存的文件中保持 SQL 易于阅读。如果工具要求使用字符串格式，请将其编码为字符串。</li>
+</ul>
+<h2 id="64-check-results-against-explicit-assumptions">6.4 根据明确的假设检查结果 <a class="section-link" aria-label="本节链接" href="#64-check-results-against-explicit-assumptions">#</a></h2>
+<p>编辑模型或查询后，重新运行受影响的结果检查。</p>
+<ol>
+<li>对于子集计数，确认两个计数基于可比较的总体。</li>
+<li>对于子集金额，在应用不等式之前，先考虑负值的影响。</li>
+<li>对于比率，检查分母为零和输入缺失时的既定处理行为。</li>
+<li>对于时间比较，检查前一期间的数据覆盖情况，以及已声明的 NULL 处理规则或填充规则。</li>
+<li>如果有独立得出的结果，请选取有代表性的行进行比较。</li>
+</ol>
+<p>不要一概规定上年数据缺失时结果为零。检查公式和生成的 SQL。缺少实际运行验证的证据时，记录为 <code>not run</code>。</p>
+<h2 id="65-recheck-affected-artifacts">6.5 重新检查受影响的产物 <a class="section-link" aria-label="本节链接" href="#65-recheck-affected-artifacts">#</a></h2>
+<p>修复后，对更改的模型运行 lint 检查，并以严格模式编译更改的查询。如果修复改变了实际运行验证或结果检查的输入，则重新运行适用的验证和检查。检查 SQL 和汇总值，尤其是在变更粒度或合并指标之后。</p>
+<p>如果严格模式下仍有警告，请报告该问题。生成 SQL 产物并不代表严格模式检查已通过。</p>
+<h2 id="66-deliver-the-artifacts-and-review-evidence">6.6 交付产物和审查证据 <a class="section-link" aria-label="本节链接" href="#66-deliver-the-artifacts-and-review-evidence">#</a></h2>
+<p>提交模型、使用模型的查询、审查发现、已接受的变更和检查结果。区分已通过的检查、已复现的缺陷和未运行的检查。</p>
+<p>对于导出和仪表板，请保持指标为数值类型，并根据下游使用方的要求核对输出名称。</p>
+<h2 id="67-resolve-findings">6.7 处理审查发现 <a class="section-link" aria-label="本节链接" href="#67-resolve-findings">#</a></h2>
+<p>在更新后的模型和受影响的查询中重新检查已接受的修复。记录尚未解决的问题及其对结果的影响。</p>
+<p>如果拟议的优化会改变业务定义，请返回第 4 阶段，并明确记录这项变更。</p>
+<h2 id="68-check-analytical-claims-separately">6.8 单独核实分析中的各项主张 <a class="section-link" aria-label="本节链接" href="#68-check-analytical-claims-separately">#</a></h2>
+<p>在建模过程中和执行后检查业务假设。仅凭技术审查无法确认业务结论能否从数据中得出。</p>
+</main></body></html>

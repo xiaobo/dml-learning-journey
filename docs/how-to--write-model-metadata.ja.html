@@ -1,0 +1,69 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>モデルのメタデータを書く · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="モデルにクエリを実行する前に、読者が適切なデータセット、対象集団、指標を選べるように説明を記述します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="モデルのメタデータを書く · DML"><meta property="og:description" content="モデルにクエリを実行する前に、読者が適切なデータセット、対象集団、指標を選べるように説明を記述します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--write-model-metadata.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--write-model-metadata.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--write-model-metadata.html">English</a> <a lang="zh" hreflang="zh" href="how-to--write-model-metadata.zh.html">中文</a></header><main><h1 id="write-model-metadata">モデルのメタデータを書く</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#describe-each-dataset">各データセットを説明する</a></li><li><a href="#explain-columns-that-affect-decisions">判断に影響する列を説明する</a></li><li><a href="#match-measure-names-to-their-formulas">指標名を数式と一致させる</a></li><li><a href="#set-internal-sql-names-when-needed">必要に応じて内部 SQL 名を設定する</a></li><li><a href="#document-derived-labels-and-estimates">派生ラベルと推定値を文書化する</a></li><li><a href="#verify-the-metadata-with-the-model">モデルを使ってメタデータを検証する</a></li></ul></details>
+<p>モデルにクエリを実行する前に、読者が適切なデータセット、対象集団、指標を選べるように説明を記述します。</p>
+<h2 id="describe-each-dataset">各データセットを説明する <a class="section-link" aria-label="この節へのリンク" href="#describe-each-dataset">#</a></h2>
+<p>ソースの1行が何を表し、どのフィールドで識別できるかを明記します。主要な合計値が業務上何を意味するか、対象範囲を絞るために必要なフィルター、既知の期間や地域の制約を説明します。</p>
+<pre><code class="language-yaml">description: |-
+  一行代表一条管道交易明细，transaction_id 标识源记录。
+  SUM(出厂价金额) 为管道净额，包含调拨和总仓流转，不代表终端 POS 销售。
+  官方 UL 报告使用 是否统计UL = '是'。
+  渠道表示购买方侧业务渠道，与卖出方渠道不同。
+</code></pre>
+<p>2つのデータセットが同じソースを売り手と買い手の視点でそれぞれ提供する場合は、<code>partner_id</code> のマッピングの違いを説明します。ソースの行が定義されるレベルが実際には同じ場合に、データセット間で異なると受け取られる記述は避けます。</p>
+<h2 id="explain-columns-that-affect-decisions">判断に影響する列を説明する <a class="section-link" aria-label="この節へのリンク" href="#explain-columns-that-affect-decisions">#</a></h2>
+<p>列名からその列の意味が分からない場合は、オブジェクト形式を使用します。</p>
+<pre><code class="language-yaml">columns:
+  Businesschannel:
+    description: 购买方侧业务渠道。模型别名为渠道，与卖出方渠道不同。
+  是否统计UL:
+    description: 官方 UL 报告范围标志。报告和归因分析使用相同筛选。
+  去年同期出厂价金额:
+    description: 行级去年同期金额。计算同比前检查数据覆盖及缺失值。
+</code></pre>
+<p>対象集団、グループ化、結合、比較に影響する列を優先します。既知の制約は、ソースに関する事実として記載します。1つのサンプルで得た結果を、列に恒常的に当てはまる特性として記載しないでください。</p>
+<h2 id="match-measure-names-to-their-formulas">指標名を数式と一致させる <a class="section-link" aria-label="この節へのリンク" href="#match-measure-names-to-their-formulas">#</a></h2>
+<p>指標のキーには業務用語を使用します。解釈に影響する場合は、対象集団、評価に必要なディメンション、NULL またはゼロの場合の動作を説明に記載します。</p>
+<p>従来の名前が数式の内容を正しく表していない場合は、正規の指標名を変更します。既存の利用側で互換性が必要な場合に限り、エイリアスを残します。アトミックな定義は、引き続き元のデータセットに属するようにします。</p>
+<pre><code class="language-yaml"># Fragment under a dataset's measures mapping.
+管道净额:
+  description: 管道净额包含调拨和总仓流转，不代表终端 POS 销售。
+  formula: SUM({出厂价金额})
+
+活跃购买方数:
+  description: 有记录的不同购买方代码数量，包含全部购买方类型。
+  formula: DISTINCTCOUNT({购买方代码})
+
+活跃药店数:
+  description: 有记录且类型为 Drugstore 的不同购买方代码数量。
+  formula: 'DISTINCTCOUNTIF({购买方代码}, {购买方客户类型} = ''Drugstore'')'
+</code></pre>
+<p>誤解を招く正規名をコメントで補わないでください。恒常的な制約は <code>description:</code> に記載し、メタデータを読み取るツールで表示できるようにします。</p>
+<h2 id="set-internal-sql-names-when-needed">必要に応じて内部 SQL 名を設定する <a class="section-link" aria-label="この節へのリンク" href="#set-internal-sql-names-when-needed">#</a></h2>
+<p>安定した SQL 互換の内部名を指定するには、<code>abbr:</code> を使用します。利用側に公開する名前には、業務用のキーまたはクエリで明示したエイリアスを引き続き使用します。</p>
+<pre><code class="language-yaml">进货额(不含税):
+  abbr: SaleAmountNoTax
+  type: measure
+  dataset: transactions
+  description: 不含税的有效进货金额。
+  formula: SUM({valid_sale_amount})
+</code></pre>
+<p>指標名を変更する前に、数式内の参照、クエリ、マテリアライズされた結果の利用側を確認します。<code>abbr</code> を指定するだけで、その指標に依存するすべての箇所で安全に名前を変更できるとは限りません。</p>
+<h2 id="document-derived-labels-and-estimates">派生ラベルと推定値を文書化する <a class="section-link" aria-label="この節へのリンク" href="#document-derived-labels-and-estimates">#</a></h2>
+<p>列マクロの意味を説明する必要がある場合は、<code>description:</code> と <code>formula:</code> を指定します。</p>
+<pre><code class="language-yaml"># Fragment under a dataset's column-macros mapping.
+购买方渠道:
+  description: 购买方侧业务渠道，来源为 Businesschannel。
+  formula: '{Businesschannel}'
+</code></pre>
+<p>ラベルがハードコードされたルールから生成される場合は、そのルールと適用範囲の限界を明記します。モデルで定義したカレンダー上のラベルと、正式な業務カレンダーを区別します。指標が処理フロー内の取引から最終段階の活動を推定する場合は、どの取引種別を含むかを明記します。</p>
+<h2 id="verify-the-metadata-with-the-model">モデルを使ってメタデータを検証する <a class="section-link" aria-label="この節へのリンク" href="#verify-the-metadata-with-the-model">#</a></h2>
+<ol>
+<li>名前、説明、数式がそれぞれ同じ指標を表していることを確認します。</li>
+<li>データセットの説明を、宣言されたソースキーと現在の対象範囲に照らして確認します。</li>
+<li>互換性のためのエイリアスと、その利用側を確認します。</li>
+<li>変更したモデルに対してリンターを実行します。</li>
+<li>変更した計算ごとに、その計算を使用するクエリを厳格モードでコンパイルします。</li>
+<li>生成されたエイリアスと出力列を確認します。</li>
+<li><a href="how-to--compile-and-validate.ja.html">CLI ガイド</a>に従って、該当するライブチェックを実行します。</li>
+</ol>
+<p>指標の構文と評価ディメンションについては、<a href="reference--measures.ja.html">指標</a>を参照してください。モデルの作成からクエリまでの一連の手順については、<a href="how-to--build-analysis.ja.html">順方向分析</a>に従ってください。</p>
+</main></body></html>

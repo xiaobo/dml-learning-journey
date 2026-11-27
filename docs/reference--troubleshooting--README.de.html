@@ -1,0 +1,436 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Übersicht zur Fehlerbehebung · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Suchen Sie unten nach einem Symptom oder nach der ID einer bekannten Fehlerquelle. Fehler in einer Abfrage beheben beschreibt das Vorgehen bei der Diagnose. Fehlercodes erläutert die strukturierten Diagnosemeld"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Übersicht zur Fehlerbehebung · DML"><meta property="og:description" content="Suchen Sie unten nach einem Symptom oder nach der ID einer bekannten Fehlerquelle. Fehler in einer Abfrage beheben beschreibt das Vorgehen bei der Diagnose. Fehlercodes erläutert die strukturierten Diagnosemeld"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--README.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--troubleshooting--README.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--README.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--README.zh.html">中文</a></header><main><h1 id="troubleshooting-index">Übersicht zur Fehlerbehebung</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#error--fix-quick-reference">Fehler und Lösungen auf einen Blick</a></li><li><a href="#find-a-pitfall-by-id">Fehlerquelle anhand der ID finden</a></li></ul></details>
+<p>Suchen Sie unten nach einem Symptom oder nach der ID einer bekannten Fehlerquelle. <a href="how-to--troubleshoot-query.de.html">Fehler in einer Abfrage beheben</a> beschreibt das Vorgehen bei der Diagnose. <a href="reference--error-codes.de.html">Fehlercodes</a> erläutert die strukturierten Diagnosemeldungen.</p>
+<h2 id="error--fix-quick-reference">Fehler und Lösungen auf einen Blick <a class="section-link" aria-label="Link zum Abschnitt" href="#error--fix-quick-reference">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Fehler oder Symptom</th>
+<th>Lösung</th>
+<th>Fehlerquelle</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UNION is not supported</code></td>
+<td>Getrennte Abfragen oder Kennzahlen mit unterschiedlichen Filtern</td>
+<td><a href="reference--troubleshooting--queries.de.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>aggregation is not possible with MODEL.DATASET_*</code></td>
+<td><code>FROM MODEL</code> + <code>AGG(measure)</code></td>
+<td><a href="reference--troubleshooting--queries.de.html#p8">P8</a>, <a href="reference--troubleshooting--queries.de.html#p45">P45</a></td>
+</tr>
+<tr>
+<td><code>subquery is not supported</code></td>
+<td>DML-Kennzahl oder <code>+f</code> / <code>HAVING</code> mit <code>AGG()</code></td>
+<td><a href="reference--troubleshooting--queries.de.html#p10">P10</a></td>
+</tr>
+<tr>
+<td><code>JOIN is not supported</code></td>
+<td><code>{DATASET}.column</code> in Spaltenmakros</td>
+<td><a href="reference--troubleshooting--queries.de.html#p11">P11</a></td>
+</tr>
+<tr>
+<td><code>ref {...} not defined</code></td>
+<td>Im Modell definieren und in SQL die Namen ohne zusätzliche Syntax verwenden</td>
+<td><a href="reference--troubleshooting--models.de.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>measure cannot be redefined</code></td>
+<td><code>AS measure_name</code> bei <code>AGG(measure_name)</code> entfernen</td>
+<td><a href="reference--troubleshooting--models.de.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>use existing measure "X" instead of recreating…</code></td>
+<td>Nur <code>AGG(X)</code></td>
+<td><a href="reference--troubleshooting--models.de.html#p40">P40</a></td>
+</tr>
+<tr>
+<td><code>... was referenced but not defined in sql</code></td>
+<td><code>{...}</code> aus dem SQL der Model Query entfernen, außer in der Modifikatorform innerhalb von <code>AGG({…})</code></td>
+<td><a href="reference--troubleshooting--models.de.html#p41">P41</a></td>
+</tr>
+<tr>
+<td><code>file not found: SELECT ...</code> (Windows)</td>
+<td>In direkt auf der CLI eingegebenem Model-Query-SQL den Operator <code>/</code> durch <code>DIVIDE()</code> ersetzen</td>
+<td><a href="reference--troubleshooting--tooling.de.html#p63">P63</a></td>
+</tr>
+<tr>
+<td><code>table … is owned by dataset …</code></td>
+<td><code>from {Dataset}</code> / <code>join {Dataset}</code> oder <code>pk(...).{Dataset}.Col</code></td>
+<td><a href="reference--troubleshooting--models.de.html#p22b">P22b</a></td>
+</tr>
+<tr>
+<td>Kennzahl als Dimension: fehlendes <code>+d</code>, inkompatible Schlüssel für Labels oder fehleranfällige Aggregation einer anderen Kennzahl derselben Ebene</td>
+<td>Für jede als Dimension verwendete Kennzahl einen vollständigen <code>+d</code>-Schlüssel explizit angeben. Kompatible Schlüssel und aggregierbare Ausgabekennzahlen verwenden.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p66">P66</a>–<a href="reference--troubleshooting--grain-and-joins.de.html#p68">P68</a></td>
+</tr>
+<tr>
+<td><code>{+d:x,-d:x}</code> / <code>{+d:x,-df:x}</code> für dasselbe Objekt wird ohne Meldung zu <code>{m}</code> bzw. <code>{-f:x}</code> allein</td>
+<td>Der Ausdruck ist unzulässig und muss einen Fehler auslösen. Den Ausdruck so umschreiben, dass er die beabsichtigte Operation direkt angibt.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p79">P79</a></td>
+</tr>
+<tr>
+<td>Ein <code>-f</code>- / <code>-df</code>-Zweig entfernt einen Abfragefilter außerhalb der Gruppierungsgranularität. Dadurch gelangen Zeilen der Partnerseite von FOJ ins Ergebnis.</td>
+<td>Die bestehende Einschränkung der Grundgesamtheit des Berichts beibehalten (<code>EXISTS</code> / Semi-Join). <code>-f</code> ändert die Gruppierung nicht.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p80">P80</a></td>
+</tr>
+<tr>
+<td>In einer Monatsabfrage wird <code>{m:{dimension:[dt_quarter]}}</code> als Skalar oder auf der falschen Granularität eingebunden</td>
+<td>Die gröber granulare CTE über einen Kalender anbinden und den Quartalswert an alle zugehörigen Zeilen weitergeben</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p81">P81</a></td>
+</tr>
+<tr>
+<td><code>WHERE</code> in einer fein granularen CTE mit anschließendem äußerem <code>SUM</code> wird als gröber granulares <code>filters: "cnt &gt; 3"</code> umgeschrieben</td>
+<td><code>SUMIF</code> / <code>SUM(iif)</code> mit passendem <code>{+d: …}</code> innerhalb der Kennzahl</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p69">P69</a></td>
+</tr>
+<tr>
+<td><code>window functions are not allowed in atomic measures</code> / unzulässige Kombination aus <code>GROUP BY</code> und <code>OVER</code></td>
+<td><code>OVER</code> auf Detailebene unter <code>columns:</code> definieren. Nach <code>GROUP-BY</code> eine zusammengesetzte Kennzahl oder <code>{-d:}</code> verwenden.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p70">P70</a>–<a href="reference--troubleshooting--grain-and-joins.de.html#p71">P71</a></td>
+</tr>
+<tr>
+<td><code>… reference is not allowed in PARTITION BY</code></td>
+<td>Wenn <code>{col}</code> direkt in der Fensterdefinition einer Kennzahl steht, die Detailberechnung nach <code>columns:</code> verschieben oder <code>{-d:}</code> / <code>{dimension:}</code> verwenden.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p71">P71</a></td>
+</tr>
+<tr>
+<td>Der Nenner des Verhältnisses wird beim Rollup ohne Diagnosemeldung falsch berechnet (<code>left²</code> statt <code>left × right</code>)</td>
+<td>Zwei Felder der Gruppierungsgranularität verweisen auf dieselbe Spalte. <code>-df</code>/<code>dimension:</code> hat die zweite Rolle an den ersten Schlüssel gebunden. Mit <code>pk()</code> auf ein <code>sql:</code>-Dataset mit deklarierter Dimension zugreifen.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p72">P72</a></td>
+</tr>
+<tr>
+<td>Zusätzliche Zeilen oder fälschlich erzeugte Zeilen mit <code>left = right</code> aus einer zusammengesetzten Rollup-Kennzahl</td>
+<td>Datasetübergreifendes <code>-df</code> erzeugt <code>FULL OUTER JOIN</code>. Das Ergebnis mit <code>'{primary_measure} is not null':</code> einschränken.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p73">P73</a></td>
+</tr>
+<tr>
+<td>Ein <code>-df</code>-Rollup lässt ein Feld der Gruppierungsgranularität weg und gibt nur die Warnung „skip dimension column“ aus</td>
+<td>Zwei <code>table:</code>-Datasets auf derselben physischen Tabelle haben unterschiedliche Spaltenmengen. Identische Spaltenmengen verwenden oder Datasets vermeiden, die dieselbe Tabelle in unterschiedlichen Rollen verwenden.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p74">P74</a></td>
+</tr>
+<tr>
+<td>Nach Umbenennung einer Dimension meldet <code>-df</code> den Fehler <code>column(s) [x] … not in dimension</code></td>
+<td><code>-df</code> erwartet die deklarierten Namen der Felder, die die Gruppierungsgranularität festlegen. Namen von Quellspalten sind hier unzulässig.</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p76">P76</a></td>
+</tr>
+<tr>
+<td><code>dataset must be specified … did you mean X</code> bei <code>MAX(pk(…))</code></td>
+<td>Für <code>dataset:</code> das <strong>verwendende</strong> Dataset angeben</td>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p77">P77</a></td>
+</tr>
+</tbody></table>
+<h2 id="find-a-pitfall-by-id">Fehlerquelle anhand der ID finden <a class="section-link" aria-label="Link zum Abschnitt" href="#find-a-pitfall-by-id">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Thema</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="reference--troubleshooting--migration.de.html#p1">P1</a></td>
+<td>Darstellungslogik in DML aufnehmen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.de.html#p2">P2</a></td>
+<td>Abgeleitete Spalten, die nur eine Abfrage benötigt, in DML aufnehmen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.de.html#p5">P5</a></td>
+<td>Nicht prüfen, ob das kompilierte SQL mit dem Referenz-SQL übereinstimmt</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.de.html#p6">P6</a></td>
+<td>Einmalig verwendete Kennzahlen für Filter oder Kombinationen von Abfragedimensionen erstellen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--migration.de.html#p7">P7</a></td>
+<td>Aggregationsformeln duplizieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p8">P8</a></td>
+<td>AGG() in Aggregationsabfragen vergessen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p9">P9</a></td>
+<td>Einen überflüssigen Alias für AGG() angeben</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p10">P10</a></td>
+<td>Unterabfragen verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p11">P11</a></td>
+<td>JOINs verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p12">P12</a></td>
+<td>Fehlender Zeitkontext für Zeitmodifikatoren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p13">P13</a></td>
+<td>Unterschiedliche Zeitgranularitäten mischen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p14">P14</a></td>
+<td>Unnötige Filter für NULL-Werte hinzufügen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p15">P15</a></td>
+<td>BETWEEN für einzelne Zeiträume verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p16">P16</a></td>
+<td>Die Reihenfolge der Zeitfilter ist eine Stilkonvention</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p17">P17</a></td>
+<td>ORDER BY ohne Bedarf verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p18">P18</a></td>
+<td>Wachstumsrate manuell berechnen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p20">P20</a></td>
+<td>Für Existenzprüfungen nur DISTINCT verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p21">P21</a></td>
+<td>AGG() in Kennzahlformeln</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p22">P22</a></td>
+<td>Datasetübergreifende Verweise ohne Lookup</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p22b">P22b</a></td>
+<td>Eine physische Tabelle, die einem Dataset über <code>table:</code> zugeordnet ist, im <code>sql:</code> eines anderen Datasets per Join einbinden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p23">P23</a></td>
+<td>Fehlendes <code>dataset:</code> bei atomaren Kennzahlen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p24">P24</a></td>
+<td>Zu spezifische Kennzahlnamen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p25">P25</a></td>
+<td>Randfälle nicht dokumentieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p27">P27</a></td>
+<td>Kennzahlen mit Dimensionseinschränkungen in inkompatiblen Abfragen verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p28">P28</a></td>
+<td><code>+d</code> verwenden, obwohl <code>GROUP BY</code> ausreicht</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p28b">P28b</a></td>
+<td>NULL-Werte breiten sich aus, wenn beim Join eine passende Zeile fehlt</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p28c">P28c</a></td>
+<td>NULL als Gruppierungsschlüssel beim Kombinieren von Datasets</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p29">P29</a></td>
+<td>Zeitfilter für einen anderen Tag als den ersten Tag des Zeitraums</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p30">P30</a></td>
+<td>Der aktuelle Tag fehlt bei der Auswahl der letzten N Tage</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p31">P31</a></td>
+<td>Den aktuellen Zeitraum in die letzten N Monate einbeziehen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p32">P32</a></td>
+<td>Den Modifikator ytd mit GROUP BY nach vollständigen Zeiträumen verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p33">P33</a></td>
+<td>Den Zeitraum vom Periodenbeginn bis zum Stichtag mit einem Datumsbereich kombinieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p34">P34</a></td>
+<td>validateOnly nicht ausführen, bevor man sich auf das Ergebnis verlässt</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p35">P35</a></td>
+<td>Spaltenbeschreibungen ignorieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p36">P36</a></td>
+<td>Unpassender Dialekt</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p37">P37</a></td>
+<td>Modifikatoren auf Spalten anwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p38">P38</a></td>
+<td>YAML-Formeln ohne Anführungszeichen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p39">P39</a></td>
+<td><code>dataset:</code> bei zusammengesetzten Kennzahlen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p40">P40</a></td>
+<td>Kennzahl kann nicht neu definiert werden / doppelte Formel</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p41">P41</a></td>
+<td>DML-Syntax <code>{...}</code> im SQL der Model Query</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--models.de.html#p42">P42</a></td>
+<td>Bloßer Name oder <code>{col}</code> in <code>.dml</code>-Formeln</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p43">P43</a></td>
+<td><code>{dimension: [...]}</code> und <code>{-d: dim_dt}</code> im Vergleich (unterschiedliche SQL-Struktur)</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p44">P44</a></td>
+<td>Anteil am Fenster in Abgrenzung zu <code>{-d: dim}</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p45">P45</a></td>
+<td>Kennzahl in einer Detailabfrage</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p46">P46</a></td>
+<td>Bloßer Spaltenname in einer Aggregationsabfrage</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p47">P47</a></td>
+<td>Unterschiedliche Namen für Dimensionsfelder in verschiedenen Datasets</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p48">P48</a></td>
+<td>Ein Mapping als Dimensionsfeld unter <code>dimension:</code> verwenden</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p49">P49</a></td>
+<td>Dimensionsfeld unter <code>measures:</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p50">P50</a></td>
+<td>Komplexer Filter unter <code>filters:</code> einer Abfrage</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p51">P51</a></td>
+<td>Falsche Parameteranzahl bei der Verkettung von PK</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p52">P52</a></td>
+<td>GROUP BY in <code>after:</code> manuell angeben</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p53">P53</a></td>
+<td>Befehle in PowerShell mit <code>&amp;&amp;</code> verketten</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p53b">P53b</a></td>
+<td>Name in <code>FROM</code> ≠ <strong>Datei</strong>name in <code>--model=</code></td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p63">P63</a></td>
+<td>Operator <code>/</code> in Model-Query-SQL, das unter Windows direkt auf der CLI eingegeben wird</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--tooling.de.html#p54">P54</a></td>
+<td>JSON mit CJK-Zeichen über eine PowerShell-Pipe übertragen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--time.de.html#p59">P59</a></td>
+<td>Vorjahresvergleich ohne vorherige Prüfung der Spalten</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p60">P60</a></td>
+<td>Unterabfrage für das MAX-Datum in einer Aggregationsabfrage</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--queries.de.html#p61">P61</a></td>
+<td>Direkt auf einem Dataset mit GROUP BY aggregieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p62">P62</a></td>
+<td><code>dimensions:</code> einer Kennzahl als Definition der Dataset-Identität oder der Abfragegruppierung behandeln</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p64">P64</a></td>
+<td><code>materialize: true</code> bei einer Kennzahl</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p66">P66</a></td>
+<td>Kennzahl als Dimension ohne expliziten Entitätsschlüssel</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p67">P67</a></td>
+<td>Aus Kennzahlen abgeleitete Dimensionen, die inkompatibel sind oder voneinander abhängen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p68">P68</a></td>
+<td>Die Ausgabekennzahl lässt sich ausgehend von der Granularität der Klassifizierung nicht auf eine gröbere Ebene aggregieren</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p69">P69</a></td>
+<td>Ein fein granulares <code>WHERE</code> unter <code>filters:</code> einer gröber granularen Abfrage angeben</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p70">P70</a></td>
+<td><code>OVER</code> bei einer atomaren Kennzahl</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p71">P71</a></td>
+<td>Bloßes <code>{col}</code> in der <code>PARTITION BY</code>-Klausel einer Kennzahl</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p72">P72</a></td>
+<td>Zwei Felder der Gruppierungsgranularität verweisen auf dieselbe Spalte. Dadurch werden datasetübergreifende Rollups an den falschen Schlüssel gebunden.</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p73">P73</a></td>
+<td>Zusammengesetzte <code>-df</code>-Rollup-Kennzahlen geben Zeilen aus, die nur auf der Partnerseite vorkommen, und können nicht vorhandene Schlüsselwerte erzeugen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p74">P74</a></td>
+<td>Zwei <code>table:</code>-Datensätze auf derselben physischen Tabelle – Besonderheiten beim Zusammenführen und unbemerkter Verlust der durch <code>-df</code> festgelegten Detailebene</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p75">P75</a></td>
+<td>Schutzfilter für Kennzahlen mit <code>filters:</code> in der Abfrage – Aufbau und Fehlerverhalten</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p76">P76</a></td>
+<td>Die Argumente für <code>-df</code> und <code>-d</code> sind die deklarierten Feldnamen der Detailebene, keine Quellspaltennamen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p77">P77</a></td>
+<td><code>pk()</code> mit einer Aggregatrelation – <code>sql:</code> als Ziel und <code>dataset:</code> am Wrapper</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p79">P79</a></td>
+<td><code>+d</code> mit <code>-d</code> oder <code>-df</code> für dieselbe Dimension</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p80">P80</a></td>
+<td><code>-f</code> oder <code>-df</code> entfernt einen Abfragefilter, der sich nicht auf die Detailebene bezieht, aus der Auswahl der Berichtszeilen</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p81">P81</a></td>
+<td>Ersetzen der Zeitdimension mit <code>dimension:</code> über unterschiedliche Detailebenen hinweg ohne Vervielfältigung über den Kalender</td>
+</tr>
+<tr>
+<td><a href="reference--troubleshooting--grain-and-joins.de.html#p78">P78</a></td>
+<td>Ein Escape mit <code>sql:</code> muss die Prädikate für seine Grundgesamtheit und sein Fenster selbst enthalten</td>
+</tr>
+</tbody></table>
+</main></body></html>

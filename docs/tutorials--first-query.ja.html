@@ -1,0 +1,57 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>最初のモデルクエリをコンパイルする · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="売上モデルを作成し、地域別の合計を返すクエリをコンパイルします。dmlc.exeがインストールされていることと、書き込み可能な作業ディレクトリが必要です。このチュートリアルでは、データベースに接続せずにSQLをコンパイルします。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="最初のモデルクエリをコンパイルする · DML"><meta property="og:description" content="売上モデルを作成し、地域別の合計を返すクエリをコンパイルします。dmlc.exeがインストールされていることと、書き込み可能な作業ディレクトリが必要です。このチュートリアルでは、データベースに接続せずにSQLをコンパイルします。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="tutorials--first-query.de.html">Deutsch</a> <a lang="en" hreflang="en" href="tutorials--first-query.html">English</a> <a lang="zh" hreflang="zh" href="tutorials--first-query.zh.html">中文</a></header><main><h1 id="compile-your-first-model-query">最初のモデルクエリをコンパイルする</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#identify-the-compiler">コンパイラを確認する</a></li><li><a href="#define-the-model">モデルを定義する</a></li><li><a href="#write-the-query">クエリを記述する</a></li><li><a href="#compile-the-query">クエリをコンパイルする</a></li><li><a href="#inspect-the-result">結果を確認する</a></li></ul></details>
+<p>売上モデルを作成し、地域別の合計を返すクエリをコンパイルします。<code>dmlc.exe</code>がインストールされていることと、書き込み可能な作業ディレクトリが必要です。このチュートリアルでは、データベースに接続せずにSQLをコンパイルします。</p>
+<h2 id="identify-the-compiler">コンパイラを確認する <a class="section-link" aria-label="この節へのリンク" href="#identify-the-compiler">#</a></h2>
+<p><code>dmlc.exe</code>をインストールし、そのディレクトリをPATHに追加します。PowerShellを開き、作業ディレクトリを作成する前に実行ファイルのパスを保存します。</p>
+<pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
+&amp; $dmlc --version
+</code></pre>
+<p>出力にはバージョン、ビルドのタイムスタンプ、プラットフォームが含まれます。<a href="compiler-observations.json">チュートリアルのコンパイラ記録</a>で、このチュートリアルの検証に使用したビルドを確認できます。</p>
+<p>次に、ファイルを保存するためのディレクトリを新規作成します。</p>
+<pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
+Set-Location first-query
+</code></pre>
+<p>プロンプトの末尾が<code>first-query</code>になります。</p>
+<h2 id="define-the-model">モデルを定義する <a class="section-link" aria-label="この節へのリンク" href="#define-the-model">#</a></h2>
+<p>次の内容を<code>model.dml</code>として保存します。</p>
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+
+average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+</code></pre>
+<p><code>FACT_SALES</code>は、<code>id</code>ごとにソース行が1行あると宣言します。<code>sales</code>と<code>cnt</code>はこれらの行を集計します。<code>average_sale</code>は前者の集計結果を後者の集計結果で割ります。</p>
+<p>次に、モデルを lint でチェックします。</p>
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
+$LASTEXITCODE
+</code></pre>
+<p>プロセスは終了コード<code>0</code>で終了します。lint で指摘が報告された場合は、先に進む前に、保存したファイルを上記のモデルと見比べてください。</p>
+<h2 id="write-the-query">クエリを記述する <a class="section-link" aria-label="この節へのリンク" href="#write-the-query">#</a></h2>
+<p>次の内容を<code>query.sql</code>として、<code>model.dml</code>と同じディレクトリに保存します。</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>FROM MODEL</code>で<code>model.dml</code>を選択します。結果の各行は1つの地域を表します。</p>
+<h2 id="compile-the-query">クエリをコンパイルする <a class="section-link" aria-label="この節へのリンク" href="#compile-the-query">#</a></h2>
+<p>次に、クエリを厳格モードでコンパイルします。</p>
+<pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+$LASTEXITCODE
+</code></pre>
+<p>JSON出力には<code>status: ok</code>と<code>exitCode: 0</code>が示され、<code>diagnostics</code>にはエラーも警告もありません。<code>data.sql</code>には<code>SUM(amount)</code>、<code>COUNT(1)</code>、<code>GROUP BY region</code>が含まれます。最終的な射影には<code>region</code>、<code>sales</code>、<code>average_sale</code>が含まれます。</p>
+<p>コンパイラは、情報レベルの診断メッセージ<code>DATASET_GRAIN_UNVERIFIED</code>を出力する場合があります。ここでは、物理テーブル<code>TABLE_SALES</code>を確認せずに、宣言されたモデルをコンパイルしました。</p>
+<h2 id="inspect-the-result">結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-result">#</a></h2>
+<p>SQLの生成ファイルを<code>gen</code>ディレクトリ内で開きます。集計式と<code>region</code>によるグループ化を確認します。これで、モデルとそれを利用するクエリが完成し、生成されたSQLを確認できます。</p>
+<p>クエリを実行するには、宣言されたソーステーブルにアクセスできる接続を使用します。接続先でキーを検証してクエリを実行する手順は、<a href="how-to--compile-and-validate.ja.html">dmlc CLIを使う</a>を参照してください。<a href="explanation--core-concepts.ja.html">基本概念</a>では、モデル層とクエリ層の関係を説明します。</p>
+</main></body></html>

@@ -1,0 +1,25 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メジャーをディメンションとして使う · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このパターンでは、エンティティごとにラベルを計算し、そのラベルで指標をグループ化します。ラベルはクエリのディメンションとして機能します。ソース行を識別するものではありません。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="メジャーをディメンションとして使う · DML"><meta property="og:description" content="このパターンでは、エンティティごとにラベルを計算し、そのラベルで指標をグループ化します。ラベルはクエリのディメンションとして機能します。ソース行を識別するものではありません。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--measure-as-dimension.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="explanation--measure-as-dimension.de.html">Deutsch</a> <a lang="en" hreflang="en" href="explanation--measure-as-dimension.html">English</a> <a lang="zh" hreflang="zh" href="explanation--measure-as-dimension.zh.html">中文</a></header><main><h1 id="measure-as-dimension">メジャーをディメンションとして使う</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#entity-keys-and-evaluation-stages">エンティティキーと評価段階</a></li><li><a href="#population-and-reaggregation">母集団と再集計</a></li><li><a href="#label-channel-filters">分類ラベルと指標に対するフィルター</a></li><li><a href="#limitations">制約</a></li></ul></details>
+<p>このパターンでは、エンティティごとにラベルを計算し、そのラベルで指標をグループ化します。ラベルはクエリのディメンションとして機能します。ソース行を識別するものではありません。</p>
+<h2 id="entity-keys-and-evaluation-stages">エンティティキーと評価段階 <a class="section-link" aria-label="この節へのリンク" href="#entity-keys-and-evaluation-stages">#</a></h2>
+<p>ラベルは特定の粒度のエンティティに属するため、分類には完全なエンティティキーが必要です。通常のレポート項目を <code>Q</code>、エンティティキーを <code>K</code> とします。<code>+d: K</code> を指定すると、分類器は <code>Q ∪ K</code> で定義される粒度で評価されます。コンパイラは完全なキーでラベルを対応付けてから、<code>Q</code> とラベルで通常の指標を集計します。</p>
+<p>アトミックな定義 <code>sales: SUM({amount})</code> を前提とすると、このクエリの断片は顧客を売上額でグループ化します。</p>
+<pre><code class="language-yaml">report:
+  type: query
+  columns:
+    dimension:
+      - sales_bucket: '{sales: {+d: customer}}'
+    total_sales: 'SUM({sales: {+d: customer}})'
+</code></pre>
+<p>外側に明示した <code>SUM</code> は、同じラベルを持つ顧客の売上額を合計します。この例では、売上額そのものをラベルとして使います。業務上の区分を使うには、その区分専用の分類器を定義し、検証する必要があります。</p>
+<p>分類を使う箇所では、キーを明示する必要があります。<code>{measure}</code> だけを指定すると拒否されます。メジャー定義内のより細かい粒度の段階や、同じ階層にある別の指標で、不足しているキーを補うことはできません。</p>
+<p>今回確認したビルドでは、検証対象の <code>+d: customer</code> と <code>dimension: [customer]</code> を使った件数ベースの分類器は、顧客単位で集計した後にラベルでグループ化する形にコンパイルされます。この検証で確認できるのは、テストした形式だけです。</p>
+<h2 id="population-and-reaggregation">母集団と再集計 <a class="section-link" aria-label="この節へのリンク" href="#population-and-reaggregation">#</a></h2>
+<p>分類の対象範囲、どのエンティティを母集団に含めるか、レポートの対象範囲は、それぞれ独立して決めます。<code>-d</code> は時間フィルターを保持するため、時間によるグループ化を外しただけでは、エンティティの全期間が分類対象になるとは限りません。ラベルの値が NULL でも、有効な区分になり得ます。その値だけでは、エンティティが母集団に含まれていないとは判断できません。また、分類によって非アクティブなエンティティが作られることもありません。</p>
+<p>複数のラベルを使うには、互いに互換性のある完全なエンティティキーと、ラベルごとに独立した定義が必要です。加算可能な金額は、エンティティ単位の値を合計できます。比率、平均、重複を除いた件数には、再集計しても元の定義を保てる構成要素が必要です。</p>
+<h2 id="label-channel-filters">分類ラベルと指標に対するフィルター <a class="section-link" aria-label="この節へのリンク" href="#label-channel-filters">#</a></h2>
+<p>分類器が付けたラベルや、ラベル単位で評価される同階層のメジャーに対するフィルターは、分類の後に適用します。DML クエリでは、このような条件を <code>filters:</code> の下に記述できます。たとえば、<code>"{首购月} is not null OR {销售额} &gt; 0":</code> と指定します。</p>
+<p>Model Query では、メジャーに対する条件を <code>HAVING</code> として表せます。どのキーワードを使うかよりも、意味上どの段階で条件を適用するかが重要です。コンパイルで生成された SQL では、分類で得られたリレーションに <code>WHERE</code> を適用するのが一般的です。条件を分類より前に移すと、ラベルの計算に使う母集団が変わります。</p>
+<p><a id="build-evidence-and-limitations"></a></p>
+<h2 id="limitations">制約 <a class="section-link" aria-label="この節へのリンク" href="#limitations">#</a></h2>
+<p>このパターンは、クエリの <code>columns.dimension</code> を対象とします。確認したマテリアライズでは、通常の属性 <code>{region}</code> はコンパイルできますが、<code>{sales: {+d: id}}</code> を <code>materialize.dimension_columns</code> に記述すると、使用できないメジャー参照として拒否されます。クエリの分類器をそのままマテリアライズの属性に移さないでください。生成された分類と再集計の段階を確認し、そのうえでご自身のデータを使ってキーを検証し、結果の値を比較してください。</p>
+</main></body></html>

@@ -1,0 +1,35 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fehlerbehebung: Zuerst den fehlerhaften Schritt ermitteln · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Speichern Sie zuerst die vollständigen Diagnoseinformationen und grenzen Sie die Untersuchung dann auf eine Kennzahl ein. Eine erfolgreiche Kompilierung belegt nicht, dass die Quellschlüssel zu den Daten passen"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/support.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/support.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/support-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/support.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/support.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Fehlerbehebung: Zuerst den fehlerhaften Schritt ermitteln · DML"><meta property="og:description" content="Speichern Sie zuerst die vollständigen Diagnoseinformationen und grenzen Sie die Untersuchung dann auf eine Kennzahl ein. Eine erfolgreiche Kompilierung belegt nicht, dass die Quellschlüssel zu den Daten passen"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/support.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="support.ja.html">日本語</a> <a lang="en" hreflang="en" href="support-en.html">English</a> <a lang="zh" hreflang="zh" href="support.html">中文</a></header><main><h1 id="troubleshooting-first-locate-the-failing-step">Fehlerbehebung: Zuerst den fehlerhaften Schritt ermitteln</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#prepare-reproducible-material">Unterlagen zur Reproduktion vorbereiten</a></li><li><a href="#versions-and-known-limits">Versionen und bekannte Einschränkungen</a></li></ul></details>
+<p><strong>Speichern Sie zuerst die vollständigen Diagnoseinformationen und grenzen Sie die Untersuchung dann auf eine Kennzahl ein.</strong> Eine erfolgreiche Kompilierung belegt nicht, dass die Quellschlüssel zu den Daten passen. Eine bestandene Validierung ersetzt nicht die fachliche Prüfung der Ergebnisse.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Nächster Schritt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modell nicht gefunden</td>
+<td>Prüfen Sie den Dateinamen und den Namen in <code>FROM</code>. Siehe <a href="reference--model-query-sql.de.html">Regeln zum Auffinden von Abfragen</a>.</td>
+</tr>
+<tr>
+<td>Kompilierungsfehler</td>
+<td>Speichern Sie den Exitcode und die JSON-Ausgabe. Siehe <a href="reference--error-codes.de.html">Referenz der Fehlercodes</a>.</td>
+</tr>
+<tr>
+<td>VALIDATION_ERROR</td>
+<td>Korrigieren Sie die Schlüssel oder die Daten und testen Sie erneut. Siehe <a href="guide--duplicate-lookup.de.html">Prüfung auf doppelte Schlüssel</a>.</td>
+</tr>
+<tr>
+<td>Summen, Anteile oder historische Werte erscheinen fehlerhaft</td>
+<td>Prüfen Sie die Eingabezeilen, Filter und Gruppierung. Siehe <a href="reference--modifiers.de.html">Modifikatoren</a>.</td>
+</tr>
+<tr>
+<td>Das materialisierte Ergebnis ist veraltet</td>
+<td><a href="materialization-workflow.de.html">Lebenszyklus der Materialisierung</a></td>
+</tr>
+</tbody></table>
+<h2 id="prepare-reproducible-material">Unterlagen zur Reproduktion vorbereiten <a class="section-link" aria-label="Link zum Abschnitt" href="#prepare-reproducible-material">#</a></h2>
+<p>Speichern Sie die Ausgabe von <code>dmlc --version</code>, den Befehl, den Exitcode, die vollständigen Diagnoseinformationen, ein minimales Modell bzw. eine minimale Abfrage, bereinigte Eingabedaten und das erwartete Ergebnis. Entfernen Sie Passwörter, Token, echte Verbindungszeichenfolgen und personenbezogene Daten. Geben Sie Feedback über Ihren bestehenden Produktkontakt. Auf dieser Website ist noch kein öffentlicher Supportkanal aufgeführt. Übermitteln Sie daher keine privaten Daten an projektfremde Repositorys.</p>
+<h2 id="versions-and-known-limits">Versionen und bekannte Einschränkungen <a class="section-link" aria-label="Link zum Abschnitt" href="#versions-and-known-limits">#</a></h2>
+<p>Beobachtungen zu einem bestimmten Build gelten nur für den dokumentierten Build und seine Testdaten. Frühere Probleme sind keine Fehlerliste für die aktuelle Version. Wenn Sie eine Abweichung feststellen, reproduzieren Sie sie mit dem aktuellen Compiler und speichern Sie den generierten SQL-Code. Prüfen Sie zuerst den Validierungsstatus der <a href="checked-exercise-de.html">Vertriebsübung</a>. Kennzeichnen Sie andere Dialekte oder nicht ausgeführte Szenarien als „not verified“.</p>
+</main></body></html>

@@ -1,0 +1,69 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>複数の地域に同じ ID があるときの検索 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="行を特定するために必要な項目をすべてキーに含め、検索時には定義と同じ順序で値を渡します。東部と西部に同じ id=1 があっても、(id, region) の組み合わせで 1 行に絞れれば検索できます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--compound-key.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="複数の地域に同じ ID があるときの検索 · DML"><meta property="og:description" content="行を特定するために必要な項目をすべてキーに含め、検索時には定義と同じ順序で値を渡します。東部と西部に同じ id=1 があっても、(id, region) の組み合わせで 1 行に絞れれば検索できます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--compound-key.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="examples--compound-key.de.html">Deutsch</a> <a lang="en" hreflang="en" href="examples--compound-key-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--compound-key-zh.html">中文</a></header><main><h1 id="look-up-an-id-that-repeats-across-regions">複数の地域に同じ ID があるときの検索</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#inspect-the-input-and-result">元データと集計結果</a></li><li><a href="#define-the-lookup-once">参照方法をモデルに定義する</a></li><li><a href="#which-sale-was-counted-twice">どの売上が二重に集計されたか</a></li><li><a href="#run-and-interpret-the-checks">検証を実行して結果を確認する</a></li></ul></details>
+<p>行を特定するために必要な項目をすべてキーに含め、検索時には定義と同じ順序で値を渡します。東部と西部に同じ <code>id=1</code> があっても、<code>(id, region)</code> の組み合わせで 1 行に絞れれば検索できます。</p>
+<h2 id="inspect-the-input-and-result">元データと集計結果 <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-input-and-result">#</a></h2>
+<p>参照先のテーブルでは <code>(1,east)</code> が東部、<code>(1,west)</code> が西部に対応します。売上は東部が 10、西部が 20 です。クエリは次の結果を返します。</p>
+<table>
+<thead>
+<tr>
+<th>地域名</th>
+<th align="right">売上</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>East</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>West</td>
+<td align="right">20</td>
+</tr>
+</tbody></table>
+<p>ID だけで結合すると、この 2 行を区別できません。</p>
+<h2 id="define-the-lookup-once">参照方法をモデルに定義する <a class="section-link" aria-label="この節へのリンク" href="#define-the-lookup-once">#</a></h2>
+<p>参照先のテーブルに <code>dimension: [id, region]</code> を定義します。売上データの地域名は <code>pk({id}, {region}).{D}.label</code> で取得します。引数の順序は参照先のディメンションで定義した順序と同じです。</p>
+<details><summary>ファイル全体：compound/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+D:
+  type: dataset
+  table: DIM
+  dimension: [id, region]
+  columns:
+    id:
+    region:
+    label:
+F:
+  type: dataset
+  table: FACT
+  dimension: [fid]
+  columns:
+    fid:
+    id:
+    region:
+    amount:
+    label: 'pk({id}, {region}).{D}.label'
+  measures:
+    sales: SUM({amount})
+</code></pre>
+</details>
+<details><summary>ファイル全体：compound/setup.sql</summary>
+
+<pre><code class="language-sql">CREATE TABLE DIM(id INTEGER, region VARCHAR, label VARCHAR); INSERT INTO DIM VALUES (1,'east','East'),(1,'west','West'); CREATE TABLE FACT(fid INTEGER,id INTEGER,region VARCHAR,amount INTEGER); INSERT INTO FACT VALUES (1,1,'east',10),(2,1,'west',20);
+</code></pre>
+</details>
+<details><summary>ファイル全体：compound/normal.sql</summary>
+
+<pre><code class="language-sql">SELECT label, AGG(sales) FROM MODEL GROUP BY label ORDER BY label
+</code></pre>
+</details>
+
+<p>地域名で集計するときは、モデルに定義した参照方法が使われます。各クエリに結合条件を書く必要はありません。<code>id, region</code> を自分のデータに合わせる前に、どの項目を組み合わせれば行を特定できるか確認してください。</p>
+<h2 id="which-sale-was-counted-twice">どの売上が二重に集計されたか <a class="section-link" aria-label="この節へのリンク" href="#which-sale-was-counted-twice">#</a></h2>
+<p>地域テーブルに <code>(1,east)</code> の行をもう 1 行追加します。東部の売上 10 が 2 行に一致します。通常の SQL で結合して合計すると、東部は 20 になります。西部は 20 のままです。注文データは変わっていません。</p>
+<p>このデータに対して <code>--validate</code> を実行すると、検証結果に <code>duplicate_key</code> が表示されます。<code>(1,east)</code> の行を 1 行だけ残して再度検証し、元のクエリを実行します。東部は 10 に戻り、西部は 20 のままです。ダウンロードできるスクリプトでは、重複があるときの SQL の集計結果、検証時のエラー、修正後の 2 行を確認できます。</p>
+<p>検証では、宣言したキーで現在のデータの行を特定できるかを確認します。その後のデータ追加で新たな重複が生じることはあります。重複の原因に応じて元データやキーの定義を修正してください。最後に DISTINCT を追加しても、二重に集計された金額を正しく戻せるとは限りません。</p>
+<p><a hreflang="zh" href="examples--compound-key-zh.html">中文</a> · <a href="examples--index.ja.html">実例集</a> · <a href="how-to--compile-and-validate.ja.html">コンパイルと検証</a></p>
+<h2 id="run-and-interpret-the-checks">検証を実行して結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#run-and-interpret-the-checks">#</a></h2>
+<p><a href="task-examples.zip">プロジェクト一式をダウンロード</a>し、README の手順に従って <code>verify.py</code> を実行します。必要なものは dmlc、Python、DuckDB です。練習用データベースは指定した新しい出力フォルダーに作成されます。実行結果と診断内容も同じ場所に保存されます。</p>
+<p>この例は DuckDB で実行しました。使用したコンパイラのバージョンと検証結果は、ダウンロードに含まれる <code>verification-summary.json</code> で確認できます。検証とクエリの実行は別々に行われるため、その間にデータが変わる可能性があります。他のデータベースで使う場合は個別に確認してください。</p>
+</main></body></html>

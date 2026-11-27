@@ -1,0 +1,556 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 求值语义 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页定义求值上下文、粒度兼容性和组合规则。有关声明语法，请参阅模型结构、指标、查询和物化。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 求值语义 · DML"><meta property="og:description" content="本页定义求值上下文、粒度兼容性和组合规则。有关声明语法，请参阅模型结构、指标、查询和物化。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--semantics.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--semantics.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--semantics.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--semantics.html">English</a></header><main><h1 id="dml-evaluation-semantics">DML 求值语义</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#scope-and-position">适用范围与定位</a></li><li><a href="#what-this-spec-covers">本规范涵盖的内容</a></li><li><a href="#what-this-spec-does-not-cover">本规范不涵盖的内容</a></li><li><a href="#three-layer-architecture">三层架构</a></li><li><a href="#core-building-blocks">基本组成部分</a></li><li><a href="#design-principles">设计原则</a></li><li><a href="#evaluation-context-model">求值上下文模型</a></li><li><a href="#definition">定义</a></li><li><a href="#canonical-grain-roles">粒度与指标上下文的标准术语</a></li><li><a href="#context-transition">上下文转换</a></li><li><a href="#dim_dt--the-time-dimension"><code>dim_dt</code> — 时间维度</a></li><li><a href="#standard-time-dimension-fields">标准时间维度字段</a></li><li><a href="#calendar-dataset">日历数据集</a></li><li><a href="#filter-context-and-pushdown">筛选上下文和筛选下推</a></li><li><a href="#grain-system">粒度体系</a></li><li><a href="#three-grain-types">三种粒度</a></li><li><a href="#grain-compatibility-rule">粒度兼容性规则</a></li><li><a href="#multi-level-aggregation-via-d">使用 <code>+d</code> 进行多级聚合</a></li><li><a href="#cross-dataset-auto-join">跨数据集自动联接</a></li><li><a href="#grain-safety-enforcement-existing-compiler-behavior">粒度安全检查（编译器现有行为）</a></li><li><a href="#time-grain-rules">时间粒度规则</a></li><li><a href="#measure-as-dimension">将度量用作维度</a></li><li><a href="#modifier-schema-constraints">修饰符的架构约束</a></li><li><a href="#modifier-composition">修饰符组合</a></li></ul></details>
+<p>本页定义求值上下文、粒度兼容性和组合规则。有关声明语法，请参阅<a href="reference--model-structure.zh.html">模型结构</a>、<a href="reference--measures.zh.html">指标</a>、<a href="reference--query-yaml.zh.html">查询</a>和<a href="reference--materialization.zh.html">物化</a>。</p>
+<p><a id="1--scope-and-position"></a></p>
+<h2 id="scope-and-position">适用范围与定位 <a class="section-link" aria-label="本节链接" href="#scope-and-position">#</a></h2>
+<p><a id="11-what-this-spec-covers"></a></p>
+<h3 id="what-this-spec-covers">本规范涵盖的内容 <a class="section-link" aria-label="本节链接" href="#what-this-spec-covers">#</a></h3>
+<p>本文规定 DML 的求值上下文、粒度兼容性和修饰符约束。下文的规则定义了语言必须遵循的行为。诊断信息的含义和建议的修复方法见<a href="reference--error-codes.zh.html">错误代码</a>。</p>
+<p><a id="12-what-this-spec-does-not-cover"></a></p>
+<h3 id="what-this-spec-does-not-cover">本规范不涵盖的内容 <a class="section-link" aria-label="本节链接" href="#what-this-spec-does-not-cover">#</a></h3>
+<ul>
+<li><a href="how-to--compile-and-validate-zh.html">编译和验证查询</a>介绍 CLI 命令及如何收集验证依据。</li>
+<li><a href="how-to--build-analysis.zh.html">创建分析</a>介绍业务分析的操作步骤。</li>
+<li><a href="explanation--core-concepts.zh.html">核心概念</a>介绍模型层、查询层和表达式层。</li>
+</ul>
+<p><a id="13-three-layer-architecture"></a></p>
+<h3 id="three-layer-architecture">三层架构 <a class="section-link" aria-label="本节链接" href="#three-layer-architecture">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>语言</th>
+<th>编写内容</th>
+<th>文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>建模</strong></td>
+<td>DML</td>
+<td>数据集、指标、列宏、materialize、dt/fn 宏</td>
+<td><code>.dml</code> (YAML)</td>
+</tr>
+<tr>
+<td><strong>查询</strong></td>
+<td>模型查询（SQL 或 DML 格式）</td>
+<td><code>AGG(measure)</code>、<code>GROUP BY</code>、修饰符</td>
+<td><code>.sql</code> 或指定了 <code>type: query</code> 的 <code>.dml</code></td>
+</tr>
+<tr>
+<td><strong>表达式</strong></td>
+<td>DMX（Dato Measure eXpression）</td>
+<td>公式、引用、修饰符、<code>pk()</code></td>
+<td>在两层中使用</td>
+</tr>
+</tbody></table>
+<p>DMX 是两层共用的表达式语言。<code>.dml</code> 公式中的示例有 <code>{column}</code>、<code>{measure: modifier}</code> 和 <code>pk(...)</code>。模型查询的 SQL 中的示例有 <code>AGG(measure)</code> 和 <code>AGG({measure: modifier})</code>。</p>
+<p><a id="14-core-building-blocks"></a></p>
+<h3 id="core-building-blocks">基本组成部分 <a class="section-link" aria-label="本节链接" href="#core-building-blocks">#</a></h3>
+<p><strong>数据集</strong>是包含已声明维度和列的表。其<strong>数据集声明粒度</strong>由声明的 <code>dimension:</code> 列表决定。</p>
+<p><strong>指标</strong>是有名称的业务度量。指标分为两类。</p>
+<ul>
+<li><strong>原子指标</strong>通过 <code>dataset:</code> 字段绑定到一个数据集，并使用 SQL 对列进行聚合。</li>
+<li><strong>复合指标</strong>引用其他指标，没有 <code>dataset:</code> 字段。</li>
+</ul>
+<p><strong>维度字段</strong>是单个有名称的 DML 字段。</p>
+<p><strong>维度</strong>是由一个或多个维度字段组成的列表。数据集的 <code>dimension:</code> 声明如何标识源行，查询维度声明如何分组，求值维度控制指标引用的求值方式，物化维度声明输出键。指标的 <code>dimensions:</code> 中，每个内部列表表示一个允许使用的维度。<strong>用作维度的指标</strong>是查询维度中的一种字段，其值通过对指标求值得到（参见<a href="#37-measure-as-dimension">将指标用作维度</a>）。</p>
+<p>修饰符形式 <code>{dimension: []}</code> 清除求值维度，以请求总计上下文。空列表表示一项操作，并不表示不含字段的维度。</p>
+<p><strong>列宏</strong>是在 <code>.dml</code> 中定义的派生列或跨数据集查找。借助列宏，指标公式无需使用 <code>JOIN</code> 即可引用其他数据集中的字段。</p>
+<p><a id="15-design-principles"></a></p>
+<h3 id="design-principles">设计原则 <a class="section-link" aria-label="本节链接" href="#design-principles">#</a></h3>
+<ol>
+<li><strong>语义必须可执行。</strong> 指标不仅用于文档记录，还会编译为可在数据仓库中执行的 SQL。</li>
+<li><strong>像管理代码一样管理语义。</strong> 使用 Git、PR、LSP，并通过 <code>dml_schema.yaml</code> 进行验证。</li>
+<li><strong>指标不绑定到固定的结果粒度。</strong> 指标具有从定义推导出的<strong>指标有效上下文（原生上下文）</strong>，可按需加以约束。求值使用由查询和修饰符决定的实际粒度，编译器强制检查兼容性。</li>
+<li><strong>复杂的派生逻辑应放在模型中。</strong> 将时间对比、比率和多级聚合统一定义在 <code>.dml</code> 中，避免分散到 BI 计算字段或临时 SQL 中。</li>
+</ol>
+<hr>
+<p><a id="2--evaluation-context-model"></a></p>
+<h2 id="evaluation-context-model">求值上下文模型 <a class="section-link" aria-label="本节链接" href="#evaluation-context-model">#</a></h2>
+<p><a id="21-definition"></a></p>
+<h3 id="definition">定义 <a class="section-link" aria-label="本节链接" href="#definition">#</a></h3>
+<p><strong>求值上下文</strong>是编译器将指标引用解析为可执行 SQL 时所用的全部信息。</p>
+<p>产品采用的标准简写为 <code>Context = {grain, filters, time}</code>。在下文的语言模型中，<code>time</code> 由解析后的 <code>dim_dt</code> 字段表示。</p>
+<pre><code>Context = {
+    grain: [dim₁, dim₂, ...],   // active grouping dimension fields
+    filters: [predicate₁, ...],  // active filter predicates
+    dim_dt: TimeDim | null       // resolved time dimension
+}
+</code></pre>
+<p><a id="22-canonical-grain-roles"></a></p>
+<h3 id="canonical-grain-roles">粒度与指标上下文的标准术语 <a class="section-link" aria-label="本节链接" href="#canonical-grain-roles">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>作用</th>
+<th>来源</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据集声明粒度</strong></td>
+<td>数据集中的 <code>dimension:</code></td>
+<td>数据集中的一行代表什么</td>
+</tr>
+<tr>
+<td><strong>指标有效上下文（原生上下文）</strong></td>
+<td>源数据集、引用的指标、公式和修饰符，以及指标的可选 <code>dimensions:</code> 约束</td>
+<td>指标定义适用的上下文，并非固定的输出粒度。</td>
+</tr>
+<tr>
+<td><strong>实际求值粒度</strong></td>
+<td>应用 <code>+d</code>、<code>-d</code>、<code>dimension</code> 及相关修饰符后的查询粒度</td>
+<td>对特定指标引用进行求值时采用的粒度</td>
+</tr>
+<tr>
+<td><strong>查询结果粒度</strong></td>
+<td><code>GROUP BY</code> 或查询中的 <code>columns.dimension</code></td>
+<td>描述输出中的一行代表什么。除了物理维度字段或映射后的维度字段外，还可以包含用作维度的指标字段（参见<a href="#37-measure-as-dimension">将指标用作维度</a>）。</td>
+</tr>
+</tbody></table>
+<p>范围更广的<strong>查询上下文</strong>包括查询结果粒度、<code>WHERE</code> 或 <code>filters:</code>，以及解析后的时间信息。旧版资料中的“指标原生粒度”和“目标粒度”分别是<strong>指标有效上下文（原生上下文）</strong>和<strong>实际求值粒度</strong>的别称。新的规范性文本应使用上文列出的标准术语。</p>
+<p><a id="23-context-transition"></a></p>
+<h3 id="context-transition">上下文转换 <a class="section-link" aria-label="本节链接" href="#context-transition">#</a></h3>
+<p>修饰符会转换求值上下文。编译器通过应用修饰符，推导出新的指标求值上下文。</p>
+<pre><code>apply_modifier(Context, Modifier) -&gt; Context'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>修饰符</th>
+<th>对粒度的影响</th>
+<th>对筛选条件的影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+d: dim</code></td>
+<td>将 <code>dim</code> 追加到定义粒度的字段列表末尾（下钻）</td>
+<td>无变化</td>
+</tr>
+<tr>
+<td><code>-d: dim</code></td>
+<td>从定义粒度的字段中移除 <code>dim</code>（上卷）</td>
+<td>无变化。针对 <code>dim</code> 的筛选条件仍会下推到数据集的 <code>WHERE</code> 子句。</td>
+</tr>
+<tr>
+<td><code>-df: dim</code></td>
+<td>从定义粒度的字段中移除 <code>dim</code></td>
+<td>在指标求值时移除针对 <code>dim</code> 及其派生列的筛选条件</td>
+</tr>
+<tr>
+<td><code>dimension: [dims]</code></td>
+<td>用 <code>dims</code> 替换定义粒度的全部字段</td>
+<td>无变化</td>
+</tr>
+<tr>
+<td><code>+f: condition</code></td>
+<td>无变化</td>
+<td>将 <code>condition</code> 添加到筛选条件中</td>
+</tr>
+<tr>
+<td><code>-f: dim</code></td>
+<td>无变化</td>
+<td>移除引用 <code>dim</code> 的筛选条件</td>
+</tr>
+<tr>
+<td>dt 宏（如 <code>ya</code>、<code>pp</code>、<code>ytd</code>）</td>
+<td>无变化</td>
+<td>替换 <code>dim_dt</code> 中的时间范围</td>
+</tr>
+<tr>
+<td>fn-macro（例如 <code>yoy</code>、<code>rank</code>）</td>
+<td>可能改变粒度（例如 <code>grand</code> → <code>dimension: []</code>）</td>
+<td>取决于宏的公式</td>
+</tr>
+</tbody></table>
+<p><a id="24-dim_dt--the-time-dimension"></a></p>
+<h3 id="dim_dt--the-time-dimension"><code>dim_dt</code> — 时间维度 <a class="section-link" aria-label="本节链接" href="#dim_dt--the-time-dimension">#</a></h3>
+<p><code>dim_dt</code> 是表示<strong>当前查询的时间维度</strong>的系统变量。</p>
+<p><strong>解析优先级</strong>：查询的 <code>dimension</code> → 查询的 <code>filter</code> → null。</p>
+<p><strong>属性</strong>：</p>
+<ul>
+<li><code>{dim_dt}</code> — 解析为查询当前使用的时间字段（例如 <code>dt_month</code>、<code>dt_quarter</code>）</li>
+<li><code>{dim_dt.datetype}</code> — 表示类型的字符串：<code>'day'</code>、<code>'week'</code>、<code>'month'</code>、<code>'quarter'</code>、<code>'year'</code></li>
+<li><code>{dim_dt.periods_per_year}</code> — 每年的周期数：按周为 52，按月为 12，按季度为 4</li>
+<li><code>{dim_dt.datepart}</code> — 表示 SQL 日期部分的字符串</li>
+</ul>
+<p><strong>设计目标</strong>：在度量公式中使用 <code>dim_dt</code> 代替具体字段 <code>dt_date</code>、<code>dt_month</code> 或 <code>dt_quarter</code>，使度量无需改写公式即可用于任意时间粒度。</p>
+<p><strong>周期转换</strong>：使用 <code>dim_dt as quarter</code> 后，即使查询按年份和季度分组，<code>pp</code> 也会按季度粒度运行：</p>
+<pre><code class="language-sql">SELECT dt_year, dt_quarter,
+       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+FROM MODEL GROUP BY dt_year, dt_quarter
+</code></pre>
+<p><a id="25-standard-time-dimension-fields"></a></p>
+<h3 id="standard-time-dimension-fields">标准时间维度字段 <a class="section-link" aria-label="本节链接" href="#standard-time-dimension-fields">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>粒度</th>
+<th>示例值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt_date</code></td>
+<td>日</td>
+<td><code>2024-03-15</code></td>
+</tr>
+<tr>
+<td><code>dt_week</code></td>
+<td>周（从星期一开始）</td>
+<td><code>2024-03-11</code></td>
+</tr>
+<tr>
+<td><code>dt_month</code></td>
+<td>月</td>
+<td><code>2024-03-01</code></td>
+</tr>
+<tr>
+<td><code>dt_quarter</code></td>
+<td>季度</td>
+<td><code>2024-01-01</code></td>
+</tr>
+<tr>
+<td><code>dt_year</code></td>
+<td>年</td>
+<td><code>2024-01-01</code></td>
+</tr>
+</tbody></table>
+<p>所有时间字段均采用<strong>首日格式</strong>，即以周期的第一天作为字段值。</p>
+<h4 id="automatic-coarser-grain-derivation">自动派生更粗粒度的时间字段</h4>
+<p>如果数据集显式声明了标准时间字段，它也会通过系统日历提供 <code>dt_&lt;grain&gt;</code> 系列中受支持的更粗粒度字段。例如，显式声明 <code>dt_date</code> 列后，<code>dt_week</code>、<code>dt_month</code>、<code>dt_quarter</code> 和 <code>dt_year</code> 都可在该数据集的作用域内作为有效的列引用。若只是要按更粗的时间粒度查询或筛选，模型作者无需在 <code>columns:</code> 下重复列出这些名称。生成的值遵循上述日历和首日规则。</p>
+<p>自动派生的时间字段具有<strong>虚拟列标识</strong>，而不是第二个显式的源定义。因此，语言工具必须：</p>
+<ul>
+<li>在数据集作用域内进行名称解析和自动补全时，纳入受支持的派生字段；</li>
+<li>凡是允许使用相应数据集列的地方，都允许使用这些派生字段，包括查询的维度字段、筛选条件、公式和修饰符的参数；</li>
+<li>从派生字段的引用跳转到提供该字段的显式源时间列（<code>dt_month</code> 由 <code>dt_date</code> 派生时，跳转到 <code>dt_date</code>）；</li>
+<li>除非存在同名的显式定义，否则将虚拟字段名视为只读，不允许重命名。</li>
+</ul>
+<p>如果同一个派生字段可以从多个显式时间来源导出，且无法唯一确定来源，工具必须拒绝解析，不得任意选择一个定义。</p>
+<p><a id="26-calendar-dataset"></a></p>
+<h3 id="calendar-dataset">日历数据集 <a class="section-link" aria-label="本节链接" href="#calendar-dataset">#</a></h3>
+<p>系统提供 <code>Dim Calendar</code> 数据集，用于跨时间粒度查找时间值：</p>
+<pre><code class="language-yaml">Dim Calendar:
+    type: dataset
+    table: DML_CALENDAR
+    dimension: [dt_date]
+    columns:
+        dt_date:
+        dt_week:
+        dt_month:
+            source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
+        dt_quarter:
+            source: pk({dt_month}).DML_CALENDAR(dt_date).dt_quarter
+        dt_year:
+            source: pk({dt_quarter}).DML_CALENDAR(dt_date).dt_year
+</code></pre>
+<p><a id="27-filter-context-and-pushdown"></a></p>
+<h3 id="filter-context-and-pushdown">筛选上下文和筛选下推 <a class="section-link" aria-label="本节链接" href="#filter-context-and-pushdown">#</a></h3>
+<p>筛选条件放在哪里取决于其语义作用域：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>位置</th>
+<th>此处填写的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查询的 <code>filters:</code> / <code>WHERE</code></td>
+<td>查询块</td>
+<td>特定于报表的数据切片（渠道、品牌、日期范围）</td>
+</tr>
+<tr>
+<td>度量公式</td>
+<td><code>.dml</code> 度量</td>
+<td>当不符合条件的行可以保留在输出分组中时，用于确定哪些行参与计算的指标专属条件</td>
+</tr>
+<tr>
+<td>数据集中的 <code>sql:</code></td>
+<td>数据集定义</td>
+<td>当前的声明式 DML 无法表达的、对源数据范围的永久限制</td>
+</tr>
+</tbody></table>
+<p>源数据上的 <code>WHERE</code> 与不满足条件时返回 NULL 的度量条件通常不能互换。前者会让仅包含不符合条件的行的分组消失，后者则可能保留这些分组。在这些层之间移动条件之前，请验证分组是否存在、同一查询中其他指标的结果、去重、联接和窗口操作的行为，以及 NULL 的语义。</p>
+<p><strong>下推规则</strong>：查询中通过 <code>filters:</code> 指定的筛选条件会在聚合前下推到数据集的 <code>WHERE</code> 子句。当 <code>-d</code> 生成粒度更粗的临时表时，筛选条件仍会生效，因此比率的分母可能变小。使用 <code>-df</code> 可阻止特定维度字段的筛选条件下推。</p>
+<p><strong>依赖关系追踪</strong>：编译器会追踪列的派生链。对 <code>store_id</code> 指定 <code>-df</code> 后，<code>store_name</code>（<code>pk({store_id}).MDM_STORE(store_id).store_name</code>）上的筛选条件不会下推，因为该列仅由 <code>store_id</code> 派生。</p>
+<hr>
+<p><a id="3--grain-system"></a></p>
+<h2 id="grain-system">粒度体系 <a class="section-link" aria-label="本节链接" href="#grain-system">#</a></h2>
+<p>每个求值上下文中的维度决定其粒度，以及它与其他上下文是否兼容。各维度声明在 DML 中的作用见<a href="explanation--dimensions.zh.html">维度的作用</a>。</p>
+<p><a id="31-three-grain-types"></a></p>
+<h3 id="three-grain-types">三种粒度 <a class="section-link" aria-label="本节链接" href="#three-grain-types">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>粒度类型</th>
+<th>声明方式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>数据集粒度</strong></td>
+<td>数据集中的 <code>dimension:</code></td>
+<td>底层表中的一行表示该维度中各维度字段的一组取值</td>
+</tr>
+<tr>
+<td><strong>度量粒度</strong></td>
+<td>公式 + 修饰符 + 可选的 <code>dimensions:</code> 约束</td>
+<td>度量公式适用的粒度</td>
+</tr>
+<tr>
+<td><strong>查询粒度</strong></td>
+<td>查询的 <code>GROUP BY</code> / <code>columns.dimension:</code></td>
+<td>查询结果中的一行表示该维度中各维度字段的一组取值</td>
+</tr>
+</tbody></table>
+<p><a id="32-grain-compatibility-rule"></a></p>
+<h3 id="grain-compatibility-rule">粒度兼容性规则 <a class="section-link" aria-label="本节链接" href="#grain-compatibility-rule">#</a></h3>
+<p><strong>查询粒度必须与每个度量的粒度兼容。</strong></p>
+<p>对于没有 <code>dimensions:</code> 约束的原子度量：</p>
+<ul>
+<li>只要维度兼容，且由该度量所属数据集的维度字段组成，就可以在该维度上计算此度量。</li>
+<li>编译器根据声明的粒度和请求的上下文选择聚合方式。在声明的、能够唯一确定每一行的粒度上，编译器可以直接投影原始值。</li>
+</ul>
+<p>对于具有 <code>dimensions: [[dims]]</code> 约束的原子度量：</p>
+<ul>
+<li>该度量<strong>只能</strong>在指定粒度上计算。</li>
+<li>其他公式若要使用此度量，必须显式使用 <code>{measure: {+d: dim}}</code> 下钻到该粒度。</li>
+<li>编译器会拒绝不兼容的粒度，并返回 <code>cannot set dimension [...] since only [...] are allowed</code>。</li>
+</ul>
+<p>数据集或物化定义中的 <code>dimension:</code> 包含一个维度，而度量中的 <code>dimensions:</code> 包含可供选择的允许维度，每个内层列表代表一个维度。后者是一项约束，不用于声明数据集的标识或查询的分组方式。有关维度声明的规则，请参阅<a href="explanation--dimensions.zh.html">维度的作用</a>。</p>
+<p>对于复合指标，适用以下规则：</p>
+<ul>
+<li>粒度由解析修饰符后各引用指标用于定义粒度的维度字段的并集决定。</li>
+<li>所有引用指标的粒度必须彼此兼容。</li>
+</ul>
+<p><a id="33-multi-level-aggregation-via-d"></a></p>
+<h3 id="multi-level-aggregation-via-d">使用 <code>+d</code> 进行多级聚合 <a class="section-link" aria-label="本节链接" href="#multi-level-aggregation-via-d">#</a></h3>
+<p><code>+d</code> 建立一个<strong>粒度更细的求值阶段</strong>。仅使用此修饰符<strong>不会</strong>将值重新聚合到查询粒度。</p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{m: {+d: x}}</code></td>
+<td>在查询粒度 ∪ <code>{x}</code> 上求值，<strong>到此为止</strong></td>
+</tr>
+<tr>
+<td><code>SUM</code> / <code>AVG</code> / <code>MAX</code> / …<code>({m: {+d: x}})</code></td>
+<td>先在更细粒度上求值，再通过<strong>显式的外层聚合</strong>回到当前查询粒度</td>
+</tr>
+<tr>
+<td>查询维度绑定 <code>- lab: '{m: {+d: K}}'</code></td>
+<td>将指标用作维度（<a href="#37-measure-as-dimension">将指标用作维度</a>）时，结果是分组键，而不是普通的汇总指标列。</td>
+</tr>
+</tbody></table>
+<p>外层聚合函数（<code>SUM</code>、<code>AVG</code>、<code>MAX</code> 等）<strong>由编写者选择</strong>。编译器不会自行添加该函数。使用外层聚合时，编译器通常会生成 CTE（<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>）。</p>
+<p><strong>模式</strong>：原子指标 → 在提供外层聚合的复合指标内使用 <code>+d</code> 下钻到更细粒度 → 按任意粒度查询</p>
+<pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
+销售量:
+    type: measure
+    dataset: o2o_pos
+    formula: SUM(count_qty)
+
+# Distribution SKU count: how many products have sales &gt; 0?
+# {销售量: {+d: prod_id}} drills down to per-product grain,
+# then DISTINCTCOUNTIF counts products with positive sales.
+分销SKU数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+
+# Distribution store count: how many stores have sales &gt; 0?
+分销客户数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+
+# Average sales per store (selling power)
+卖力:
+    type: measure
+    formula: |-
+        divide({销售额}, {分销客户数})
+</code></pre>
+<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
+SELECT dt_quarter, brand,
+       AGG(销售额),
+       AGG(分销SKU数),
+       AGG(分销客户数),
+       AGG(卖力)
+FROM MODEL
+GROUP BY dt_quarter, brand
+</code></pre>
+<p>如果 <code>+d</code> 出现在<strong>查询维度</strong>的绑定中，而不是出现在带有显式外层聚合的指标公式中，这属于<strong>将指标用作维度</strong>（<a href="#37-measure-as-dimension">将指标用作维度</a>），而不是上述两步模式。</p>
+<p><a id="34-cross-dataset-auto-join"></a></p>
+<h3 id="cross-dataset-auto-join">跨数据集自动联接 <a class="section-link" aria-label="本节链接" href="#cross-dataset-auto-join">#</a></h3>
+<p>独立的指标数据集通常先分别聚合，再合并所有分组键（<em>键的并集</em>）。<strong>NULL 安全的相等比较</strong>会比较完整的键，因此，当其他维度也匹配时，相同位置上的 NULL 会相互匹配。指定为保留行的 <code>LEFT JOIN</code> 和 <code>nullpk</code> 关联也使用 NULL 安全的相等比较。显式 SQL 谓词保留其原有语义。有关示例，请参阅<a href="reference--join-null-equality.zh.html">联接中的 NULL 相等比较</a>。</p>
+<p><strong>生成的联接类型。</strong> 编译器可以使用 <code>FULL OUTER JOIN</code>，也可以用 <code>UNION</code> 构建去重后的键集合，再用 <code>LEFT JOIN</code> 联接指标。两种形式都采用 NULL 安全的键匹配。使用原生全外联接时，如果 <code>{primary_presence_measure} is not null</code> 等筛选条件能证明必须存在主数据源中的对应分组，编译器可以将生成的联接简化为 <code>LEFT JOIN</code>。如果筛选条件要求两个数据源中都存在对应分组，则可以简化为 <code>INNER JOIN</code>。筛选条件决定保留哪些分组。分组键的比较方式保持不变。</p>
+<p>对于 LEFT 结果集，请使用专门用于判断主数据源中分组是否存在的指标进行筛选。该指标在每个有效的主数据源分组中都必须为非空值，在不存在的分组中则必须为 NULL。对于 INNER 结果集，要求两侧都存在对应分组。请使用未经填补的源数据计数，或其他经验证能判断分组是否存在的信号。使用可为空的业务值可能会丢弃有效分组，而填补缺失行可能会保留原本不存在的分组。</p>
+<p>请分别验证共享键的含义、完整键的唯一性、含 NULL 的分组键如何匹配、未匹配行如何处理，以及缺失行如何填补。独立预聚合无法消除查找键重复的问题，也无法纠正错误的匹配规则。检查生成的 SQL 可以确认查询结构。在数据库中验证和比较结果需要分别检查。</p>
+<p><a id="35-grain-safety-enforcement-existing-compiler-behavior"></a></p>
+<h3 id="grain-safety-enforcement-existing-compiler-behavior">粒度安全检查（编译器现有行为） <a class="section-link" aria-label="本节链接" href="#grain-safety-enforcement-existing-compiler-behavior">#</a></h3>
+<p>编译器在编译时检查粒度是否安全：</p>
+<ol>
+<li><p><strong>违反指标的维度约束</strong>：如果指标允许的维度为 <code>dimensions: [[customer_id]]</code>，而引用该指标的查询维度还包含 <code>dt_date</code>，编译器会拒绝该查询并给出以下消息：</p>
+<pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
+</code></pre>
+<p>编译器现在会给出提示（Hint），说明 <code>...</code> 允许额外的维度字段，但列出的字段仍为必需字段，并建议使用 <code>+d</code> 添加缺少的必需字段。使用 <code>...</code> 可允许额外的维度字段，列出的字段仍为必需字段。</p>
+</li>
+<li><p><strong>聚合指标需要 <code>+d</code></strong>：<code>SUM({measure})</code> 会失败，并返回“cannot aggregate a measure w/o +d modifier”。编译器会给出提示（Hint），说明缺少 <code>+d</code> 时，指标已在目标求值维度上求值，没有更细粒度的值可供聚合。无论如何声明 <code>dimensions:</code>，此规则适用于聚合函数中的<strong>任何</strong>指标引用。目标求值维度由查询的 <code>GROUP BY</code> 和指标的允许维度约束共同决定。<code>+d: dim</code> 会添加一个维度字段，并在由此得到的更细粒度上求值。<strong>外层</strong>的 <code>SUM</code>/<code>AVG</code>/… 再将结果聚合回目标维度。如果需要这两步处理，请使用 <code>SUM({measure: {+d: dim}})</code>，不要将单独的 <code>{measure: {+d: dim}}</code> 用作汇总列。</p>
+</li>
+<li><p><strong>缺少时间上下文</strong>：时间修饰符要求 <code>dim_dt</code> 可解析，并且满足对应宏的前置条件。用于分组的时间字段或时间筛选条件都可以提供上下文。</p>
+</li>
+<li><p><strong>跨数据集的粒度不兼容</strong>：如果来自不同数据集的两个指标没有足够的共享维度来满足查询粒度，编译器会报错。</p>
+</li>
+<li><p><strong>将指标用作维度的规则</strong>：请参阅<a href="#37-measure-as-dimension">将指标用作维度</a>和版本注意事项。编译器会拒绝缺少实体键的查询，但静态检查无法发现所有无效的底层转换。</p>
+</li>
+</ol>
+<p><strong>编译能验证的范围：</strong> 编译成功本身无法证明生成的 SQL 有效，也无法证明计算出的数值正确。请检查分类和聚合阶段，验证实际数据中的键，并单独比较结果。</p>
+<p><a id="36-time-grain-rules"></a></p>
+<h3 id="time-grain-rules">时间粒度规则 <a class="section-link" aria-label="本节链接" href="#time-grain-rules">#</a></h3>
+<ul>
+<li>为明确报表的汇总级别，建议只显式指定一种时间粒度。已验证的构建版本接受同时使用 <code>dt_year, dt_month</code>。这无法证明所有包含多个时间修饰符的组合都受支持。</li>
+<li>对于粒度较粗的时间字段，请使用各时间段的起始值。等值比较选中一个时间段，结构化的 <code>range: [start, end]</code> 在该粒度下包含两个端点。</li>
+<li>WHERE 中谓词的顺序是编写约定，不是语法限制。</li>
+<li>请使用宏的实际前置条件和解析后的 <code>dim_dt</code>。即使没有可见的时间分组字段，时间筛选条件也能提供上下文。</li>
+</ul>
+<p><a id="37-measure-as-dimension"></a></p>
+<h3 id="measure-as-dimension">将度量用作维度 <a class="section-link" aria-label="本节链接" href="#measure-as-dimension">#</a></h3>
+<p><strong>用作维度的指标</strong>字段属于<strong>查询维度</strong>。它的值来自对指标或基于该指标的标量表达式的求值，而不是数据集中的物理列。该字段仍承担查询维度的角色（参见<a href="explanation--dimensions.zh.html">维度角色</a>），参与确定<strong>查询结果的粒度</strong>。它不声明数据集的标识。</p>
+<p>说明：<a href="explanation--measure-as-dimension.zh.html">将指标用作维度</a>。本节说明多轮处理应遵循的约定。<a href="explanation--measure-as-dimension.zh.html">说明</a>列出了已验证的写法和需要检查的分类阶段。编译器对此类查询列单独建模，将其与物理维度列和常规输出指标区分开来，同时复用常规的指标计算逻辑。</p>
+<p><a id="371-syntax-on-columnsdimension"></a></p>
+<h4 id="syntax-on-columnsdimension"><code>columns.dimension</code> 中的语法</h4>
+<p>编写形式及支持范围（DML 格式的查询）：</p>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>示例</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>命名指标加显式 <code>+d</code></td>
+<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
+<td>将 <code>store_id</code> 加入指标的求值维度后对指标求值，并将结果用作查询维度字段。</td>
+</tr>
+<tr>
+<td>仅使用指标名称</td>
+<td><code>- first_purchase_month</code></td>
+<td>此写法不适用于从指标派生的维度。必须在引用处显式声明完整的 <code>+d</code> 键。</td>
+</tr>
+<tr>
+<td>对 <code>{m: {+d: dim}}</code> 应用标量表达式</td>
+<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
+<td>对每个完整键求值一次标量表达式，并将结果用作查询维度字段。</td>
+</tr>
+<tr>
+<td>命名标量指标加查询中的 <code>+d</code></td>
+<td>先在指标中指定 <code>formula: 'cast({authorization_ts} as date)'</code>，再写 <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
+<td>标量表达式可复用时，优先采用这种等价写法</td>
+</tr>
+<tr>
+<td><code>dimension:</code> / <code>rank</code> 标签（无 <code>+d</code>）</td>
+<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
+<td>这种查询维度公式通过 <code>dimension:</code> 替换求值维度，或使用 <code>rank</code>，不属于使用 <code>+d</code> 的多轮处理关联模式。</td>
+</tr>
+</tbody></table>
+<p>编写和验证这些绑定时，优先使用 <code>type: query</code>。生成的测试夹具头部显示 SQL，并不能证明相应的 Model Query 与 SQL 之间支持往返转换。</p>
+<p><a id="372-evaluation-semantics-multi-pass"></a></p>
+<h4 id="evaluation-semantics-multi-pass">求值语义（多轮处理）</h4>
+<p>设 <code>M</code> 为将指标用作维度的表达式，<code>K</code> 为其中显式指定的 <code>+d</code> 字段集合，<code>Q</code> 为常规查询维度字段集合。求值和关联的粒度为 <code>G = Q ∪ K</code>，其中不包含从指标派生的标签。内部聚合阶段不会重新定义 <code>K</code>。</p>
+<ol>
+<li><strong>按细粒度求值。</strong> 在 <code>G</code> 粒度下对每个用作维度的指标求值。常规输出指标也在 <code>G</code> 粒度下求值，并保留后续向上汇总所需的状态或组成指标。</li>
+<li><strong>按完整分类键 <code>G</code> 关联。</strong> 分类关系必须为每个完整键提供唯一一个标量值。如果分类关系和使用它的指标不在同一关系中，必须先进行关联，再按分类值对这些指标分组。按门店和月份分类时，连接条件必须同时包含门店和月份，仅使用 <code>+d: store_id</code> 不够。按更粗粒度关联时，使用方必须能取得完整键，或能证明可从已有字段推导出完整键。按更细粒度关联时，必须显式下钻并向上汇总。保留 NULL 键的处理语义以及查询数据范围的语义。</li>
+<li><strong>汇总到查询结果粒度。</strong> 将常规指标聚合到 <code>{ measure-as-dimension fields } ∪ Q</code> 粒度。移除 <code>K</code> 中未同时出现在 <code>Q</code> 中的字段。如果某个常规指标无法安全地改写为先在 <code>G</code> 粒度下求值，再执行此汇总，则编译失败。</li>
+</ol>
+<p>其执行原理与通过 <code>+d</code> 进行多级聚合相同（参见<a href="#33-multi-level-aggregation-via-d">多级聚合</a>）。在这一用法中，下钻后得到的指标结果成为<strong>查询维度字段</strong>，而不只是复合公式的中间输入。</p>
+<pre><code class="language-text">source
+  → evaluate measure-as-dimension + other measures at finer evaluation dimension (+d)
+  → attach on the complete classification key
+  → roll up to query result grain (GROUP BY measure-as-dimension field[, ordinary query-dimension fields])
+</code></pre>
+<p><a id="373-d-compatibility"></a></p>
+<h4 id="d-compatibility"><code>+d</code> 的兼容性</h4>
+<p>分类及参与分类的同级下钻引用都应使用显式实体键。兼容性取决于解析后的求值维度和作用范围，而不只取决于 <code>+d</code> 参数的写法。</p>
+<p><strong>共享 <code>+d</code>。</strong> 每个用作维度的指标都需要显式指定完整键。只有各键的字段集合相同时，才允许使用多个独立标签。键内字段的声明顺序不影响判断。</p>
+<p><strong>未指定键的引用。</strong> 不要根据同级指标推断实体粒度。请通过 <code>+d</code> 或 <code>dimension:</code> 显式指定实体键。只绑定指标而不指定键会被拒绝。对于已验证的客户数分类器，两种写法都能通过编译。这一结果无法证明所有分类形式都受支持。增加或删除输出指标不得改变各实体的分类归属。</p>
+<p><strong>不同的键。</strong> 键不相等的独立标签会被拒绝。标签不得依赖同一查询中的其他标签。若要在不同实体粒度之间建立通用映射，必须单独建模一个关系。</p>
+<p><a id="374-constraints"></a></p>
+<h4 id="constraints">约束</h4>
+<ol>
+<li><p>分类需要显式实体键（优先使用 <code>+d</code>，也能识别 <code>dimension:</code>）。多标签兼容性和安全汇总是规范要求，并不意味着发布版本对所有情况都提供保证。请验证实际使用的查询。</p>
+</li>
+<li><p>时间段修饰符的组合尚未得到普遍验证。test_82d 测试了使用 <code>mat</code> 的滚动年度分类器，但这不能证明 <code>yoy</code> 或 <code>pop</code> 的正确性。仅使用明确指定了分类和报表各自的时间范围、且有证据支持其结果的组合。</p>
+</li>
+<li><p>标量转换可以内联编写，也可以命名定义。每个完整分类键必须得到一个确定的值。</p>
+</li>
+<li><p>度量指标的 <code>dimensions:</code> 允许列表和粒度安全规则（<a href="#35-grain-safety-enforcement-existing-compiler-behavior">粒度安全性</a>）适用于将指标用作维度的表达式中的每个指标引用，并按该引用实际求值的粒度应用。</p>
+</li>
+<li><p>跨数据集自动联接（<a href="#34-cross-dataset-auto-join">跨数据集组合</a>）仍会将每个数据集的指标聚合到共同的查询粒度。用作维度的指标字段在附加并向上汇总后，成为该查询粒度的一部分。</p>
+</li>
+<li><p>按显示的最终分类值分组。每个完整的查询键必须恰好对应一行，包括含有 NULL 的键。使用分类器并不意味着可以对不可加指标求和或凭空生成非活跃实体。比率各组成部分的语义保持不变。是否对实体级的值显式应用外层聚合，由编写者决定。</p>
+</li>
+<li><p>源数据筛选条件按现有修饰符规则应用。<code>-d</code> 会更改粒度，同时保留筛选条件。<code>-f</code> 和 <code>-df</code> 提供现有的范围控制。标签谓词应在分类之后应用，报表聚合值的阈值应在聚合之后应用。两者都不得改变各自对应的分类输入。基于截至截止点的历史数据、滚动窗口或当前选择范围的分类器，采用的是不同的业务定义。</p>
+</li>
+</ol>
+<p><a id="375-example"></a></p>
+<h4 id="example">示例</h4>
+<p>下文的 <code>first_purchase_month</code> 特指求值范围内首个<strong>月度净销售额为正</strong>的月份。<code>purchase_span</code> 显式在实体粒度上对两个端点求值，再对较细粒度的结果进行最终聚合。</p>
+<pre><code class="language-yaml">first_purchase_month:
+    type: measure
+    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+
+report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
+        sales:
+        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
+</code></pre>
+<ul>
+<li>查询结果的粒度为 <code>[first_purchase_month]</code>。</li>
+<li>对用作维度的指标和 <code>purchase_span</code> 都应用 <code>{+d: store_id}</code>，以便在更细的粒度上求值。</li>
+<li>最终的 <code>GROUP BY</code> 按 <code>first_purchase_month</code> 分组，并移除 <code>store_id</code>。</li>
+</ul>
+<p><a id="44-modifier-schema-constraints"></a></p>
+<h2 id="modifier-schema-constraints">修饰符的架构约束 <a class="section-link" aria-label="本节链接" href="#modifier-schema-constraints">#</a></h2>
+<p>根据 <code>dmx_variable_schema.yaml</code>，修饰符对象有以下结构约束：</p>
+<ul>
+<li><strong><code>dim_dt</code> 的变体</strong>包括 <code>dim_dt</code>、<code>dim_dt as date</code>、<code>dim_dt as month</code> 等。每个修饰符对象最多只能包含其中一个。</li>
+<li><strong><code>+d</code> 和 <code>dimension</code></strong> 互斥，每个修饰符对象最多只能包含其中一个。</li>
+<li><strong><code>-d</code> 和 <code>dimension</code></strong> 互斥，每个修饰符对象最多只能包含其中一个。</li>
+<li><strong><code>+d</code> 和 <code>-d</code> / <code>-df</code></strong> 只有在<strong>维度名称集合互不相交</strong>时才可共存（按一个字段细化粒度，同时移除另一个字段）。<strong>两个集合包含同名维度时，该组合无效</strong>。请参阅<a href="#45-modifier-composition">修饰符组合</a>。</li>
+<li>遵循上述集合相交规则时，同一个修饰符对象可以包含多个修饰符。组合示例请参阅<a href="reference--modifiers.zh.html#24-combining-modifiers">组合修饰符</a>。</li>
+</ul>
+<p><a id="45-modifier-composition"></a></p>
+<h2 id="modifier-composition">修饰符组合 <a class="section-link" aria-label="本节链接" href="#modifier-composition">#</a></h2>
+<p>保留修饰符的书写顺序。多个宏可能生成中间指标。应用于多路径函数的时间宏则可能传播到每个分支。请参阅<a href="reference--modifiers.zh.html#25-modifier-stacking">修饰符叠加语义</a>及其中的发布验证用例。</p>
+<p>每个修饰符只写一个 YAML 键。请写成 <code>{+f: {a: 1, b: 2}}</code>，不要重复写 <code>+f</code> 键。<code>-df</code> 同时移除维度和筛选条件。</p>
+<p><strong>同一维度上的修饰符冲突</strong></p>
+<p>语言规范要求，在同一个修饰符对象中，如果 <code>+d</code> 的字段集合与 <code>-d</code> 或 <code>-df</code> 的字段集合相交，编译时必须报错。当前构建在已检查的用例中没有执行这项要求。<strong>不要</strong>通过代数抵消将表达式化简为不带修饰符的 <code>{m}</code>，也<strong>不要</strong>将 <code>{+d: x, -df: x}</code> 静默改写为 <code>{-f: x}</code>。如果输出粒度已包含 <code>x</code>，则 <code>-df</code> 和 <code>-f</code> 的行为不同。</p>
+<table>
+<thead>
+<tr>
+<th>无效</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{销量: {+d: 门店, -d: 门店}}</code></td>
+<td>同时添加和移除同一字段，无法得出唯一的隐式解释。抵消为 <code>{销量}</code> 会掩盖拼写错误，且语义有别于 <code>AVG({销量: {+d: 门店}})</code>（每家门店权重相同）。</td>
+</tr>
+<tr>
+<td><code>{销量: {+d: 门店, -df: 门店}}</code></td>
+<td>不得改写为 <code>{-f: 门店}</code>。更改粒度与仅更改筛选条件的语义不同。</td>
+</tr>
+</tbody></table>
+<p>为明确表达意图，编写者必须采用以下写法之一：<code>{销量}</code> / <code>SUM({销量: {+d: 门店}})</code> / <code>{销量: {-d:…\|-df:…\|-f:…}}</code>。<br><strong>不同</strong>维度仍可共存，例如 <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>。</p>
+<p>当前受检构建会接受已检查的同一字段维度冲突，并在客户粒度上重复区域总计，然后对这些值求和。这是已知的实现缺陷，属于不受支持的写法。请显式写出一个求值阶段，并检查对应的 SQL。</p>
+</main></body></html>

@@ -1,0 +1,118 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML mit benutzerdefinierten Modifikatoren und Datenbankfunktionen erweitern · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="DML lässt sich auf zwei Ebenen erweitern: Sie können wiederverwendbare Transformationen für Kennzahlen und Zeitbezüge in DML definieren oder Skalarfunktionen aufrufen, die in der Zieldatenbank installiert sind."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML mit benutzerdefinierten Modifikatoren und Datenbankfunktionen erweitern · DML"><meta property="og:description" content="DML lässt sich auf zwei Ebenen erweitern: Sie können wiederverwendbare Transformationen für Kennzahlen und Zeitbezüge in DML definieren oder Skalarfunktionen aufrufen, die in der Zieldatenbank installiert sind."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--define-macros.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="how-to--define-macros.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--define-macros.html">English</a> <a lang="zh" hreflang="zh" href="how-to--define-macros.zh.html">中文</a></header><main><h1 id="extend-dml-with-custom-modifiers-and-database-functions">DML mit benutzerdefinierten Modifikatoren und Datenbankfunktionen erweitern</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#custom-macro-definitions-dt-macro-and-fn-macro">Benutzerdefinierte Makros definieren (dt-macro und fn-macro)</a></li><li><a href="#choose-the-extension-point">Erweiterungspunkt auswählen</a></li><li><a href="#a-verified-composition-example">Geprüftes Beispiel für die Kombination von Modifikatoren</a></li><li><a href="#calling-a-function-defined-in-your-database">Eine in Ihrer Datenbank definierte Funktion aufrufen</a></li><li><a href="#validate-the-function-on-the-intended-connection">Die Funktion auf der vorgesehenen Verbindung validieren</a></li><li><a href="#what-was-verified">Was geprüft wurde</a></li></ul></details>
+<p><strong>DML lässt sich auf zwei Ebenen erweitern:</strong> Sie können wiederverwendbare Transformationen für Kennzahlen und Zeitbezüge in DML definieren oder Skalarfunktionen aufrufen, die in der Zieldatenbank installiert sind. Benutzerdefinierte Modifikatoren lassen sich mit Kennzahlreferenzen kombinieren. Die Implementierung der Berechnungen von Datenbankfunktionen liegt in der jeweiligen Datenbank.</p>
+<p>Verwenden Sie ein benutzerdefiniertes Makro, um eine Zeittransformation oder eine Formel für eine beim Aufruf gewählte Kennzahl wiederzuverwenden. Die Regeln für Aufruf und Kombination finden Sie in der <a href="reference--modifiers.de.html">Modifikatorreferenz</a>.</p>
+<p><a id="27-custom-macro-definitions-dt-macro-and-fn-macro"></a></p>
+<h2 id="custom-macro-definitions-dt-macro-and-fn-macro">Benutzerdefinierte Makros definieren (dt-macro und fn-macro) <a class="section-link" aria-label="Link zum Abschnitt" href="#custom-macro-definitions-dt-macro-and-fn-macro">#</a></h2>
+<p>In <code>.dml</code> können Sie eigene Makros definieren, sowohl <code>dt-macro</code> (zum Verschieben von Zeitbereichen) als auch <code>fn-macro</code> (zum Einbetten von Kennzahlen in Formeln). Definieren Sie ein Makro einmal und referenzieren Sie es dann wie einen integrierten Modifikator in jeder Kennzahl oder Abfrage über seinen Namen.</p>
+<p><strong>Zwei Makrotypen</strong></p>
+<table>
+<thead>
+<tr>
+<th>Typ</th>
+<th>Zweck</th>
+<th>Zentrale Eigenschaft</th>
+<th>Platzhalter <code>{measure}</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt-macro</code></td>
+<td>Zeitfenster verschieben oder erweitern</td>
+<td><code>value:</code> (Verschiebung um einen einzelnen Zeitversatz) oder <code>range:</code> <code>[start, end]</code></td>
+<td>Nein, das Makro arbeitet mit dem Zeitkontext.</td>
+</tr>
+<tr>
+<td><code>fn-macro</code></td>
+<td>Die Kennzahl in eine abgeleitete Formel einbetten</td>
+<td><code>formula:</code> mit <code>{measure}</code></td>
+<td>Ja, der Platzhalter wird durch die beim Aufruf angegebene Kennzahl ersetzt.</td>
+</tr>
+</tbody></table>
+<p>Verwenden Sie <code>value:</code> zum Verschieben eines Zeitpunkts und <code>range: [start, end]</code> für ein Zeitfenster. Ein <code>fn-macro</code> verwendet <code>{measure}</code> für die beim Aufruf angegebene Kennzahl. Ein <code>dt-macro</code> verwendet <code>{dim_dt}</code> für das ermittelte Zeitfeld. Mit der optionalen Eigenschaft <code>prerequisite:</code> können Sie einschränken, auf welchen Ebenen Zeilen oder Summen für die Auswertung definiert sein dürfen.</p>
+<h2 id="choose-the-extension-point">Erweiterungspunkt auswählen <a class="section-link" aria-label="Link zum Abschnitt" href="#choose-the-extension-point">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Ziel</th>
+<th>Geeignetes Mittel</th>
+<th>Was Sie pflegen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dieselbe Berechnung auf mehrere Kennzahlen anwenden</td>
+<td><code>fn-macro</code></td>
+<td>Eine DML-Formel, die <code>{measure}</code> verwendet</td>
+</tr>
+<tr>
+<td>Eine Zeitverschiebung oder ein Zeitfenster wiederverwenden</td>
+<td><code>dt-macro</code></td>
+<td>Eine DML-Zeittransformation</td>
+</tr>
+<tr>
+<td>Eine vorhandene Berechnung in der Datenbank wiederverwenden</td>
+<td>Aufruf einer Skalarfunktion der Datenbank</td>
+<td>Die Datenbankfunktion, ihre Berechtigungen und ihre Bereitstellung</td>
+</tr>
+</tbody></table>
+<p>Mit benutzerdefinierten Modifikatoren legen Sie die fachliche Logik im Modell fest. Für den Aufruf gilt dieselbe Syntax wie bei integrierten Modifikatoren. Datenbankfunktionen greifen auf Logik direkt in der Datenbank zurück und hängen damit von deren Funktionsimplementierung ab. Bei beiden Varianten müssen Sie die passende Ebene wählen, auf der Zeilen oder Summen für die Auswertung definiert sind.</p>
+<h2 id="a-verified-composition-example">Geprüftes Beispiel für die Kombination von Modifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#a-verified-composition-example">#</a></h2>
+<p>Benutzerdefinierte Modifikatoren werden genauso referenziert wie integrierte Modifikatoren. Änderungen am Compiler sind dafür nicht erforderlich.</p>
+<p>Beginnen Sie mit zwei Verkäufen in einer isolierten DuckDB-Übungsdatenbank:</p>
+<pre><code class="language-sql">CREATE TABLE sales(id INTEGER, dt_month DATE, amount DECIMAL(12,2));
+INSERT INTO sales VALUES
+  (1, DATE '2025-01-01', 20),
+  (2, DATE '2025-02-01', 30);
+</code></pre>
+<p>Speichern Sie dieses vollständige Modell als <code>model.dml</code>:</p>
+<pre><code class="language-yaml">dialect: duckdb
+S:
+  type: dataset
+  table: sales
+  dimension: [id]
+  columns:
+    id:
+    dt_month:
+    amount:
+  measures:
+    sales: SUM({amount})
+double_value:
+  type: fn-macro
+  formula: '{measure} * 2'
+prior_month:
+  type: dt-macro
+  value: date({dim_dt}, '-1 month')
+</code></pre>
+<p>Bei einem Umsatz von 20 im Januar und 30 im Februar gilt:</p>
+<pre><code class="language-sql">SELECT AGG({sales: double_value}) AS doubled,
+       AGG({sales: prior_month}) AS previous,
+       AGG({sales: {double_value, prior_month}}) AS previous_doubled
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>Speichern Sie die Abfrage als <code>query.sql</code>. Konfigurieren Sie die Übungsdatenbank als <code>default</code> und führen Sie Folgendes aus:</p>
+<pre><code class="language-powershell">dmlc --compile --strict query.sql --model=model.dml --json
+dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default
+</code></pre>
+<p>Die Ausführung ergab die Werte <strong>60, 20 und 40</strong>. Die strikte Kompilierung, der Modus validate-only und die Ausführung waren auf der geprüften DuckDB-Verbindung erfolgreich. Das Modell deklarierte <code>dialect: duckdb</code>, eine eindeutige Quell-ID <code>id</code> sowie <code>dt_month</code> und <code>sales: SUM({amount})</code>.</p>
+<p>Diese Kombination ist auf Sprachebene wiederverwendbar. Das Makro erhält die beim Aufruf angegebene Kennzahl und ihren Auswertungskontext. Es handelt sich nicht um eine API für beliebige Compiler-Plug-ins. Die Regeln zur Auswertungsebene, zu den zeitbezogenen Voraussetzungen und zur Reihenfolge der Modifikatoren gelten weiterhin. Ein eigener Name umgeht diese Regeln nicht.</p>
+<h2 id="calling-a-function-defined-in-your-database">Eine in Ihrer Datenbank definierte Funktion aufrufen <a class="section-link" aria-label="Link zum Abschnitt" href="#calling-a-function-defined-in-your-database">#</a></h2>
+<p><strong>DML kann Aufrufe von Skalarfunktionen im generierten SQL beibehalten. Die Datenbank stellt die Implementierung bereit.</strong> Installieren Sie zum Beispiel die folgende Funktion in der DuckDB-Übungsdatenbank, bevor Sie DML ausführen:</p>
+<pre><code class="language-sql">CREATE FUNCTION business_net(x) AS x * 0.8;
+</code></pre>
+<p>DuckDB implementiert diese Form als persistentes SQL-Skalarmakro. Das Beispiel prüft den Aufruf einer in der Datenbank definierten Skalarfunktion. Die Registrierung einer Python-UDF, Aggregat-UDFs und tabellenwertige Funktionen werden dabei nicht geprüft.</p>
+<p>Fügen Sie unter <code>S.measures</code> neben <code>sales</code> den folgenden Eintrag hinzu, um die Funktion vor der Aggregation auf die Quellwerte anzuwenden:</p>
+<pre><code class="language-yaml"># Under the sales dataset's measures:
+net_sales: SUM(business_net({amount}))
+</code></pre>
+<p>Vergleichen Sie diese Kennzahl anschließend mit einem Funktionsaufruf auf dem aggregierten Ergebnis:</p>
+<pre><code class="language-sql">SELECT AGG(net_sales), business_net(AGG(sales)) AS net_total
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+</code></pre>
+<p>Bei einem Februarumsatz von 30 ergaben beide Varianten <strong>24</strong>. Das generierte SQL behielt <code>SUM(business_net(amount))</code> und <code>business_net(SUM(amount))</code> bei. Die Funktionsaufrufe erfolgen in unterschiedlichen Auswertungsphasen. Hier führt die Linearität der Funktion zum gleichen Ergebnis. Rundungen, Schwellenwerte oder andere nichtlineare Funktionen können zu unterschiedlichen Ergebnissen führen. Wählen Sie daher gezielt, in welcher Phase die Funktion ausgewertet wird.</p>
+<h3 id="validate-the-function-on-the-intended-connection">Die Funktion auf der vorgesehenen Verbindung validieren <a class="section-link" aria-label="Link zum Abschnitt" href="#validate-the-function-on-the-intended-connection">#</a></h3>
+<p>DML installiert die Funktion nicht und schreibt ihre Implementierung nicht für andere Datenbanken um. Die Funktion muss für die ausführende Verbindung sichtbar sein, die Typen der generierten Argumente akzeptieren und für den jeweiligen Datenbankbenutzer zur Ausführung freigegeben sein. Funktionsnamen, Schemaqualifizierung, Bereitstellung und Portabilität hängen von der jeweiligen Datenbank ab.</p>
+<p>Der Aufruf einer absichtlich fehlenden Funktion <strong>bestand die strikte Kompilierung</strong>. Der anschließende Lauf im Modus validate-only schlug bei EXPLAIN fehl (Exitcode 65). Auch die direkte Ausführung schlug fehl (Exitcode 70). Eine erfolgreiche Kompilierung allein belegt daher nicht, dass eine UDF existiert oder aufgerufen werden kann. Verwenden Sie <a href="how-to--compile-and-validate.de.html">Kompilieren und Validieren</a> und vergleichen Sie anschließend die tatsächlichen Ergebnisse.</p>
+<h3 id="what-was-verified">Was geprüft wurde <a class="section-link" aria-label="Link zum Abschnitt" href="#what-was-verified">#</a></h3>
+<p>Die obigen Beispiele wurden mit dmlc 0.3.16 (SHA-256-Prüfsumme der ausführbaren Datei: <code>c019a84c3208aee31cb5fa068232fa24d3258e9cdc83dfc2a91584a86a5ba091</code>) und DuckDB 1.5.5 ausgeführt. Geprüft wurden benutzerdefinierte <code>fn-macro</code> und <code>dt-macro</code>, deren Kombination, Aufrufe von Skalarfunktionen auf Quellwerten und auf aggregierten Ergebnissen sowie die Diagnose fehlender Funktionen. Andere Datenbank-Engines, schemaqualifizierte Namen, prozedurale und native UDFs, Aggregat-UDFs und Tabellenfunktionen wurden hier nicht getestet.</p>
+</main></body></html>

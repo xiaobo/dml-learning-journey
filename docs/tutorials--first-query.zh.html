@@ -1,0 +1,57 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>编译第一条模型查询 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="我们将构建销售模型，并编译一条按地区返回合计值的查询。开始前需安装 dmlc.exe，并准备一个可写的工作目录。本教程在不连接数据库的情况下编译 SQL。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="编译第一条模型查询 · DML"><meta property="og:description" content="我们将构建销售模型，并编译一条按地区返回合计值的查询。开始前需安装 dmlc.exe，并准备一个可写的工作目录。本教程在不连接数据库的情况下编译 SQL。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="tutorials--first-query.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="tutorials--first-query.ja.html">日本語</a> <a lang="en" hreflang="en" href="tutorials--first-query.html">English</a></header><main><h1 id="compile-your-first-model-query">编译第一条模型查询</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#identify-the-compiler">确认编译器</a></li><li><a href="#define-the-model">定义模型</a></li><li><a href="#write-the-query">编写查询</a></li><li><a href="#compile-the-query">编译查询</a></li><li><a href="#inspect-the-result">检查结果</a></li></ul></details>
+<p>我们将构建销售模型，并编译一条按地区返回合计值的查询。开始前需安装 <code>dmlc.exe</code>，并准备一个可写的工作目录。本教程在不连接数据库的情况下编译 SQL。</p>
+<h2 id="identify-the-compiler">确认编译器 <a class="section-link" aria-label="本节链接" href="#identify-the-compiler">#</a></h2>
+<p>安装 <code>dmlc.exe</code>，并将其所在目录添加到 PATH。打开 PowerShell，然后先保存可执行文件的路径，再创建工作目录。</p>
+<pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
+&amp; $dmlc --version
+</code></pre>
+<p>输出包含版本、构建时间戳和平台。<a href="compiler-observations.json">教程编译器记录</a>注明了验证本教程时使用的构建版本。</p>
+<p>接下来，新建一个目录来存放本教程的文件。</p>
+<pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
+Set-Location first-query
+</code></pre>
+<p>此时，命令提示符以 <code>first-query</code> 结尾。</p>
+<h2 id="define-the-model">定义模型 <a class="section-link" aria-label="本节链接" href="#define-the-model">#</a></h2>
+<p>将以下内容保存为 <code>model.dml</code>。</p>
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+
+average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+</code></pre>
+<p><code>FACT_SALES</code> 声明每个 <code>id</code> 对应一条源数据行。<code>sales</code> 和 <code>cnt</code> 对这些行进行聚合。<code>average_sale</code> 将前者的聚合结果除以后者的聚合结果。</p>
+<p>接下来，对模型运行 lint 检查。</p>
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
+$LASTEXITCODE
+</code></pre>
+<p>进程以退出码 <code>0</code> 结束。如果 lint 报告了问题，请先将保存的文件与上面的模型进行比较，再继续。</p>
+<h2 id="write-the-query">编写查询 <a class="section-link" aria-label="本节链接" href="#write-the-query">#</a></h2>
+<p>将以下内容保存为 <code>query.sql</code>，并将该文件放在 <code>model.dml</code> 所在的目录中。</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>FROM MODEL</code> 选择 <code>model.dml</code>。结果中的每一行代表一个地区。</p>
+<h2 id="compile-the-query">编译查询 <a class="section-link" aria-label="本节链接" href="#compile-the-query">#</a></h2>
+<p>接下来，在严格模式下编译查询。</p>
+<pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+$LASTEXITCODE
+</code></pre>
+<p>JSON 输出报告 <code>status: ok</code> 和 <code>exitCode: 0</code>，且 <code>diagnostics</code> 中没有错误或警告。<code>data.sql</code> 包含 <code>SUM(amount)</code>、<code>COUNT(1)</code> 和 <code>GROUP BY region</code>。最终投影包含 <code>region</code>、<code>sales</code> 和 <code>average_sale</code>。</p>
+<p>编译器可能会输出信息级诊断消息 <code>DATASET_GRAIN_UNVERIFIED</code>。我们编译了已声明的模型，但没有检查物理表 <code>TABLE_SALES</code>。</p>
+<h2 id="inspect-the-result">检查结果 <a class="section-link" aria-label="本节链接" href="#inspect-the-result">#</a></h2>
+<p>打开生成的 SQL 文件，该文件位于 <code>gen</code> 目录下。找到聚合表达式和按 <code>region</code> 分组的子句。现在，模型和使用该模型的查询都已完整，生成的 SQL 也可供检查。</p>
+<p>要执行查询，请使用能够访问已声明源表的数据库连接。请按照<a href="how-to--compile-and-validate-zh.html">使用 dmlc CLI</a>中的步骤，在连接的数据库上验证键并执行查询。<a href="explanation--core-concepts.zh.html">核心概念</a>介绍了模型层和查询层如何配合。</p>
+</main></body></html>

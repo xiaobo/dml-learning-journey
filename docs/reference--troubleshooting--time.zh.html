@@ -1,0 +1,65 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>时间上下文中的常见问题 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本节介绍期间值、比较上下文和历史数据缺失的问题。时间上下文的规则由求值语义定义。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="时间上下文中的常见问题 · DML"><meta property="og:description" content="本节介绍期间值、比较上下文和历史数据缺失的问题。时间上下文的规则由求值语义定义。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--troubleshooting--time.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--troubleshooting--time.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--time.html">English</a></header><main><h1 id="time-context-pitfalls">时间上下文中的常见问题</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#p29-non-first-day-time-filters">P29. 时间筛选使用了非期间首日</a></li><li><a href="#p30-missing-current-day-in-past-n-days">P30. 最近 N 天漏掉了今天</a></li><li><a href="#p31-including-current-period-in-past-n-months">P31. 最近 N 个月包含了当月</a></li><li><a href="#p32-using-ytd-modifier-with-full-period-group-by">P32. 在按完整期间执行 GROUP BY 时使用 ytd 修饰符</a></li><li><a href="#p33-period-to-date-with-date-range">P33. 计算期初至今累计值时指定了日期范围</a></li><li><a href="#category-compilation-and-validation">类别：编译与验证</a></li><li><a href="#p59-yoy-without-column-probe">P59. 未检查对比列就计算同比</a></li><li><a href="#extra-month-after-the-latest-source-data">结果多出源数据最后一个月之后的月份</a></li><li><a href="#reconcile-both-periods-by-category">按类别核对两个期间的收入</a></li></ul></details>
+<p>本节介绍期间值、比较上下文和历史数据缺失的问题。时间上下文的规则由<a href="reference--semantics.zh.html">求值语义</a>定义。</p>
+<p><a id="p29"></a></p>
+<h2 id="p29-non-first-day-time-filters">P29. 时间筛选使用了非期间首日 <a class="section-link" aria-label="本节链接" href="#p29-non-first-day-time-filters">#</a></h2>
+<p><strong>错误</strong>：<code>dt_month = '2024-01-15'</code> 或 <code>dt_month = 'Jan 2024'</code>。<strong>修正</strong>：<code>dt_month = '2024-01-01'</code>。始终使用期间的第一天。</p>
+<p><a id="p30"></a></p>
+<h2 id="p30-missing-current-day-in-past-n-days">P30. 最近 N 天漏掉了今天 <a class="section-link" aria-label="本节链接" href="#p30-missing-current-day-in-past-n-days">#</a></h2>
+<p><strong>错误</strong>：<code>dt_date BETWEEN date(current_date, '-7 days') AND date(current_date, '-1 day')</code>。<strong>修正</strong>：<code>dt_date BETWEEN date(current_date, '-6 days') AND date(current_date)</code>。范围共 7 天，包含今天。</p>
+<p><a id="p31"></a></p>
+<h2 id="p31-including-current-period-in-past-n-months">P31. 最近 N 个月包含了当月 <a class="section-link" aria-label="本节链接" href="#p31-including-current-period-in-past-n-months">#</a></h2>
+<p><strong>错误</strong>：<code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>。<strong>修正</strong>：<code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>。排除尚未结束的当月。</p>
+<p><a id="p32"></a></p>
+<h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. 在按完整期间执行 GROUP BY 时使用 ytd 修饰符 <a class="section-link" aria-label="本节链接" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>。<strong>修正</strong>：<code>ytd</code> 返回累计值。以 <code>dt_date</code> 为分组层级：<code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>。</p>
+<p><a id="p33"></a></p>
+<h2 id="p33-period-to-date-with-date-range">P33. 计算期初至今累计值时指定了日期范围 <a class="section-link" aria-label="本节链接" href="#p33-period-to-date-with-date-range">#</a></h2>
+<p><strong>错误</strong>：计算 YTD 时使用 <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code>。<strong>修正</strong>：将 <code>WHERE dt_date = date(current_date)</code> 与 <code>AGG(sales, 'ytd')</code> 搭配使用。日期范围由修饰符确定。</p>
+<hr>
+<h2 id="category-compilation-and-validation">类别：编译与验证 <a class="section-link" aria-label="本节链接" href="#category-compilation-and-validation">#</a></h2>
+<p><a id="p59"></a></p>
+<h2 id="p59-yoy-without-column-probe">P59. 未检查对比列就计算同比 <a class="section-link" aria-label="本节链接" href="#p59-yoy-without-column-probe">#</a></h2>
+<p><strong>错误</strong>：在 <code>去年同期出厂价金额</code> 的合计为零时使用 <code>AGG(销售额, 'yoy')</code>。<strong>修正</strong>：在承诺提供同比解读之前，先通过明细查询检查 <code>SUM(去年同期出厂价金额)</code>。</p>
+<h2 id="extra-month-after-the-latest-source-data">结果多出源数据最后一个月之后的月份 <a class="section-link" aria-label="本节链接" href="#extra-month-after-the-latest-source-data">#</a></h2>
+<p>比较期间时，请明确指定报表的月份范围。全外连接可以保留任一期间中存在的分组。当 12 月的销售额作为上期销售额与 1 月对齐时，未限制日期范围的查询可能会包含 1 月，即使该月不在报表范围内。</p>
+<p>此示例使用 2024 年 1 月至 2025 年 12 月的数据，每个月的五个类别都有销售额。模型定义了 <code>revenue: SUM({amount})</code>、名为 <code>dt_month</code> 的月份维度，以及 <code>revenue_mom: '{revenue: pop}'</code>。</p>
+<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+FROM MODEL
+WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
+GROUP BY dt_month, category
+</code></pre>
+<p>在示例数据上，此查询返回 120 行，结果与手写的 SQL 一致。去掉日期筛选条件后，验证的查询返回 125 行。多出的五行属于 2026 年 1 月。这些分组只有 12 月的销售额参与计算，因此本期收入和增长率均为 NULL。</p>
+<h3 id="reconcile-both-periods-by-category">按类别核对两个期间的收入 <a class="section-link" aria-label="本节链接" href="#reconcile-both-periods-by-category">#</a></h3>
+<p>如果报表用于比较两个期间的总收入，请保留在报表月份范围内任一期间有收入的类别。要查看两个期间的收入，请将 <code>AGG({revenue: pp}) AS previous_revenue</code> 添加到 SELECT 列表中。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th align="right">本期收入</th>
+<th align="right">上期收入</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td align="right">120</td>
+<td align="right">100</td>
+</tr>
+<tr>
+<td>B</td>
+<td align="right">NULL</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>C</td>
+<td align="right">30</td>
+<td align="right">NULL</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td align="right"><strong>150</strong></td>
+<td align="right"><strong>140</strong></td>
+</tr>
+</tbody></table>
+<p>在此示例中，如果筛选后只保留本期有销售额的类别，B 会被排除，报表中显示的上期收入合计会降至 100。如果报表专门关注本期活跃类别，请使用该筛选条件，并在计算合计时采用相同的类别范围。要核对完整的比较结果，请按报表月份分别对每个收入列求和，并与源数据中对应月份的合计比较。总体增长率应根据两个期间的收入合计计算。</p>
+<p>只有在该期间的数据完整，且业务规则将无销售视为零时，才将缺失值显示为零。用零填充会改变显示值。</p>
+</main></body></html>

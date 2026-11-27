@@ -1,0 +1,24 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gemeinsames Modell für die Abfragebeispiele · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Die ersten Abfragebeispiele verwenden dieses Modell als model.dml. Bei späteren Beispielen sind weitere Abhängigkeiten angegeben. Prüfen Sie nach dem Kompilieren, ob die Quellschlüssel eindeutig sind und die Ab"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Gemeinsames Modell für die Abfragebeispiele · DML"><meta property="og:description" content="Die ersten Abfragebeispiele verwenden dieses Modell als model.dml. Bei späteren Beispielen sind weitere Abhängigkeiten angegeben. Prüfen Sie nach dem Kompilieren, ob die Quellschlüssel eindeutig sind und die Ab"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--shared-model.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--examples--shared-model.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--shared-model.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--shared-model.zh.html">中文</a></header><main><h1 id="shared-model-for-query-examples">Gemeinsames Modell für die Abfragebeispiele</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul></ul></details>
+<p>Die ersten <a href="reference--examples--queries.de.html">Abfragebeispiele</a> verwenden dieses Modell als <code>model.dml</code>. Bei späteren Beispielen sind weitere Abhängigkeiten angegeben. Prüfen Sie nach dem Kompilieren, ob die Quellschlüssel eindeutig sind und die Abfrage die erwarteten Ergebnisse liefert.</p>
+<pre><code class="language-yaml"># model.dml (shared)
+transactions:
+    type: dataset
+    table: fact_transactions
+    dimension:
+        - transaction_id
+    columns:
+        transaction_id:
+        dt_date:
+        product:
+        region:
+        category:
+        amount:
+        quantity:
+        is_paid:
+
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+</code></pre>
+</main></body></html>

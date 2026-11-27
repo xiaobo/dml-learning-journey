@@ -1,0 +1,199 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SQL Server で Maz を使う · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="SQL を理解しているレポート開発者、アプリケーション開発者、データ運用担当者が対象です。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="SQL Server で Maz を使う · DML"><meta property="og:description" content="SQL を理解しているレポート開発者、アプリケーション開発者、データ運用担当者が対象です。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-sqlserver.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="maz-sqlserver.de.html">Deutsch</a> <a lang="en" hreflang="en" href="maz-sqlserver-en.html">English</a> <a lang="zh" hreflang="zh" href="maz-sqlserver.html">中文</a></header><main><h1 id="using-maz-on-sql-server">SQL Server で Maz を使う</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#a-quarterly-report-from-the-tutorial39s-sales-data">チュートリアルの売上データを使った四半期レポート</a></li><li><a href="#prepare-the-first-quarter">第 1 四半期を準備する</a></li><li><a href="#how-new-months-and-historical-corrections-are-handled">新しい月と過去データの訂正の扱い</a></li><li><a href="#continuing-after-an-interruption">中断後の再開</a></li><li><a href="#common-problems">よくある問題</a></li><li><a href="#watch-global-runner-progress">ランナー全体の進捗を監視する</a></li></ul></details>
+<p>SQL を理解しているレポート開発者、アプリケーション開発者、データ運用担当者が対象です。</p>
+<blockquote>
+<p>この演習では、月次売上と四半期売上の 2 つの Maz を使います。生成された <code>setup_sql</code> でランタイムをインストールします。<code>prepare_sql</code> を実行し、<code>data_ready=1</code> が返ったら業務クエリを実行します。待機中は、<code>prepare_status_sql</code> でこのリクエストの状況を、<code>DML_MAZ_PROGRESS</code> で全体の進捗を確認できます。</p>
+</blockquote>
+<p>最初に「<a href="maz-prepare-refresh.ja.html">prepare と refresh の選び方：パラメーターと復旧ルール</a>」を読んでください。</p>
+<h2 id="a-quarterly-report-from-the-tutorial39s-sales-data">チュートリアルの売上データを使った四半期レポート <a class="section-link" aria-label="この節へのリンク" href="#a-quarterly-report-from-the-tutorial39s-sales-data">#</a></h2>
+<p>インタラクティブチュートリアルの第 12 章では、データセット <code>FACT_SALES</code> が <code>TABLE_SALES</code> を読み取り、<code>id</code> で個々の売上を識別し、<code>dt_month</code> に月を記録し、<code>SUM({amount})</code> で売上を集計します。このモデルとその 8 行のソースデータを引き続き使います。1 月の合計は 70、2 月の合計は 100 です。</p>
+<p>この拡張で、マテリアライズ済みの結果を 2 つ、四半期レポートを 1 つ追加します。</p>
+<p><code>TABLE_SALES</code>（売上明細）→ <code>SALES_MONTHLY</code>（月次売上）→ <code>SALES_QUARTERLY</code>（四半期売上）→ <code>quarterly_sales</code>（レポート）</p>
+<p>クエリの準備では、まず上流で必要な月を確認し、次に下流の四半期パーティションを作成します。再構築が必要なパーティションは、それぞれ個別にコミットされます。</p>
+<h2 id="prepare-the-first-quarter">第 1 四半期を準備する <a class="section-link" aria-label="この節へのリンク" href="#prepare-the-first-quarter">#</a></h2>
+<ol>
+<li>インタラクティブチュートリアルのセットアップスクリプトを、SQL Server の空の練習用データベースで実行します。その演習をすでに実行した場合は、同じデータベースを引き続き使います。</li>
+<li>以下のカレンダー拡張を実行します。チュートリアルの練習用カレンダーには日付と月だけがあり、2025 年 2 月で終わります。この手順では四半期を追加し、6 月末までのデータを補います。</li>
+<li>チュートリアルの <code>model.dml</code> を <code>quarterly_sales.dml</code> という名前で保存します。元からある <code>dialect: mssql</code> の行を残し、以下のマテリアライズとレポートの定義をファイルの末尾に追加します。</li>
+</ol>
+<p>参照用に、<a href="journey.ja.html#capstone">インタラクティブチュートリアルの第 12 章</a>を確認し、元の <a href="model.dml">model.dml</a> と <a href="lesson-files--setup-mssql.sql">SQL Server 用のセットアップスクリプト</a>をダウンロードしてください。</p>
+<details>
+<summary>SQL Server 用のカレンダー拡張を表示</summary>
+
+<pre><code class="language-sql">ALTER TABLE dbo.DML_CALENDAR ADD dt_quarter date NULL;
+GO
+UPDATE dbo.DML_CALENDAR
+SET dt_quarter = DATEFROMPARTS(YEAR(dt_date), 3 * (DATEPART(quarter, dt_date) - 1) + 1, 1);
+ALTER TABLE dbo.DML_CALENDAR ALTER COLUMN dt_quarter date NOT NULL;
+
+;WITH dates AS (
+    SELECT CAST('20250301' AS date) AS dt_date
+    UNION ALL
+    SELECT DATEADD(day, 1, dt_date) FROM dates WHERE dt_date &lt; '20250630'
+)
+INSERT dbo.DML_CALENDAR (dt_date, dt_month, dt_quarter)
+SELECT dt_date, DATEFROMPARTS(YEAR(dt_date), MONTH(dt_date), 1),
+       DATEFROMPARTS(YEAR(dt_date), 3 * (DATEPART(quarter, dt_date) - 1) + 1, 1)
+FROM dates
+OPTION (MAXRECURSION 0);
+</code></pre>
+</details>
+
+<details>
+<summary>マテリアライズとレポートの定義を表示</summary>
+
+<pre><code class="language-yaml">SALES_MONTHLY:
+  type: materialize
+  parameters: {dt_month: range}
+  dimension: [dt_month]
+  measures: [sales]
+
+SALES_QUARTERLY:
+  type: materialize
+  allows: [SALES_MONTHLY]
+  parameters: {dt_quarter: range}
+  dimension: [dt_quarter]
+  measures: [sales]
+
+quarterly_sales:
+  type: query
+  allows: [SALES_QUARTERLY]
+  filters:
+    dt_quarter:
+      range: ['2025-01-01', '2025-01-01']
+  columns:
+    dimension: [dt_quarter]
+    sales:
+</code></pre>
+</details>
+
+<pre><code class="language-powershell">$compiled = dmlc --compile --strict --json --artifacts=gen quarterly_sales.dml | ConvertFrom-Json
+$compiled.data.setupSql    # setup_sql
+$compiled.data.prepareSql  # prepare_sql
+$compiled.data.sql         # sql
+</code></pre>
+<p>拡張したモデルをコンパイルし、生成された <code>setup_sql</code> でマテリアライズと依存関係をインストールします。次に、自動コミット接続で <code>quarterly_sales</code> の <code>prepare_sql</code> を実行します。準備と実際にデータが利用可能かどうかの確認が完了し、<code>data_ready=1</code> が返ったら、同じリクエストの業務クエリ <code>sql</code> を実行します。待機中は、別の接続から <code>prepare_status_sql</code> で状況を確認できます。エラーが発生した場合や待機がタイムアウトした場合は、まだクエリを実行しないでください。原因を解消してから通常の準備をやり直します。SQL Server のセッションには <code>IMPLICIT_TRANSACTIONS OFF</code> と <code>@@TRANCOUNT = 0</code> が必要です。業務クエリは引き続き SELECT または CTE です。</p>
+<p>第 1 四半期の結果は <strong>170</strong> です。月 1、2、3 にはそれぞれ月次パーティションの状態が記録されています。この時点で 3 月のパーティションは空でした。SQL Server では、大文字と小文字が混在する入れ子の名前の登録に現時点で制約があるため、この例ではマテリアライズ名をすべて大文字にしています。</p>
+<h2 id="how-new-months-and-historical-corrections-are-handled">新しい月と過去データの訂正の扱い <a class="section-link" aria-label="この節へのリンク" href="#how-new-months-and-historical-corrections-are-handled">#</a></h2>
+<p>以下の 3 つのデータ変更を、練習用データベースで順番に実行します。ソースのトランザクションをコミットしてから refresh を実行します。2 件の挿入には、チュートリアルと同じ地域と顧客を使います。</p>
+<table>
+<thead>
+<tr>
+<th>ソースの変更</th>
+<th>操作</th>
+<th>レポート結果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>3 月の売上 30 を <code>TABLE_SALES</code> に挿入する。Q1 は公開済み。</td>
+<td><code>SALES_MONTHLY</code> に対して 3 月の refresh を実行する。デフォルトでは、その月とマテリアライズ済みの Q1 が更新される。</td>
+<td>Q1 <strong>170 → 200</strong></td>
+</tr>
+<tr>
+<td>4 月の売上 40 を挿入する。Q2 とその月次パーティションはまだ作成されていない。</td>
+<td>第1四半期のコンパイル結果を保存しておきます。<code>quarterly_sales.dml</code> で <code>dt_quarter</code> の開始日と終了日をどちらも <code>2025-04-01</code> に変更し、上のコンパイルコマンドをもう一度実行します。新しい結果の <code>prepareSql</code> を実行し、<code>data_ready=1</code> が返ったら、同じ結果の <code>sql</code> を実行します。2月分の修正を確認するときは、保存した第1四半期の結果を使うか、開始日と終了日を <code>2025-01-01</code> に戻して再コンパイルします。</td>
+<td>Q2 の結果として初めて <strong>40</strong> が返る。</td>
+</tr>
+<tr>
+<td>2 月の <code>id = 2</code> の売上を 20 から 25 に訂正する。</td>
+<td><code>SALES_MONTHLY</code> に対して 2 月の refresh を実行する。デフォルトでは、その月と影響を受ける Q1 が更新される。</td>
+<td>Q1 は <strong>200 → 205</strong>、Q2 は <strong>40</strong> のまま。</td>
+</tr>
+</tbody></table>
+<p>この手順では、2025 年の過去のパーティションを使います。3 月分の追加と 2 月分の訂正の後も、通常の準備だけでは古い結果が再利用されます。初めて Q2 をクエリするときは、Q2 とその上流パーティションを初めて作成するため、通常の準備でソースから 4 月の新しいデータを読み取れます。作成時に空だった月も含め、上流キャッシュがすでに存在する場合は、更新漏れを防ぐためにコミット後に影響を受ける月を通知します。</p>
+<details>
+<summary>3 件の書き込みと変更通知に使う SQL を表示</summary>
+
+<pre><code class="language-sql">-- 1. March backfill. After the source write commits, register the
+--    refresh demand and attempt to call the runner.
+INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
+VALUES (9, N'North', N'A', '20250301', N'completed', 30);
+
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize = N'SALES_MONTHLY',
+    @_range_start = '20250301',
+    @_range_end   = '20250331';
+
+-- 2. April arrives for the first time. After the write commits,
+--    prepare Q2 for the first time.
+INSERT dbo.TABLE_SALES (id, region, customer, dt_month, status, amount)
+VALUES (10, N'South', N'C', '20250401', N'completed', 40);
+
+-- 3. Back to Q1. After the February correction commits, refresh
+--    the month and the quarter.
+UPDATE dbo.TABLE_SALES SET amount = 25 WHERE id = 2;
+
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize = N'SALES_MONTHLY',
+    @_range_start = '20250201',
+    @_range_end   = '20250228';
+</code></pre>
+<p>各手順の後、次に進む前に、表に記載された期間でレポートの結果を確認します。ロードスクリプトが明示的なトランザクションを開始する場合は、先にコミットし、その後、自動コミット接続で refresh を呼び出します。</p>
+</details>
+
+<p>デフォルトの refresh は、まず指定した月と影響を受ける四半期をまとめて無効化して登録し、その後にランナーを呼び出します。処理中に "accepted" が返る場合があります。レポートを読み取る前に、クエリの prepare_sql を実行します。この処理は待機し、そのクエリでデータが利用可能かを確認します。クエリで必要になるまで再構築を延期するには、@_invalidate_only=1 を明示的に指定します。この場合は無効化マークを登録して戻ります。ランナーは起動せず、すでに保留中の処理は維持されます。</p>
+<p>レポート全体を監査するには、<code>SALES_QUARTERLY</code> に対して、期間を Q1 に設定し、<code>@_force_update = 1</code> を指定して <code>DML_PREPARE_MAZ</code> を実行します。これにより、このリクエストに必要な月と四半期が強制的に再構築されます。ある月のソースが変わったことだけが分かっている場合は、<code>SALES_MONTHLY</code> から refresh を呼び出します。四半期だけを更新しても、変更が通知されていない古い月次キャッシュは検出されません。</p>
+<p><code>@_match</code> のデフォルトは exact です。<code>like</code> モードで <code>SALES~_%</code> を指定すると、リテラルの接頭辞 SALES_ で始まる名前に一致します。同じモードで <code>%</code> を指定すると、登録済みのすべての Maz に一致します。日付の範囲には開始日と終了日の両方が含まれます。両方の日付を省略した refresh は既存の範囲を処理し、カレンダー全体を事前に構築することはありません。別の月に移動する場合は、移動元と移動先の両方の月を対象にする必要があります。</p>
+<h2 id="continuing-after-an-interruption">中断後の再開 <a class="section-link" aria-label="この節へのリンク" href="#continuing-after-an-interruption">#</a></h2>
+<p>コミットはパーティションごとに行われます。後続のパーティションの処理に失敗した場合、完了済みのパーティションは保持され、処理中のパーティションの変更はロールバックされます。通常の prepare では、既知のターゲットと範囲を補完できます。force_update=1 を指定して prepare を再実行すると、新たな強制更新が開始されます。</p>
+<p>既定の更新が中断された場合、登録済みの残りの処理は STATE に保持されます。エラーを解消したら、<code>DML_REFRESH_MAZ</code> を引数なしで呼び出すか、その後の prepare または refresh の呼び出しでランナーを起動します。既定の更新や force_update=1 を指定した更新を再度要求すると、更新要求が再登録され、完了済みのパーティションが再処理されることがあります。引数なしの refresh は保留中の処理だけを再開し、完了済みのパーティションを再度無効化することはありません。キャンセルまたはタイムアウトが発生した場合は、再開する前に物理接続を閉じてください。ROLLBACK だけでは、ランナーのセッションレベルのロックは解放されません。コミットの応答が失われた場合は、先に状態を再確認してください。</p>
+<h2 id="common-problems">よくある問題 <a class="section-link" aria-label="この節へのリンク" href="#common-problems">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>確認と対処</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ソースデータを修正しても、レポートに古い値が表示される</td>
+<td>ソースのトランザクションがコミットされたこと、すべてのエントリーポイントと日付が無効化の対象になったこと、その後レポートで <code>prepare_sql</code> が実行されたことを確認してください。下流のオブジェクトにだけ通知した場合は、その上流のオブジェクトも無効化する必要があったか確認してください。</td>
+</tr>
+<tr>
+<td>プロシージャ、ターゲット、またはパラメーター <code>@_match</code> が見つからない</td>
+<td>ターゲットデータベースに接続していることと、デプロイ時にモデル用に生成された <code>setup_sql</code> が実行されたことを確認してください。名前を完全一致で指定する場合は、登録済みの Maz 名を使用します。LIKE は一致する対象がなくても成功しますが、変更は行われません。どの対象が一致するかを事前に確認してください。</td>
+</tr>
+<tr>
+<td>自動コミットを求められる</td>
+<td><code>autoCommit=true</code> を設定した JDBC 接続を使用し、明示的なトランザクションも暗黙的なトランザクションも使用しないでください。無効化の呼び出しは、ソースへの書き込みトランザクションがコミットされた後に行ってください。</td>
+</tr>
+<tr>
+<td>無効化時に、日付の不足、順序の逆転、または未カバーの日付が報告される</td>
+<td>開始日と終了日をこの順に指定し、期間内のすべての日が <code>dbo.DML_CALENDAR</code> に含まれていることを確認してください。マテリアライズ済みの範囲すべてを対象にする場合は、両方の日付を省略してください。</td>
+</tr>
+<tr>
+<td>ライターの実行権限がない</td>
+<td>呼び出し元アカウントに、無効化プロシージャと影響を受ける各 Maz のライターを実行する権限があるか、データベース管理者に確認を依頼してください。無効化の前に、影響を受けるすべてのターゲットが検証されます。必要な権限がない要求は拒否されます。</td>
+</tr>
+<tr>
+<td>呼び出し中にロック待ちがタイムアウトするか、接続が切断される</td>
+<td>クライアント側でキャンセルまたはタイムアウトが発生した場合は、そのとき使用していた物理接続を閉じてください。接続プールを使用している場合は、その接続を破棄して、ランナーのセッションレベルのロックを解放してください。エラーを解消したら、<code>DML_REFRESH_MAZ</code> を引数なしで呼び出して登録済みの処理を再開します。クエリの準備に失敗した場合は、<code>prepare_sql</code> 全体を再実行し、<code>data_ready=1</code> になってからクエリを実行してください。</td>
+</tr>
+</tbody></table>
+<p>状態テーブルの読み取り権限がある場合は、次のクエリでパーティションを確認できます。</p>
+<pre><code class="language-sql">SELECT materialize, dim_dt, state, COALESCE(last_end_time, created_end_time) AS build_finished_at
+FROM dbo.DML_MATERIALIZE_STATE
+WHERE materialize IN (N'SALES_QUARTERLY', N'SALES_MONTHLY')
+ORDER BY materialize, dim_dt;
+</code></pre>
+<p><code>state = 0</code> は通常の無効化、<code>state = 3</code> は無効で能動的な更新を待っている状態、<code>state = 1</code> は完全な結果が公開済みであることを示します。ビルド時刻は、Maz のライターが処理を完了した時刻です。特定の修正が反映されているかを判断するには、無効化の通知と、それに続く準備処理も確認してください。</p>
+<p>次のソースクエリで演習の最終結果を確認してください。Q1 は 205、Q2 は 40 です。</p>
+<pre><code class="language-sql">WITH source_rows AS (
+    SELECT DATEFROMPARTS(YEAR(dt_month), 3 * (DATEPART(quarter, dt_month) - 1) + 1, 1) AS dt_quarter,
+           amount
+    FROM dbo.TABLE_SALES
+    WHERE dt_month &gt;= '20250101' AND dt_month &lt; '20250701'
+)
+SELECT dt_quarter, SUM(amount) AS sales
+FROM source_rows
+GROUP BY dt_quarter
+ORDER BY dt_quarter;
+</code></pre>
+<p><a href="maz-prepare-refresh.ja.html">prepare と refresh の規約</a>を参照してください。</p>
+<h2 id="watch-global-runner-progress">ランナー全体の進捗を監視する <a class="section-link" aria-label="この節へのリンク" href="#watch-global-runner-progress">#</a></h2>
+<p>生成された <code>setup_sql</code> で共有の進捗ビューをインストールし、次のクエリを実行します。</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>ビューには、クエリごとに直近 60 秒間の統計が表示されます。統計には、現在保留中の処理、完了したパーティションと追加されたパーティションのそれぞれの単位時間あたりの件数（重複を除く）、および保留中の処理がなくなるまでの推定秒数が含まれます。対象期間内に同じパーティションの処理が複数回完了しても、1 回として数えます。保留中の処理がなければ推定値は 0 です。処理を残したままランナーが停止した場合や、完了する処理より追加される処理のほうが多く、保留中の処理を解消できない場合は NULL です。監視用アカウントには、このビューに対する SELECT 権限が必要です。</p>
+<p>このビューが示すのは全体の進捗であり、このレポートの準備が完了したかどうかは判断できません。レポートを参照する前に、対象クエリの <code>prepare_sql</code> を使って、データの準備が完了するまで待ち、完了を確認してください。各列の詳しい説明、実行時オブジェクトの所有者、復旧手順については、<a href="maz-prepare-refresh.ja.html#runner-progress">prepare と refresh の規約</a>を参照してください。</p>
+</main></body></html>

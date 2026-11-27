@@ -1,0 +1,333 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>模型示例 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="这些代码片段涵盖查询维度、填充、物化以及跨数据集的粒度。每个示例都需要其中指定的模型对象。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="模型示例 · DML"><meta property="og:description" content="这些代码片段涵盖查询维度、填充、物化以及跨数据集的粒度。每个示例都需要其中指定的模型对象。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--models.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--examples--models.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--examples--models.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--models.html">English</a></header><main><h1 id="model-examples">模型示例</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#dimension-modifiers">维度修饰符</a></li><li><a href="#product-share-within-category">产品在所属类别中的占比</a></li><li><a href="#using-pot-percentage-of-total">使用 <code>pot</code>（占总计的百分比）</a></li><li><a href="#hidden-dimension-fields">隐藏的维度字段</a></li><li><a href="#moving-annual-total-mat">滚动年度总计（MAT）</a></li><li><a href="#combo-columns">组合列</a></li><li><a href="#conditional-aggregation">条件聚合</a></li><li><a href="#calendar-densification-vs-fill-default">补齐日历日期与填充默认值的区别</a></li><li><a href="#allows-all-for-materialization-selection">使用 <code>allows: ALL</code> 选择物化结果</a></li><li><a href="#materialize">物化</a></li><li><a href="#solution-materialize">解决方案：物化</a></li><li><a href="#how-it-works">工作原理</a></li><li><a href="#query-with-non-materialized-filter">使用未物化维度筛选的查询</a></li><li><a href="#when-to-materialize">何时使用物化</a></li><li><a href="#materialize-as-etl-replacement">使用物化替代 ETL</a></li><li><a href="#solution-model-the-etl-pipeline-as-a-materialize-object">解决方案：将 ETL 流水线建模为物化对象</a></li><li><a href="#uneven-dimensions">维度不一致</a></li><li><a href="#the-challenge">比较的难点</a></li><li><a href="#common-grain-by-product-and-date">共同粒度：按产品和日期</a></li><li><a href="#if-you-need-region--warehouse-in-the-same-query">同一查询中需要同时使用地区和仓库时</a></li><li><a href="#selected-period-and-all-history-totals">所选期间与全部历史的合计</a></li></ul></details>
+<p>这些代码片段涵盖查询维度、填充、物化以及跨数据集的粒度。每个示例都需要其中指定的模型对象。</p>
+<h2 id="dimension-modifiers">维度修饰符 <a class="section-link" aria-label="本节链接" href="#dimension-modifiers">#</a></h2>
+<p><strong>业务问题</strong>：每种产品在所属类别中的占比是多少？</p>
+<h3 id="product-share-within-category">产品在所属类别中的占比 <a class="section-link" aria-label="本节链接" href="#product-share-within-category">#</a></h3>
+<pre><code class="language-sql">SELECT category, product,
+       AGG(sales) as product_sales,
+       AGG({sales: {dimension: [category]}}) as category_total
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<p>这里，<code>{sales: {dimension: [category]}}</code> 移除 <code>product</code> 和 <code>region</code>，因此 <code>sales</code> 仅按类别计算。</p>
+<h3 id="using-pot-percentage-of-total">使用 <code>pot</code>（占总计的百分比） <a class="section-link" aria-label="本节链接" href="#using-pot-percentage-of-total">#</a></h3>
+<p><code>pot</code> 移除<strong>所有</strong>维度，从而计算每行占总计的比例：</p>
+<pre><code class="language-sql">SELECT category, product,
+       AGG(sales) as product_sales,
+       AGG({sales: pot}) as share_of_grand_total
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<p>如果要计算在上级维度内的占比（例如产品值除以类别总计），请改用 <code>dimension</code> 修饰符：</p>
+<pre><code class="language-sql">-- Share of category (product / category total)
+SELECT category, product,
+       AGG(sales) as product_sales,
+       DIVIDE(AGG(sales), AGG({sales: {dimension: [category]}})) as category_share
+FROM MODEL
+GROUP BY category, product
+</code></pre>
+<h3 id="hidden-dimension-fields">隐藏的维度字段 <a class="section-link" aria-label="本节链接" href="#hidden-dimension-fields">#</a></h3>
+<p>数据集有时包含仅供内部计算使用、不应向最终用户显示的维度。</p>
+<pre><code class="language-yaml">transactions:
+    type: dataset
+    dimension:
+        - dt_date
+        - product
+        - region
+    columns:
+        dt_date:
+        product:
+        region:
+        transaction_id:          # internal dimension, not for analysis
+        amount:
+</code></pre>
+<p><code>transaction_id</code> 仍可用于 <code>+d</code> 修饰符，但不会显示在 MODEL 表中。</p>
+<h3 id="moving-annual-total-mat">滚动年度总计（MAT） <a class="section-link" aria-label="本节链接" href="#moving-annual-total-mat">#</a></h3>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: mat})
+FROM MODEL
+WHERE dt_month BETWEEN date(current_date, 'start of month', '-12 months')
+                   AND date(current_date, 'start of month', '-1 month')
+GROUP BY dt_month
+</code></pre>
+<p><code>mat</code> 计算截至每个 <code>dt_month</code>（含当月）的滚动 12 个月总计。</p>
+<p><strong>要点</strong>：<code>+d</code> 执行下钻：向计算维度追加一个维度字段，在更细的粒度上聚合，再汇总回原来的粒度。<code>-d</code> 移除维度字段（上卷）。<code>dimension: [list]</code> 替换整个计算维度。可使用这些修饰符计算占比、父子层级之间的比值，以及在调整粒度后进行比较。</p>
+<hr>
+<h2 id="combo-columns">组合列 <a class="section-link" aria-label="本节链接" href="#combo-columns">#</a></h2>
+<p><strong>业务问题</strong>：如何按产品显示已支付发票中的最小开票数量？</p>
+<h3 id="conditional-aggregation">条件聚合 <a class="section-link" aria-label="本节链接" href="#conditional-aggregation">#</a></h3>
+<pre><code class="language-yaml">min_paid_qty:
+    type: measure
+    dataset: transactions
+    formula: MINIF({quantity}, {is_paid} = 1)
+</code></pre>
+<pre><code class="language-sql">SELECT product, AGG(min_paid_qty)
+FROM MODEL
+GROUP BY product
+</code></pre>
+<h3 id="calendar-densification-vs-fill-default">补齐日历日期与填充默认值的区别 <a class="section-link" aria-label="本节链接" href="#calendar-densification-vs-fill-default">#</a></h3>
+<p><strong>补齐日期</strong>（显示每个日期）：先确保日历或连续日期序列具备所需粒度，例如在 <code>Dim Calendar</code> 上设置标志，然后按该粒度查询。</p>
+<pre><code class="language-yaml">Dim Calendar:
+    type: dataset
+    table: DML_CALENDAR
+    dimension:
+        - dt_date
+    columns:
+        dt_date:
+        has_data:
+            source: '1'
+</code></pre>
+<p><strong>行缺失时填充默认值</strong>（防止连接 / FOJ 后 NULL 传播）：在表达式最外层使用 <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code> 启用填充。填充仅在该指标的<strong>使用处</strong>生效。请参阅<a href="reference--measures.zh.html#fill-default-when-row-missing">缺失行填充</a>。</p>
+<pre><code class="language-yaml">daily_sales:
+    type: measure
+    formula: 'isnull(SUM({sales: {+d: dt_date}}), 0)'   # activate
+</code></pre>
+<p>对于后续组合计算，不要仅依赖 <code>SUM(isnull({sales: {+d: dt_date}}, 0))</code> 来处理<strong>连接后缺失的行</strong>。请为将要引用的指标启用填充，或为组合计算的结果启用填充。</p>
+<p><strong>要点</strong>：使用 <code>MINIF</code> / <code>MAXIF</code> / <code>AVGIF</code> 进行返回单个值的条件聚合。<strong>日期</strong>有缺失时，补齐日期；<strong>连接后的指标行</strong>有缺失时，在使用处填充默认值（P28b）。</p>
+<h3 id="allows-all-for-materialization-selection">使用 <code>allows: ALL</code> 选择物化结果 <a class="section-link" aria-label="本节链接" href="#allows-all-for-materialization-selection">#</a></h3>
+<p>有关语法和示例，请参阅 <a href="reference--query-yaml.zh.html#411-allows-all"><code>allows: ALL</code></a>。<code>allows: ALL</code> 允许将兼容的物化结果纳入候选范围，指标的粒度约束仍然适用。</p>
+<hr>
+<h2 id="materialize">物化 <a class="section-link" aria-label="本节链接" href="#materialize">#</a></h2>
+<p><strong>业务问题</strong>：某个仪表板每小时查询一次过去 24 个月的月度销售额、同比增长率和 MAT。底层数据集非常大。</p>
+<h3 id="solution-materialize">解决方案：物化 <a class="section-link" aria-label="本节链接" href="#solution-materialize">#</a></h3>
+<p>先定义指标，再定义一个物化对象，按固定粒度预聚合这些指标：</p>
+<pre><code class="language-yaml">sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+
+sales_yoy:
+    type: measure
+    formula: '{sales: yoy}'
+
+sales_mat:
+    type: measure
+    formula: '{sales: mat}'
+
+DWS_SALES_DATE_PRODUCT:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension:
+        - dt_date
+        - product
+    measures:
+        - sales
+        - sales_yoy
+        - sales_mat
+</code></pre>
+<p>数据集也可以在自身定义中直接声明物化（在数据集上指定 <code>materialize: &lt;name&gt;</code>）。请参阅<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">数据集定义（<code>type: dataset</code>）</a>。有关独立对象形式，请参阅<a href="reference--materialization.zh.html">物化声明</a>。</p>
+<blockquote>
+<p>⚠️ 指标级别<strong>没有</strong> <code>materialize: true</code> 标志。编译器会拒绝该标志并报错 <code>undefined modifier 'materialize'</code>（已用 <code>dmlc -c</code> 验证）。物化通过 <code>type: materialize</code> 或数据集级别的 <code>materialize: &lt;name&gt;</code> 声明，不能在指标上声明。</p>
+</blockquote>
+<h3 id="how-it-works">工作原理 <a class="section-link" aria-label="本节链接" href="#how-it-works">#</a></h3>
+<ol>
+<li>编译器会注册物化，并按 <code>dimension:</code> 声明的粒度预聚合列出的指标。</li>
+<li>以兼容粒度引用这些指标的查询可以考虑从物化表获取结果，无需扫描原始数据。是否可用取决于 <code>allows:</code>，请参阅<a href="reference--query-yaml.zh.html">查询定义（<code>type: query</code>）</a>。</li>
+<li>物化通过对应的存储过程（<code>parameters:</code>）刷新，不会实时更新。</li>
+</ol>
+<h3 id="query-with-non-materialized-filter">使用未物化维度筛选的查询 <a class="section-link" aria-label="本节链接" href="#query-with-non-materialized-filter">#</a></h3>
+<pre><code class="language-sql">SELECT dt_month, product, region, AGG(sales)
+FROM MODEL
+WHERE region = 'North'
+GROUP BY dt_month, product, region
+</code></pre>
+<p>如果物化粒度为 <code>dt_date + product</code>（不含 <code>region</code>），则无法用该物化结果处理此查询。必要时可以考虑按多个粒度分别物化。</p>
+<h3 id="when-to-materialize">何时使用物化 <a class="section-link" aria-label="本节链接" href="#when-to-materialize">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>是否物化？</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>频繁扫描指标，且原始数据量很大</td>
+<td>是</td>
+</tr>
+<tr>
+<td>指标用于有严格 SLA 要求的仪表板</td>
+<td>是</td>
+</tr>
+<tr>
+<td>仅偶尔临时查询该指标</td>
+<td>否（收益不足以抵消额外开销）</td>
+</tr>
+<tr>
+<td>指标粒度 = 原始数据粒度</td>
+<td>否（聚合无法带来收益）</td>
+</tr>
+<tr>
+<td>指标涉及复杂的窗口函数</td>
+<td>是</td>
+</tr>
+</tbody></table>
+<p><strong>要点</strong>：使用 <code>type: materialize</code> 对象声明物化（用 <code>dimension:</code> 指定粒度，用 <code>measures:</code> 指定指标）。不能直接在指标上声明物化。查询仍按常规方式引用已物化的指标（<code>AGG(sales)</code>）。请参阅<a href="reference--materialization.zh.html#55-materialize-definition-type-materialize">物化定义（<code>type: materialize</code>）</a>和<a href="how-to--design-materializations.zh.html">物化设计</a>。</p>
+<h3 id="materialize-as-etl-replacement">使用物化替代 ETL <a class="section-link" aria-label="本节链接" href="#materialize-as-etl-replacement">#</a></h3>
+<p><strong>业务问题</strong>：一个存储过程构建事实表（<code>INSERT INTO RPT_X SELECT ... FROM raw LEFT JOIN dim1 LEFT JOIN dim2 ...</code>），随后报表使用 <code>RPT_X</code>。能否用 DML 替代这个存储过程？</p>
+<h3 id="solution-model-the-etl-pipeline-as-a-materialize-object">解决方案：将 ETL 流水线建模为物化对象 <a class="section-link" aria-label="本节链接" href="#solution-model-the-etl-pipeline-as-a-materialize-object">#</a></h3>
+<p>请对<strong>整个流水线</strong>建模，而不是将 <code>RPT_X</code> 视为外部构建的 <code>table:</code> 数据集。将原始数据源定义为 <code>table:</code> 数据集，通过链式调用 <code>pk()</code> 补充数据，再将 <code>RPT_X</code> 定义为 <code>type: materialize</code> 对象，从补充后的数据源进行预聚合。</p>
+<pre><code class="language-yaml"># 1. Dimension datasets (the stored procedure's #temp tables)
+Dim Customer:
+    type: dataset
+    table: MDM_STORE
+    dimension: [store_id]
+    columns:
+        store_id:
+        store_name:
+        hq_id:
+
+Dim Org:
+    type: dataset
+    table: MDM_ORG
+    dimension: [org_id]
+    columns:
+        org_id:
+        emp_name:
+
+# 2. Source fact dataset with pk() chain enrichment
+#    (replaces the stored procedure's SELECT ... LEFT JOIN ...)
+raw_sales:
+    type: dataset
+    table: RAW_SALES
+    dimension: [dt_month, store_id, prod_id]
+    columns:
+        dt_month:
+        store_id:
+        prod_id:
+        amt:
+        # pk() chain enrichment replaces LEFT JOINs
+        store_name: pk({store_id}).{Dim Customer}.store_name
+        hq_id: pk({store_id}).{Dim Customer}.hq_id
+        # nested pk() chain: hq_id → Dim Customer → ... (hq_id is itself a pk result)
+        hq_name: pk({hq_id}).{Dim Customer}.store_name
+        # three-hop chain: store → hq_id → org_id → emp_name
+        hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+        hq_emp: pk({hq_org_id}).{Dim Org}.emp_name
+    measures:
+        sales: SUM({amt})
+
+# 3. Materialize replaces INSERT INTO RPT_X
+#    Grain keys (dt_month, store_id, prod_id) go in dimension:.
+#    Functionally dependent attributes (store_name, hq_name, hq_emp) go in
+#    dimension_columns: — the compiler rejects derivable attributes in dimension:.
+RPT_X:
+    type: materialize
+    parameters:
+        dt_month: range
+    dimension:
+        - dt_month
+        - store_id
+        - prod_id
+    dimension_columns:
+        store_name:
+        hq_name:
+        hq_emp:
+    measures:
+        - sales
+
+# 4. Report query consumes the materialize
+report:
+    type: query
+    allows:
+        - RPT_X
+    filters:
+        dt_month: { range: ['2024-01-01', '2024-03-01'] }
+    columns:
+        dimension: [dt_month, store_name]
+        sales: '{sales}'
+</code></pre>
+<p><strong>何时使用此模式</strong>：</p>
+<ul>
+<li>作为基准的 SQL 实现是一个包含 <code>INSERT INTO ... SELECT ... FROM raw JOIN dims</code> 的存储过程。</li>
+<li>存储过程的临时表可直接映射为通过 <code>pk()</code> 链查找的维度数据集。</li>
+<li>存储过程中通过 <code>INNER JOIN</code> 限定参与计算的行的条件，会转换为控制哪些行参与指标计算的条件。请保留原有的行集合，并检查生成的谓词。</li>
+</ul>
+<p><strong>注意事项</strong>：</p>
+<ul>
+<li>使用 <code>@month</code>（最后一个余额月份）刷新所有历史月份主数据的存储过程，无法用基于 <code>archive_month</code>（各月各自的主数据）进行联接的 <code>pk()</code> 链精确复现。请将其记录为已知限制，并注明需要使用同一份源数据快照比较结果。</li>
+<li>通过 <code>CROSS APPLY</code> 使用表值函数以及通过 <code>CASE WHEN</code> 重映射键时，需要在维度数据集中使用 <code>sql:</code> 转义写法。请声明所得的键并验证其唯一性。</li>
+</ul>
+<hr>
+<h2 id="uneven-dimensions">维度不一致 <a class="section-link" aria-label="本节链接" href="#uneven-dimensions">#</a></h2>
+<p><strong>业务问题</strong>：比较按地区划分的销售额和按仓库划分的库存。两者共有 <code>dt_date</code> 和 <code>product</code>，但 <code>region</code> 和 <code>warehouse</code> 都不是共有维度。</p>
+<h3 id="the-challenge">比较的难点 <a class="section-link" aria-label="本节链接" href="#the-challenge">#</a></h3>
+<p>如果数据集的维度完全不同，必须先对齐维度，才能直接比较其中的指标。</p>
+<pre><code class="language-yaml">sales:
+    type: dataset
+    table: fact_sales
+    dimension:
+        - dt_date
+        - product
+        - region
+        - customer
+    columns:
+        dt_date:
+        product:
+        region:
+        customer:
+        amount:
+
+inventory:
+    type: dataset
+    table: fact_inventory
+    dimension:
+        - dt_date
+        - product
+        - warehouse
+    columns:
+        dt_date:
+        product:
+        warehouse:
+        units:
+
+total_sales:
+    type: measure
+    dataset: sales
+    formula: SUM({amount})
+
+total_inventory:
+    type: measure
+    dataset: inventory
+    formula: SUM({units})
+</code></pre>
+<h3 id="common-grain-by-product-and-date">共同粒度：按产品和日期 <a class="section-link" aria-label="本节链接" href="#common-grain-by-product-and-date">#</a></h3>
+<pre><code class="language-sql">SELECT dt_date, product, AGG(total_sales), AGG(total_inventory)
+FROM MODEL
+WHERE dt_date = date(current_date)
+GROUP BY dt_date, product
+</code></pre>
+<p>两项指标共有 <code>dt_date</code> 和 <code>product</code>，因此可以这样比较。模型会隐式处理缺少的维度。</p>
+<h3 id="if-you-need-region--warehouse-in-the-same-query">同一查询中需要同时使用地区和仓库时 <a class="section-link" aria-label="本节链接" href="#if-you-need-region--warehouse-in-the-same-query">#</a></h3>
+<p>通常<strong>不能</strong>同时按 <code>region</code> 和 <code>warehouse</code> 分组，因为 <code>total_inventory</code> 没有 <code>region</code>，而 <code>total_sales</code> 没有 <code>warehouse</code>。</p>
+<p><strong>方案 1</strong>：使用两个独立查询</p>
+<pre><code class="language-sql">-- Sales by region
+SELECT dt_date, region, AGG(total_sales) FROM MODEL GROUP BY dt_date, region
+
+-- Inventory by warehouse
+SELECT dt_date, warehouse, AGG(total_inventory) FROM MODEL GROUP BY dt_date, warehouse
+</code></pre>
+<p><strong>方案 2</strong>：使用修饰符移除不兼容的维度</p>
+<pre><code class="language-sql">SELECT dt_date, region,
+       AGG(total_sales) as sales,
+       AGG({total_inventory: {-d: warehouse}}) as inventory_dropped_warehouse
+FROM MODEL
+GROUP BY dt_date, region
+</code></pre>
+<p><code>{-d: warehouse}</code> 将 <code>warehouse</code> 从定义库存粒度的维度中移除。这样，库存按 <code>dt_date + product</code> 粒度计算，并可与 <code>dt_date + region + product</code> 粒度的销售额联接。不过，这种联接在业务含义上通常值得商榷，请谨慎使用。</p>
+<p><a id="minus-dim_dt-pattern"></a></p>
+<h3 id="selected-period-and-all-history-totals">所选期间与全部历史的合计 <a class="section-link" aria-label="本节链接" href="#selected-period-and-all-history-totals">#</a></h3>
+<p><code>-d</code> 会取消分组。如果仍有月份筛选条件，取消分组并不意味着查询涵盖全部历史。对于这些模型片段，请使用各自明确指定范围的独立查询：</p>
+<pre><code class="language-sql">-- Selected month
+SELECT product, region, AGG(total_sales) AS period_sales
+FROM MODEL
+WHERE dt_month = date(current_date, 'start of month')
+GROUP BY product, region
+
+-- All history
+SELECT product, region, AGG(total_sales) AS all_time_sales
+FROM MODEL
+GROUP BY product, region
+</code></pre>
+<p>请使用本页要求的模型定义，分别执行这些语句。有关在同一份报表中实际执行完整比较的示例，请参阅<a href="examples--fixed-total-zh.html">固定轴分母</a>。该示例中的常规分组字段 <code>month</code> 有别于时间上下文 <code>dim_dt</code>。</p>
+<p><strong>要点</strong>：如果不同数据集中的指标有足够多的共有维度，就可以在同一查询中查询这些指标。如果维度不一致，请使用独立查询，或谨慎使用 <code>-d</code> 修饰符。为强行兼容而移除维度可能产生误导性结果，请记录这样做的目的。</p>
+</main></body></html>

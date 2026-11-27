@@ -1,0 +1,31 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Warum ein Regionsfilter den Nenner des Umsatzanteils ändert · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Ein Umsatzanteil setzt einen Teil und ein Ganzes voraus. Wenn Sie die Gruppierung nach Region aus dem Nenner entfernen, entfällt der Regionsfilter dadurch nicht zwangsläufig. Legen Sie fest, ob das Ganze die au"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Warum ein Regionsfilter den Nenner des Umsatzanteils ändert · DML"><meta property="og:description" content="Ein Umsatzanteil setzt einen Teil und ein Ganzes voraus. Wenn Sie die Gruppierung nach Region aus dem Nenner entfernen, entfällt der Regionsfilter dadurch nicht zwangsläufig. Legen Sie fest, ob das Ganze die au"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--share-denominator.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="guide--share-denominator.ja.html">日本語</a> <a lang="en" hreflang="en" href="guide--share-denominator-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--share-denominator-zh.html">中文</a></header><main><h1 id="why-a-region-filter-changes-the-sales-share-denominator">Warum ein Regionsfilter den Nenner des Umsatzanteils ändert</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#keep-the-question-fixed">Die Fragestellung beibehalten</a></li><li><a href="#try-both-meanings">Beide Varianten ausprobieren</a></li><li><a href="#choose-the-business-meaning-first">Zuerst die fachliche Bedeutung festlegen</a></li></ul></details>
+<p>Ein Umsatzanteil setzt einen Teil und ein Ganzes voraus. Wenn Sie die Gruppierung nach Region aus dem Nenner entfernen, entfällt der Regionsfilter dadurch nicht zwangsläufig. Legen Sie fest, ob das Ganze die ausgewählte Region oder alle Regionen umfasst.</p>
+<h2 id="keep-the-question-fixed">Die Fragestellung beibehalten <a class="section-link" aria-label="Link zum Abschnitt" href="#keep-the-question-fixed">#</a></h2>
+<p>Im Februar beträgt der Umsatz für North 30 und für South 70. Ein auf North beschränkter Bericht zeigt auch nach einer Änderung des Nenners weiterhin North an:</p>
+<table>
+<thead>
+<tr>
+<th>Berechnung des Nenners</th>
+<th align="right">Gesamtumsatz</th>
+<th align="right">Umsatzanteil von North</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Gruppierung nach Region entfernen und zugehörigen Filter beibehalten</td>
+<td align="right">30</td>
+<td align="right">100%</td>
+</tr>
+<tr>
+<td>Gruppierung nach Region und zugehörigen Filter entfernen</td>
+<td align="right">100</td>
+<td align="right">30%</td>
+</tr>
+</tbody></table>
+<p>In DMX steht d für Dimension und f für Filter. Die Referenz {sales: {-d: region}} entfernt die Gruppierung nach Region und behält den zugehörigen Filter bei. Die Referenz {sales: {-df: region}} entfernt auch diesen Filter. Diese Einstellungen gelten für die jeweilige Referenz. Sie ändern weder die ursprüngliche Kennzahl noch den Quellschlüssel oder die GROUP BY-Klausel des Berichts.</p>
+<h2 id="try-both-meanings">Beide Varianten ausprobieren <a class="section-link" aria-label="Link zum Abschnitt" href="#try-both-meanings">#</a></h2>
+<p><a href="journey.de.html#shares">Übung zum Nenner öffnen</a>. Lassen Sie North ausgewählt und wechseln Sie von -d zu -df. Der Nenner ändert sich von 30 auf 100, der angezeigte Anteil von 100% auf 30%. Beide Berechnungen beziehen sich weiterhin auf Februar. Wenn kein zugehöriger Regionsfilter vorhanden ist, liefern beide Einstellungen in diesem Beispiel denselben Nenner.</p>
+<h2 id="choose-the-business-meaning-first">Zuerst die fachliche Bedeutung festlegen <a class="section-link" aria-label="Link zum Abschnitt" href="#choose-the-business-meaning-first">#</a></h2>
+<p>Für den Anteil am Umsatz aller Regionen entfernen Sie den zugehörigen Regionsfilter aus der Berechnung des Nenners. Für den Anteil am Umsatz innerhalb der ausgewählten Teilmenge behalten Sie den Filter bei. Welche Variante richtig ist, hängt von der Fragestellung ab. Der Bericht muss angeben, welchen Gesamtumsatz er verwendet. Andere Filter werden nicht automatisch entfernt.</p>
+<p>Der Browser führt die Berechnungen lokal mit fiktiven Daten durch. <a href="lesson-files.zip">Vorhandenes Übungsprojekt herunterladen</a>, um das Modell und die dokumentierten Ergebnisse des Compilers einzusehen. Die interaktive Tabelle zeigt kein Datenbankergebnis. <a href="reference--modifiers.de.html">Genaue Regeln für Modifikatoren nachlesen</a>.</p>
+<p><a hreflang="zh" href="guide--share-denominator-zh.html">中文</a> · <a href="journey.de.html#shares">Interaktive Einführung</a></p>
+</main></body></html>

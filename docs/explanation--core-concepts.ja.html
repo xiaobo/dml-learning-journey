@@ -1,0 +1,142 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML、DMX、Model Query · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="レポートは、業務上の定義と、グループ化、フィルター、表示方法の指定を組み合わせます。DMLでは再利用できる定義をモデルに保持します。行や集計値を定義するレベル（粒度）が互いに適合していれば、複数のレポートで同じ指標を使用できます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML、DMX、Model Query · DML"><meta property="og:description" content="レポートは、業務上の定義と、グループ化、フィルター、表示方法の指定を組み合わせます。DMLでは再利用できる定義をモデルに保持します。行や集計値を定義するレベル（粒度）が互いに適合していれば、複数のレポートで同じ指標を使用できます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--core-concepts.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="explanation--core-concepts.de.html">Deutsch</a> <a lang="en" hreflang="en" href="explanation--core-concepts.html">English</a> <a lang="zh" hreflang="zh" href="explanation--core-concepts.zh.html">中文</a></header><main><h1 id="dml-dmx-and-model-query">DML、DMX、Model Query</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#1-the-model-query-and-expression-layers">1. モデル、クエリ、式の各レイヤー</a></li><li><a href="#2-source-relations-lookups-and-metric-composition">2. ソースリレーション、ルックアップ、指標の組み合わせ</a></li><li><a href="#3-dimension-roles-and-grain">3. ディメンションの役割と粒度</a></li><li><a href="#4-time-context-and-dim_dt">4. 時間コンテキストと <code>dim_dt</code></a></li><li><a href="#5-reuse-and-integration">5. 再利用と連携</a></li><li><a href="#time-comparisons-and-row-membership">期間比較と結果に含まれる行</a></li></ul></details>
+<p>レポートは、業務上の定義と、グループ化、フィルター、表示方法の指定を組み合わせます。DMLでは再利用できる定義をモデルに保持します。行や集計値を定義するレベル（粒度）が互いに適合していれば、複数のレポートで同じ指標を使用できます。</p>
+<p>指標はほかの指標を参照できます。各参照の評価方法は分析コンテキストによって決まります。たとえば、同じ利益率の定義を地域別レポートと年初来のKPIで使用できます。時間変換では、月ごとの利益率を平均するのではなく、利益と売上高を再計算してから除算します。異なるデータセットの指標も、行や集計値の粒度に互換性があれば組み合わせられます。その際、出力キーと、片側にしかデータがないグループが、レポートの想定する対象範囲に合っている必要があります。<a href="reference--examples--composable-metrics.ja.html">収益性の例</a>では、指標の組み合わせ、累積、比較を通じてこの仕組みを説明します。DMLモデル、DMX式、コンパイラは、分析用セマンティックレイヤーの計算の中核を担うことができます。業務上の定義は、引き続き関係者が合意して決めます。</p>
+<p>図解付きの<a href="explanation--visual-introduction.ja.html">DML入門ガイド</a>では、4 件の売上例とグループ化を試せるツールを使って、これらの概念を紹介します。</p>
+<p>実行可能な完全な例については、<a href="tutorials--first-query.ja.html">初めてのモデルクエリをコンパイルする</a>を参照してください。言語の規則は<a href="reference--semantics.ja.html">DMLのコア仕様</a>で定義されています。</p>
+<h2 id="1-the-model-query-and-expression-layers">1. モデル、クエリ、式の各レイヤー <a class="section-link" aria-label="この節へのリンク" href="#1-the-model-query-and-expression-layers">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>レイヤー</th>
+<th>言語</th>
+<th>内容</th>
+<th>記述場所</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>モデル</td>
+<td>DML（Dato Measure Language）</td>
+<td>データセット、指標、列マクロ</td>
+<td><code>.dml</code> YAML</td>
+</tr>
+<tr>
+<td>クエリ</td>
+<td>Model Query</td>
+<td>指標の選択、グループ化、レポートのフィルター</td>
+<td><code>.sql</code>、または <code>type: query</code> を指定した DML</td>
+</tr>
+<tr>
+<td>式</td>
+<td>DMX（Dato Measure eXpression）</td>
+<td>数式、参照、修飾子</td>
+<td>モデルの数式とクエリの式</td>
+</tr>
+</tbody></table>
+<p>DMLは、モデルファイルを処理し、データベースが実行するSQLを生成する独立したセマンティックレイヤーのコンパイラです。アクセスはデータベースの権限とアプリケーションの認可で制御します。ダッシュボードとスケジュール管理は周辺システムが担います。モデルのフィルターだけでは、アクセス制御ポリシーにはなりません。</p>
+<p>DMLは、宣言の構造と、粒度や時間コンテキストなどの分析上の互換性を検査します。SQL式の静的型チェックは完全には行いません。物理的な値の型はデータベースが扱い、検証に使うモデルスキーマは列の <code>type:</code> 宣言を受け付けません。そのため、型変換や関数の引数に誤りがあってもコンパイルを通過し、データベースでの実行時にエラーになることがあります。<a href="reference--model-structure.ja.html#column-metadata-is-not-a-sql-type-declaration">列のメタデータと値の型</a>を参照してください。</p>
+<p>データセットは、列を物理テーブルまたはSQLリレーションに結び付けます。<code>dimension:</code> には、ソース行の完全キーを宣言します。</p>
+<pre><code class="language-yaml">transactions:
+  type: dataset
+  table: fact_transactions
+  dimension: [transaction_id]
+  columns:
+    transaction_id:
+    amount:
+    discount:
+    net_amount: amount - discount
+  measures:
+    sales: SUM({net_amount})
+    number_of_transactions: COUNT(1)
+
+avg_transaction_value:
+  type: measure
+  formula: 'DIVIDE({sales}, {number_of_transactions})'
+</code></pre>
+<p><code>sales</code>と<code>number_of_transactions</code>はアトミック指標です。定義を含むデータセットを継承し、ほかの指標を参照せずに、そのデータセットの行または列式を直接集計します。どちらのアトミック指標も<code>transactions</code>を使用していますが、<code>avg_transaction_value</code>は数式でほかの指標を参照するため、複合指標です。複合指標には <code>dataset:</code> プロパティがありません。</p>
+<p>モデルの数式では、波括弧のない<code>amount</code>は物理SQL列を指します。<code>{net_amount}</code>は、モデルの計算列の式に展開されます。論理名と物理名が一致する場合も、波括弧で両者を区別できます。</p>
+<p>列マクロは、再利用できる列式や、別のデータセットを参照するルックアップを定義します。指標を使用するクエリごとに結合を書くことなく、指標から属性を利用できます。ルックアップの引数は、参照先データセットの完全キーで決まります。<a href="#2-source-relations-lookups-and-metric-composition">ソースリレーションとルックアップ</a>を参照してください。</p>
+<p>Model Query では、<code>AGG(...)</code> を使って指標を参照します。モデルの数式では、<code>SUM</code> や <code>COUNT</code> などの集計関数を直接使用します。<code>AGG</code> はクエリから指標を参照するためのインターフェースであり、モデルの数式内の <code>SUM</code> を置き換えるものではありません。</p>
+<p>一時的に使う指標は、まずクエリファイル内の<a href="reference--model-query-sql.ja.html#312-inline-measures--dml--">インラインDMLブロック</a>に定義できます。試す前に共有モデルを変更する必要はありません。有用な定義を共有指標に昇格させる前に、その内容を確認してください。</p>
+<h2 id="2-source-relations-lookups-and-metric-composition">2. ソースリレーション、ルックアップ、指標の組み合わせ <a class="section-link" aria-label="この節へのリンク" href="#2-source-relations-lookups-and-metric-composition">#</a></h2>
+<p>DMLは、処理のさまざまな段階でデータを組み合わせます。確認すべきキー、フィルター、対象行の範囲は、どの段階で組み合わせるかによって決まります。</p>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>仕組み</th>
+<th>結果の規則</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完全キーを使って属性を再利用する</td>
+<td>モデルの数式内で <code>pk(...)</code> を使うルックアップ</td>
+<td>ルックアップキーごとに参照先の行は 1 件です。単一列のキーと複合キーを使用できます。</td>
+</tr>
+<tr>
+<td>イベントの日付に有効な属性を取得する</td>
+<td><code>[id, 'range(valid_from, valid_to)']</code> を対象とする <code>pk(id, event_date)</code></td>
+<td>検証対象の有限区間は <code>[start,end)</code> に従います。同じ id の区間どうしが重なってはいけません。</td>
+</tr>
+<tr>
+<td>売上や予算など、独立したファクトを比較する</td>
+<td>ディメンションをそろえて評価する指標</td>
+<td>キーの和集合を使う通常の組み合わせでは、少なくとも一方に存在するグループをすべて保持します。片側にしか存在しないグループでは、もう一方の値は欠損したままになります。</td>
+</tr>
+<tr>
+<td>ブリッジ、結合、和集合、サブクエリのリレーションを用意する</td>
+<td>データセットの <code>sql:</code> またはデータベースビュー</td>
+<td>用意したリレーションには、そのリレーション自体の完全キーが必要です。1 件のソース行が複数の行に一致し得る場合は、配分の重みを定義し、合計値を確認してください。</td>
+</tr>
+</tbody></table>
+<p>モデルを利用する Model Query の SQL では、JOIN、UNION、サブクエリを直接記述できません。この制約があっても、サポートされているリレーションはデータセットの SQL で準備できます。ソース SQL に組み込んだフィルターは、ソースリレーションの対象行を引き続き絞り込みます。利用側のコンテキストごとに動作が変わるルールには自動的にはなりません。</p>
+<p>複合キーによるルックアップや、指定した日付に有効な値を取得するルックアップをサポートしていても、任意の経路を選べる汎用的な関係グラフや、多対多の自動配分までサポートしているとは限りません。指標を独立して集計しても、ルックアップキーの重複や誤った対応付けの規則は解消されません。<a href="examples--compound-key.ja.html">複合キーによるルックアップ</a>と<a href="examples--range-lookup.ja.html">指定日に有効な値のルックアップ</a>の例では、完全なモデル、意図的に起こしたキーのエラー、その修正方法を確認できます。片側にしか存在しないグループと NULL キーの扱いについては、<a href="reference--semantics.ja.html#34-cross-dataset-auto-join">指標の組み合わせの規則</a>を参照してください。ソースの所有関係と派生リレーションの検証については、<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセットの SQL</a>を参照してください。</p>
+<p><a id="2-dimension-roles-and-grain"></a></p>
+<h2 id="3-dimension-roles-and-grain">3. ディメンションの役割と粒度 <a class="section-link" aria-label="この節へのリンク" href="#3-dimension-roles-and-grain">#</a></h2>
+<p>ディメンションフィールドは、名前付きの DML フィールド1つを指します。ディメンションはフィールドのリストです。ディメンションの役割は、宣言する場所によって決まります。</p>
+<table>
+<thead>
+<tr>
+<th>宣言</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>データセットの <code>dimension:</code></td>
+<td>ソース行を完全に識別する情報</td>
+</tr>
+<tr>
+<td>数式のディメンション修飾子</td>
+<td>1つの指標参照を評価するディメンション</td>
+</tr>
+<tr>
+<td>クエリの <code>GROUP BY</code> または <code>columns.dimension</code></td>
+<td>結果のグループ化</td>
+</tr>
+<tr>
+<td>マテリアライズの <code>dimension:</code></td>
+<td>保存時のグループ化の単位とキー</td>
+</tr>
+<tr>
+<td>指標の <code>dimensions:</code></td>
+<td>評価ディメンションとして使用できる候補。各内側のリストが1つの候補を表します。</td>
+</tr>
+</tbody></table>
+<p>粒度は、あるコンテキストで1行が何を表すかを示します。たとえば、<code>[transaction_id]</code> はトランザクションを識別し、<code>[region, dt_month]</code> はレポートを地域と月でグループ化します。レポートの1つのグループには多数のソース行が含まれることがあるため、グループでソースキーを置き換えることはできません。</p>
+<p>修飾子 <code>dimension: []</code> は、総計を求めるために評価ディメンションを空にします。この修飾子は、データセットの行を識別するキーを宣言するものではありません。<code>+d</code> は中間計算用のフィールドを追加します。数式でより粗い粒度の結果が必要な場合は、外側に明示した集計で中間値をまとめます。</p>
+<p>コンパイラは、宣言されたソースキーが正しいことを前提とします。<code>pk(...)</code> の参照先に同じキー値を持つ行が複数あると、コンパイルに成功しても行が増えることがあります。実データでの検証では、実際に存在するキー値が一意かどうかを確認します。結果の比較では、クエリが意図した答えを返すかどうかを確認します。</p>
+<p><a href="explanation--dimensions.ja.html">ディメンションの意味</a>では、これらの役割とその影響を詳しく説明します。</p>
+<p><a id="3-time-context-and-dim_dt"></a></p>
+<h2 id="4-time-context-and-dim_dt">4. 時間コンテキストと <code>dim_dt</code> <a class="section-link" aria-label="この節へのリンク" href="#4-time-context-and-dim_dt">#</a></h2>
+<p><code>dim_dt</code> は、指標のクエリコンテキストで有効な時間フィールドを表します。数式では、<code>dt_date</code>、<code>dt_month</code>、<code>dt_quarter</code> を直接指定せずに、現在の時間粒度を参照できます。マクロが受け付ける粒度は、引き続きそのマクロの前提条件によって制限されます。</p>
+<p>グループ化に使う時間フィールド、または時間フィルターがコンテキストを提供できます。厳格モードの診断メッセージと生成された結合は、構文が受理されるかどうかとは別に確認してください。期間比較やキーの和集合を使った結合があるだけで、厳格モードの警告が出るとは限りません。</p>
+<p><code>dt_date</code> のような細かい粒度の標準時間フィールドを宣言すると、システムカレンダーを通じて、サポートされるより粗い粒度の時間フィールドを使用できます。これらの仮想フィールドを物理フィールドとして重ねて宣言する必要はありません。派生した <code>dt_month</code> からエディターで定義に移動すると、明示的に宣言されたソースの時間列に移動します。</p>
+<p>単一の KPI でも、集計対象期間の終了時点を明示する必要があります。<a href="examples--time-context.ja.html">実行可能な例</a>では、2月で絞り込むと、1月と2月を対象とする YTD の利益率は 20% になります。一方、同じクエリ内の通常の売上高は2月分のみです。時間コンテキストがない場合、クエリは失敗します。カレンダーを使ってグループ化するクエリでは、累計値があり、当月の売上高が NULL の月も返ることがあります。出力する期間は目的に合わせて選んでください。クエリを実行する接続で、カレンダーが対象の日付をカバーしている必要があります。</p>
+<p><a href="reference--semantics.ja.html">時間コンテキストの仕様</a>では、<code>dim_dt</code> と標準時間フィールドを定義しています。<a href="02-syntax--system_macros.dml">システムマクロ</a>では、時間マクロと数式マクロの定義を参照できます。</p>
+<h2 id="5-reuse-and-integration">5. 再利用と連携 <a class="section-link" aria-label="この節へのリンク" href="#5-reuse-and-integration">#</a></h2>
+<p>カスタムの <code>fn-macro</code> 定義は呼び出し元の指標の数式を包み、<code>dt-macro</code> 定義はその数式の時間コンテキストを変更します。どちらも、コンパイラを変更せずに修飾子の構文で組み合わせられます。データベースのスカラー関数呼び出しでは、実行に使う接続にインストールされている関数を再利用します。<a href="how-to--define-macros.ja.html">拡張ガイド</a>では、実際に実行した例と、関数が存在しないために失敗する例を紹介します。これらの仕組みは、汎用のモジュールシステムや、あらゆる種類の UDF を環境間で利用できるようにする移植性を提供するものではありません。</p>
+<p>モデルの <a href="reference--model-structure.ja.html#sql-dialect">SQL 方言</a>を明示的に設定してください。方言が認識されても、そのデータベースエンジンですべての機能が正常に実行されたことの証明にはなりません。生成された SQL には、複数のステートメント、中間リレーション、カレンダーへの依存関係が含まれることがあるため、実行環境も確認してください。</p>
+<p>動作を確認した JDBC ドライバーは、物理 SQL で位置パラメーターをバインドします。Model Query では、フィルターと指標式で位置パラメーターをバインドします。<a href="reference--model-query-sql.ja.html#jdbc-parameters-and-query-kind">JDBC パラメーターの例</a>を参照してください。マテリアライズ用パラメーターと、リテラルを内部でパラメーター化する処理は、それぞれ別の仕組みです。</p>
+<p><a href="how-to--compile-and-validate.ja.html">コンパイル、検証、実行</a>では、それぞれ確認できることが異なります。実データでキーを検証すると、ルックアップで行が増える前に重複を検出できる場合があります。ただし、検証とその後の実行で同じスナップショットが使われる保証はありません。データベースが EXPLAIN を受理しても、返される数値が正しいことの証明にはなりません。対象のデータ範囲について、各キーを構成するすべての値、各行の出現回数、NULL、丸め前の値を、独立に求めた結果と比較してください。</p>
+<h2 id="time-comparisons-and-row-membership">期間比較と結果に含まれる行 <a class="section-link" aria-label="この節へのリンク" href="#time-comparisons-and-row-membership">#</a></h2>
+<p>前の期間を処理するクエリ分岐では、カレンダーを使って、当月のファクトデータがない月にも前の期間のグループを含めることができます。そのグループがレポートに含まれるかどうかは、クエリの時間範囲と、現在の期間にデータがあるグループに絞り込むフィルターによって決まります。<a href="reference--troubleshooting--time.ja.html#extra-month-after-the-latest-source-data">期間比較で追加される月</a>を参照してください。</p>
+</main></body></html>

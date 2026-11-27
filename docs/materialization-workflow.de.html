@@ -1,0 +1,48 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Materialisierung: von der Deklaration zum geprüften Ergebnis · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Prüfen Sie drei Punkte: Die Ergebnisse sind korrekt, die Abfrage nutzt die Materialisierung und die Ergebnisse bleiben nach Aktualisierungen korrekt. Eine hinzugefügte Deklaration oder kürzerer SQL-Code allein "><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Materialisierung: von der Deklaration zum geprüften Ergebnis · DML"><meta property="og:description" content="Prüfen Sie drei Punkte: Die Ergebnisse sind korrekt, die Abfrage nutzt die Materialisierung und die Ergebnisse bleiben nach Aktualisierungen korrekt. Eine hinzugefügte Deklaration oder kürzerer SQL-Code allein "><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="materialization-workflow.ja.html">日本語</a> <a lang="en" hreflang="en" href="materialization-workflow-en.html">English</a> <a lang="zh" hreflang="zh" href="materialization-workflow.html">中文</a></header><main><h1 id="materialization-from-declaration-to-confirmed-results">Materialisierung: von der Deklaration zum geprüften Ergebnis</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#1-save-the-un-optimized-result">1. Ergebnis ohne Optimierung speichern</a></li><li><a href="#2-declare-and-install">2. Deklarieren und installieren</a></li><li><a href="#3-confirm-hits-and-compare-results">3. Nutzung der Materialisierung prüfen und Ergebnisse vergleichen</a></li><li><a href="#4-update-and-invalidate">4. Aktualisieren und invalidieren</a></li><li><a href="#5-keep-the-evidence">5. Nachweise festhalten</a></li></ul></details>
+<p><strong>Prüfen Sie drei Punkte: Die Ergebnisse sind korrekt, die Abfrage nutzt die Materialisierung und die Ergebnisse bleiben nach Aktualisierungen korrekt.</strong> Eine hinzugefügte Deklaration oder kürzerer SQL-Code allein belegt nicht, dass die Optimierung abgeschlossen ist.</p>
+<p>Voraussetzungen sind ein verfügbarer Compiler, eine Verbindung zur Zieldatenbank und eine bereits ohne Materialisierung geprüfte Abfrage. Diese Anleitung beschreibt den Ablauf. Sie enthält keine Aussage zur Kompatibilität, die durch Tests auf jeder Datenbank abgesichert wäre.</p>
+<h2 id="1-save-the-un-optimized-result">1. Ergebnis ohne Optimierung speichern <a class="section-link" aria-label="Link zum Abschnitt" href="#1-save-the-un-optimized-result">#</a></h2>
+<p>Halten Sie Daten und Filter konstant. Speichern Sie das ursprüngliche Ergebnis, den generierten SQL-Code und die vollständige Schlüsselmenge. Wählen Sie additive Kennzahlen wie Umsatz, Kosten und Transaktionsanzahl. Eine Marge muss neu berechnet werden und darf nie durch Aufsummieren der Quotienten gebildet werden. Unter <a href="how-to--design-materializations.de.html">Granularität festlegen</a> erfahren Sie, wie Sie die Felder beibehalten, die spätere Abfragen benötigen.</p>
+<h2 id="2-declare-and-install">2. Deklarieren und installieren <a class="section-link" aria-label="Link zum Abschnitt" href="#2-declare-and-install">#</a></h2>
+<p>Legen Sie anhand der <a href="reference--materialization.de.html">Referenz zur Deklaration</a> die Ebene fest, auf der Zeilen oder Summen definiert sind. Wählen Sie die Kennzahlen und legen Sie fest, welche Materialisierungen zulässig sind. Prüfen Sie die Hilfe zur aktuellen Version und führen Sie anschließend Folgendes in einer isolierten Übungsdatenbank aus:</p>
+<pre><code class="language-powershell">dmlc --advanced-help
+dmlc --setup model.dml --connection=default
+</code></pre>
+<p>Das Setup installiert die Datenbankprozeduren für die Materialisierung und führt dabei einen Schreibvorgang aus. Prüfen Sie sämtliche Diagnoseausgaben. Reguläre Abfragen können benötigte Prozeduren bei Bedarf installieren oder aktualisieren. Das tatsächliche Verhalten hängt von der aktuellen Version und der Verbindung ab.</p>
+<h2 id="3-confirm-hits-and-compare-results">3. Nutzung der Materialisierung prüfen und Ergebnisse vergleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#3-confirm-hits-and-compare-results">#</a></h2>
+<pre><code class="language-powershell">dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default --output=optimized.json --replace
+</code></pre>
+<p>Prüfen Sie im generierten SQL-Code oder im Ausführungsplan, ob die Abfrage aus dem erwarteten Aggregatobjekt liest. Vergleichen Sie das Ergebnis für jeden Schlüssel und jede Spalte mit dem Ergebnis ohne Optimierung. Prüfen Sie außerdem separat auf doppelte Zeilen, fehlende Gruppen und NULL-Werte und kontrollieren Sie die Quotienten vor der Formatierung. Variieren Sie Dimensionen und Filter und wiederholen Sie die Prüfung. Gehen Sie nicht davon aus, dass jede Fragestellung dasselbe Aggregat nutzt.</p>
+<h2 id="4-update-and-invalidate">4. Aktualisieren und invalidieren <a class="section-link" aria-label="Link zum Abschnitt" href="#4-update-and-invalidate">#</a></h2>
+<p>Fügen Sie der Übungsdatenbank einen Datensatz mit bekannten Werten hinzu. Berechnen Sie zunächst, welche Ergebnisse sich ändern sollten, und führen Sie dann die Abfrage aus. Prüfen Sie, ob der Cache aktualisiert wird und sich die Ausgabe ändert. Wenn die Diagnose ein erneutes Setup verlangt, führen Sie es für dasselbe Modell und dieselbe Verbindung aus und wiederholen Sie die Prüfung. Bearbeiten Sie generierte Tabellen nicht von Hand, um Probleme zu verdecken.</p>
+<p>SQL Server trennt die Abfragevorbereitung von der Aktualisierung bei Änderungen. Eine einzige synchronisierte Ausführungsinstanz übernimmt die Erstellung der Materialisierungen. Führen Sie das generierte <code>prepare_sql</code> aus. Es bündelt die Vorbereitung, das Warten und die eigentliche Bereitschaftsprüfung und gibt im Normalfall <code>data_ready=1</code> zurück, bevor Sie die fachliche Abfrage mit <code>sql</code> ausführen. Brechen Sie die Abfrage bei einem Fehler oder nach Ablauf der Wartezeit ab, beheben Sie die Ursache und versuchen Sie es erneut.</p>
+<p>Verwenden Sie DML_MAZ_PROGRESS, um offene Aufgaben, den Status der Ausführungsinstanz und die voraussichtliche Zeit bis zum Abschluss aller offenen Aufgaben einzusehen. Ziehen Sie bei Bedarf weitere Statistikspalten heran. Die globale Fortschrittsansicht ersetzt die Bereitschaftsprüfung für die einzelne Abfrage nicht. Führen Sie das generierte <code>setup_sql</code> bei der Bereitstellung aus. Informationen zu Parametern, zur reinen Invalidierung und zur Wiederherstellung finden Sie unter <a href="maz-prepare-refresh.de.html">Konventionen für die Vorbereitung und Aktualisierung</a>. Eine vollständige Übung finden Sie unter <a href="maz-sqlserver.de.html">Monats- und Quartalsaggregate</a>.</p>
+<p>Dokumentieren Sie Änderungen an den Quelldaten, die Aktualisierungsschritte, die tatsächlich verwendeten Objekte und die neuen Ergebnisse. Ohne diesen Schritt können Sie nicht behaupten, dass die Ergebnisse „in Echtzeit aktualisiert“ werden. Prüfen Sie den Aktualisierungsmechanismus und die erforderlichen Berechtigungen für jede Verbindung separat.</p>
+<h2 id="5-keep-the-evidence">5. Nachweise festhalten <a class="section-link" aria-label="Link zum Abschnitt" href="#5-keep-the-evidence">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Prüfpunkt</th>
+<th>Nachweis</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Korrektheit</td>
+<td>Ergebnisse vor und nach der Optimierung und ihre Unterschiede</td>
+</tr>
+<tr>
+<td>Nutzung der Materialisierung</td>
+<td>Das tatsächlich verwendete Objekt im SQL-Code oder im Ausführungsplan</td>
+</tr>
+<tr>
+<td>Aktualisierung</td>
+<td>Änderungsprotokolle, Aktualisierungsschritte und die neuen Ergebnisse</td>
+</tr>
+<tr>
+<td>Auswirkung</td>
+<td>Ausführungspläne für dieselben Daten und Definitionen. Geben Sie bei Zeitmesswerten den Cache-Zustand und die Anzahl der Wiederholungen an.</td>
+</tr>
+</tbody></table>
+<p>Diese Seite ergänzt nur den Arbeitsablauf und macht keine neuen Aussagen zur Materialisierung. Die Deklarationsbeispiele dokumentieren keine Datenbankkompatibilität.</p>
+</main></body></html>

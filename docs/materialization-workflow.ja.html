@@ -1,0 +1,48 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>マテリアライズ：宣言から結果の確認まで · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="結果が正しいこと、クエリがマテリアライズされたデータを参照すること、更新後も結果が正しいことの3点を確認します。 宣言を追加したり、SQLが短くなったりしただけでは、最適化が完了したとは判断できません。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="マテリアライズ：宣言から結果の確認まで · DML"><meta property="og:description" content="結果が正しいこと、クエリがマテリアライズされたデータを参照すること、更新後も結果が正しいことの3点を確認します。 宣言を追加したり、SQLが短くなったりしただけでは、最適化が完了したとは判断できません。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/materialization-workflow.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="materialization-workflow.de.html">Deutsch</a> <a lang="en" hreflang="en" href="materialization-workflow-en.html">English</a> <a lang="zh" hreflang="zh" href="materialization-workflow.html">中文</a></header><main><h1 id="materialization-from-declaration-to-confirmed-results">マテリアライズ：宣言から結果の確認まで</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#1-save-the-un-optimized-result">1. 最適化前の結果を保存する</a></li><li><a href="#2-declare-and-install">2. 宣言してインストールする</a></li><li><a href="#3-confirm-hits-and-compare-results">3. マテリアライズの利用を確認し、結果を比較する</a></li><li><a href="#4-update-and-invalidate">4. 更新と無効化を行う</a></li><li><a href="#5-keep-the-evidence">5. 検証記録を残す</a></li></ul></details>
+<p><strong>結果が正しいこと、クエリがマテリアライズされたデータを参照すること、更新後も結果が正しいことの3点を確認します。</strong> 宣言を追加したり、SQLが短くなったりしただけでは、最適化が完了したとは判断できません。</p>
+<p>前提として、コンパイラと対象データベースへの接続が必要です。また、マテリアライズを使わずにクエリを検証しておく必要があります。ここで示すのは作業手順であり、すべてのデータベースで互換性を検証したことを示すものではありません。</p>
+<h2 id="1-save-the-un-optimized-result">1. 最適化前の結果を保存する <a class="section-link" aria-label="この節へのリンク" href="#1-save-the-un-optimized-result">#</a></h2>
+<p>データとフィルターを固定し、元の結果、生成されたSQL、キーの集合全体を保存します。売上金額、費用、取引件数など、加算できる指標を選びます。利益率は必ず再計算し、比率を足し合わせてはいけません。後続のクエリに必要なフィールドを残す方法については、<a href="how-to--design-materializations.ja.html">粒度の設計</a>を参照してください。</p>
+<h2 id="2-declare-and-install">2. 宣言してインストールする <a class="section-link" aria-label="この節へのリンク" href="#2-declare-and-install">#</a></h2>
+<p><a href="reference--materialization.ja.html">宣言のリファレンス</a>に従い、粒度（行や集計値を定義するレベル）、指標、許可するマテリアライズを選びます。現在のバージョンのヘルプを確認してから、隔離された練習用データベースで次を実行します。</p>
+<pre><code class="language-powershell">dmlc --advanced-help
+dmlc --setup model.dml --connection=default
+</code></pre>
+<p>セットアップはデータベースにマテリアライズ用のプロシージャをインストールする書き込み操作です。診断出力をすべて確認します。通常のクエリでも、必要に応じてプロシージャがインストールまたは更新される場合があります。実際の動作は、現在のバージョンと接続によって異なります。</p>
+<h2 id="3-confirm-hits-and-compare-results">3. マテリアライズの利用を確認し、結果を比較する <a class="section-link" aria-label="この節へのリンク" href="#3-confirm-hits-and-compare-results">#</a></h2>
+<pre><code class="language-powershell">dmlc --validate query.sql --model=model.dml --connection=default --json
+dmlc query.sql --model=model.dml --connection=default --output=optimized.json --replace
+</code></pre>
+<p>生成されたSQLまたは実行プランを調べ、想定した集計オブジェクトからデータを読み取るか確認します。最適化前の結果とキーごと、列ごとに比較します。重複行、欠落したグループ、NULL、書式設定前の比率は個別に確認します。ディメンションやフィルターを変えて再度確認します。すべての問いに対して同じ集計が使われるとは限りません。</p>
+<h2 id="4-update-and-invalidate">4. 更新と無効化を行う <a class="section-link" aria-label="この節へのリンク" href="#4-update-and-invalidate">#</a></h2>
+<p>値が既知のレコードを練習用データベースに追加します。どの結果が変わるはずかを先に計算してから、クエリを実行します。キャッシュが更新され、出力が変わることを確認します。診断でセットアップの再実行が求められた場合は、同じモデルと接続でセットアップを実行し、再度検証します。問題を隠すために生成されたテーブルを手作業で編集しないでください。</p>
+<p>SQL Server では、クエリの準備とデータ変更に伴う更新が分離されており、同期制御された単一の実行プロセスがマテリアライズを構築します。生成された<code>prepare_sql</code>を実行します。準備、待機、利用可能かどうかの確認はここでまとめて行われ、通常は業務クエリの<code>sql</code>を実行する前に<code>data_ready=1</code>が返ります。エラーが発生した場合や待機時間が上限に達した場合は、クエリを中止し、原因を解消してから再試行します。</p>
+<p>DML_MAZ_PROGRESSで未処理の作業、実行プロセスの状態、未処理の作業がすべて完了するまでの推定時間を確認します。必要に応じて、ほかの統計列も参照します。全体の進捗を確認しても、クエリごとに実行の準備が整っているかを確認する必要があります。デプロイ時に、生成された<code>setup_sql</code>を実行します。パラメーター、無効化のみを行う方法、復旧手順については<a href="maz-prepare-refresh.ja.html">準備と更新の規約</a>を、一連の手順を試すには<a href="maz-sqlserver.ja.html">月次集計と四半期集計</a>を参照してください。</p>
+<p>ソースデータの変更、更新操作、実際に参照されたオブジェクト、新しい結果を記録します。この手順を省くと、「リアルタイムで更新される」とは言えません。更新の仕組みと必要な権限は、接続ごとに確認します。</p>
+<h2 id="5-keep-the-evidence">5. 検証記録を残す <a class="section-link" aria-label="この節へのリンク" href="#5-keep-the-evidence">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>確認項目</th>
+<th>検証記録</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>結果の正しさ</td>
+<td>最適化前後の結果とその差分</td>
+</tr>
+<tr>
+<td>マテリアライズの利用</td>
+<td>SQLまたは実行プランで実際に参照されたオブジェクト</td>
+</tr>
+<tr>
+<td>更新</td>
+<td>変更記録、更新操作、新しい結果</td>
+</tr>
+<tr>
+<td>効果</td>
+<td>同じデータと定義を使った実行プラン。測定時間を示す場合は、キャッシュの状態と繰り返し回数も明記します。</td>
+</tr>
+</tbody></table>
+<p>このページでは作業手順のみを補足し、マテリアライズについて新たな主張は行いません。宣言の例はデータベースの互換性を報告するものではありません。</p>
+</main></body></html>

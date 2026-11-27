@@ -1,0 +1,57 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Erste Modellabfrage kompilieren · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Wir erstellen ein Vertriebsmodell und kompilieren eine Abfrage, die Summen nach Region zurückgibt. Dazu benötigen wir eine installierte Version von dmlc.exe und ein Arbeitsverzeichnis mit Schreibzugriff. In die"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Erste Modellabfrage kompilieren · DML"><meta property="og:description" content="Wir erstellen ein Vertriebsmodell und kompilieren eine Abfrage, die Summen nach Region zurückgibt. Dazu benötigen wir eine installierte Version von dmlc.exe und ein Arbeitsverzeichnis mit Schreibzugriff. In die"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/tutorials--first-query.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="tutorials--first-query.ja.html">日本語</a> <a lang="en" hreflang="en" href="tutorials--first-query.html">English</a> <a lang="zh" hreflang="zh" href="tutorials--first-query.zh.html">中文</a></header><main><h1 id="compile-your-first-model-query">Erste Modellabfrage kompilieren</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#identify-the-compiler">Compiler identifizieren</a></li><li><a href="#define-the-model">Modell definieren</a></li><li><a href="#write-the-query">Abfrage schreiben</a></li><li><a href="#compile-the-query">Abfrage kompilieren</a></li><li><a href="#inspect-the-result">Ergebnis prüfen</a></li></ul></details>
+<p>Wir erstellen ein Vertriebsmodell und kompilieren eine Abfrage, die Summen nach Region zurückgibt. Dazu benötigen wir eine installierte Version von <code>dmlc.exe</code> und ein Arbeitsverzeichnis mit Schreibzugriff. In diesem Tutorial kompilieren wir SQL ohne Datenbankverbindung.</p>
+<h2 id="identify-the-compiler">Compiler identifizieren <a class="section-link" aria-label="Link zum Abschnitt" href="#identify-the-compiler">#</a></h2>
+<p>Installieren Sie <code>dmlc.exe</code> und fügen Sie das Verzeichnis, in dem die ausführbare Datei liegt, zu PATH hinzu. Öffnen Sie PowerShell und speichern Sie den Pfad zur ausführbaren Datei, bevor Sie ein Arbeitsverzeichnis erstellen.</p>
+<pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
+&amp; $dmlc --version
+</code></pre>
+<p>Die Ausgabe enthält die Version, den Build-Zeitstempel und die Plattform. Der <a href="compiler-observations.json">Compilereintrag für dieses Tutorial</a> gibt an, mit welchem Build das Tutorial überprüft wurde.</p>
+<p>Erstellen Sie nun ein neues Verzeichnis für die Dateien.</p>
+<pre><code class="language-powershell">New-Item -ItemType Directory -Path first-query
+Set-Location first-query
+</code></pre>
+<p>Die Eingabeaufforderung endet jetzt mit <code>first-query</code>.</p>
+<h2 id="define-the-model">Modell definieren <a class="section-link" aria-label="Link zum Abschnitt" href="#define-the-model">#</a></h2>
+<p>Speichern Sie den folgenden Inhalt als <code>model.dml</code>.</p>
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+
+average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+</code></pre>
+<p><code>FACT_SALES</code> definiert pro <code>id</code> genau eine Quellzeile. <code>sales</code> und <code>cnt</code> aggregieren diese Zeilen. <code>average_sale</code> teilt das erste Ergebnis durch das zweite.</p>
+<p>Prüfen Sie das Modell nun mit dem Linter.</p>
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
+$LASTEXITCODE
+</code></pre>
+<p>Der Prozess endet mit dem Exitcode <code>0</code>. Wenn der Linter einen Befund meldet, vergleichen Sie die gespeicherte Datei mit dem Modell oben, bevor Sie fortfahren.</p>
+<h2 id="write-the-query">Abfrage schreiben <a class="section-link" aria-label="Link zum Abschnitt" href="#write-the-query">#</a></h2>
+<p>Speichern Sie den folgenden Inhalt als <code>query.sql</code> im selben Verzeichnis wie <code>model.dml</code>.</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>FROM MODEL</code> wählt <code>model.dml</code> aus. Jede Ergebniszeile steht für eine Region.</p>
+<h2 id="compile-the-query">Abfrage kompilieren <a class="section-link" aria-label="Link zum Abschnitt" href="#compile-the-query">#</a></h2>
+<p>Kompilieren Sie die Abfrage nun im strikten Modus.</p>
+<pre><code class="language-powershell">&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+$LASTEXITCODE
+</code></pre>
+<p>Die JSON-Ausgabe meldet <code>status: ok</code> und <code>exitCode: 0</code>. Unter <code>diagnostics</code> stehen weder Fehler noch Warnungen. <code>data.sql</code> enthält <code>SUM(amount)</code>, <code>COUNT(1)</code> und <code>GROUP BY region</code>. Die abschließende Projektion enthält <code>region</code>, <code>sales</code> und <code>average_sale</code>.</p>
+<p>Der Compiler kann die Diagnosemeldung <code>DATASET_GRAIN_UNVERIFIED</code> als Hinweis ausgeben. Wir haben das deklarierte Modell kompiliert, ohne eine physische Tabelle <code>TABLE_SALES</code> zu prüfen.</p>
+<h2 id="inspect-the-result">Ergebnis prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-result">#</a></h2>
+<p>Öffnen Sie die SQL-Datei unter <code>gen</code>. Suchen Sie die Aggregatausdrücke und die Gruppierung nach <code>region</code>. Das Modell und die darauf zugreifende Abfrage sind jetzt vollständig. Den generierten SQL-Code können Sie nun prüfen.</p>
+<p>Verwenden Sie zum Ausführen der Abfrage eine Datenbankverbindung, über die die deklarierte Quelltabelle verfügbar ist. Folgen Sie der Anleitung <a href="how-to--compile-and-validate.de.html">dmlc-CLI verwenden</a>, um die Schlüssel an der verbundenen Datenbank zu validieren und die Abfrage auszuführen. Unter <a href="explanation--core-concepts.de.html">Grundkonzepte</a> erfahren Sie, wie Modell- und Abfrageebene zusammenspielen.</p>
+</main></body></html>

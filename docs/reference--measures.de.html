@@ -1,0 +1,281 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kennzahldeklarationen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Seite beschreibt die Eigenschaften und Formelvarianten von Kennzahlen. Kennzahlen entwerfen erläutert die Entscheidungen bei der Definition. Formelbeispiele zeigt typische fachliche Anwendungsfälle."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--measures.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Kennzahldeklarationen · DML"><meta property="og:description" content="Diese Seite beschreibt die Eigenschaften und Formelvarianten von Kennzahlen. Kennzahlen entwerfen erläutert die Entscheidungen bei der Definition. Formelbeispiele zeigt typische fachliche Anwendungsfälle."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--measures.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--measures.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--measures.html">English</a> <a lang="zh" hreflang="zh" href="reference--measures.zh.html">中文</a></header><main><h1 id="measure-declarations">Kennzahldeklarationen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#basic-syntax">Grundsyntax</a></li><li><a href="#simple-aggregations">Einfache Aggregationen</a></li><li><a href="#count">COUNT</a></li><li><a href="#sum">SUM</a></li><li><a href="#maxmin">MAX/MIN</a></li><li><a href="#avg">AVG</a></li><li><a href="#filtered-measures">Gefilterte Kennzahlen</a></li><li><a href="#measure-references">Kennzahlreferenzen</a></li><li><a href="#measure-aliases">Aliasse für Kennzahlen</a></li><li><a href="#complex-formulas">Komplexe Formeln</a></li><li><a href="#conditional-aggregations">Bedingte Aggregationen</a></li><li><a href="#nested-aggregations">Verschachtelte Aggregationen</a></li><li><a href="#window-functions">Fensterfunktionen</a></li><li><a href="#isnull-and-iif">ISNULL und IIF</a></li><li><a href="#fill-default-when-row-missing">Standardwert bei fehlender Zeile einsetzen</a></li><li><a href="#reusable-chronological-running-measures">Wiederverwendbare Kennzahlen mit fortlaufender Kumulierung in zeitlicher Reihenfolge</a></li></ul></details>
+<p>Diese Seite beschreibt die Eigenschaften und Formelvarianten von Kennzahlen. <a href="how-to--design-measures.de.html">Kennzahlen entwerfen</a> erläutert die Entscheidungen bei der Definition. <a href="reference--examples--measure-formulas.de.html">Formelbeispiele</a> zeigt typische fachliche Anwendungsfälle.</p>
+<h2 id="basic-syntax">Grundsyntax <a class="section-link" aria-label="Link zum Abschnitt" href="#basic-syntax">#</a></h2>
+<pre><code class="language-yaml">measure_name:
+    type: measure
+    description: Business description
+    dataset: dataset_name
+    formula: aggregation_expression
+    dimensions:                # optional allowed evaluation dimensions
+        - [customer_id]
+        - [customer_id, ...]   # listed fields remain required
+    prerequisite: validity_expression
+</code></pre>
+<p><code>formula:</code> ist erforderlich. <code>dataset:</code> bindet eine atomare Kennzahl auf oberster Ebene an ihre Datenquelle. Eine Kennzahl im Block <code>measures:</code> eines Datensatzes übernimmt diesen Datensatz. Zusammengesetzte Kennzahlen verweisen auf andere Kennzahlen und lassen <code>dataset:</code> weg.</p>
+<p><code>dimensions:</code> ist ein Array aus Arrays. Jede innere Liste definiert eine zulässige Alternative für die Dimensionen der Auswertung. Eine flache Liste führt zu <code>string found, array expected</code>. Auslassungspunkte erlauben zusätzliche Felder. Alle aufgeführten Felder bleiben erforderlich. Die Eigenschaft schränkt die Auswertung ein. Sie legt weder die Identität des Datensatzes noch die Gruppierung der Abfrage fest.</p>
+<p><code>prerequisite:</code> ergänzt einen Ausdruck, der prüft, ob die Ebene zulässig ist, auf der Zeilen oder Summen definiert sind. Die allgemeinen Metadatenfelder <code>description</code>, <code>abbr</code> und <code>tags</code> sind unter <a href="reference--model-structure.de.html#57-common-metadata-fields">Metadatenfelder des Modells</a> beschrieben. Wie Sie diese Einschränkungen auswählen, erfahren Sie unter <a href="how-to--design-measures.de.html">Kennzahlen entwerfen</a>.</p>
+<p>Hinweise</p>
+<ul>
+<li>Wenden Sie abfragespezifische Filter und Gruppierungen in der <strong>Modellabfrage</strong> an (SQL mit <code>WHERE</code>/<code>GROUP BY</code> oder im DML-Format mit <code>filters:</code> / <code>columns: dimension:</code>). Verwenden Sie dafür keine eigens für eine einzelne Abfrage definierten Kennzahlen. Die Regeln für Modellabfragen finden Sie unter <a href="reference--model-query-sql.de.html">Modellabfrage in SQL</a>.</li>
+<li><code>dataset:</code> ist nur für <strong>atomare</strong> Kennzahlen vorgesehen. Ihre Formeln aggregieren direkt Zeilen oder Spaltenausdrücke des Datensatzes, ohne auf andere Kennzahlen zu verweisen. <strong>Zusammengesetzte</strong> Kennzahlen verweisen auf andere Kennzahlen und dürfen <code>dataset:</code> nicht deklarieren. Das gilt auch dann, wenn alle referenzierten Kennzahlen denselben Datensatz verwenden. Siehe <a href="reference--measures.de.html#measure-references">Kennzahlreferenzen</a> und die häufige Fehlerquelle <a href="reference--troubleshooting--models.de.html#p39"><code>P39</code></a>.</li>
+<li>Kennzahlen können numerische Werte, Datumswerte oder Klassifikationswerte zurückgeben. Formatieren Sie die Werte dort, wo sie angezeigt werden. Wählen Sie Aggregation und Datentyp passend zur fachlichen Definition.</li>
+<li>Konvertieren Sie Rohfelder mit Geldbeträgen oder besonderen Genauigkeitsanforderungen möglichst einmal in einer atomaren Kennzahl (zum Beispiel <code>SUM(CAST({amount} AS DECIMAL(38, 2)))</code>). Verwenden Sie diese Kennzahl anschließend in weiteren Berechnungen.</li>
+<li>Wenn fachliche Regeln auf Vergleichen mit <code>&gt; 0</code> / <code>&lt; 0</code> beruhen, stellen Sie sicher, dass die Basiskennzahl bereits den vorgesehenen Typ hat (zum Beispiel DECIMAL), bevor Sie sie in Bedingungen für <code>MINIF</code>/<code>MAXIF</code>/<code>DISTINCTCOUNTIF</code> wiederverwenden.</li>
+</ul>
+<hr>
+<h2 id="simple-aggregations">Einfache Aggregationen <a class="section-link" aria-label="Link zum Abschnitt" href="#simple-aggregations">#</a></h2>
+<h3 id="count">COUNT <a class="section-link" aria-label="Link zum Abschnitt" href="#count">#</a></h3>
+<pre><code class="language-yaml">number_of_transactions:
+    type: measure
+    dataset: transactions
+    formula: count(distinct transaction_id)
+
+number_of_products:
+    type: measure
+    dataset: transactions
+    formula: count(distinct product)
+</code></pre>
+<h3 id="sum">SUM <a class="section-link" aria-label="Link zum Abschnitt" href="#sum">#</a></h3>
+<pre><code class="language-yaml">amount:
+    type: measure
+    dataset: transactions
+    formula: SUM(CAST({raw_amount} AS DECIMAL(38, 2)))
+
+transaction_quantity:
+    type: measure
+    dataset: transactions
+    formula: SUM(quantity)
+</code></pre>
+<h3 id="maxmin">MAX/MIN <a class="section-link" aria-label="Link zum Abschnitt" href="#maxmin">#</a></h3>
+<pre><code class="language-yaml">last_order_date:
+    type: measure
+    dataset: transactions
+    formula: MAX(dt_date)
+</code></pre>
+<h3 id="avg">AVG <a class="section-link" aria-label="Link zum Abschnitt" href="#avg">#</a></h3>
+<pre><code class="language-yaml">avg_invoice_quantity:
+    type: measure
+    formula: 'AVG({invoice_quantity: {+d: transaction_id}})'
+</code></pre>
+<hr>
+<h2 id="filtered-measures">Gefilterte Kennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#filtered-measures">#</a></h2>
+<p>Verwenden Sie <code>{+f: condition}</code> für Inline-Filter. Die Syntax finden Sie unter <a href="reference--modifiers.de.html#22-function-modifiers">Funktionsmodifikatoren</a>.</p>
+<pre><code class="language-yaml">expense:
+    type: measure
+    dataset: transactions
+    formula: |-
+        {debit: {+f: {account_type: ['Expense', 'Other Expense']}}}
+
+sales:
+    type: measure
+    description: Sales revenue from income accounts
+    formula: |-
+        {credit: {+f: {account_type: ['Income', 'Other Income']}}}
+
+food_and_drink_expense:
+    type: measure
+    formula: |-
+        {expense: {+f: "instr(account, 'Food &amp; drink') &gt; 0"}}
+
+number_of_credit_card_transactions:
+    type: measure
+    formula: |-
+        {number_of_transactions: {+f: {credit_card : 'yes'}}}
+
+number_of_unpaid_invoices:
+    type: measure
+    formula: |-
+        {number_of_invoices: {+f: 'open_balance &gt; 0'}}
+</code></pre>
+<hr>
+<h2 id="measure-references">Kennzahlreferenzen <a class="section-link" aria-label="Link zum Abschnitt" href="#measure-references">#</a></h2>
+<p>So verweisen Sie in Formeln auf andere Kennzahlen:</p>
+<blockquote>
+<p><strong>Zusammengesetzte Kennzahlen dürfen <code>dataset:</code> nicht deklarieren.</strong> Wenn <code>formula:</code> auf eine andere Kennzahl verweist, lassen Sie <code>dataset:</code> weg. Atomare Kennzahlen binden mit <code>dataset:</code> die Quellzeilen oder Spaltenausdrücke, die sie aggregieren, ohne auf andere Kennzahlen zu verweisen. Die folgenden atomaren Beispiele (<code>credit</code> / <code>debit</code>) enthalten <code>dataset:</code>. Die zusammengesetzte Kennzahl <code>profit</code> lässt diese Eigenschaft weg. Siehe die häufige Fehlerquelle <a href="reference--troubleshooting--models.de.html#p39"><code>P39</code></a>.</p>
+</blockquote>
+<pre><code class="language-yaml"># Base measures
+credit:
+    type: measure
+    dataset: transactions
+    formula: SUM(credit)
+
+debit:
+    type: measure
+    dataset: transactions
+    formula: SUM(debit)
+
+# Derived measure (composite — no dataset:)
+profit:
+    type: measure
+    formula: |-
+        {credit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}} -
+        {debit: {+f: {transaction_type: ['Income','Other Income','Expense','Other Expense']}}}
+</code></pre>
+<hr>
+<h2 id="measure-aliases">Aliasse für Kennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#measure-aliases">#</a></h2>
+<p>So erstellen Sie Aliasse für vorhandene Kennzahlen:</p>
+<pre><code class="language-yaml">revenue: |-
+    {sales}
+
+income: |-
+    {sales}
+
+outgoing: |-
+    {expense}
+</code></pre>
+<hr>
+<h2 id="complex-formulas">Komplexe Formeln <a class="section-link" aria-label="Link zum Abschnitt" href="#complex-formulas">#</a></h2>
+<h3 id="conditional-aggregations">Bedingte Aggregationen <a class="section-link" aria-label="Link zum Abschnitt" href="#conditional-aggregations">#</a></h3>
+<p>Kennzahlen mit <code>SUMIF</code> / <code>DISTINCTCOUNTIF</code> / <code>MINIF</code> / <code>MAXIF</code>, die auf andere Kennzahlen verweisen, sind zusammengesetzt. Deklarieren Sie dort kein <code>dataset:</code>, auch wenn eine Spalte in der Formel zu einem bekannten Datensatz „gehört“. Wenn Sie eine spaltenbezogene Aggregation benötigen, verwenden Sie <code>dataset:</code> nur in einer separaten atomaren Kennzahl. Siehe <a href="reference--measures.de.html#measure-references">Kennzahlreferenzen</a> und die häufige Fehlerquelle <a href="reference--troubleshooting--models.de.html#p39"><code>P39</code></a>.</p>
+<pre><code class="language-yaml">incoming_payment:
+    type: measure
+    formula: |-
+        SUMIF({payment: {+d: customer}}, {customer} is not null)
+
+outgoing_payment:
+    type: measure
+    formula: |-
+        SUMIF({payment: {+d: vendor}}, {vendor} is not null)
+</code></pre>
+<h3 id="nested-aggregations">Verschachtelte Aggregationen <a class="section-link" aria-label="Link zum Abschnitt" href="#nested-aggregations">#</a></h3>
+<pre><code class="language-yaml">max_amount_per_invoice:
+    type: measure
+    formula: |-
+        MAX({sales: {+d: transaction_id}})
+
+daily_avg_sales:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: dt_date}}), distinctcount({dt_date}))
+
+weekly_avg_sales:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: dt_week}}), distinctcount({dt_week}))
+
+avg_sales_per_trx:
+    type: measure
+    formula: |-
+        divide(sum({sales: {+d: transaction_id}}), distinctcount({transaction_id}))
+</code></pre>
+<h3 id="window-functions">Fensterfunktionen <a class="section-link" aria-label="Link zum Abschnitt" href="#window-functions">#</a></h3>
+<p><strong>Platzierung von Fensterfunktionen</strong>. Die vollständigen Regeln finden Sie unter <a href="explanation--window-placement.de.html">Platzierung von Fensterfunktionen</a>. Die folgende Übersicht fasst sie zusammen.</p>
+<table>
+<thead>
+<tr>
+<th>Zweck</th>
+<th>Platzierung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OVER</code> auf Detailebene (ohne <code>GROUP BY</code>, als Zeilenattribut für spätere Bedingungen mit <code>DISTINCTCOUNTIF</code> oder mit äußerem <code>SUM</code> / <code>LAG</code>)</td>
+<td><strong>Berechnete Spalte</strong> unter <code>columns:</code>, anschließend atomare Aggregation</td>
+</tr>
+<tr>
+<td>Rang / Anteil / laufende Summe nach <code>GROUP-BY</code></td>
+<td>Als Übergangslösung <strong>atomare</strong> Aggregation plus <strong>zusammengesetzte</strong> Kennzahl mit Fensterfunktion / <code>{-d:}</code> / <code>{-df:}</code> / <code>grand</code> (ohne <code>dataset:</code>)</td>
+</tr>
+</tbody></table>
+<p>Atomare Kennzahlen lehnen <code>OVER</code> ab (<code>window functions are not allowed in atomic measures</code>). Häufige Fehlerquellen sind unter <a href="reference--troubleshooting--grain-and-joins.de.html#p70"><code>P70</code></a> und <a href="reference--troubleshooting--grain-and-joins.de.html#p71"><code>P71</code></a> beschrieben.</p>
+<p><strong>Detailebene</strong> (direkte Spaltenreferenzen für die Partitionierung unter <code>columns:</code>):</p>
+<pre><code class="language-yaml">fact:
+    type: dataset
+    table: FACT_SALES
+    columns:
+        store_id:
+        prod_id:
+        qty:
+        net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+    measures:
+        sum_net_qty: 'SUM({net_qty})'
+</code></pre>
+<p><strong>Nach der Aggregation</strong> (Verweise auf die Aggregationsebene in der zusammengesetzten Kennzahl):</p>
+<pre><code class="language-yaml">total_sales:
+    type: measure
+    dataset: fact
+    formula: SUM({qty})
+
+region_rank:
+    type: measure
+    formula: 'rank() over (partition by {-d: product} order by {total_sales} desc)'
+</code></pre>
+<p><strong>In Modellabfragen mit SQL</strong> sollten Sie bevorzugt die Funktionsmakros aus <a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> (<code>rank</code>, <code>rank_asc</code>, <code>pot</code>, <code>grand</code>) verwenden, wenn sie den Anwendungsfall abdecken.</p>
+<pre><code class="language-sql">SELECT product, AGG(sales, 'rank') AS sales_rank
+FROM MODEL GROUP BY product
+
+SELECT product, AGG({sales: pot}) AS share
+FROM MODEL GROUP BY product
+</code></pre>
+<p>Die Kategorien und das Verhalten der Makros sind unter <a href="reference--modifiers.de.html#22-function-modifiers">Funktionsmodifikatoren</a> beschrieben.</p>
+<h3 id="isnull-and-iif">ISNULL und IIF <a class="section-link" aria-label="Link zum Abschnitt" href="#isnull-and-iif">#</a></h3>
+<pre><code class="language-yaml">all_product_sales:
+    type: measure
+    description: Product sales including products with zero sales
+    formula: |-
+        SUM(isnull({sales: {+d: product}}, 0) * iif({DATASET_PRODUCT_SERVICE}.product is not null, 1, 0))
+
+all_customer_sales:
+    type: measure
+    description: Customer sales including customers with zero sales
+    formula: |-
+        SUM(isnull({sales: {+d: customer}}, 0) * iif({DATASET_CUSTOMER}.customer is not null, 1, 0))
+</code></pre>
+<h3 id="fill-default-when-row-missing">Standardwert bei fehlender Zeile einsetzen <a class="section-link" aria-label="Link zum Abschnitt" href="#fill-default-when-row-missing">#</a></h3>
+<p><strong>Funktion</strong>. Wenn eine Zeile aus einem Join, einem FOJ oder einer Materialisierung fehlt, setzt die Funktion einen Standardwert ein. So wird kein Nullwert in weitere Berechnungen übernommen.</p>
+<p><strong>Aktivieren</strong> Sie die Funktion, indem Sie die gesamte Kennzahlformel <strong>auf der äußersten Ebene</strong> mit <code>isnull</code> / <code>ifnull</code> / <code>coalesce(公式, 字面量)</code> umschließen.</p>
+<p>Der Standardwert greift an <strong>Verwendungsstellen dieser Kennzahl</strong> (Abfragespalte, Umbenennung, <code>{m: pp}</code> / andere dt-Modifikatoren oder Einbettung in eine andere Formel), wenn an der jeweiligen Stelle Zeilen fehlen können (FOJ / <code>nullpk</code> / Umschließung bei der Materialisierung).</p>
+<p><strong>Beachten Sie den Unterschied zwischen diesen beiden Regeln.</strong></p>
+<ol>
+<li><strong>Keine automatische äußere Umschließung.</strong> Ein Verweis auf eine Kennzahl mit Standardwert in einer zusammengesetzten Kennzahl umschließt deren Ergebnisspalte allein noch <strong>nicht</strong>. Aktivieren Sie die Funktion für das Ergebnis selbst, wenn <em>dessen</em> Spalte bei einer fehlenden Zeile einen Wert ungleich NULL liefern muss.</li>
+<li><strong>Bei der Einbettung wird die Standardwertlogik weiterhin expandiert.</strong> Wenn eine zusammengesetzte Kennzahl eine Abhängigkeit mit bereits aktiviertem Standardwert direkt oder über eine Kette von Formelreferenzen <strong>einbettet</strong>, wird die Standardwertlogik an FOJ-Verwendungsstellen, an denen Zeilen fehlen können, weiterhin dort expandiert, wo die Einbettung aufgerufen wird. Bei fehlenden Partnerzeilen ergibt zum Beispiel <code>deep = {q2fp1} * 3</code> mit <code>q2fp1 = {q2f} + 1</code> und <code>q2f = isnull(SUM(...), 0)</code> den Ausdruck <code>(coalesce(dep, 0) + 1) * 3</code> statt NULL. Dabei greift der Standardwert der Abhängigkeit. Ein automatisches <code>isnull(deep, …)</code> findet nicht statt.</li>
+</ol>
+<pre><code class="language-yaml">上期:
+    type: measure
+    formula: 'isnull({销售额: pp}, 0)'   # activate
+
+上上期:
+    type: measure
+    formula: '{上期: pp}'                # use site → 0
+
+本期减上期:
+    type: measure
+    formula: '{销售额} - {上期}'         # 上期 use site → 0 (no contagion)
+
+本期减上期_fill:
+    type: measure
+    formula: 'isnull({销售额} - {上期}, 0)'  # activate on result
+
+# Nested embed (activation on q2f; deep expands fill of q2f at FOJ)
+q2f:   { dataset: secondary, formula: 'isnull(SUM({q2}), 0)' }
+q2fp1: { formula: '{q2f} + 1' }
+deep:  { formula: '{q2fp1} * 3' }
+</code></pre>
+<p><strong>Keine Aktivierung</strong> (der Wert kann weiterhin null sein, wenn die Zeile fehlt):</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Begründung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{销售额: pp}</code> allein</td>
+<td>Nicht aktiviert</td>
+</tr>
+<tr>
+<td><code>isnull({a}, {b})</code> / <code>coalesce(a, b, 0)</code></td>
+<td>Ergänzung zur Kennzahl, kein <code>(公式, 字面量)</code></td>
+</tr>
+<tr>
+<td><code>isnull(…, 0) + 1</code> als aktivierte Kennzahl selbst</td>
+<td>Auswertung dieser Kennzahl bei null (häufig → 1). „Zeile fehlt → 0“ gilt für das neutrale Element <em>dieser</em> Kennzahl nicht.</td>
+</tr>
+<tr>
+<td>Ergebnisspalte wird nie aktiviert</td>
+<td>Der Ersatzwert einer abhängigen Kennzahl kann innerhalb der Formel eingesetzt werden. An Stellen, an denen <em>die Ergebnisspalte selbst</em> weiterverwendet wird, wird sie nur dann automatisch mit einer Ersatzwertlogik umschlossen, wenn sie aktiviert ist.</td>
+</tr>
+</tbody></table>
+<p>Dasselbe Prinzip wie bei <code>fill_nulls_with</code> in MetricFlow oder <code>COALESCE</code> nach der Aggregation in Looker: Der Ersatzwert wird an einer Kennzahl deklariert und beim Verwenden <strong>dieser</strong> Kennzahl eingesetzt. DML erzeugt keine fehlenden Kalenderzeilen. Der Ersatzwert wird nur eingesetzt, wenn die Spalte nach dem Join null ist. Ergänzen Sie fehlende Datumswerte separat über einen Kalender oder auf der mit FOJ definierten Zeilenebene. Eine mögliche Fehlerquelle beschreibt der <a href="reference--troubleshooting--README.de.html">Index zur Fehlerbehebung</a> unter P28b. Hinweise zum Compiler (dmlc): <code>docs/fill-default-when-row-missing.md</code>.</p>
+<h2 id="reusable-chronological-running-measures">Wiederverwendbare Kennzahlen mit fortlaufender Kumulierung in zeitlicher Reihenfolge <a class="section-link" aria-label="Link zum Abschnitt" href="#reusable-chronological-running-measures">#</a></h2>
+<p>Eine benannte zusammengesetzte Kennzahl kann eine Fensterfunktion enthalten, die nach der Aggregation ausgewertet wird. Das <a href="examples--running-total.de.html">Beispiel zum kumulierten Umsatz</a> definiert <code>SUM({sales}) OVER (ORDER BY {month} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code> auf der deklarierten Ebene <code>[month]</code>. Die Berechnung wird nicht nach Regionen partitioniert. Ein Filter auf Februar verschiebt den Startpunkt der Berechnung. Die laufende Summe additiver Beträge ist weder eine kumulierte Anzahl unterschiedlicher Werte noch ein kumuliertes Verhältnis. Das Beispiel enthält das vollständige Modell, die Abfragen und die erwarteten Ergebniszeilen. <code>dimension: []</code> hebt für die Berechnung einer Gesamtsumme die Gruppierung auf. Es legt keine Reihenfolge fest und fordert keine kumulative Berechnung an. Legen Sie für den Saldo zum letzten Beobachtungszeitpunkt fest, ob das Datum je Entität oder global bestimmt wird und wie fehlende Beobachtungen und Gleichstände beim Datum behandelt werden. Eine Summe mit festgelegter Reihenfolge oder ein einzelnes Verfahren für den letzten Beobachtungstag deckt nicht alle semiadditiven Berechnungen ab.</p>
+</main></body></html>

@@ -1,0 +1,65 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Eine Kennzahl zusammensetzen und dann die Fragestellung ändern · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Dieses eigenständige Beispiel modelliert die Rentabilität. Es ergänzt das Vertriebsmodell im interaktiven Rundgang. Sehen Sie sich die Übersichtsanimation an, um zu erfahren, wie die Definitionen zusammenhängen"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Eine Kennzahl zusammensetzen und dann die Fragestellung ändern · DML"><meta property="og:description" content="Dieses eigenständige Beispiel modelliert die Rentabilität. Es ergänzt das Vertriebsmodell im interaktiven Rundgang. Sehen Sie sich die Übersichtsanimation an, um zu erfahren, wie die Definitionen zusammenhängen"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--examples--composable-metrics.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--examples--composable-metrics.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--composable-metrics.zh.html">中文</a></header><main><h1 id="compose-a-metric-then-change-the-question">Eine Kennzahl zusammensetzen und dann die Fragestellung ändern</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#agree-the-definition">Die Definition abstimmen</a></li><li><a href="#the-model">Das Modell</a></li><li><a href="#change-the-context">Den Kontext ändern</a></li><li><a href="#compare-the-same-period">Den gleichen Zeitraum vergleichen</a></li><li><a href="#inspect-the-evidence">Die Prüfergebnisse ansehen</a></li><li><a href="#continue">Weiterlesen</a></li></ul></details>
+<p>Dieses eigenständige Beispiel modelliert die Rentabilität. Es ergänzt das Vertriebsmodell im <a href="journey.de.html">interaktiven Rundgang</a>. <a href="index.de.html">Sehen Sie sich die Übersichtsanimation an</a>, um zu erfahren, wie die Definitionen zusammenhängen.</p>
+<h2 id="agree-the-definition">Die Definition abstimmen <a class="section-link" aria-label="Link zum Abschnitt" href="#agree-the-definition">#</a></h2>
+<p>Fach- und Datenteams legen gemeinsam fest, welche Posten in den Nettoumsatz und die Umsatzkosten eingehen. Das Modell benennt diese Berechnungen, leitet daraus den Bruttogewinn ab und teilt ihn durch den Umsatz, um die Bruttomarge zu ermitteln. DML und DMX halten die Regeln fest. Der Compiler erzeugt SQL für die Datenbank. Die drei Sprachen können gemeinsam den Berechnungskern einer semantischen Schicht für Analysen bilden.</p>
+<h2 id="the-model">Das Modell <a class="section-link" aria-label="Link zum Abschnitt" href="#the-model">#</a></h2>
+<p>Der logische Datensatz heißt FACT_PROFITABILITY und seine physische Quelle ist TABLE_PROFITABILITY. Die Quellfelder und Kennzahlen haben unterschiedliche Namen, damit die Referenzen eindeutig sind. Der vollständige Quellschlüssel lautet [id]. Verwenden Sie in der physischen Tabelle Dezimaltypen für revenue_amount und cost_amount. CSV enthält keine SQL-Spaltentypen, und bei einer Ganzzahldivision ginge der Nachkommaanteil der Marge verloren.</p>
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: '{net_revenue} - {sales_cost}'
+
+gross_margin:
+  type: measure
+  formula: 'DIVIDE({gross_profit}, {net_revenue})'
+
+gross_margin_ytd:
+  type: measure
+  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+
+margin_change_pp:
+  type: measure
+  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
+</code></pre>
+<p>Sie können <a href="profitability-model.dml">model.dml</a>, die <a href="TABLE_PROFITABILITY.csv">Quelldaten als CSV</a> oder die <a href="profitability-data.json">Quelldaten als JSON</a> herunterladen.</p>
+<h2 id="change-the-context">Den Kontext ändern <a class="section-link" aria-label="Link zum Abschnitt" href="#change-the-context">#</a></h2>
+<p>Für North beträgt der Umsatz im Februar 2025 300, die Kosten betragen 240. Daraus ergibt sich eine Marge von 20%. Im Januar beträgt der Umsatz 100 bei Kosten von 60 und einer Marge von 40%. Seit Jahresbeginn betragen der Umsatz 400 und die Kosten 300. Die kumulierte Marge beträgt 25% und entspricht damit nicht dem einfachen Durchschnitt der Monatsmargen von 30%.</p>
+<p>Wenden Sie den Zeitmodifikator direkt auf die benannte Verhältniskennzahl an: <code>formula: '{gross_margin: ytd}'</code>. Dadurch wird die Bruttomarge aus den zugrunde liegenden Umsätzen und Kosten für den kumulierten Zeitraum neu berechnet. Die monatlichen Prozentwerte werden weder addiert noch gemittelt. Für YTD im Vorjahr verwenden Sie <code>'{gross_margin: {ytd, ya}}'</code>.</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY region, dt_month
+</code></pre>
+<h2 id="compare-the-same-period">Den gleichen Zeitraum vergleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#compare-the-same-period">#</a></h2>
+<p>Von Januar bis Februar 2024 beträgt der Umsatz für North 200 bei Kosten von 160. Daraus ergibt sich eine kumulierte Marge von 20%. Die aktuelle kumulierte Marge von 25% liegt <strong>5 Prozentpunkte höher</strong>. Das relative Wachstum läge bei 25%. Es wird anders berechnet und entspricht nicht der angezeigten Differenz.</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY region, dt_month
+</code></pre>
+<p>Laden Sie die <a href="profitability-monthly.sql">monatliche Abfrage</a>, die <a href="profitability-cumulative.sql">kumulative Abfrage</a> oder die <a href="profitability-comparison.sql">Vergleichsabfrage</a> herunter. Für Standardzeitberechnungen muss außerdem die DML_CALENDAR des Compilers auf der Zielverbindung verfügbar sein.</p>
+<h2 id="inspect-the-evidence">Die Prüfergebnisse ansehen <a class="section-link" aria-label="Link zum Abschnitt" href="#inspect-the-evidence">#</a></h2>
+<p>Das <a href="profitability-compiler-observations.json">Compilerprotokoll</a> dokumentiert die verwendete ausführbare Datei, die Abfragen im exakten Wortlaut, die Prozess-Exitcodes, die Statusangaben, die Diagnosen und den generierten SQL-Code. Die drei geprüften Abfragen bestehen die strikte Kompilierung. Die Prüfung bestätigt, dass die kumulativen Zweige Umsatz und Kosten vor der Division summieren. Der Vorjahreszweig verschiebt den kumulierten Zeitraum um ein Jahr zurück.</p>
+<p>Diese Beobachtungen gelten für dieses Beispiel und diesen Compiler-Build. Bei einer separaten Ausführungsprüfung in DuckDB bestanden diese kurzen Formeln die strikte Kompilierung und die Validierung des Quellschlüssels. Eine unabhängige Prüfung mit SQL bestätigte für Februar eine YTD-Marge von 25% für North und 33⅓% für South. Im Vorjahr lag die YTD-Marge für beide bei 20%. Daraus lässt sich kein gleiches Ausführungsverhalten in SQL Server ableiten. Der Browser berechnet die fiktiven Datenzeilen eigenständig und führt kein DML aus. Ist der Umsatz im Nenner null, lautet das Ergebnis NULL. Fehlt der Wert für die Vorperiode, bleibt er fehlend und wird nicht durch eine künstliche Null ersetzt.</p>
+<h2 id="continue">Weiterlesen <a class="section-link" aria-label="Link zum Abschnitt" href="#continue">#</a></h2>
+<p>Die genauen Regeln und Prüfungen finden Sie in den <a href="explanation--core-concepts.de.html">Grundkonzepten</a>, in der <a href="reference--modifiers.de.html">Modifikatorreferenz</a> und im <a href="how-to--compile-and-validate.de.html">Leitfaden zur Kompilierung und Validierung</a>.</p>
+</main></body></html>

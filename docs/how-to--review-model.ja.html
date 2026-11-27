@@ -1,0 +1,66 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLモデルをレビューする · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="順方向分析のフェーズ5で該当するチェックに合格してから、この技術レビューを実施します。モデルの再利用性、クエリの構造、評価時の粒度、検証の証跡を確認します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DMLモデルをレビューする · DML"><meta property="og:description" content="順方向分析のフェーズ5で該当するチェックに合格してから、この技術レビューを実施します。モデルの再利用性、クエリの構造、評価時の粒度、検証の証跡を確認します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--review-model.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--review-model.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--review-model.html">English</a> <a lang="zh" hreflang="zh" href="how-to--review-model.zh.html">中文</a></header><main><h1 id="review-a-dml-model">DMLモデルをレビューする</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#prepare-an-independent-review">独立したレビューを準備する</a></li><li><a href="#61-reconcile-the-report-contract">6.1 レポート仕様と照合する</a></li><li><a href="#62-review-model-definitions">6.2 モデル定義をレビューする</a></li><li><a href="#63-review-consumer-queries">6.3 モデルを利用するクエリをレビューする</a></li><li><a href="#64-check-results-against-explicit-assumptions">6.4 明示した前提に照らして結果を確認する</a></li><li><a href="#65-recheck-affected-artifacts">6.5 影響を受ける成果物を再確認する</a></li><li><a href="#66-deliver-the-artifacts-and-review-evidence">6.6 成果物とレビューの証跡を提出する</a></li><li><a href="#67-resolve-findings">6.7 指摘事項に対応する</a></li><li><a href="#68-check-analytical-claims-separately">6.8 分析上の主張を別途検証する</a></li></ul></details>
+<p><a href="how-to--build-analysis.ja.html#phase-5-validate-the-model-and-query">順方向分析のフェーズ5</a>で該当するチェックに合格してから、この技術レビューを実施します。モデルの再利用性、クエリの構造、評価時の粒度、検証の証跡を確認します。</p>
+<h2 id="prepare-an-independent-review">独立したレビューを準備する <a class="section-link" aria-label="この節へのリンク" href="#prepare-an-independent-review">#</a></h2>
+<p>レビュー担当者に、レビューに必要な資料をまとめて渡します。やり取りの全履歴の代わりに、最終成果物とレポートの仕様を含めます。</p>
+<p>資料には以下を含めます。</p>
+<ul>
+<li>モデルとそのインクルードファイル。変更した定義を明示します。</li>
+<li>モデルを利用するクエリと、当初のレポート仕様。</li>
+<li>実行ファイルのパス、バージョン、ビルドのタイムスタンプ、フィンガープリント、方言。</li>
+<li>コンパイル、実行による検証、結果比較の証跡。</li>
+<li>必要なセマンティックチェックと、各チェックが前提とする仮定。</li>
+<li>既知の指摘事項と不足している前提条件。</li>
+</ul>
+<p>変更が大規模な場合は、モデルの再利用性、モデルを利用するクエリ、結果のチェックをそれぞれ別のレビュー担当者に割り当てます。各担当者の責任範囲を明示します。作成者が合意した修正を反映し、最終的な引き渡しの可否を判断します。</p>
+<h2 id="61-reconcile-the-report-contract">6.1 レポート仕様と照合する <a class="section-link" aria-label="この節へのリンク" href="#61-reconcile-the-report-contract">#</a></h2>
+<p>モデルを利用する各クエリをフェーズ2のドラフトと比較します。</p>
+<ol>
+<li>結果の各行がどのレベルで定義されているかと、対象となる母集団を確認します。</li>
+<li>必要な指標がすべて、意図した定義を参照していることを確認します。</li>
+<li>対象期間、比較期間、レポートでデータを絞り込む条件を確認します。</li>
+<li>出力列、エイリアス、型、実際の順序を確認します。</li>
+<li>納品するレポートに不要なデバッグ列を削除します。</li>
+</ol>
+<h2 id="62-review-model-definitions">6.2 モデル定義をレビューする <a class="section-link" aria-label="この節へのリンク" href="#62-review-model-definitions">#</a></h2>
+<p>新しい指標ごとに、別のレポートで再利用できるかを確認します。</p>
+<ul>
+<li>母集団、粒度、フィルター、NULLの扱いがすべて一致する場合に限り、重複する式を統合します。</li>
+<li>レポート固有の絞り込み条件はクエリに移します。ただし、その条件が業務指標を定義する場合は除きます。</li>
+<li>評価に必要なディメンションを定義に組み込んでいる中間指標は残します。</li>
+<li>名前付きの派生指標が、再利用できる業務指標である場合や、マテリアライズ処理がその指標に依存する場合は、その指標を残します。</li>
+<li>名前、説明、式が一致していることを確認します。</li>
+<li>2つの定義が重複していると判断する前に、類似する指標に関する警告を確認します。</li>
+</ul>
+<p>統合や名前変更の後は、変更したモデルをリントし、影響を受ける利用側クエリを厳格モードでコンパイルします。</p>
+<h2 id="63-review-consumer-queries">6.3 モデルを利用するクエリをレビューする <a class="section-link" aria-label="この節へのリンク" href="#63-review-consumer-queries">#</a></h2>
+<p>グループ化と指標の修飾子が、求められているレポートの要件を表していることを確認します。</p>
+<ul>
+<li>修飾子付きの指標参照には、それぞれ異なるエイリアスを明示的に指定したままにします。</li>
+<li>利用側で必要としない場合は、修飾子のない <code>AGG(measure)</code> の冗長なエイリアスを削除します。</li>
+<li>結果の意味や利用側の仕様が <code>ORDER BY</code> と <code>LIMIT</code> に依存する場合は、それらを残します。</li>
+<li>解決された時間コンテキストと、マクロの前提条件を確認します。</li>
+<li>結合の等価条件、各ソースに含まれるデータ、補完時の動作、射影される列を確認します。</li>
+<li>保存するファイルでは、SQL を読みやすく保ちます。ツールが文字列形式を要求する場合は、その形式で記述します。</li>
+</ul>
+<h2 id="64-check-results-against-explicit-assumptions">6.4 明示した前提に照らして結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#64-check-results-against-explicit-assumptions">#</a></h2>
+<p>モデルやクエリを編集した後は、影響を受ける結果チェックを再実行します。</p>
+<ol>
+<li>部分集合の件数を比較する場合は、両方の件数が比較可能な母集団に基づいていることを確認します。</li>
+<li>部分集合の金額に不等式を適用する前に、負の値を考慮します。</li>
+<li>比率については、分母がゼロの場合と入力値が欠けている場合に、どのように処理するかが定義されているかを確認し、その内容を確認します。</li>
+<li>期間を比較する場合は、前の期間のデータがどこまでそろっているかと、定義されている NULL の扱いまたは補完のルールを確認します。</li>
+<li>独立に得られた結果がある場合は、代表的な行をその結果と比較します。</li>
+</ol>
+<p>前年のデータがない場合に一律でゼロになるというルールを設けないでください。式と出力された SQL を確認します。実行による検証の証跡がない場合は、<code>not run</code> と記録します。</p>
+<h2 id="65-recheck-affected-artifacts">6.5 影響を受ける成果物を再確認する <a class="section-link" aria-label="この節へのリンク" href="#65-recheck-affected-artifacts">#</a></h2>
+<p>修正後は、変更したモデルをリントし、変更した利用側クエリを厳格モードでコンパイルします。修正によって検証やチェックの入力が変わる場合は、該当する実行による検証と結果チェックを再実施します。合計値と SQL の両方を確認します。特に、行や合計値を定義する粒度を変更した場合や、指標を統合した場合は、この確認を行ってください。</p>
+<p>厳格モードの警告が残っている場合は、その指摘事項を報告します。SQL の成果物が出力されても、厳格モードのチェックに合格したことにはなりません。</p>
+<h2 id="66-deliver-the-artifacts-and-review-evidence">6.6 成果物とレビューの証跡を提出する <a class="section-link" aria-label="この節へのリンク" href="#66-deliver-the-artifacts-and-review-evidence">#</a></h2>
+<p>モデル、モデルを利用するクエリ、レビューの指摘事項、合意した変更、チェック結果を提出します。合格したチェック、再現できた不具合、実行していないチェックを区別します。</p>
+<p>エクスポートやダッシュボードでは指標を数値型のままにし、出力名が利用側の仕様と一致するかを確認します。</p>
+<h2 id="67-resolve-findings">6.7 指摘事項に対応する <a class="section-link" aria-label="この節へのリンク" href="#67-resolve-findings">#</a></h2>
+<p>更新したモデルと影響を受けるクエリで、合意した修正を再確認します。未解決の指摘事項と、それらが結果に及ぼす影響を記録します。</p>
+<p>提案された最適化によって業務上の定義が変わる場合は、フェーズ4に戻ります。その変更を明示的に記録します。</p>
+<h2 id="68-check-analytical-claims-separately">6.8 分析上の主張を別途検証する <a class="section-link" aria-label="この節へのリンク" href="#68-check-analytical-claims-separately">#</a></h2>
+<p>モデリング中と実行後に、業務上の前提を確認します。技術レビューだけでは、業務上の結論がデータから導けることを確認できません。</p>
+</main></body></html>

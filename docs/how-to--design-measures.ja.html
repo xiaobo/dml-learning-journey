@@ -1,0 +1,146 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>再利用可能なメジャーを設計する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="分析ワークフローで不足している業務上の計算が見つかったら、このガイドを使用します。式を選ぶ前に、計算の対象となる行と、中間値を求める単位を定義します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="再利用可能なメジャーを設計する · DML"><meta property="og:description" content="分析ワークフローで不足している業務上の計算が見つかったら、このガイドを使用します。式を選ぶ前に、計算の対象となる行と、中間値を求める単位を定義します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--design-measures.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--design-measures.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--design-measures.html">English</a> <a lang="zh" hreflang="zh" href="how-to--design-measures.zh.html">中文</a></header><main><h1 id="design-a-reusable-measure">再利用可能なメジャーを設計する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#metric-eligibility-predicates-in-intermediate-columns">中間列で指標の対象行を決める条件</a></li><li><a href="#derivative-measures">派生メジャー</a></li><li><a href="#ctes-and-multi-step-logic">CTE と複数ステップの処理</a></li><li><a href="#dimension-constrained-measures">ディメンションを制約したメジャー</a></li><li><a href="#translate-sql-into-measures">SQL をメジャーに変換する</a></li><li><a href="#d-in-distinctcountif--sumif-conditions-cross-grain-filtering">DISTINCTCOUNTIF / SUMIF の条件で使う <code>+d</code>（集計とは異なる単位での絞り込み）</a></li><li><a href="#backward-looking-repurchase-metrics">過去の購入を振り返る再購入指標</a></li><li><a href="#recompute-distinct-counts-at-the-report-grain">レポートの粒度で重複を除いた件数を再計算する</a></li></ul></details>
+<p><a href="how-to--build-analysis.ja.html">分析ワークフロー</a>で不足している業務上の計算が見つかったら、このガイドを使用します。式を選ぶ前に、計算の対象となる行と、中間値を求める単位を定義します。</p>
+<h2 id="metric-eligibility-predicates-in-intermediate-columns">中間列で指標の対象行を決める条件 <a class="section-link" aria-label="この節へのリンク" href="#metric-eligibility-predicates-in-intermediate-columns">#</a></h2>
+<p>条件によって、ある指標に算入する行だけが決まり、データセット全体の行集合にも意味がある場合は、中間列を使います。<code>state</code> や <code>delete_time</code> などの名前だけで条件を分類しないでください。同じように見える条件でも、ソースに含める行を恒常的に定義する場合があります。</p>
+<pre><code class="language-yaml">columns:
+    valid_amount:
+        description: Row-level amount gated by validity checks
+        formula: 'iif(state = 1 and delete_time is null, prod_amount, null)'
+measures:
+    total: SUM({valid_amount})
+</code></pre>
+<p><code>SUM</code> は NULL を無視するため、条件を満たす行が 1 行以上あるグループでは、集計値がフィルター適用後の合計と一致します。この条件式は、ソースに適用する <code>WHERE</code> と<strong>一般には等価ではありません</strong>。条件を満たす行がないグループは <code>WHERE</code> では結果から消えますが、中間列で対象を制限すると、<code>total = NULL</code> の行として残ることがあります。同じクエリ内の他のカウント、結合、ウィンドウ計算、後続のフィルターも変わる可能性があります。</p>
+<p>この書き換えは、条件を満たす行がないグループの挙動、同じクエリ内の他の指標で対象行を決める条件、重複排除・結合・ウィンドウ計算の対象行を検証し、行が存在しない場合と NULL を持つ行が存在する場合が等価であることを確認してから使います。それ以外の場合は、クエリまたはリレーションシップのスコープで行を除外する条件を維持するか、ソースで恒常的に成立する条件を、必要最小限の <code>sql:</code> を使ってデータセットに定義し、その内容を文書化します。</p>
+<p><strong>処理を段階に分ける例：</strong> <code>tax_rate_effective</code>（適用税率の決定）→ <code>amount_excl_tax</code>（税抜金額への換算）→ <code>eligible_amount</code>（指標の対象行の判定）→ <code>SUM({eligible_amount})</code>（メジャー）。コンパイラは中間式を生成先の式に直接展開します。生成された SQL を確認し、各式がどのように変換され、どの行が対象になるかを検証します。</p>
+<h2 id="derivative-measures">派生メジャー <a class="section-link" aria-label="この節へのリンク" href="#derivative-measures">#</a></h2>
+<p>レポート固有のモディファイアーは、メジャーを使う箇所で適用します。<code>.dml</code> で派生メジャーを定義するのは、変更後の値をすべての利用箇所で再利用する必要がある場合（<code>type: materialize</code> オブジェクトに列挙する場合など）、または名前付きの業務指標として定義する必要がある場合に限ります。メジャーの式では DMX 参照を使い、<strong><code>AGG()</code> は決して使わないでください</strong>。</p>
+<pre><code class="language-yaml">sales_last_month:
+    type: measure
+    formula: '{sales: pp}'
+
+sales_yoy_growth:
+    type: measure
+    formula: '{sales: yoy}'
+
+sales_by_product:
+    type: measure
+    formula: SUM({sales: {+d: product}})
+</code></pre>
+<p>これらのメジャーでは、メジャー名に対応する変換処理が維持されます。評価は引き続き、クエリのコンテキストとモディファイアーおよびフィルターのルールに従います。</p>
+<hr>
+<h2 id="ctes-and-multi-step-logic">CTE と複数ステップの処理 <a class="section-link" aria-label="この節へのリンク" href="#ctes-and-multi-step-logic">#</a></h2>
+<p>SQL で CTE を使用している場合は、次のいずれかの方法で置き換えます。</p>
+<ol>
+<li><strong>モディファイアー付きのメジャー</strong>（推奨）：CTE がフィルターまたはディメンションフィールドを追加するだけの場合</li>
+<li><strong>列マクロ</strong>：CTE が派生列を計算する場合</li>
+<li><strong>個別のクエリ</strong>：CTE が実際に中間結果セットを生成する場合</li>
+</ol>
+<p><strong>例</strong>：CTE を使って完了済みの注文（"completed orders"）に絞り込む SQL</p>
+<pre><code class="language-sql">-- Original SQL
+WITH completed AS (
+    SELECT * FROM orders WHERE status = 'completed'
+)
+SELECT product, SUM(amount) FROM completed GROUP BY product
+</code></pre>
+<pre><code class="language-yaml"># DML approach
+completed_sales:
+    type: measure
+    formula: SUM({amount: {+f: {status: 'completed'}}})
+</code></pre>
+<pre><code class="language-sql">-- Model Query SQL: retain the row-removing population restriction
+SELECT product, AGG(completed_sales) FROM MODEL
+WHERE status = 'completed'
+GROUP BY product
+</code></pre>
+<h2 id="dimension-constrained-measures">ディメンションを制約したメジャー <a class="section-link" aria-label="この節へのリンク" href="#dimension-constrained-measures">#</a></h2>
+<blockquote>
+<p>⚠️ <strong>メジャーの <code>dimensions:</code> には、使用できるディメンションを指定します。</strong> 内側のリストはそれぞれ 1 つの許可されたディメンションを表し、外側のリストはその選択肢を列挙します。この設定では、データセットの行を識別する方法や、クエリでのグループ化は定義しません。行の識別はデータセットの <code>dimension:</code> で、グループ化はクエリの <code>GROUP BY</code> または <code>columns.dimension:</code> で定義します。<a href="explanation--dimensions.ja.html">ディメンションの役割</a>を参照してください。</p>
+</blockquote>
+<p>特定のディメンションで指標を評価する<strong>必要がある</strong>場合に限り、この制約を追加します。</p>
+<pre><code class="language-yaml"># "Average order value per customer" — customer_id is required during evaluation
+aov_per_customer:
+    type: measure
+    formula: DIVIDE({sales}, {number_of_transactions})
+    dimensions:
+        - [customer_id]    # ← the only allowed dimension
+</code></pre>
+<p>他の式でこのメジャーを使う場合は、<code>{aov_per_customer: {+d: customer_id}}</code> を明示的に指定して <code>customer_id</code> で評価し、その結果を上位の単位に集計する必要があります。この制約は評価単位を指定するのに役立ちますが、予想外の結果になることもあるため、制約の内容を明記してください。</p>
+<h2 id="translate-sql-into-measures">SQL をメジャーに変換する <a class="section-link" aria-label="この節へのリンク" href="#translate-sql-into-measures">#</a></h2>
+<p>指標の仕様や既存の SQL（CTE、JOIN）を、DML のメジャーとシンプルな Model Query SQL（<code>FROM MODEL</code> + <code>AGG(...)</code>）に変換するためのチェックリストです。</p>
+<p><strong>SQL の記述ではなく、ディメンションから検討する</strong></p>
+<ul>
+<li><strong>最終クエリのディメンションは何か？</strong>（例：<code>[customer]</code> または <code>[customer, dt_month]</code>）</li>
+<li><strong>中間評価のディメンションは何か？</strong>（例：初回購入なら <code>[customer]</code>）</li>
+<li>評価方法に応じて実装を選びます。データセットのディメンションで直接評価する → アトミックメジャー、評価ディメンションを変更する → <code>+d</code> / <code>dimension</code>、使用できるディメンションを制限する → <strong>ディメンションを制約したメジャー</strong>。中間値を求める単位と結果を求める単位が両立することを確認します。処理に JOIN またはサブクエリが本当に必要で、DML で表現できない場合は、作業を止めて設計を見直してください。Model Query SQL のルールを回避しないでください。</li>
+</ul>
+<p><strong>ディメンションを制約したメジャー（CTE に相当する中間行を表現する）</strong></p>
+<ul>
+<li>許可するディメンションを 1 つに限定したメジャーを定義します：<code>dimensions: [[customer_id]]</code></li>
+<li><code>SUM({that_measure: {+d: customer_id}})</code>（または <code>AVG</code> など）で上位の単位に集計します。</li>
+<li><strong><code>dimensions:</code></strong> は、メジャーが有効となるディメンションを制限します。別の式でそのメジャーに <strong><code>+d</code></strong> を指定すると、メジャーの評価ディメンションに必要なディメンションフィールドが追加されます。</li>
+</ul>
+<pre><code class="language-yaml">first_month:
+    type: measure
+    description: first month with sales &gt; 0 (customer grain only)
+    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+    dimensions:
+        - [customer_id]
+
+first_month_sales_by_customer:
+    type: measure
+    description: sales in customer's first month (customer grain only)
+    formula: 'SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})'
+    dimensions:
+        - [customer_id]
+
+first_month_sales_total:
+    type: measure
+    formula: 'SUM({first_month_sales_by_customer: {+d: customer_id}})'
+</code></pre>
+<p>顧客ディメンションに制約されたメジャーでは、<code>{sales: {+d: dt_month}}</code> は対象の顧客の該当月の売上です。</p>
+<p><code>first_month</code> で<strong>レポートをグループ化</strong>し（クエリのディメンション = メジャーの結果）、同じクエリ内の他のメジャーを <code>+d: customer_id</code> でそろえる方法については、<a href="explanation--measure-as-dimension.ja.html">メジャーをディメンションとして使う</a>を参照してください。</p>
+<p><strong>条件を一度でも満たしたかを判定する処理（継続や繰り返し行動の分析）</strong></p>
+<ul>
+<li>顧客ごとのフラグ：<code>ISNULL(MAXIF(1, &lt;condition&gt;), 0)</code> に <code>dimensions: [[customer_id]]</code> を指定</li>
+<li>フラグが立った顧客の合計数：<code>SUM({flag: {+d: customer_id}})</code></li>
+<li>割合：<code>DIVIDE(total_flag, total_customers)</code></li>
+</ul>
+<p><strong>CTE を 1 つ以上のメジャーに変換する</strong></p>
+<table>
+<thead>
+<tr>
+<th>CTE のパターン</th>
+<th>DML での実装方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>顧客と月の組み合わせごとの集計</td>
+<td><code>{sales: {+d: [customer, dt_month]}}</code></td>
+</tr>
+<tr>
+<td>初回購入月</td>
+<td>顧客単位での <code>MINIF({dt_month}, …)</code></td>
+</tr>
+<tr>
+<td>顧客ごとのフラグ</td>
+<td>顧客単位での <code>MAXIF</code></td>
+</tr>
+<tr>
+<td>最終的な KPI</td>
+<td><code>SUM({customer_measure: {+d: customer_id}})</code> と比率</td>
+</tr>
+</tbody></table>
+<p>最終的なクエリの形式は <code>SELECT AGG(kpi_1), AGG(kpi_2), ... FROM MODEL</code> です。</p>
+<h2 id="d-in-distinctcountif--sumif-conditions-cross-grain-filtering">DISTINCTCOUNTIF / SUMIF の条件で使う <code>+d</code>（集計とは異なる単位での絞り込み） <a class="section-link" aria-label="この節へのリンク" href="#d-in-distinctcountif--sumif-conditions-cross-grain-filtering">#</a></h2>
+<p>ある単位でエンティティを数え、別の単位で絞り込む場合は、条件内の列ではなく<strong>メジャー</strong>に <code>{+d: dimension_field}</code> を指定します。</p>
+<ul>
+<li>誤り: <code>DISTINCTCOUNTIF({entity: {+d: entity}}, …)</code> は無効です。修飾子は指標にのみ指定できます。</li>
+<li>正しい例: <code>DISTINCTCOUNTIF({entity}, {sales: {+d: entity}} &gt; 0 AND …)</code></li>
+</ul>
+<p><strong>コホートの範囲:</strong> エンティティの粒度と、対象とする履歴の範囲または基準時点を明示して初回購入を定義し、その初回購入を観測期間と比較します。名前付きの分類式を再利用するのは、使用可能なディメンションと、その分類式を適用する粒度を検証した後に限ります。エラーになる式を直接埋め込んでも、その意味が正しいことの確認にはならず、粒度の不整合も回避できません。検証済みの式の形式とリリース版の不具合については、<a href="explanation--measure-as-dimension.ja.html">指標をディメンションとして使用する</a>を参照してください。</p>
+<h2 id="backward-looking-repurchase-metrics">過去の購入を振り返る再購入指標 <a class="section-link" aria-label="この節へのリンク" href="#backward-looking-repurchase-metrics">#</a></h2>
+<p>まず、業務上の定義を文章にします（誰を対象とするか、観測月、対象期間）。顧客単位でフラグを作成し、<code>SUM({flag: {+d: customer_id}})</code> または <code>DISTINCTCOUNTIF(...)</code> で集計します。定義の意味を変更する前に、業務責任者と確認してください。</p>
+<h2 id="recompute-distinct-counts-at-the-report-grain">レポートの粒度で重複を除いた件数を再計算する <a class="section-link" aria-label="この節へのリンク" href="#recompute-distinct-counts-at-the-report-grain">#</a></h2>
+<p>2 か月に登場する購入者は、それぞれの月で 1 人、四半期全体でも 1 人として数えます。ファクトデータセットで <code>buyers: DISTINCTCOUNT({customer_id})</code> を定義します。四半期内の購入者を重複なく数えるには、月でグループ化せず、四半期全体に <code>AGG(buyers)</code> を適用します。複数の四半期を個別に表示するには、四半期でグループ化します。</p>
+<p><code>SUM({buyers: {+d: dt_month}})</code> は月ごとの重複を除いた購入者数を合計します。試行では、購入者と月の組み合わせが 3,066 件、四半期全体で重複を除いた購入者数が 1,248 人でした。試行で検証したビルドは、この合計を受け付け、厳格な診断メッセージは出しませんでした。同じ期間に対して <code>COUNT(DISTINCT customer_id)</code> を直接適用した結果と比較してください。</p>
+</main></body></html>

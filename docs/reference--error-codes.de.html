@@ -1,0 +1,250 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Referenz der DMLC-Fehlercodes · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Anhand dieser Codes können Sie die fehlgeschlagene Phase ermitteln und eine passende Maßnahme wählen. Prüfen Sie neben dem Exitcode des Prozesses auch die Diagnoseinformationen und das generierte SQL."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Referenz der DMLC-Fehlercodes · DML"><meta property="og:description" content="Anhand dieser Codes können Sie die fehlgeschlagene Phase ermitteln und eine passende Maßnahme wählen. Prüfen Sie neben dem Exitcode des Prozesses auch die Diagnoseinformationen und das generierte SQL."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--error-codes.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--error-codes.html">English</a> <a lang="zh" hreflang="zh" href="reference--error-codes.zh.html">中文</a></header><main><h1 id="dmlc-error-codes-reference">Referenz der DMLC-Fehlercodes</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#path-display-convention">Darstellung von Dateipfaden</a></li><li><a href="#error-code-categories">Fehlercodekategorien</a></li><li><a href="#error-codes">Fehlercodes</a></li><li><a href="#file-io-errors">Fehler bei der Datei-Ein-/Ausgabe</a></li><li><a href="#connection-errors">Verbindungsfehler</a></li><li><a href="#query-execution-errors">Fehler bei der Abfrageausführung</a></li><li><a href="#compilation-errors">Kompilierungsfehler</a></li><li><a href="#generation-errors">Generierungsfehler</a></li><li><a href="#dimension-validation-errors">Fehler bei der Dimensionsvalidierung</a></li><li><a href="#workspaceoperation-errors">Arbeitsbereichs- und Vorgangsfehler</a></li><li><a href="#general-errors">Allgemeine Fehler</a></li></ul></details>
+<p>Anhand dieser Codes können Sie die fehlgeschlagene Phase ermitteln und eine passende Maßnahme wählen. Prüfen Sie neben dem Exitcode des Prozesses auch die Diagnoseinformationen und das generierte SQL.</p>
+<h2 id="path-display-convention">Darstellung von Dateipfaden <a class="section-link" aria-label="Link zum Abschnitt" href="#path-display-convention">#</a></h2>
+<p>Angezeigte Dateipfade verwenden auf allen Plattformen <strong>Schrägstriche</strong> (<code>/</code>):</p>
+<ul>
+<li>Eingaben wie <code>..\data</code> oder <code>../data</code> werden in Fehlermeldungen zur einheitlichen Schreibweise <code>../data</code> normalisiert.</li>
+<li>Pfade mit Arbeitsbereichsplatzhalter haben die Form <code>&lt;workspaceFolder&gt;/relative/path</code>. Hinter dem Platzhalter werden keine Backslashes verwendet.</li>
+<li>Aufgelöste Dateisystempfade werden nach Möglichkeit relativ zum aktuellen Arbeitsverzeichnis angezeigt.</li>
+</ul>
+<h2 id="error-code-categories">Fehlercodekategorien <a class="section-link" aria-label="Link zum Abschnitt" href="#error-code-categories">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Kategorie</th>
+<th>Beschreibung</th>
+<th>CLI-Exitcode</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INVALID_INPUT</td>
+<td>Eingabevalidierung fehlgeschlagen. Sie können die Eingabe korrigieren und es erneut versuchen.</td>
+<td>64</td>
+</tr>
+<tr>
+<td>VALIDATION</td>
+<td>Validierung auf Benutzerebene fehlgeschlagen (Parsing OK, aber die Argumente sind ungültig)</td>
+<td>65</td>
+</tr>
+<tr>
+<td>NOT_FOUND</td>
+<td>Angeforderte Ressource nicht gefunden</td>
+<td>66</td>
+</tr>
+<tr>
+<td>CONFIG</td>
+<td>Konfigurationsfehler (fehlende oder ungültige Konfiguration, unbekannte Verbindungs-ID usw.)</td>
+<td>78</td>
+</tr>
+<tr>
+<td>TIMEOUT</td>
+<td>Zeitlimit für den Vorgang überschritten. Versuchen Sie es mit anderen Parametern erneut.</td>
+<td>69</td>
+</tr>
+<tr>
+<td>COMPILE</td>
+<td>Kompilierung fehlgeschlagen (Syntax- oder Modellfehler)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>EXECUTION</td>
+<td>Ausführung fehlgeschlagen. Ein erneuter Versuch kann erfolgreich sein.</td>
+<td>70</td>
+</tr>
+<tr>
+<td>INTERNAL</td>
+<td>Unerwarteter interner Fehler. Dieser Fehler sollte gemeldet werden.</td>
+<td>70</td>
+</tr>
+<tr>
+<td>BLOCKED</td>
+<td>Vorgang durch eine Richtlinie oder den aktuellen Zustand blockiert</td>
+<td>77</td>
+</tr>
+</tbody></table>
+<h2 id="error-codes">Fehlercodes <a class="section-link" aria-label="Link zum Abschnitt" href="#error-codes">#</a></h2>
+<h3 id="file-io-errors">Fehler bei der Datei-Ein-/Ausgabe <a class="section-link" aria-label="Link zum Abschnitt" href="#file-io-errors">#</a></h3>
+<h4 id="file_not_found">FILE_NOT_FOUND</h4>
+<ul>
+<li><strong>Kategorie</strong>: NOT_FOUND</li>
+<li><strong>Code</strong>: FILE_NOT_FOUND</li>
+<li><strong>Häufige Ursachen</strong>: Der Dateipfad ist falsch, die Datei existiert nicht oder sie liegt außerhalb des Arbeitsbereichsordners.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Prüfen Sie, ob der Dateipfad korrekt ist und innerhalb des Arbeitsbereichsordners liegt.</li>
+<li><strong>Beispiel</strong>: <code>File not found: /path/to/file.dml</code></li>
+</ul>
+<h4 id="file_already_exists">FILE_ALREADY_EXISTS</h4>
+<ul>
+<li><strong>Kategorie</strong>: BLOCKED</li>
+<li><strong>Code</strong>: FILE_ALREADY_EXISTS</li>
+<li><strong>Häufige Ursachen</strong>: Es wurde versucht, eine bereits vorhandene Datei zu erstellen, ohne das Überschreiben zu aktivieren.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Wählen Sie einen neuen Namen für die Ausgabedatei. Wenn Sie die vorhandene Datei ersetzen möchten, verwenden Sie die dafür vorgesehene Option des Befehls.</li>
+<li><strong>Beispiel</strong>: <code>File already exists: /path/to/file.csv</code></li>
+</ul>
+<h4 id="unsupported_file_type">UNSUPPORTED_FILE_TYPE</h4>
+<ul>
+<li><strong>Kategorie</strong>: INVALID_INPUT</li>
+<li><strong>Code</strong>: UNSUPPORTED_FILE_TYPE</li>
+<li><strong>Häufige Ursachen</strong>: Es wurde versucht, ein nicht unterstütztes Dateiformat zu verwenden.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Verwenden Sie einen unterstützten Dateityp (parquet, csv, xlsx).</li>
+<li><strong>Beispiel</strong>: <code>Unsupported file type: .txt. Supported types: .csv, .xlsx, .parquet</code></li>
+</ul>
+<h4 id="path_outside_workspace">PATH_OUTSIDE_WORKSPACE</h4>
+<ul>
+<li><strong>Kategorie</strong>: BLOCKED</li>
+<li><strong>Code</strong>: PATH_OUTSIDE_WORKSPACE</li>
+<li><strong>Häufige Ursachen</strong>: Der Dateipfad führt aus dem Arbeitsbereichsordner heraus, etwa über <code>../</code>, über einen absoluten Pfad auf einem anderen Laufwerk oder über einen symbolischen Link, dessen Ziel außerhalb des Arbeitsbereichs liegt.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Verwenden Sie einen relativen Pfad, der innerhalb des Arbeitsbereichsordners bleibt.</li>
+<li><strong>Beispiel</strong>: <code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code></li>
+<li><strong>Pfaddarstellung</strong>: In Fehlermeldungen und CLI-Ausgaben werden Pfade auf allen Plattformen mit Schrägstrichen (<code>/</code>) angezeigt. Das gilt auch für Pfade mit Platzhaltern wie <code>&lt;workspaceFolder&gt;/relative/path</code>.</li>
+<li><strong>Hinweise</strong>: Wenn in der CLI die Einstellung <code>WORKSPACE_FOLDER</code> gesetzt ist, müssen Ein- und Ausgabedateien innerhalb dieses Verzeichnisses liegen.</li>
+</ul>
+<h4 id="no_sheets_in_excel">NO_SHEETS_IN_EXCEL</h4>
+<ul>
+<li><strong>Kategorie</strong>: INVALID_INPUT</li>
+<li><strong>Code</strong>: NO_SHEETS_IN_EXCEL</li>
+<li><strong>Häufige Ursachen</strong>: Die Excel-Datei enthält keine Arbeitsblätter oder ist beschädigt.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Geben Sie eine gültige Excel-Datei mit mindestens einem Arbeitsblatt an.</li>
+<li><strong>Beispiel</strong>: <code>Excel file has no sheets: /path/to/file.xlsx</code></li>
+</ul>
+<h3 id="connection-errors">Verbindungsfehler <a class="section-link" aria-label="Link zum Abschnitt" href="#connection-errors">#</a></h3>
+<h4 id="connection_not_found">CONNECTION_NOT_FOUND</h4>
+<ul>
+<li><strong>Kategorie</strong>: CONFIG</li>
+<li><strong>Code</strong>: CONNECTION_NOT_FOUND</li>
+<li><strong>Häufige Ursachen</strong>: Die Verbindungs-ID ist in connections.json nicht vorhanden.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Lassen Sie die verfügbaren Verbindungen auflisten und wählen Sie eine gültige Verbindungs-ID. Sie können die Verbindung auch zu connections.json hinzufügen.</li>
+<li><strong>Beispiel</strong>: <code>Connection not found: production. Available connections: [dev, staging]</code></li>
+</ul>
+<h4 id="list_connections_error">LIST_CONNECTIONS_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: EXECUTION</li>
+<li><strong>Code</strong>: LIST_CONNECTIONS_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Aufgrund eines Datenbank- oder Konfigurationsfehlers konnten die verfügbaren Verbindungen nicht aufgelistet werden.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Prüfen Sie die Verbindungskonfiguration und ob die Datenbank erreichbar ist.</li>
+<li><strong>Beispiel</strong>: <code>Failed to list connections: Connection refused</code></li>
+</ul>
+<h3 id="query-execution-errors">Fehler bei der Abfrageausführung <a class="section-link" aria-label="Link zum Abschnitt" href="#query-execution-errors">#</a></h3>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: EXECUTION</li>
+<li><strong>Code</strong>: EXECUTION_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Die Abfrage konnte wegen eines SQL-Fehlers, eines Problems mit den Daten oder der Datenbank oder eines nach Modelländerungen veralteten materialize-Caches nicht ausgeführt werden.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Prüfen Sie die Abfragesyntax, die Datentypen und die Verbindung zur Datenbank. Wenn die Meldung eine veraltete materialize-semver oder <code>pls re-setup related model</code> erwähnt, führen Sie <code>dmlc -s &lt;model.dml&gt; --connection=&lt;id&gt;</code> aus und starten Sie die Abfrage erneut mit demselben Wert für <code>--model</code>.</li>
+<li><strong>Beispiel</strong>: <code>Execution failed: Column 'invalid_column' does not exist</code></li>
+<li><strong>Beispiel (materialize veraltet)</strong>: <code>materialize abort: procedure PROC_M__CACHED_SALES is obsolete since semver (...) is different from expect: ..., pls re-setup related model</code></li>
+</ul>
+<h4 id="execution_interrupted">EXECUTION_INTERRUPTED</h4>
+<ul>
+<li><strong>Kategorie</strong>: EXECUTION</li>
+<li><strong>Code</strong>: EXECUTION_INTERRUPTED</li>
+<li><strong>Häufige Ursachen</strong>: Die Abfrage wurde vom Benutzer oder vom System unterbrochen.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Führen Sie die Abfrage erneut aus.</li>
+<li><strong>Beispiel</strong>: <code>Query execution interrupted</code></li>
+</ul>
+<h4 id="timeout_error">TIMEOUT_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: TIMEOUT</li>
+<li><strong>Code</strong>: TIMEOUT_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Die Ausführung der Abfrage hat zu lange gedauert.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Erhöhen Sie den Wert des Parameters timeoutSeconds oder vereinfachen Sie die Abfrage. Um die Leistung zu verbessern, können Sie auch materialize hinzufügen.</li>
+<li><strong>Beispiel</strong>: <code>Query timed out after 30 seconds</code></li>
+</ul>
+<h3 id="compilation-errors">Kompilierungsfehler <a class="section-link" aria-label="Link zum Abschnitt" href="#compilation-errors">#</a></h3>
+<h4 id="compile_error">COMPILE_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: VALIDATION</li>
+<li><strong>Code</strong>: COMPILE_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: DML-Syntaxfehler, Fehler bei der Modellvalidierung, Fehler bei der SQL-Generierung oder eine unzulässige Kombination von Modifikatoren. Ein Beispiel ist <code>+d</code> zusammen mit <code>-d</code>/<code>-df</code> für dieselbe Dimension in einem Modifikatorobjekt. Laut Sprachspezifikation muss die Kompilierung in diesem Fall mit einer Fehlermeldung abbrechen. Siehe <a href="reference--semantics.de.html#45-modifier-composition">Kombination von Modifikatoren</a> und Fallstrick P79.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Beheben Sie die Kompilierungsfehler, prüfen Sie, ob model.dml im Arbeitsbereichsordner vorhanden ist, und kontrollieren Sie das generierte SQL in error.details.generatedSql. Formulieren Sie bei Konflikten zwischen <code>+d</code>/<code>-d</code>/<code>-df</code> die gewünschte Wirkung eindeutig in einer einzigen Angabe, ohne sich darauf zu verlassen, dass sich die Modifikatoren gegenseitig aufheben.</li>
+<li><strong>Beispiel</strong>: <code>Compilation failed — see details.compilationErrors</code></li>
+<li><strong>Hinweise</strong>: Im aktuell geprüften Build führen die überprüften <code>+d</code>-Konflikte auf demselben Feld zu keiner Fehlermeldung. Geben Sie genau eine Auswertungsphase ausdrücklich an und prüfen Sie das generierte SQL. Verlassen Sie sich nicht darauf, dass sich die Modifikatoren gegenseitig aufheben.</li>
+</ul>
+<h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
+<ul>
+<li><strong>Kategorie</strong>: TIMEOUT</li>
+<li><strong>Code</strong>: COMPILE_TIMEOUT</li>
+<li><strong>Häufige Ursachen</strong>: Die Kompilierung hat zu lange gedauert.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Vereinfachen Sie das DML-Modell, verringern Sie die Komplexität und erhöhen Sie das Zeitlimit.</li>
+<li><strong>Beispiel</strong>: <code>Compilation timed out after 30 seconds</code></li>
+</ul>
+<h4 id="validation_error">VALIDATION_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: VALIDATION</li>
+<li><strong>Code</strong>: VALIDATION_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Deklarierte Einschränkungen für Dimensionen wurden verletzt. Prüfen Sie <code>data.status</code> und <code>data.issues</code>.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Korrigieren Sie ungültige Parameter oder die fehlerhafte Konfiguration.</li>
+<li><strong>Beispiel</strong>: <code>Declared dimension constraints were violated; see data.issues.</code></li>
+</ul>
+<h3 id="generation-errors">Generierungsfehler <a class="section-link" aria-label="Link zum Abschnitt" href="#generation-errors">#</a></h3>
+<h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: NOT_FOUND</li>
+<li><strong>Code</strong>: MODEL_RESOLUTION_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: <code>&lt;FROM&gt;.dml</code> wurde weder neben der SQL-Datei noch unter <code>--model=&lt;dir&gt;</code> oder im Modellsuchpfad gefunden. Weitere mögliche Ursachen sind die gemeinsame Verwendung von <code>--model=acme.dml</code> und <code>FROM MODEL</code> (die Datei stimmt nicht mit FROM überein, Exitcode 65) oder die Angabe eines Verzeichnisses für einen Vorgang, der nur Dateien akzeptiert.</li>
+<li><strong>Lösungsvorschläge</strong>: Übergeben Sie den Befehlen query, compile und validate ein Verzeichnis mit der passenden <code>.dml</code>-Datei oder eine Datei, deren Name mit <code>FROM</code> übereinstimmt. Übergeben Sie setup eine <code>.dml</code>-Datei.</li>
+<li><strong>Beispiel</strong>: <code>model file "acme.dml" does not match FROM "MODEL" (expected "MODEL.dml").</code></li>
+</ul>
+<h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: VALIDATION</li>
+<li><strong>Code</strong>: FILTER_VALIDATION_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Syntaxfehler im Filter oder ungültiger Feldname</li>
+<li><strong>Lösungsvorschläge</strong>: Korrigieren Sie den Feldnamen oder die Syntax im Filter.</li>
+<li><strong>Beispiel</strong>: <code>Filter validation failed: invalid field 'dt_invalid'</code></li>
+</ul>
+<h3 id="dimension-validation-errors">Fehler bei der Dimensionsvalidierung <a class="section-link" aria-label="Link zum Abschnitt" href="#dimension-validation-errors">#</a></h3>
+<p><a id="dimension-not-unique"></a>
+<a id="dimension_not_unique"></a></p>
+<h4 id="duplicate-keys-and-overlapping-ranges">Doppelte Schlüssel und überlappende Bereiche</h4>
+<ul>
+<li><strong>Kategorie</strong>: VALIDATION</li>
+<li><strong>Code</strong>: VALIDATION_ERROR. Prüfen Sie den Problemtyp in <code>data.issues</code>.</li>
+<li><strong>Häufige Ursachen</strong>: Die vollständige Kombination der Dimensionswerte des Datensatzes kommt mehrfach vor oder eine bereichsbasierte Suche kann mehrere Quellzeilen mit überlappenden Bereichen finden.</li>
+<li><strong>Lösungsvorschläge</strong>: Korrigieren Sie den Quellschlüssel, die Feldliste unter <code>dimension:</code> im Datensatz, die überlappenden Bereiche oder die Quelldaten. Führen Sie anschließend <code>--validate</code> erneut aus. Weder <code>DISTINCT</code>/<code>GROUP BY</code> im kompilierten SQL noch <code>DISTINCTCOUNT</code>-Kennzahlen beheben eine nicht eindeutige Suche mit <code>pk(...)</code>.</li>
+<li><strong>Beispiel</strong>: <code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+</ul>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error-1">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: EXECUTION</li>
+<li><strong>Code</strong>: EXECUTION_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Die Validierungsabfrage konnte nicht ausgeführt werden.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Prüfen Sie die Verbindungskonfiguration und ob die Datenbank erreichbar ist.</li>
+<li><strong>Beispiel</strong>: <code>Validation query failed: Connection refused</code></li>
+</ul>
+<h3 id="workspaceoperation-errors">Arbeitsbereichs- und Vorgangsfehler <a class="section-link" aria-label="Link zum Abschnitt" href="#workspaceoperation-errors">#</a></h3>
+<h4 id="no_workspace">NO_WORKSPACE</h4>
+<ul>
+<li><strong>Kategorie</strong>: BLOCKED</li>
+<li><strong>Code</strong>: NO_WORKSPACE</li>
+<li><strong>Häufige Ursachen</strong>: Es ist kein Arbeitsbereichsordner festgelegt oder auf den Arbeitsbereich kann nicht zugegriffen werden.</li>
+<li><strong>Lösungsvorschläge</strong>: Legen Sie einen Arbeitsbereichsordner fest oder prüfen Sie die Zugriffsberechtigungen für den Arbeitsbereich.</li>
+<li><strong>Beispiel</strong>: <code>No workspace folder configured</code></li>
+</ul>
+<h4 id="invalid_params">INVALID_PARAMS</h4>
+<ul>
+<li><strong>Kategorie</strong>: VALIDATION</li>
+<li><strong>Code</strong>: INVALID_PARAMS</li>
+<li><strong>Häufige Ursachen</strong>: Ungültiger Parametername oder Parameterwert</li>
+<li><strong>Lösungsvorschläge</strong>: Korrigieren Sie den Parameternamen oder -wert und prüfen Sie die zulässigen Optionen für den Parameter.</li>
+<li><strong>Beispiel</strong>: <code>Invalid parameter: 'invalid_param'. Valid options: ['param1', 'param2']</code></li>
+</ul>
+<h4 id="file_export_error">FILE_EXPORT_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: EXECUTION</li>
+<li><strong>Code</strong>: FILE_EXPORT_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Der Export der Daten in eine Datei ist fehlgeschlagen.</li>
+<li><strong>Empfohlene Maßnahmen</strong>: Prüfen Sie den Ausgabepfad und die Schreibberechtigungen und wiederholen Sie den Export. Existiert die Zieldatei bereits, wählen Sie einen neuen Namen oder aktivieren Sie das Überschreiben, wenn Sie die vorhandene Datei ersetzen möchten.</li>
+<li><strong>Beispiel</strong>: <code>File export failed: Permission denied</code></li>
+</ul>
+<h3 id="general-errors">Allgemeine Fehler <a class="section-link" aria-label="Link zum Abschnitt" href="#general-errors">#</a></h3>
+<h4 id="unexpected_error">UNEXPECTED_ERROR</h4>
+<ul>
+<li><strong>Kategorie</strong>: INTERNAL</li>
+<li><strong>Code</strong>: UNEXPECTED_ERROR</li>
+<li><strong>Häufige Ursachen</strong>: Ein unerwarteter interner Fehler ist aufgetreten.</li>
+<li><strong>Lösungsvorschläge</strong>: Erstellen Sie anhand der <a href="support.de.html">Support-Checkliste</a> ein minimales Beispiel, mit dem sich der Fehler reproduzieren lässt. Senden Sie es über Ihren bestehenden Produktkontakt. Ein öffentlicher Supportkanal ist noch nicht aufgeführt.</li>
+<li><strong>Beispiel</strong>: <code>Unexpected error: NullPointerException</code></li>
+</ul>
+</main></body></html>

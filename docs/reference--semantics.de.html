@@ -1,0 +1,556 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Auswertungssemantik von DML · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Seite definiert den Auswertungskontext, die Kompatibilität von Granularitätsebenen und die Kompositionsregeln. Die Deklarationssyntax finden Sie unter Modellstruktur, Kennzahlen, Abfragen und Materialisie"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--semantics.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Auswertungssemantik von DML · DML"><meta property="og:description" content="Diese Seite definiert den Auswertungskontext, die Kompatibilität von Granularitätsebenen und die Kompositionsregeln. Die Deklarationssyntax finden Sie unter Modellstruktur, Kennzahlen, Abfragen und Materialisie"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--semantics.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--semantics.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--semantics.html">English</a> <a lang="zh" hreflang="zh" href="reference--semantics.zh.html">中文</a></header><main><h1 id="dml-evaluation-semantics">Auswertungssemantik von DML</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#scope-and-position">Geltungsbereich und Einordnung</a></li><li><a href="#what-this-spec-covers">Was diese Spezifikation abdeckt</a></li><li><a href="#what-this-spec-does-not-cover">Was diese Spezifikation nicht abdeckt</a></li><li><a href="#three-layer-architecture">Dreischichtige Architektur</a></li><li><a href="#core-building-blocks">Grundbausteine</a></li><li><a href="#design-principles">Entwurfsprinzipien</a></li><li><a href="#evaluation-context-model">Modell des Auswertungskontexts</a></li><li><a href="#definition">Definition</a></li><li><a href="#canonical-grain-roles">Standardbegriffe für Granularität und Kennzahlkontext</a></li><li><a href="#context-transition">Änderung des Auswertungskontexts</a></li><li><a href="#dim_dt--the-time-dimension"><code>dim_dt</code> – die Zeitdimension</a></li><li><a href="#standard-time-dimension-fields">Standardfelder der Zeitdimension</a></li><li><a href="#calendar-dataset">Kalender-Dataset</a></li><li><a href="#filter-context-and-pushdown">Filterkontext und Filter-Pushdown</a></li><li><a href="#grain-system">Granularitätsregeln</a></li><li><a href="#three-grain-types">Drei Arten von Granularität</a></li><li><a href="#grain-compatibility-rule">Regel zur Kompatibilität der Granularität</a></li><li><a href="#multi-level-aggregation-via-d">Mehrstufige Aggregation mit <code>+d</code></a></li><li><a href="#cross-dataset-auto-join">Automatische Joins über Datensätze hinweg</a></li><li><a href="#grain-safety-enforcement-existing-compiler-behavior">Prüfung der Granularität (bestehendes Compilerverhalten)</a></li><li><a href="#time-grain-rules">Regeln für die zeitliche Granularität</a></li><li><a href="#measure-as-dimension">Kennzahl als Dimension</a></li><li><a href="#modifier-schema-constraints">Schemaeinschränkungen für Modifikatoren</a></li><li><a href="#modifier-composition">Kombinieren von Modifikatoren</a></li></ul></details>
+<p>Diese Seite definiert den Auswertungskontext, die Kompatibilität von Granularitätsebenen und die Kompositionsregeln. Die Deklarationssyntax finden Sie unter <a href="reference--model-structure.de.html">Modellstruktur</a>, <a href="reference--measures.de.html">Kennzahlen</a>, <a href="reference--query-yaml.de.html">Abfragen</a> und <a href="reference--materialization.de.html">Materialisierung</a>.</p>
+<p><a id="1--scope-and-position"></a></p>
+<h2 id="scope-and-position">Geltungsbereich und Einordnung <a class="section-link" aria-label="Link zum Abschnitt" href="#scope-and-position">#</a></h2>
+<p><a id="11-what-this-spec-covers"></a></p>
+<h3 id="what-this-spec-covers">Was diese Spezifikation abdeckt <a class="section-link" aria-label="Link zum Abschnitt" href="#what-this-spec-covers">#</a></h3>
+<p>Dieses Dokument legt den Auswertungskontext, die Kompatibilität von Granularitätsebenen und die Einschränkungen für Modifikatoren in DML fest. Die folgenden Regeln definieren das verbindliche Verhalten der Sprache. Unter <a href="reference--error-codes.de.html">Fehlercodes</a> finden Sie die Bedeutung der Diagnosemeldungen und Vorschläge zur Behebung.</p>
+<p><a id="12-what-this-spec-does-not-cover"></a></p>
+<h3 id="what-this-spec-does-not-cover">Was diese Spezifikation nicht abdeckt <a class="section-link" aria-label="Link zum Abschnitt" href="#what-this-spec-does-not-cover">#</a></h3>
+<ul>
+<li><a href="how-to--compile-and-validate.de.html">Eine Abfrage kompilieren und validieren</a> beschreibt die Befehle der CLI und das Erfassen von Nachweisen.</li>
+<li><a href="how-to--build-analysis.de.html">Eine Analyse erstellen</a> beschreibt die Schritte für fachliche Analysen.</li>
+<li><a href="explanation--core-concepts.de.html">Grundkonzepte</a> erläutert die Modell-, Abfrage- und Ausdrucksebene.</li>
+</ul>
+<p><a id="13-three-layer-architecture"></a></p>
+<h3 id="three-layer-architecture">Dreischichtige Architektur <a class="section-link" aria-label="Link zum Abschnitt" href="#three-layer-architecture">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Ebene</th>
+<th>Sprache</th>
+<th>Was Sie schreiben</th>
+<th>Datei</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Modellierung</strong></td>
+<td>DML</td>
+<td>Datensätze, Kennzahlen, Spaltenmakros, materialize, dt/fn-Makros</td>
+<td><code>.dml</code> (YAML)</td>
+</tr>
+<tr>
+<td><strong>Abfragen</strong></td>
+<td>Modellabfrage (Format SQL oder DML)</td>
+<td><code>AGG(measure)</code>, <code>GROUP BY</code>, Modifikatoren</td>
+<td><code>.sql</code> oder <code>.dml</code> mit <code>type: query</code></td>
+</tr>
+<tr>
+<td><strong>Ausdrücke</strong></td>
+<td>DMX (Dato Measure eXpression)</td>
+<td>Formeln, Referenzen, Modifikatoren, <code>pk()</code></td>
+<td>In beiden Schichten</td>
+</tr>
+</tbody></table>
+<p>DMX ist die gemeinsame Ausdruckssprache. Beispiele in <code>.dml</code>-Formeln sind <code>{column}</code>, <code>{measure: modifier}</code> und <code>pk(...)</code>. Beispiele in Modellabfragen im Format SQL sind <code>AGG(measure)</code> und <code>AGG({measure: modifier})</code>.</p>
+<p><a id="14-core-building-blocks"></a></p>
+<h3 id="core-building-blocks">Grundbausteine <a class="section-link" aria-label="Link zum Abschnitt" href="#core-building-blocks">#</a></h3>
+<p>Ein <strong>Datensatz</strong> ist eine Tabelle mit einer deklarierten Dimension und Spalten. Seine <strong>deklarierte Datensatzgranularität</strong> ergibt sich aus der deklarierten Liste <code>dimension:</code>.</p>
+<p>Eine <strong>Kennzahl</strong> ist eine benannte fachliche Kennzahl. Es gibt zwei Typen.</p>
+<ul>
+<li>Eine <strong>atomare Kennzahl</strong> ist über das Feld <code>dataset:</code> an einen Datensatz gebunden und aggregiert Spalten mit SQL.</li>
+<li>Eine <strong>zusammengesetzte Kennzahl</strong> referenziert andere Kennzahlen und hat kein Feld <code>dataset:</code>.</li>
+</ul>
+<p>Ein <strong>Dimensionsfeld</strong> ist ein einzelnes benanntes Feld in DML.</p>
+<p>Eine <strong>Dimension</strong> ist eine Liste mit einem oder mehreren Dimensionsfeldern. Die Angabe <code>dimension:</code> eines Datensatzes legt fest, wodurch eine Quellzeile identifiziert wird. Eine Abfragedimension legt die Gruppierung fest, eine Auswertungsdimension steuert die Auswertung einer Kennzahlreferenz, und eine Materialisierungsdimension deklariert einen Ausgabeschlüssel. Jede innere Liste in <code>dimensions:</code> einer Kennzahl entspricht einer zulässigen Dimension. Ein Feld vom Typ <strong>Kennzahl als Dimension</strong> ist ein Feld einer Abfragedimension, dessen Wert durch die Auswertung einer Kennzahl entsteht (siehe <a href="#37-measure-as-dimension">Kennzahl als Dimension</a>).</p>
+<p>Die Modifikatorform <code>{dimension: []}</code> entfernt die Auswertungsdimension, um einen Kontext für die Gesamtsumme anzufordern. Die leere Liste gibt eine Operation an und definiert keine Dimension ohne Felder.</p>
+<p>Ein <strong>Spaltenmakro</strong> ist eine in <code>.dml</code> definierte abgeleitete Spalte oder ein datensatzübergreifender Zugriff. Damit lassen sich Felder aus anderen Datensätzen ohne <code>JOIN</code> in Kennzahlformeln verwenden.</p>
+<p><a id="15-design-principles"></a></p>
+<h3 id="design-principles">Entwurfsprinzipien <a class="section-link" aria-label="Link zum Abschnitt" href="#design-principles">#</a></h3>
+<ol>
+<li><strong>Semantik muss ausführbar sein.</strong> Kennzahlen dienen nicht nur der Dokumentation. Sie werden in SQL für das Data Warehouse kompiliert.</li>
+<li><strong>Semantik wie Code verwalten.</strong> Dazu gehören Git, PR, LSP und die Validierung mit <code>dml_schema.yaml</code>.</li>
+<li><strong>Kennzahlen sind nicht an eine feste Ergebnisgranularität gebunden.</strong> Für jede Kennzahl ergibt sich aus ihrer Definition ein <strong>gültiger beziehungsweise nativer Kennzahlkontext</strong>, der zusätzlich eingeschränkt werden kann. Abfrage und Modifikatoren bestimmen die effektive Granularität der Auswertung. Der Compiler stellt die Kompatibilität sicher.</li>
+<li><strong>Komplexe Ableitungen gehören ins Modell.</strong> Zeitvergleiche, Verhältnisse und mehrstufige Aggregationen bleiben in <code>.dml</code>. Sie werden nicht auf berechnete Felder in BI-Tools oder Ad-hoc-Abfragen in SQL verteilt.</li>
+</ol>
+<hr>
+<p><a id="2--evaluation-context-model"></a></p>
+<h2 id="evaluation-context-model">Modell des Auswertungskontexts <a class="section-link" aria-label="Link zum Abschnitt" href="#evaluation-context-model">#</a></h2>
+<p><a id="21-definition"></a></p>
+<h3 id="definition">Definition <a class="section-link" aria-label="Link zum Abschnitt" href="#definition">#</a></h3>
+<p>Der <strong>Auswertungskontext</strong> umfasst alle Informationen, mit denen der Compiler eine Kennzahlreferenz auflöst und daraus ausführbares SQL erzeugt.</p>
+<p>Die standardisierte Kurzschreibweise im Produkt lautet <code>Context = {grain, filters, time}</code>. Im folgenden Sprachmodell übernimmt das aufgelöste Feld <code>dim_dt</code> die Rolle von <code>time</code>.</p>
+<pre><code>Context = {
+    grain: [dim₁, dim₂, ...],   // active grouping dimension fields
+    filters: [predicate₁, ...],  // active filter predicates
+    dim_dt: TimeDim | null       // resolved time dimension
+}
+</code></pre>
+<p><a id="22-canonical-grain-roles"></a></p>
+<h3 id="canonical-grain-roles">Standardbegriffe für Granularität und Kennzahlkontext <a class="section-link" aria-label="Link zum Abschnitt" href="#canonical-grain-roles">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Rolle</th>
+<th>Quelle</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Deklarierte Datensatzgranularität</strong></td>
+<td><code>dimension:</code> im Dataset</td>
+<td>Was eine einzelne Zeile des Datensatzes darstellt</td>
+</tr>
+<tr>
+<td><strong>Gültiger beziehungsweise nativer Kennzahlkontext</strong></td>
+<td>Quelldatensatz, referenzierte Kennzahlen, Formel und Modifikatoren sowie die optionale Einschränkung <code>dimensions:</code> der Kennzahl</td>
+<td>Kontexte, in denen die Kennzahldefinition gültig ist. Sie legen keine feste Ausgabegranularität fest.</td>
+</tr>
+<tr>
+<td><strong>Effektive Auswertungsgranularität</strong></td>
+<td>Abfragegranularität nach Anwendung von <code>+d</code>, <code>-d</code>, <code>dimension</code> und weiteren zugehörigen Modifikatoren</td>
+<td>Granularitätsebene, auf der eine bestimmte Kennzahlreferenz ausgewertet wird</td>
+</tr>
+<tr>
+<td><strong>Granularität des Abfrageergebnisses</strong></td>
+<td><code>GROUP BY</code> oder <code>columns.dimension</code> in der Abfrage</td>
+<td>Was eine einzelne Ausgabezeile darstellt. Neben physischen oder zugeordneten Dimensionsfeldern können auch Kennzahlen als Dimensionsfelder einfließen (siehe <a href="#37-measure-as-dimension">Kennzahl als Dimension</a>).</td>
+</tr>
+</tbody></table>
+<p>Der umfassendere <strong>Abfragekontext</strong> verbindet die Granularität des Abfrageergebnisses mit <code>WHERE</code> beziehungsweise <code>filters:</code> und den aufgelösten Zeitinformationen. Die älteren Bezeichnungen „native Kennzahlgranularität“ und „Zielgranularität“ stehen für den <strong>gültigen beziehungsweise nativen Kennzahlkontext</strong> bzw. die <strong>effektive Auswertungsgranularität</strong>. Neue normative Texte sollten die oben aufgeführten Standardbegriffe verwenden.</p>
+<p><a id="23-context-transition"></a></p>
+<h3 id="context-transition">Änderung des Auswertungskontexts <a class="section-link" aria-label="Link zum Abschnitt" href="#context-transition">#</a></h3>
+<p>Modifikatoren ändern den Auswertungskontext. Der Compiler wendet sie an, um einen neuen Kontext für die Kennzahlauswertung abzuleiten.</p>
+<pre><code>apply_modifier(Context, Modifier) -&gt; Context'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Modifikator</th>
+<th>Auswirkung auf die Granularität</th>
+<th>Auswirkung auf Filter</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+d: dim</code></td>
+<td><code>dim</code> ans Ende der Liste der Felder anhängen, die die Granularität bestimmen (Drilldown)</td>
+<td>Keine Änderung</td>
+</tr>
+<tr>
+<td><code>-d: dim</code></td>
+<td><code>dim</code> aus der Granularität entfernen (Rollup)</td>
+<td>Keine Änderung. Filter auf <code>dim</code> werden weiterhin in die <code>WHERE</code>-Klausel des Datensatzes verschoben.</td>
+</tr>
+<tr>
+<td><code>-df: dim</code></td>
+<td><code>dim</code> aus der Granularität entfernen</td>
+<td>Filter auf <code>dim</code> und daraus abgeleiteten Spalten bei der Kennzahlauswertung entfernen</td>
+</tr>
+<tr>
+<td><code>dimension: [dims]</code></td>
+<td>Die gesamte Granularität durch <code>dims</code> ersetzen</td>
+<td>Keine Änderung</td>
+</tr>
+<tr>
+<td><code>+f: condition</code></td>
+<td>Keine Änderung</td>
+<td><code>condition</code> zu den Filtern hinzufügen</td>
+</tr>
+<tr>
+<td><code>-f: dim</code></td>
+<td>Keine Änderung</td>
+<td>Filter entfernen, die <code>dim</code> referenzieren</td>
+</tr>
+<tr>
+<td>dt-Makro (z. B. <code>ya</code>, <code>pp</code>, <code>ytd</code>)</td>
+<td>Keine Änderung</td>
+<td>Zeitraum in <code>dim_dt</code> ersetzen</td>
+</tr>
+<tr>
+<td>fn-macro (z. B. <code>yoy</code>, <code>rank</code>)</td>
+<td>Kann die Granularität ändern (z. B. <code>grand</code> → <code>dimension: []</code>)</td>
+<td>Hängt von der Makroformel ab</td>
+</tr>
+</tbody></table>
+<p><a id="24-dim_dt--the-time-dimension"></a></p>
+<h3 id="dim_dt--the-time-dimension"><code>dim_dt</code> – die Zeitdimension <a class="section-link" aria-label="Link zum Abschnitt" href="#dim_dt--the-time-dimension">#</a></h3>
+<p><code>dim_dt</code> ist die Systemvariable für die <strong>Zeitdimension der aktuellen Abfrage</strong>.</p>
+<p><strong>Auflösungsreihenfolge</strong>: <code>dimension</code> der Abfrage → <code>filter</code> der Abfrage → null.</p>
+<p><strong>Eigenschaften</strong>:</p>
+<ul>
+<li><code>{dim_dt}</code> – wird zum aktuellen Zeitfeld der Abfrage aufgelöst (z. B. <code>dt_month</code>, <code>dt_quarter</code>)</li>
+<li><code>{dim_dt.datetype}</code> – Zeichenfolge für den Typ: <code>'day'</code>, <code>'week'</code>, <code>'month'</code>, <code>'quarter'</code>, <code>'year'</code></li>
+<li><code>{dim_dt.periods_per_year}</code> – Perioden pro Jahr: 52 bei Wochen, 12 bei Monaten, 4 bei Quartalen</li>
+<li><code>{dim_dt.datepart}</code> – Zeichenfolge für den Datumsbestandteil in SQL</li>
+</ul>
+<p><strong>Entwurfsziel</strong>: Verwenden Sie in Maßformeln <code>dim_dt</code> anstelle der konkreten Felder <code>dt_date</code>, <code>dt_month</code> oder <code>dt_quarter</code>. So lässt sich ein Maß ohne Änderung der Formel auf jeder Zeitebene auswerten.</p>
+<p><strong>Umstellung der Periode</strong>: Mit <code>dim_dt as quarter</code> arbeitet <code>pp</code> auf Quartalsebene, auch wenn die Abfrage nach Jahr und Quartal gruppiert:</p>
+<pre><code class="language-sql">SELECT dt_year, dt_quarter,
+       AGG({sales: {dim_dt as quarter: pp}}) as last_quarter
+FROM MODEL GROUP BY dt_year, dt_quarter
+</code></pre>
+<p><a id="25-standard-time-dimension-fields"></a></p>
+<h3 id="standard-time-dimension-fields">Standardfelder der Zeitdimension <a class="section-link" aria-label="Link zum Abschnitt" href="#standard-time-dimension-fields">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Feld</th>
+<th>Granularität</th>
+<th>Beispielwert</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dt_date</code></td>
+<td>Tag</td>
+<td><code>2024-03-15</code></td>
+</tr>
+<tr>
+<td><code>dt_week</code></td>
+<td>Woche (beginnt am Montag)</td>
+<td><code>2024-03-11</code></td>
+</tr>
+<tr>
+<td><code>dt_month</code></td>
+<td>Monat</td>
+<td><code>2024-03-01</code></td>
+</tr>
+<tr>
+<td><code>dt_quarter</code></td>
+<td>Quartal</td>
+<td><code>2024-01-01</code></td>
+</tr>
+<tr>
+<td><code>dt_year</code></td>
+<td>Jahr</td>
+<td><code>2024-01-01</code></td>
+</tr>
+</tbody></table>
+<p>Alle Zeitfelder verwenden das <strong>Format mit dem ersten Tag</strong>: Der Wert ist der erste Tag der Periode.</p>
+<h4 id="automatic-coarser-grain-derivation">Automatische Ableitung gröberer Zeitebenen</h4>
+<p>Wenn ein Dataset ein Standardzeitfeld explizit deklariert, stellt es über den Systemkalender auch die unterstützten Felder der Reihe <code>dt_&lt;grain&gt;</code> auf gröberen Zeitebenen bereit. Ist beispielsweise die Spalte <code>dt_date</code> explizit deklariert, sind <code>dt_week</code>, <code>dt_month</code>, <code>dt_quarter</code> und <code>dt_year</code> gültige Spaltenreferenzen innerhalb des Datasets. Wer ein Modell erstellt, muss diese Namen nicht eigens unter <code>columns:</code> aufführen, um auf einer gröberen Zeitebene abzufragen oder zu filtern. Die erzeugten Werte folgen den oben beschriebenen Kalenderregeln und verwenden jeweils den ersten Tag der Periode.</p>
+<p>Ein automatisch abgeleitetes Zeitfeld hat eine <strong>virtuelle Spaltenidentität</strong> und ist keine zweite explizite Quellendefinition. Sprachwerkzeuge müssen daher:</p>
+<ul>
+<li>unterstützte abgeleitete Felder bei der Namensauflösung und Autovervollständigung innerhalb des Datasets berücksichtigen,</li>
+<li>sie überall zulassen, wo die entsprechende Dataset-Spalte zulässig ist, etwa als Dimensionsfelder in Abfragen oder in Filtern, Formeln und Argumenten von Modifikatoren,</li>
+<li>beim Navigieren von einer abgeleiteten Referenz zur expliziten Zeitspalte springen, aus der das Feld abgeleitet ist (bei <code>dt_month</code>, abgeleitet aus <code>dt_date</code>, führt die Navigation zu <code>dt_date</code>),</li>
+<li>den virtuellen Feldnamen bei Umbenennungen als schreibgeschützt behandeln, sofern keine explizite Definition mit diesem Namen existiert.</li>
+</ul>
+<p>Wenn sich dasselbe abgeleitete Feld aus mehreren expliziten Zeitquellen ableiten lässt und keine Quelle eindeutig bestimmt werden kann, müssen die Werkzeuge die Auflösung abbrechen, statt eine Definition willkürlich auszuwählen.</p>
+<p><a id="26-calendar-dataset"></a></p>
+<h3 id="calendar-dataset">Kalender-Dataset <a class="section-link" aria-label="Link zum Abschnitt" href="#calendar-dataset">#</a></h3>
+<p>Das System stellt das Dataset <code>Dim Calendar</code> für das Nachschlagen von Zeitwerten über verschiedene Zeitebenen hinweg bereit:</p>
+<pre><code class="language-yaml">Dim Calendar:
+    type: dataset
+    table: DML_CALENDAR
+    dimension: [dt_date]
+    columns:
+        dt_date:
+        dt_week:
+        dt_month:
+            source: pk({dt_date}).DML_CALENDAR(dt_date).dt_month
+        dt_quarter:
+            source: pk({dt_month}).DML_CALENDAR(dt_date).dt_quarter
+        dt_year:
+            source: pk({dt_quarter}).DML_CALENDAR(dt_date).dt_year
+</code></pre>
+<p><a id="27-filter-context-and-pushdown"></a></p>
+<h3 id="filter-context-and-pushdown">Filterkontext und Filter-Pushdown <a class="section-link" aria-label="Link zum Abschnitt" href="#filter-context-and-pushdown">#</a></h3>
+<p>Wo ein Filter gesetzt wird, hängt von seinem semantischen Geltungsbereich ab:</p>
+<table>
+<thead>
+<tr>
+<th>Ebene</th>
+<th>Ort</th>
+<th>Was hier angegeben wird</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filters:</code> / <code>WHERE</code> der Abfrage</td>
+<td>Abfrageblock</td>
+<td>Berichtsspezifische Datenausschnitte (Kanal, Marke, Datumsbereich)</td>
+</tr>
+<tr>
+<td>Maßformel</td>
+<td>Maß in <code>.dml</code></td>
+<td>Kennzahlspezifische Kriterien dafür, welche Zeilen in die Berechnung eingehen, wenn ausgeschlossene Zeilen in den Ergebnisgruppen verbleiben dürfen</td>
+</tr>
+<tr>
+<td><code>sql:</code> im Dataset</td>
+<td>Dataset-Definition</td>
+<td>Dauerhafte Einschränkungen der Quelldatenmenge, die sich mit dem derzeitigen deklarativen DML nicht ausdrücken lassen</td>
+</tr>
+</tbody></table>
+<p>Ein <code>WHERE</code> auf den Quelldaten und eine Bedingung im Maß, die NULL liefert, sind im Allgemeinen nicht austauschbar. Im ersten Fall verschwinden Gruppen, die ausschließlich ausgeschlossene Zeilen enthalten. Im zweiten Fall können solche Gruppen bestehen bleiben. Prüfen Sie vor einem Wechsel zwischen diesen Ebenen, welche Gruppen bestehen bleiben, wie sich die Änderung auf andere Kennzahlen derselben Abfrage, auf die Deduplizierung, auf Joins und Fensterfunktionen sowie auf die Semantik von NULL auswirkt.</p>
+<p><strong>Pushdown-Regel</strong>: Die unter <code>filters:</code> angegebenen Abfragefilter werden vor der Aggregation an die <code>WHERE</code>-Klausel des Datasets weitergegeben. Erstellt <code>-d</code> eine temporäre Tabelle mit gröberer Granularität, wird der Filter weiterhin angewendet. Dadurch können die Nenner von Verhältniskennzahlen kleiner werden. Mit <code>-df</code> verhindern Sie den Filter-Pushdown für ein bestimmtes Dimensionsfeld.</p>
+<p><strong>Verfolgung von Abhängigkeiten</strong>: Der Compiler verfolgt die Ableitungskette einer Spalte. Ein Filter auf <code>store_name</code> (<code>pk({store_id}).MDM_STORE(store_id).store_name</code>) wird nicht weitergegeben, wenn für <code>store_id</code> die Option <code>-df</code> gesetzt ist, da die Spalte ausschließlich aus <code>store_id</code> abgeleitet ist.</p>
+<hr>
+<p><a id="3--grain-system"></a></p>
+<h2 id="grain-system">Granularitätsregeln <a class="section-link" aria-label="Link zum Abschnitt" href="#grain-system">#</a></h2>
+<p>Die Dimension eines Auswertungskontexts bestimmt dessen Granularität und Kompatibilität mit anderen Kontexten. Welche Rolle die einzelnen Dimensionsdeklarationen in DML haben, fasst <a href="explanation--dimensions.de.html">Dimensionsrollen</a> zusammen.</p>
+<p><a id="31-three-grain-types"></a></p>
+<h3 id="three-grain-types">Drei Arten von Granularität <a class="section-link" aria-label="Link zum Abschnitt" href="#three-grain-types">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Art der Granularität</th>
+<th>Deklariert durch</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Granularität des Datasets</strong></td>
+<td><code>dimension:</code> im Dataset</td>
+<td>Eine Zeile der zugrunde liegenden Tabelle steht für eine Wertekombination der Felder dieser Dimension</td>
+</tr>
+<tr>
+<td><strong>Granularität des Maßes</strong></td>
+<td>Formel + Modifikatoren + optionale Einschränkung über <code>dimensions:</code></td>
+<td>Die Ebene, auf der die Formel des Maßes gültig ist</td>
+</tr>
+<tr>
+<td><strong>Granularität der Abfrage</strong></td>
+<td><code>GROUP BY</code> / <code>columns.dimension:</code> der Abfrage</td>
+<td>Eine Zeile im Abfrageergebnis steht für eine Wertekombination der Felder dieser Dimension</td>
+</tr>
+</tbody></table>
+<p><a id="32-grain-compatibility-rule"></a></p>
+<h3 id="grain-compatibility-rule">Regel zur Kompatibilität der Granularität <a class="section-link" aria-label="Link zum Abschnitt" href="#grain-compatibility-rule">#</a></h3>
+<p><strong>Die Granularität der Abfrage muss mit der Granularität jedes Maßes kompatibel sein.</strong></p>
+<p>Für ein atomares Maß ohne Einschränkung über <code>dimensions:</code> gilt:</p>
+<ul>
+<li>Das Maß lässt sich für jede kompatible Dimension auswerten, die aus den Dimensionsfeldern seines Datasets besteht.</li>
+<li>Der Compiler wählt die Aggregation anhand der deklarierten Granularität und des angeforderten Kontexts. Auf der deklarierten Granularität, die jede Zeile eindeutig bestimmt, kann er die Rohwerte direkt projizieren.</li>
+</ul>
+<p>Für ein atomares Maß mit der Einschränkung <code>dimensions: [[dims]]</code> gilt:</p>
+<ul>
+<li>Das Maß kann <strong>nur</strong> auf der angegebenen Ebene ausgewertet werden.</li>
+<li>Andere Formeln, die dieses Maß verwenden, müssen mit <code>{measure: {+d: dim}}</code> ausdrücklich auf diese Ebene wechseln.</li>
+<li>Der Compiler weist inkompatible Granularitäten mit der Meldung <code>cannot set dimension [...] since only [...] are allowed</code> zurück.</li>
+</ul>
+<p>Bei einem Dataset oder einer Materialisierung enthält <code>dimension:</code> genau eine Dimension. Bei einem Maß enthält <code>dimensions:</code> die alternativ zulässigen Dimensionen. Jede innere Liste steht für eine Dimension. Diese Angabe schränkt die zulässigen Dimensionen ein. Sie deklariert weder die Identität des Datasets noch die Gruppierung der Abfrage. Die Regeln dazu finden Sie unter <a href="explanation--dimensions.de.html">Dimensionsrollen</a>.</p>
+<p>Für eine zusammengesetzte Kennzahl gilt:</p>
+<ul>
+<li>Die Granularität ergibt sich aus der Vereinigung der Dimensionsfelder der referenzierten Kennzahlen, nachdem die Modifikatoren aufgelöst wurden.</li>
+<li>Die Granularitäten aller referenzierten Kennzahlen müssen untereinander kompatibel sein.</li>
+</ul>
+<p><a id="33-multi-level-aggregation-via-d"></a></p>
+<h3 id="multi-level-aggregation-via-d">Mehrstufige Aggregation mit <code>+d</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#multi-level-aggregation-via-d">#</a></h3>
+<p><code>+d</code> richtet eine <strong>Auswertungsstufe auf feinerer Granularität</strong> ein. Der Modifikator allein aggregiert den Wert <strong>nicht</strong> zurück auf die Granularität der Abfrage.</p>
+<table>
+<thead>
+<tr>
+<th>Schreibweise</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{m: {+d: x}}</code></td>
+<td>Auf der Granularität der Abfrage ∪ <code>{x}</code> auswerten und <strong>dort aufhören</strong></td>
+</tr>
+<tr>
+<td><code>SUM</code> / <code>AVG</code> / <code>MAX</code> / …<code>({m: {+d: x}})</code></td>
+<td>Den Wert auf feinerer Granularität auswerten und dann mit einer <strong>expliziten äußeren Aggregation</strong> auf die aktuelle Granularität der Abfrage zurückführen</td>
+</tr>
+<tr>
+<td>Bindung einer Abfragedimension <code>- lab: '{m: {+d: K}}'</code></td>
+<td>Kennzahl als Dimension (<a href="#37-measure-as-dimension">Kennzahl als Dimension</a>): Das Ergebnis ist ein Gruppierungsschlüssel, keine gewöhnliche Spalte mit einer aggregierten Kennzahl.</td>
+</tr>
+</tbody></table>
+<p>Die äußere Aggregationsfunktion (<code>SUM</code>, <code>AVG</code>, <code>MAX</code> usw.) <strong>legt der Autor fest</strong>. Der Compiler ergänzt sie nicht selbst. Bei einer äußeren Aggregation erzeugt der Compiler in der Regel eine CTE (<code>WITH ... AS (SELECT ... GROUP BY ...) SELECT ...</code>).</p>
+<p><strong>Muster</strong>: atomare Kennzahl → mit <code>+d</code> in einer zusammengesetzten Kennzahl, die die äußere Aggregation vorgibt, auf eine feinere Granularität wechseln → Abfrage auf beliebiger Granularität</p>
+<pre><code class="language-yaml"># Atomic measure (dataset grain: dt_date × store_id × prod_id)
+销售量:
+    type: measure
+    dataset: o2o_pos
+    formula: SUM(count_qty)
+
+# Distribution SKU count: how many products have sales &gt; 0?
+# {销售量: {+d: prod_id}} drills down to per-product grain,
+# then DISTINCTCOUNTIF counts products with positive sales.
+分销SKU数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({prod_id}, {销售量: {+d: prod_id}} &gt; 0)
+
+# Distribution store count: how many stores have sales &gt; 0?
+分销客户数:
+    type: measure
+    formula: |-
+        DISTINCTCOUNTIF({store_id}, {销售量: {+d: store_id}} &gt; 0)
+
+# Average sales per store (selling power)
+卖力:
+    type: measure
+    formula: |-
+        divide({销售额}, {分销客户数})
+</code></pre>
+<pre><code class="language-sql">-- Query at brand × quarter grain — the +d inside each measure
+-- generates intermediate CTEs at prod_id / store_id grain, then rolls up.
+SELECT dt_quarter, brand,
+       AGG(销售额),
+       AGG(分销SKU数),
+       AGG(分销客户数),
+       AGG(卖力)
+FROM MODEL
+GROUP BY dt_quarter, brand
+</code></pre>
+<p>Steht <code>+d</code> in der Bindung einer <strong>Abfragedimension</strong> statt in einer Kennzahlenformel mit expliziter äußerer Aggregation, handelt es sich um eine <strong>Kennzahl als Dimension</strong> (<a href="#37-measure-as-dimension">Kennzahl als Dimension</a>) und nicht um das oben beschriebene zweistufige Muster.</p>
+<p><a id="34-cross-dataset-auto-join"></a></p>
+<h3 id="cross-dataset-auto-join">Automatische Joins über Datensätze hinweg <a class="section-link" aria-label="Link zum Abschnitt" href="#cross-dataset-auto-join">#</a></h3>
+<p>Unabhängige Kennzahlendatensätze werden normalerweise getrennt aggregiert. Anschließend werden alle ihre Gruppierungsschlüssel vereinigt (<em>Schlüsselvereinigung</em>). Der <strong>NULL-sichere Gleichheitsvergleich</strong> berücksichtigt den vollständigen Schlüssel. Dadurch passen Schlüssel mit NULL an denselben Positionen zusammen, wenn auch die übrigen Dimensionen übereinstimmen. Auch bei ausdrücklich zeilenerhaltenden Verknüpfungen über <code>LEFT JOIN</code> und <code>nullpk</code> kommt ein NULL-sicherer Gleichheitsvergleich zum Einsatz. Explizite SQL-Prädikate behalten ihre definierte Semantik. Ein Beispiel finden Sie unter <a href="reference--join-null-equality.de.html">Gleichheitsvergleich mit NULL in Joins</a>.</p>
+<p><strong>Erzeugter Join-Typ.</strong> Der Compiler kann <code>FULL OUTER JOIN</code> verwenden oder mit <code>UNION</code> eine Menge eindeutiger Schlüssel bilden und die Kennzahlen per <code>LEFT JOIN</code> hinzufügen. Beide Varianten gleichen die Schlüssel NULL-sicher ab. Bei nativen vollständigen äußeren Joins kann der Compiler den erzeugten Join auf <code>LEFT JOIN</code> reduzieren, wenn ein Filter wie <code>{primary_presence_measure} is not null</code> nachweist, dass die Primärquelle erforderlich ist. Filter, die beide Quellen voraussetzen, können ihn auf <code>INNER JOIN</code> reduzieren. Die Filter bestimmen, welche Gruppen erhalten bleiben. Der Vergleich der Gruppierungsschlüssel bleibt gleich.</p>
+<p>Für eine LEFT-Ergebnismenge filtern Sie auf eine eigene Kennzahl, die das Vorhandensein einer Gruppe in der Primärquelle anzeigt. Für jede vorhandene Gruppe muss sie einen Wert liefern (auch 0 ist ein Wert), für fehlende Gruppen dagegen NULL. Für eine INNER-Ergebnismenge muss die Gruppe auf beiden Seiten vorhanden sein. Verwenden Sie Zählwerte aus der Quelle ohne nachträgliche Auffüllung oder ein anderes verlässliches Anwesenheitsmerkmal. Kann eine fachliche Kennzahl bei vorhandener Gruppe NULL sein, würde der Filter gültige Gruppen ausschließen. Wird ein fehlender Wert durch 0 ersetzt, können dagegen Gruppen ohne Eintrag in der Primärquelle erhalten bleiben.</p>
+<p>Prüfen Sie getrennt, ob gemeinsam verwendete Schlüssel dieselbe Bedeutung haben, ob vollständige Schlüssel eindeutig sind, wie Gruppierungsschlüssel, die NULL enthalten, abgeglichen werden und wie Zeilen ohne Gegenstück sowie die Auffüllung fehlender Zeilen behandelt werden. Eine getrennte Voraggregation behebt weder doppelte Nachschlageschlüssel noch fehlerhafte Zuordnungsregeln. Durch die Prüfung des erzeugten SQL lässt sich die Abfragestruktur feststellen. Die Validierung in der Datenbank und der Ergebnisvergleich erfordern eigene Prüfungen.</p>
+<p><a id="35-grain-safety-enforcement-existing-compiler-behavior"></a></p>
+<h3 id="grain-safety-enforcement-existing-compiler-behavior">Prüfung der Granularität (bestehendes Compilerverhalten) <a class="section-link" aria-label="Link zum Abschnitt" href="#grain-safety-enforcement-existing-compiler-behavior">#</a></h3>
+<p>Der Compiler prüft die Granularität beim Kompilieren:</p>
+<ol>
+<li><p><strong>Verstoß gegen die Dimensionsbeschränkung einer Kennzahl</strong>: Wird eine Kennzahl mit der zulässigen Dimension <code>dimensions: [[customer_id]]</code> auf einer Abfragedimension referenziert, die auch <code>dt_date</code> enthält, lehnt der Compiler die Abfrage mit folgender Meldung ab:</p>
+<pre><code>cannot set dimension [dt_date, customer_id]+d: customer_id since only [[customer_id]] are allowed
+</code></pre>
+<p>Der Compiler gibt jetzt einen Hinweis (Hint) aus. Er erklärt, dass <code>...</code> zusätzliche Dimensionsfelder zulässt und die aufgeführten Felder weiterhin erforderlich sind. Zum Ergänzen fehlender Pflichtfelder empfiehlt er <code>+d</code>. Verwenden Sie <code>...</code>, um zusätzliche Dimensionsfelder zuzulassen. Die aufgeführten Felder bleiben erforderlich.</p>
+</li>
+<li><p><strong>Das Aggregieren einer Kennzahl erfordert <code>+d</code></strong>: <code>SUM({measure})</code> schlägt mit der Meldung „cannot aggregate a measure w/o +d modifier“ fehl. Ein Hinweis (Hint) des Compilers erklärt, dass die Kennzahl ohne <code>+d</code> bereits auf ihrer Zielgranularität ausgewertet wird und keine feineren Werte zum Aggregieren vorliegen. Das gilt für <strong>jede</strong> Kennzahlenreferenz innerhalb einer Aggregationsfunktion, unabhängig von <code>dimensions:</code>-Deklarationen. Die Zielgranularität für die Auswertung ergibt sich aus dem <code>GROUP BY</code> der Abfrage und der Beschränkung auf die zulässigen Dimensionen der Kennzahl. <code>+d: dim</code> fügt ein Dimensionsfeld hinzu und wertet die Kennzahl auf der dadurch feineren Granularität aus. Die <strong>äußere</strong> Aggregation per <code>SUM</code>/<code>AVG</code>/… führt das Ergebnis auf die Zielgranularität zurück. Verwenden Sie für diese zweistufige Auswertung <code>SUM({measure: {+d: dim}})</code>. Die bloße Referenz <code>{measure: {+d: dim}}</code> eignet sich dafür nicht als aggregierte Spalte.</p>
+</li>
+<li><p><strong>Fehlender Zeitkontext</strong>: Zeitmodifikatoren erfordern ein auflösbares <code>dim_dt</code> und setzen voraus, dass die Anforderungen ihrer Makros erfüllt sind. Ein Zeitfeld in der Gruppierung oder ein Zeitfilter kann den Kontext liefern.</p>
+</li>
+<li><p><strong>Inkompatible Granularitäten über Datensätze hinweg</strong>: Wenn zwei Kennzahlen aus verschiedenen Datensätzen nicht genügend gemeinsame Dimensionen für die Granularität der Abfrage haben, meldet der Compiler einen Fehler.</p>
+</li>
+<li><p><strong>Regeln für Kennzahlen als Dimensionen</strong>: Siehe <a href="#37-measure-as-dimension">Kennzahl als Dimension</a> und die Einschränkungen in den Versionshinweisen. Der Compiler lehnt Abfragen mit fehlenden Entitätsschlüsseln ab. Die statischen Prüfungen erkennen jedoch nicht jede ungültige Übersetzung in die Zielform.</p>
+</li>
+</ol>
+<p><strong>Aussagekraft der Kompilierung:</strong> Eine erfolgreiche Kompilierung allein belegt weder, dass das erzeugte SQL gültig ist, noch, dass die berechneten Werte stimmen. Prüfen Sie die Klassifizierungs- und Aggregationsstufen, validieren Sie die Schlüssel in den tatsächlichen Daten und vergleichen Sie die Ergebnisse separat.</p>
+<p><a id="36-time-grain-rules"></a></p>
+<h3 id="time-grain-rules">Regeln für die zeitliche Granularität <a class="section-link" aria-label="Link zum Abschnitt" href="#time-grain-rules">#</a></h3>
+<ul>
+<li>Geben Sie für eine eindeutige Berichtsdefinition möglichst eine einzige zeitliche Granularität explizit an. Im geprüften Build kann <code>dt_year, dt_month</code> gemeinsam verwendet werden. Daraus lässt sich nicht ableiten, dass jede Kombination mehrerer Zeitmodifikatoren funktioniert.</li>
+<li>Verwenden Sie für Zeitfelder mit gröberer Granularität den Beginn des jeweiligen Zeitraums als Wert. Ein Gleichheitsvergleich wählt einen Zeitraum aus. Die strukturierte Angabe <code>range: [start, end]</code> schließt auf dieser Ebene beide Grenzen ein.</li>
+<li>Die Reihenfolge der Prädikate in WHERE ist eine Schreibkonvention und keine Einschränkung der Grammatik.</li>
+<li>Verwenden Sie die tatsächlichen Voraussetzungen des Makros und den aufgelösten Wert für <code>dim_dt</code>. Ein Zeitfilter kann den Kontext auch ohne sichtbares Zeitfeld zur Gruppierung bereitstellen.</li>
+</ul>
+<p><a id="37-measure-as-dimension"></a></p>
+<h3 id="measure-as-dimension">Kennzahl als Dimension <a class="section-link" aria-label="Link zum Abschnitt" href="#measure-as-dimension">#</a></h3>
+<p>Ein Feld vom Typ <strong>Kennzahl als Dimension</strong> gehört zur <strong>Abfragedimension</strong>. Sein Wert stammt aus der Auswertung einer Kennzahl oder eines skalaren Ausdrucks über eine solche Kennzahl, nicht aus einer physischen Spalte des Datensatzes. Das Feld behält seine Rolle als Abfragedimension (<a href="explanation--dimensions.de.html">Dimensionsrollen</a>) und bestimmt damit die <strong>Granularität des Abfrageergebnisses</strong> mit. Es legt die Identität des Datensatzes nicht fest.</p>
+<p>Erläuterung zu <a href="explanation--measure-as-dimension.de.html">Kennzahlen als Dimensionen</a>. Dieser Abschnitt beschreibt die vorgesehenen Regeln für die Verarbeitung in mehreren Durchläufen. Die <a href="explanation--measure-as-dimension.de.html">Erläuterung</a> nennt die geprüften Formen und die zu überprüfenden Klassifizierungsphasen. Der Compiler modelliert diese Abfragespalten getrennt von physischen Dimensionsspalten und gewöhnlichen Ausgabekennzahlen und verwendet dabei die reguläre Kennzahlberechnung.</p>
+<p><a id="371-syntax-on-columnsdimension"></a></p>
+<h4 id="syntax-on-columnsdimension">Syntax in <code>columns.dimension</code></h4>
+<p>Schreibweisen und Grenzen der Unterstützung (Abfrage im DML-Format):</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Beispiel</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Benannte Kennzahl mit explizitem <code>+d</code></td>
+<td><code>- first_purchase_month: '{first_purchase_month: {+d: store_id}}'</code></td>
+<td>Ergänzen Sie die Auswertungsdimension der Kennzahl um <code>store_id</code>, werten Sie die Kennzahl aus und verwenden Sie das Ergebnis als Feld der Abfragedimension.</td>
+</tr>
+<tr>
+<td>Kennzahlname ohne weitere Angaben</td>
+<td><code>- first_purchase_month</code></td>
+<td>Für eine aus einer Kennzahl abgeleitete Dimension ist diese Form ungültig. An der Verwendungsstelle muss ein vollständiger <code>+d</code>-Schlüssel explizit angegeben werden.</td>
+</tr>
+<tr>
+<td><code>{m: {+d: dim}}</code> in einem skalaren Ausdruck</td>
+<td><code>- payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'</code></td>
+<td>Werten Sie den skalaren Ausdruck einmal pro vollständigem Schlüssel aus und verwenden Sie das Ergebnis als Feld der Abfragedimension.</td>
+</tr>
+<tr>
+<td>Benannte skalare Kennzahl mit <code>+d</code> in der Abfrage</td>
+<td>Kennzahl mit <code>formula: 'cast({authorization_ts} as date)'</code>, danach <code>- payment_day: '{dt_payment_day: {+d: payment_id}}'</code></td>
+<td>Gleichwertige und bevorzugte Schreibweise, wenn der skalare Ausdruck wiederverwendbar ist</td>
+</tr>
+<tr>
+<td>Label mit <code>dimension:</code> / <code>rank</code> (ohne <code>+d</code>)</td>
+<td><code>- brand_bucket: 'iif({sales: {dimension: [brand], rank}} &lt; 5, {brand}, ''others'')'</code></td>
+<td>Formel der Abfragedimension, die die Auswertungsdimension mit <code>dimension:</code> ersetzt bzw. <code>rank</code> verwendet. Sie verwendet nicht das Muster zur Verknüpfung in mehreren Durchläufen mit <code>+d</code>.</td>
+</tr>
+</tbody></table>
+<p>Verwenden Sie zum Schreiben und Validieren dieser Bindungen vorzugsweise <code>type: query</code>. Die Angabe SQL im Kopf generierter Test-Fixtures belegt nicht, dass der entsprechende Roundtrip zwischen Model Query und SQL unterstützt wird.</p>
+<p><a id="372-evaluation-semantics-multi-pass"></a></p>
+<h4 id="evaluation-semantics-multi-pass">Auswertungssemantik bei mehreren Durchläufen</h4>
+<p>Sei <code>M</code> der Ausdruck für die Kennzahl als Dimension, <code>K</code> die Menge der darin explizit angegebenen <code>+d</code>-Felder und <code>Q</code> die Menge der gewöhnlichen Felder der Abfragedimension. Die Granularität für Auswertung und Verknüpfung ist <code>G = Q ∪ K</code>. Aus Kennzahlen abgeleitete Labels sind davon ausgeschlossen. Interne Aggregationsphasen definieren <code>K</code> nicht neu.</p>
+<ol>
+<li><strong>Auswertung auf feiner Granularität.</strong> Werten Sie jede als Dimension verwendete Kennzahl auf Ebene <code>G</code> aus. Werten Sie auch gewöhnliche Ausgabekennzahlen auf Ebene <code>G</code> aus. Behalten Sie dabei die Zustände oder Teilkennzahlen bei, die für die spätere Aggregation auf gröberer Ebene erforderlich sind.</li>
+<li><strong>Über den vollständigen Klassifizierungsschlüssel <code>G</code> verknüpfen.</strong> Die Klassifizierungsrelation muss pro vollständigem Schlüssel genau einen skalaren Wert enthalten. Wenn sie getrennt von den Kennzahlen vorliegt, die sie verwenden, muss sie vor der Gruppierung dieser Kennzahlen nach dem Klassifizierungswert verknüpft werden. Bei der Klassifizierung nach Filiale und Monat muss der Join sowohl die Filiale als auch den Monat einbeziehen. <code>+d: store_id</code> allein reicht nicht aus. Für eine Verknüpfung auf gröberer Ebene muss der vollständige Schlüssel in der verarbeitenden Relation verfügbar oder nachweislich daraus ableitbar sein. Eine Verknüpfung auf feinerer Ebene erfordert einen expliziten Drilldown und eine anschließende Aggregation auf gröberer Ebene. Die Semantik für NULL-Schlüssel und für die Menge der von der Abfrage erfassten Datensätze muss erhalten bleiben.</li>
+<li><strong>Auf die Granularität des Abfrageergebnisses aggregieren.</strong> Aggregieren Sie gewöhnliche Kennzahlen auf Ebene <code>{ measure-as-dimension fields } ∪ Q</code>. Felder aus <code>K</code> entfallen, sofern sie nicht auch in <code>Q</code> enthalten sind. Lässt sich eine gewöhnliche Kennzahl nicht sicher so umschreiben, dass sie zunächst auf Ebene <code>G</code> ausgewertet und dann wie beschrieben aggregiert wird, schlägt die Kompilierung fehl.</li>
+</ol>
+<p>Das Verfahren beruht auf demselben Ausführungsprinzip wie die Aggregation über mehrere Ebenen mit <code>+d</code> (<a href="#33-multi-level-aggregation-via-d">Mehrstufige Aggregation</a>). In diesem Fall wird das auf der feineren Ebene berechnete Kennzahlergebnis zu einem <strong>Feld der Abfragedimension</strong> und dient nicht nur als Zwischeneingabe für eine zusammengesetzte Formel.</p>
+<pre><code class="language-text">source
+  → evaluate measure-as-dimension + other measures at finer evaluation dimension (+d)
+  → attach on the complete classification key
+  → roll up to query result grain (GROUP BY measure-as-dimension field[, ordinary query-dimension fields])
+</code></pre>
+<p><a id="373-d-compatibility"></a></p>
+<h4 id="d-compatibility">Kompatibilität von <code>+d</code></h4>
+<p>Geben Sie Entitätsschlüssel sowohl für die Klassifizierung als auch für die beteiligten Drilldown-Referenzen auf derselben Ebene explizit an. Die Kompatibilität richtet sich nach den aufgelösten Auswertungsdimensionen und ihrem Geltungsbereich und hängt nicht allein davon ab, wie die Argumente von <code>+d</code> geschrieben sind.</p>
+<p><strong>Gemeinsames <code>+d</code>.</strong> Jede als Dimension verwendete Kennzahl erfordert einen expliziten vollständigen Schlüssel. Mehrere unabhängige Labels sind nur zulässig, wenn ihre Schlüssel dieselben Felder enthalten. Die Reihenfolge der Felder in der Schlüsseldeklaration spielt dabei keine Rolle.</p>
+<p><strong>Referenzen ohne Schlüsselangabe.</strong> Leiten Sie die Entitätsgranularität nicht aus anderen Kennzahlen auf derselben Ebene ab. Geben Sie einen Entitätsschlüssel explizit mit <code>+d</code> oder <code>dimension:</code> an. Eine Kennzahlbindung ohne Schlüssel wird abgelehnt. Beide Formen lassen sich für die geprüfte Klassifizierung nach Kundenanzahl kompilieren. Das ist kein Nachweis für alle Klassifizierungsformen. Das Hinzufügen oder Entfernen einer Ausgabekennzahl darf die Zuordnung zu den Klassen nicht ändern.</p>
+<p><strong>Unterschiedliche Schlüssel.</strong> Unabhängige Labels mit unterschiedlichen Schlüsseln werden abgelehnt. Ein Label darf nicht von einem anderen Label derselben Abfrage abhängen. Die allgemeine Verknüpfung verschiedener Entitätsgranularitäten erfordert eine separat modellierte Relation.</p>
+<p><a id="374-constraints"></a></p>
+<h4 id="constraints">Einschränkungen</h4>
+<ol>
+<li><p>Die Klassifizierung erfordert explizite Entitätsschlüssel (vorzugsweise <code>+d</code>, auch <code>dimension:</code> wird erkannt). Die Kompatibilität mehrerer Labels und die sichere Aggregation auf gröberer Ebene sind Anforderungen der Spezifikation und keine pauschalen Garantien für eine veröffentlichte Version. Validieren Sie die konkrete Abfrage.</p>
+</li>
+<li><p>Kombinationen von Zeitraummodifikatoren sind nicht allgemein verifiziert. test_82d testet eine Klassifizierung mit einem gleitenden Jahreszeitraum über <code>mat</code>. Das belegt nicht die Korrektheit von <code>yoy</code> oder <code>pop</code>. Verwenden Sie nur Kombinationen, bei denen die Zeitbereiche für Klassifizierung und Bericht explizit angegeben sind und die Ergebnisse überprüft wurden.</p>
+</li>
+<li><p>Skalare Transformationen können direkt angegeben oder benannt werden. Sie müssen pro vollständigem Klassifizierungsschlüssel genau einen eindeutig bestimmten Wert liefern.</p>
+</li>
+<li><p>Die Positivlisten unter <code>dimensions:</code> für Kennzahlen und die Regeln zur sicheren Granularität (<a href="#35-grain-safety-enforcement-existing-compiler-behavior">Sicherheit der Granularität</a>) gelten für jeden Kennzahlverweis im Ausdruck, der eine Kennzahl als Dimension verwendet, jeweils auf der Granularität, auf der der Verweis tatsächlich ausgewertet wird.</p>
+</li>
+<li><p>Der automatische Join über mehrere Datensätze hinweg (<a href="#34-cross-dataset-auto-join">Kombination mehrerer Datensätze</a>) aggregiert die Kennzahlen jedes Datensatzes weiterhin auf eine gemeinsame Abfragegranularität. Ein Feld, das eine Kennzahl als Dimension verwendet, gehört nach dem Anfügen und der Aggregation auf eine gröbere Ebene zu dieser Abfragegranularität.</p>
+</li>
+<li><p>Gruppieren Sie nach demselben endgültigen Klassifizierungswert, der angezeigt wird. Für jeden vollständigen Abfrageschlüssel ist genau eine Zeile erforderlich, auch für Schlüssel mit NULL. Eine Klassifizierung erlaubt weder das Summieren nicht additiver Kennzahlen noch das Erfinden inaktiver Entitäten. Bei Verhältniszahlen bleibt die Semantik ihrer Bestandteile erhalten. Ob die Werte pro Entität explizit in einer äußeren Aggregation zusammengefasst werden, entscheidet der Autor der Abfrage.</p>
+</li>
+<li><p>Filter der Datenquelle werden nach den bestehenden Modifikatorregeln angewendet. <code>-d</code> ändert die Granularität, ohne Filter zu entfernen. Mit <code>-f</code> und <code>-df</code> lässt sich der Geltungsbereich wie bisher steuern. Ein Prädikat auf dem Klassifizierungslabel wird nach der Klassifizierung angewendet, ein Schwellenwert für einen aggregierten Berichtswert nach der Aggregation. Keines von beiden darf die Eingabedaten der zugehörigen Klassifizierung verändern. Klassifizierungen anhand der Historie bis zu einem Stichtag, eines rollierenden Zeitfensters oder der aktuellen Auswahl sind fachlich unterschiedlich definiert.</p>
+</li>
+</ol>
+<p><a id="375-example"></a></p>
+<h4 id="example">Beispiel</h4>
+<p><code>first_purchase_month</code> bezeichnet im folgenden Beispiel den ersten Monat im Auswertungsbereich mit <strong>positivem monatlichem Nettoumsatz</strong>. <code>purchase_span</code> wertet beide Endpunkte ausdrücklich auf Entitätsebene aus und wendet die abschließende Aggregation auf das Ergebnis dieser feineren Ebene an.</p>
+<pre><code class="language-yaml">first_purchase_month:
+    type: measure
+    formula: 'MINIF({dt_month}, {sales: {+d: dt_month}} &gt; 0)'
+
+report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
+        sales:
+        purchase_span: 'SUM(datediff(day, {first_buy: {+d: store_id}}, {last_buy: {+d: store_id}}))'
+</code></pre>
+<ul>
+<li>Granularität des Abfrageergebnisses: <code>[first_purchase_month]</code>.</li>
+<li>Die Auswertung auf der feineren Granularität erfolgt, indem <code>{+d: store_id}</code> sowohl auf die als Dimension verwendete Kennzahl als auch auf <code>purchase_span</code> angewendet wird.</li>
+<li>Das abschließende <code>GROUP BY</code> gruppiert nach <code>first_purchase_month</code> und lässt <code>store_id</code> weg.</li>
+</ul>
+<p><a id="44-modifier-schema-constraints"></a></p>
+<h2 id="modifier-schema-constraints">Schemaeinschränkungen für Modifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#modifier-schema-constraints">#</a></h2>
+<p>Gemäß <code>dmx_variable_schema.yaml</code> gelten für das Modifikatorobjekt folgende strukturelle Einschränkungen:</p>
+<ul>
+<li><strong>Varianten von <code>dim_dt</code></strong> dürfen pro Modifikatorobjekt höchstens einmal vorkommen. Das gilt für <code>dim_dt</code>, <code>dim_dt as date</code>, <code>dim_dt as month</code> und weitere Varianten zusammen.</li>
+<li><strong><code>+d</code> und <code>dimension</code></strong> schließen sich gegenseitig aus. Pro Modifikatorobjekt ist höchstens eines von beiden zulässig.</li>
+<li><strong><code>-d</code> und <code>dimension</code></strong> schließen sich gegenseitig aus. Pro Modifikatorobjekt ist höchstens eines von beiden zulässig.</li>
+<li><strong><code>+d</code> und <code>-d</code> / <code>-df</code></strong> dürfen nur gemeinsam vorkommen, wenn ihre <strong>Mengen von Dimensionsnamen keine gemeinsamen Elemente haben</strong>. So kann ein Feld zur Verfeinerung der Granularität hinzugefügt und ein anderes entfernt werden. <strong>Übereinstimmende Dimensionsnamen sind unzulässig</strong>. Siehe <a href="#45-modifier-composition">Kombinieren von Modifikatoren</a>.</li>
+<li>Mehrere Modifikatoren dürfen im selben Modifikatorobjekt vorkommen, sofern die oben genannte Regel für sich überschneidende Dimensionsnamen eingehalten wird. Beispiele finden Sie unter <a href="reference--modifiers.de.html#24-combining-modifiers">Modifikatoren kombinieren</a>.</li>
+</ul>
+<p><a id="45-modifier-composition"></a></p>
+<h2 id="modifier-composition">Kombinieren von Modifikatoren <a class="section-link" aria-label="Link zum Abschnitt" href="#modifier-composition">#</a></h2>
+<p>Behalten Sie die angegebene Reihenfolge der Modifikatoren bei. Mehrere Makros können Zwischenkennzahlen erzeugen. Bei Funktionen mit mehreren Auswertungspfaden können Zeitmakros stattdessen an jeden Zweig weitergegeben werden. Siehe <a href="reference--modifiers.de.html#25-modifier-stacking">Semantik aufeinanderfolgender Modifikatoren</a> und die dort beschriebenen Release-Prüfungen.</p>
+<p>Verwenden Sie pro Modifikator genau einen YAML-Schlüssel. Schreiben Sie <code>{+f: {a: 1, b: 2}}</code> und vermeiden Sie wiederholte <code>+f</code>-Schlüssel. <code>-df</code> entfernt sowohl Dimensionen als auch Filter.</p>
+<p><strong>Modifikatorkonflikte bei derselben Dimension</strong></p>
+<p>Die Sprachspezifikation verlangt einen Kompilierungsfehler, wenn sich in einem Modifikatorobjekt die Feldmenge von <code>+d</code> mit der Feldmenge von <code>-d</code> oder <code>-df</code> überschneidet. Der aktuelle Build setzt diese Anforderung in den geprüften Fällen nicht durch. Vereinfachen Sie den Ausdruck algebraisch <strong>nicht</strong> zu bloßem <code>{m}</code>. Schreiben Sie <strong>keinesfalls</strong> <code>{+d: x, -df: x}</code> stillschweigend in <code>{-f: x}</code> um. Wenn die Ausgabegranularität bereits <code>x</code> enthält, unterscheiden sich <code>-df</code> und <code>-f</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Unzulässig</th>
+<th>Begründung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{销量: {+d: 门店, -d: 门店}}</code></td>
+<td>Das Hinzufügen und Entfernen desselben Feldes lässt keine eindeutige implizite Auslegung zu. Eine Vereinfachung zu <code>{销量}</code> verdeckt Tippfehler und weicht von <code>AVG({销量: {+d: 门店}})</code> ab, das jede Filiale gleich gewichtet.</td>
+</tr>
+<tr>
+<td><code>{销量: {+d: 门店, -df: 门店}}</code></td>
+<td>Darf nicht in <code>{-f: 门店}</code> umgewandelt werden. Eine Änderung der Granularität hat eine andere Bedeutung als eine reine Filteränderung.</td>
+</tr>
+</tbody></table>
+<p>Für eine eindeutige Auslegung müssen Autoren eine der folgenden Formen schreiben: <code>{销量}</code> / <code>SUM({销量: {+d: 门店}})</code> / <code>{销量: {-d:…\|-df:…\|-f:…}}</code>.<br><strong>Unterschiedliche</strong> Dimensionen dürfen weiterhin gemeinsam vorkommen, zum Beispiel in <code>SUM({销量: {+d: 门店, -d: 品牌}})</code>.</p>
+<p>Der aktuell geprüfte Build akzeptiert die untersuchten Dimensionskonflikte für dasselbe Feld und wiederholt die regionalen Summen auf Kundenebene, bevor er sie addiert. Das ist eine bekannte Lücke in der Implementierung und keine zulässige Schreibweise. Geben Sie eine Auswertungsstufe explizit an und prüfen Sie das zugehörige SQL.</p>
+</main></body></html>

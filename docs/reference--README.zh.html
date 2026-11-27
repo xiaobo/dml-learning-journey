@@ -1,0 +1,59 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML 和 DMX 语言参考 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="有关概念和用法指南，请参阅文档索引；有关常见模式的完整示例，请参阅示例目录。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--README.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--README.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--README.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--README.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--README.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML 和 DMX 语言参考 · DML"><meta property="og:description" content="有关概念和用法指南，请参阅文档索引；有关常见模式的完整示例，请参阅示例目录。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--README.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--README.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--README.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--README.html">English</a></header><main><h1 id="dml-and-dmx-language-reference">DML 和 DMX 语言参考</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#language-definitions">语言定义</a></li><li><a href="#diagnostics-and-built-in-definitions">诊断与内置定义</a></li></ul></details>
+<p>有关概念和用法指南，请参阅<a href="docs.zh.html">文档索引</a>；有关常见模式的完整示例，请参阅<a href="reference--examples--README.zh.html">示例目录</a>。</p>
+<h2 id="language-definitions">语言定义 <a class="section-link" aria-label="本节链接" href="#language-definitions">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>主题</th>
+<th>参考文档</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>求值上下文、粒度兼容性和组合</td>
+<td><a href="reference--semantics.zh.html">求值语义</a></td>
+</tr>
+<tr>
+<td>数据集、列和元数据</td>
+<td><a href="reference--model-structure.zh.html">模型结构</a></td>
+</tr>
+<tr>
+<td>原子指标和复合指标、窗口与填充</td>
+<td><a href="reference--measures.zh.html">指标声明</a></td>
+</tr>
+<tr>
+<td>引用、按复合键或生效日期查找、函数和运行时变量</td>
+<td><a href="reference--expressions.zh.html">DMX 表达式</a></td>
+</tr>
+<tr>
+<td>时间、维度和筛选修饰符</td>
+<td><a href="reference--modifiers.zh.html">指标修饰符</a></td>
+</tr>
+<tr>
+<td><code>FROM</code>、<code>AGG</code>、筛选和分组</td>
+<td><a href="reference--model-query-sql.zh.html">Model Query SQL</a></td>
+</tr>
+<tr>
+<td><code>type: query</code>、列和筛选</td>
+<td><a href="reference--query-yaml.zh.html">YAML 查询声明</a></td>
+</tr>
+<tr>
+<td>存储的分组键、属性和指标</td>
+<td><a href="reference--materialization.zh.html">物化声明</a></td>
+</tr>
+<tr>
+<td>包含、前向引用和名称</td>
+<td><a href="reference--model-composition.zh.html">模型组合</a></td>
+</tr>
+<tr>
+<td>连接中的相等比较、NULL 键以及哪些行会纳入结果</td>
+<td><a href="reference--join-null-equality.zh.html">连接中的 NULL 相等比较</a></td>
+</tr>
+</tbody></table>
+<h2 id="diagnostics-and-built-in-definitions">诊断与内置定义 <a class="section-link" aria-label="本节链接" href="#diagnostics-and-built-in-definitions">#</a></h2>
+<ul>
+<li><a href="reference--error-codes.zh.html">错误代码</a>——代码含义和建议的修复方法。</li>
+<li><a href="reference--troubleshooting--README.zh.html">故障排查</a>——问题的症状及常见易错点的稳定标识符。</li>
+<li><a href="02-syntax--system_macros.dml">系统宏</a>——示例中使用的内置宏定义。</li>
+</ul>
+<p>要查看命令行选项，请使用已安装的可执行文件运行 <code>dmlc --help</code> 和 <code>dmlc --advanced-help</code>，并查看输出。</p>
+</main></body></html>

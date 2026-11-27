@@ -1,0 +1,192 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>モデル構造 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、モデルレベルのフィールド、データセット、列マクロ、共通メタデータについて説明します。インクルードの可視性と名前解決については、モデルの構成を参照してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="モデル構造 · DML"><meta property="og:description" content="このページでは、モデルレベルのフィールド、データセット、列マクロ、共通メタデータについて説明します。インクルードの可視性と名前解決については、モデルの構成を参照してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--model-structure.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--model-structure.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--model-structure.html">English</a> <a lang="zh" hreflang="zh" href="reference--model-structure.zh.html">中文</a></header><main><h1 id="model-structure">モデル構造</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#model-level-fields">モデルレベルのフィールド</a></li><li><a href="#sql-dialect">SQL方言</a></li><li><a href="#dataset-definition-type-dataset">データセットの定義（<code>type: dataset</code>）</a></li><li><a href="#column-macros">列マクロ</a></li><li><a href="#common-metadata-fields">共通のメタデータフィールド</a></li><li><a href="#column-metadata-is-not-a-sql-type-declaration">列のメタデータは SQL の型宣言ではない</a></li><li><a href="#system-calendar">システムカレンダー</a></li></ul></details>
+<p>このページでは、モデルレベルのフィールド、データセット、列マクロ、共通メタデータについて説明します。インクルードの可視性と名前解決については、<a href="reference--model-composition.ja.html">モデルの構成</a>を参照してください。</p>
+<p><a id="51-model-level-fields"></a></p>
+<h2 id="model-level-fields">モデルレベルのフィールド <a class="section-link" aria-label="この節へのリンク" href="#model-level-fields">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>フィールド</th>
+<th>種類</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>includes</code></td>
+<td><code>string[]</code></td>
+<td>マージする他の<code>.dml</code>ファイルへのパス（各ファイルのシンボルの和集合を取ります）</td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td><code>string</code></td>
+<td>対象のSQL方言。明示的に設定してください。認識される名前、既定値、実行の対応範囲については、<a href="#sql-dialect">SQL方言</a>を参照してください。</td>
+</tr>
+<tr>
+<td><code>column-macros</code></td>
+<td><code>object</code></td>
+<td>複数のデータセットで共有する列定義</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td><code>object</code> | <code>string</code></td>
+<td>データセット、指標、dt-macro、fn-macro、materialize、またはクエリ</td>
+</tr>
+</tbody></table>
+<p><strong>オブジェクト名の規則</strong>: 予約キーワード（<code>includes</code>、<code>column-macros</code>、<code>datasets</code>、<code>measures</code>、<code>columns</code>、<code>dimensions[dt]</code>、<code>dt-macros</code>、<code>fn-macros</code>、<code>materializes</code>、<code>queries</code>、<code>dialects</code>およびそれらの単数形）を除く任意の文字列です。</p>
+<p><strong>指標定義の簡略形</strong>: 最上位のマッピングの値に文字列だけを指定すると、指標の式を表す省略記法として扱われます。</p>
+<pre><code class="language-yaml">sales: SUM({amount})
+# equivalent to:
+sales:
+    type: measure
+    formula: SUM({amount})
+</code></pre>
+<h3 id="sql-dialect">SQL方言 <a class="section-link" aria-label="この節へのリンク" href="#sql-dialect">#</a></h3>
+<p>確認に使用したコンパイラは、<code>adb_mysql</code>、<code>duckdb</code>、<code>mssql</code>、<code>mysql</code>、<code>postgres</code>、<code>sqlite</code>を認識します。現行のコンパイラでは、確認したモデルに方言の指定がないとコンパイルが拒否されます。対象の方言を明示的に指定してください。DuckDB接続を設定しても、モデルの対象方言は変わりません。DuckDBを対象とする場合は、<code>dialect: duckdb</code>を指定してください。</p>
+<p>この確認では、BigQuery、Snowflake、Databricks、ClickHouse は対象として認識されませんでした。認識されないエンジンが必要な場合は、そのデプロイでdmlcを使用する前に、この要件を解決する必要があります。</p>
+<p>方言の認識と、実行を確認した範囲は別です。実行可能な例では主にDuckDBの結果を検証しています。SQL Server 向けのコンパイルについては、概要に別途記載しています。これらの確認で、6 つすべてのエンジンが同じ機能を備えていることまで確認できるわけではありません。生成されたSQLを検証し、使用予定のデータベースで結果を比較してください。生成されたSQLでは、複数のステートメント、中間リレーション、カレンダーオブジェクトが必要になる場合があります。</p>
+<p><a id="52-dataset-definition-type-dataset"></a></p>
+<h2 id="dataset-definition-type-dataset">データセットの定義（<code>type: dataset</code>） <a class="section-link" aria-label="この節へのリンク" href="#dataset-definition-type-dataset">#</a></h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: dataset
+    table: &lt;table_name&gt;          # required (or sql:)
+    # sql: &lt;SELECT ...&gt;          # alternative to table: — derived dataset
+    dimension: [col1, col2]      # dataset grain dimensions
+    materialize: &lt;name&gt;          # optional, declare a materialize table for this dataset
+    # or:
+    # materialize:
+    #     name: &lt;name&gt;
+    #     parameters:
+    #         &lt;param&gt;: &lt;value&gt;
+    columns:                     # required
+        col1:                    # direct column (pass-through)
+        col2: expr               # calculated column (inline expression)
+        col3:                    # full column definition
+            abbr: &lt;short&gt;        # abbreviation for display
+            description: &lt;text&gt;
+            formula: expr        # calculated column (block form)
+            # source: expr       # alternative to formula: data-source verification formula
+            prerequisite: &lt;expr&gt; # column-level grain constraint
+    dimensions[dt]:              # optional explicit time metadata; coarser standard dt_* fields may be system-derived
+        dt_date: date
+        dt_month: month
+    measures:                    # atomic measures (inherit enclosing dataset; no dataset:)
+        &lt;measure_name&gt;: &lt;formula or full definition&gt;
+            abbr: &lt;short&gt;
+            description: &lt;text&gt;
+</code></pre>
+<p><strong>制約</strong>:</p>
+<ul>
+<li><code>table:</code>と<code>sql:</code>のどちらか一方だけを指定します（両方は指定できません）。</li>
+<li><strong><code>table:</code>によるテーブルの所有は排他的です。</strong> <code>table: policy</code>は、データセット<code>Policy</code>がその物理テーブルを所有することを意味します。他のデータセットでは、<code>sql:</code>内の<code>FROM</code>や<code>JOIN</code>で物理テーブル名を指定してはいけません。<code>from {Policy}</code>または<code>join {Policy}</code>と記述するか（コンパイラがデータセットのクエリ名に置き換えます）、<code>pk(...).{Policy}.Col</code>で属性を参照してその結合を省略してください。所有権を設定せずにテーブルを共有するには、<code>table:</code>の代わりに<code>sql: select * from &lt;table&gt;</code>を使用してください。</li>
+<li><strong>ファクトテーブルのパターン:</strong> ディメンションデータセット（<code>Claim</code>、<code>Policy</code>）では<code>table:</code>を使用します。これらの属性だけが必要なファクトデータセットでは、所有者のいないソーステーブルをそのまま使えます。所有者のいるテーブルとの結合を<code>sql:</code>に記述する代わりに、<code>pk()</code>で属性を参照できます。</li>
+<li><strong>可視性:</strong> 確認したビルドでは、同じファイル内で後に定義されるデータセット、指標、列への参照がサポートされています。インクルードされたファイルは、自身の定義または自身のインクルードから名前を解決する必要があり、親ファイルからは解決できません。<a href="reference--model-composition.ja.html">モデルの構成</a>を参照してください。</li>
+<li>ファイルを直接コンパイルする場合は、拡張子を除いたファイル名をクエリ名にします（<code>report.dml</code> → <code>report</code>）。</li>
+<li><code>allows:</code>は、使用できるマテリアライズの対象を指定します（<code>ALL</code>、<code>NONE</code>、または明示的に指定した名前）。指標のディメンションは上書きしません。</li>
+<li>例に示す形式の指標クエリでは、<code>columns:</code>が必須です。</li>
+<li><code>dimensions[dt]</code>に指定できる列挙値は、<code>year</code>、<code>quarter</code>、<code>month</code>、<code>week</code>、<code>date</code>、<code>hour</code>です。</li>
+<li><code>materialize:</code>には、名前をスカラー値として指定するか、必須の<code>name:</code>と任意の<code>parameters:</code>を持つオブジェクトを指定できます。どちらの形式も、データセット内で同じマテリアライズを識別します。</li>
+</ul>
+<p>データセットのSQLでは、指標を評価する前に、サポートされている結合、和集合、サブクエリでデータを準備できます。<code>UNION ALL</code>は重複行も保持します。各入力内で行を一意に識別できるキーでも、入力をまとめた結果のすべての行を一意に識別できるとは限りません。各分岐の元のキーが一意のままであると仮定せず、入力をまとめたリレーションで行を識別するキーを定義してください。確認した例では、<code>{DATASET}</code>参照を通じて、列だけを定義したソースデータセットを使用します。現行の実行プログラムは、利用できない中間テーブルを必要とせずに、これらの派生リレーションを検証します。派生リレーションのキーを構成するすべての要素を確認してください。キーが一意なら検証に合格します。キーが重複している場合、検証レポートは<code>data.issues[].kind: duplicate_key</code>で違反を示します。不足しているキー要素を追加すると、検証に合格します。物理ソースが存在しない場合は<code>EXECUTION_ERROR</code>となり、キーの重複としては報告されません。業務上の結果は、検証とは別に確認してください。</p>
+<p><strong>列定義の形式</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>記述形式</th>
+<th>YAML</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>直接参照</td>
+<td><code>amount:</code>（null）</td>
+<td>元のテーブルの列をそのまま使用</td>
+</tr>
+<tr>
+<td>計算（インライン）</td>
+<td><code>net: amount - discount</code>（文字列）</td>
+<td>式から導出される列</td>
+</tr>
+<tr>
+<td>計算（ブロック）</td>
+<td><code>net: { formula: amount - discount }</code></td>
+<td>メタデータ付きの派生列</td>
+</tr>
+<tr>
+<td>検証式付き</td>
+<td><code>net: { source: amount - discount }</code></td>
+<td>データソースを検証する式を宣言します。コンパイルだけでは、ソースの値が等しいことは確認できません。</td>
+</tr>
+</tbody></table>
+<p><strong>式における波かっこによる名前のバインド</strong>:</p>
+<table>
+<thead>
+<tr>
+<th><code>formula:</code>での記述形式</th>
+<th>バインド先</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>amount</code> 単独</td>
+<td><strong>物理</strong>（ネイティブ）テーブル列。コンパイラは名前をそのままSQLに渡します。</td>
+<td>両方の列が直接参照の場合の<code>net: amount - discount</code></td>
+</tr>
+<tr>
+<td><code>{calc_amt}</code></td>
+<td><strong>計算</strong>列（または指標や列マクロ）。DMXが定義を展開します。</td>
+<td><code>doubled: '{calc_amt} * 2'</code></td>
+</tr>
+</tbody></table>
+<p>計算列の式に波かっこなしで名前を書くと、その識別子はネイティブのSQL列として扱われます。SELECT内のエイリアスの順序によっては動作しているように見えますが、計算列の定義は<strong>展開されません</strong>。式でその定義を再利用するには、名前を波かっこで囲みます。</p>
+<p>依存先を先に定義するのは、読みやすさのための慣例です。確認したリリースでは、同じファイル内で後に定義される対象を<code>pk()</code>で参照しても、コンパイルに成功しました。名前を解決できない場合は、インクルードの不足、名前の誤記、インクルードの可視性ルールへの違反が考えられます。<a href="reference--model-composition.ja.html">モデルの構成</a>を参照してください。</p>
+<p><a id="56-column-macros"></a></p>
+<h2 id="column-macros">列マクロ <a class="section-link" aria-label="この節へのリンク" href="#column-macros">#</a></h2>
+<p>列マクロは、複数のデータセットで共通して使用する列を定義します。</p>
+<pre><code class="language-yaml">column-macros:
+    datasets: [tx, orders]       # scoped datasets
+    columns:                     # shared column definitions
+        region: '{stores}.region'  # cross-dataset lookup
+    dimensions[dt]:
+        dt_month: month
+
+    # OR per-dataset scope:
+    &lt;dataset_name&gt;:
+        &lt;col&gt;: &lt;formula&gt;
+</code></pre>
+<p><a id="57-common-metadata-fields"></a></p>
+<h2 id="common-metadata-fields">共通のメタデータフィールド <a class="section-link" aria-label="この節へのリンク" href="#common-metadata-fields">#</a></h2>
+<p>サポートされるメタデータはオブジェクトの種類によって異なります。対応するスキーマ定義を参照してください。</p>
+<table>
+<thead>
+<tr>
+<th>フィールド</th>
+<th>種類</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>abbr</code></td>
+<td><code>string</code></td>
+<td>SQL で安全に使える内部専用の短縮名です。一時テーブル、結合、<code>materialize</code> の出力で使用します。最終的なクエリ結果の列エイリアスにはこの短縮名は一切使われません。列エイリアスには、業務上の名前を表すキーか、<code>AS</code> で明示したエイリアスが使われます。</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>string</code></td>
+<td>人が読んで理解できる説明</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>自由に指定できるタグ</td>
+</tr>
+<tr>
+<td><code>prerequisite</code></td>
+<td><code>string</code>（数式）</td>
+<td>行や集計値を定義できるレベル（粒度）の制約（メジャー、列、dt マクロ、fn マクロ）</td>
+</tr>
+</tbody></table>
+<h2 id="column-metadata-is-not-a-sql-type-declaration">列のメタデータは SQL の型宣言ではない <a class="section-link" aria-label="この節へのリンク" href="#column-metadata-is-not-a-sql-type-declaration">#</a></h2>
+<p>列のプロパティは DML スキーマに従う必要があります。プロパティは対象の列の下に記述してください。<code>columns:</code> 内で対象の列と同じ階層に <code>type: text</code> を記述すると、<code>type</code> という名前の別の列が定義されます。そのモデルが受理されても、対象の列の型については何も判断できません。確認したビルドでは、列の下に記述した <code>type: text</code> と <code>type: banana</code> は、どちらも未対応のプロパティとして拒否されます。これはメタデータスキーマの検証であり、式の静的型チェックが完全に行われることを示すものではありません。物理列の型はデータベースで定義し、型変換が必要な場合は、サポートされている式やキャストを使用してください。最上位の <code>type: dataset</code> と <code>type: measure</code> は DML オブジェクトの種類を示します。SQL の値の型を宣言するものではありません。</p>
+<h2 id="system-calendar">システムカレンダー <a class="section-link" aria-label="この節へのリンク" href="#system-calendar">#</a></h2>
+<p>一部の接続では、データベースに接続する検証またはクエリの実行でその接続を初めて使用したときに、<code>DML_CALENDAR</code> が初期化されます。クエリに時間修飾子がない場合も同様です。試験に使用した DuckDB 接続では、2016 から 2036 までの両端を含む期間について、1 日 1 行のデータが初期化されました（7,671 行）。初期化に使うアカウントには、対象のスキーマでテーブルを作成し、データを格納する権限が必要です。以降のクエリには、そのテーブルの読み取り権限が必要です。</p>
+<p>実行時アカウントでテーブルを作成できない場合は、そのアカウントで検証を実行する前に、データベース管理者に同じ dmlc ビルド、接続の SQL 方言、スキーマを使ってカレンダーを初期化してもらってください。カレンダーがレポート期間と比較期間をカバーしていることを確認してください。</p>
+</main></body></html>

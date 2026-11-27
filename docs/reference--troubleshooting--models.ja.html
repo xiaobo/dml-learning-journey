@@ -1,0 +1,71 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>モデル定義でよくある問題 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="ここでは、定義、名前、ルックアップ、メタデータを扱います。宣言の構文については、モデル構造と指標の宣言を参照してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="モデル定義でよくある問題 · DML"><meta property="og:description" content="ここでは、定義、名前、ルックアップ、メタデータを扱います。宣言の構文については、モデル構造と指標の宣言を参照してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--models.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--troubleshooting--models.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--troubleshooting--models.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--models.zh.html">中文</a></header><main><h1 id="model-definition-pitfalls">モデル定義でよくある問題</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#p21-agg-in-measure-formulas">P21. 指標の式での AGG() の使用</a></li><li><a href="#p22-cross-dataset-references-without-lookup">P22. ルックアップを使わないデータセット間の参照</a></li><li><a href="#p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">P22b. <code>table:</code> でデータセットに割り当てられた物理テーブルを、別のデータセットの <code>sql:</code> で結合する</a></li><li><a href="#p23-missing-dataset-on-atomic-measures">P23. アトミック指標での <code>dataset:</code> の指定漏れ</a></li><li><a href="#p24-overly-specific-measure-names">P24. 用途を絞りすぎた指標名</a></li><li><a href="#p25-not-documenting-edge-cases">P25. 例外的なケースを文書化していない</a></li><li><a href="#p27-mixing-dimension-constrained-measures-with-incompatible-queries">P27. ディメンションに制約のある指標を互換性のないクエリで使用する</a></li><li><a href="#p28-using-d-when-group-by-suffices">P28. <code>GROUP BY</code> で十分な場合に <code>+d</code> を使用する</a></li><li><a href="#p28b-null-contagion-when-a-joined-row-is-missing">P28b. 結合する行がない場合の NULL の伝播</a></li><li><a href="#p28c-null-grouping-keys-in-cross-dataset-composition">P28c. データセットをまたいで指標を組み合わせる場合の NULL のグループ化キー</a></li><li><a href="#category-time-handling">カテゴリ：時間の扱い</a></li><li><a href="#p37-modifiers-on-columns">P37. 列に対する修飾子</a></li><li><a href="#p38-unquoted-yaml-formulas">P38. YAML の式を引用符で囲んでいない</a></li><li><a href="#p39-dataset-on-composite-measures">P39. 複合指標での <code>dataset:</code> の指定</a></li><li><a href="#p40-measure-cannot-be-redefined--duplicate-formula">P40. 指標の再定義エラーまたは式の重複</a></li><li><a href="#p41-dml--syntax-in-model-query-sql">P41. モデルクエリの SQL での DML の <code>{...}</code> 構文</a></li><li><a href="#p42-bare-name-vs-col-inside-dml-formulas">P42. <code>.dml</code> の数式での、波かっこなしの列名と <code>{col}</code> の違い</a></li><li><a href="#模型排错">モデルのトラブルシューティング</a></li></ul></details>
+<p>ここでは、定義、名前、ルックアップ、メタデータを扱います。宣言の構文については、<a href="reference--model-structure.ja.html">モデル構造</a>と<a href="reference--measures.ja.html">指標の宣言</a>を参照してください。</p>
+<p><a id="p21"></a></p>
+<h2 id="p21-agg-in-measure-formulas">P21. 指標の式での AGG() の使用 <a class="section-link" aria-label="この節へのリンク" href="#p21-agg-in-measure-formulas">#</a></h2>
+<p><strong>誤り</strong>: <code>.dml</code> に <code>sales: AGG({amount})</code> を記述する。<strong>修正</strong>: <code>sales: SUM({amount})</code>。<code>.dml</code> では SQL の集約関数を使用します。</p>
+<p><a id="p22"></a></p>
+<h2 id="p22-cross-dataset-references-without-lookup">P22. ルックアップを使わないデータセット間の参照 <a class="section-link" aria-label="この節へのリンク" href="#p22-cross-dataset-references-without-lookup">#</a></h2>
+<p><strong>誤り</strong>: データセットをまたいで <code>profit: SUM({sales.amount} - {costs.amount})</code> を使用する。<strong>修正</strong>: <code>{DATASET}.column</code> または <code>pk(...)</code> によるルックアップを使った列マクロを使用します。</p>
+<p><a id="p22b"></a></p>
+<h2 id="p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">P22b. <code>table:</code> でデータセットに割り当てられた物理テーブルを、別のデータセットの <code>sql:</code> で結合する <a class="section-link" aria-label="この節へのリンク" href="#p22b-joining-a-table-owned-physical-table-in-another-dataset39s-sql">#</a></h2>
+<p><strong>誤り</strong>: <code>Policy</code> に <code>table: policy</code> があり、別のデータセットの <code>sql:</code> で <code>from policy</code> または <code>join policy</code> を使用する。<strong>修正</strong>: 物理テーブルではなく、<code>from {Policy}</code> または <code>join {Policy}</code> でデータセットを参照します。SQL の結合を使わずに属性を参照するには、<code>pk(...).{Policy}.Col</code> を使用します。<code>sql:</code> 内の <code>{Policy}</code> はテーブルソースの置換に使われ、列式ではありません。コンパイラがこれをデータセットのクエリ名に置き換えます。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセット定義（<code>type: dataset</code>）</a>を参照してください。</p>
+<p><a id="p23"></a></p>
+<h2 id="p23-missing-dataset-on-atomic-measures">P23. アトミック指標での <code>dataset:</code> の指定漏れ <a class="section-link" aria-label="この節へのリンク" href="#p23-missing-dataset-on-atomic-measures">#</a></h2>
+<p><strong>誤り</strong>: <code>sales: type: measure, formula: SUM({amount})</code>。データセットが指定されていません。<strong>修正</strong>: <code>sales: type: measure, dataset: transactions, formula: SUM({amount})</code></p>
+<p><a id="p24"></a></p>
+<h2 id="p24-overly-specific-measure-names">P24. 用途を絞りすぎた指標名 <a class="section-link" aria-label="この節へのリンク" href="#p24-overly-specific-measure-names">#</a></h2>
+<p><strong>誤り</strong>: <code>sales_q1_2024_north</code>、<code>sales_john_doe</code>。<strong>修正</strong>: 汎用的な指標とクエリフィルターを組み合わせます。</p>
+<p><a id="p25"></a></p>
+<h2 id="p25-not-documenting-edge-cases">P25. 例外的なケースを文書化していない <a class="section-link" aria-label="この節へのリンク" href="#p25-not-documenting-edge-cases">#</a></h2>
+<p><strong>誤り</strong>: 指標の説明に「返品を除外する」または「ゼロを含む」と明記していない。<strong>修正</strong>: 挙動が自明でない場合は、必ず <code>description:</code> を追加します。データセットのディメンション、各行の意味、適用範囲を示すフラグ、誤解を招く名前を文書化します。<a href="how-to--write-model-metadata.ja.html">モデルのメタデータを記述する</a>を参照してください。</p>
+<p><a id="p27"></a></p>
+<h2 id="p27-mixing-dimension-constrained-measures-with-incompatible-queries">P27. ディメンションに制約のある指標を互換性のないクエリで使用する <a class="section-link" aria-label="この節へのリンク" href="#p27-mixing-dimension-constrained-measures-with-incompatible-queries">#</a></h2>
+<p><strong>誤り</strong>: クエリのディメンションが <code>[dt_month]</code> のクエリで、<code>sales_by_product</code>（許可されているディメンションは <code>[product]</code>）と <code>total_sales</code> を選択する。<strong>修正</strong>: すべての指標でクエリのディメンションが許可されていることと、各指標の行が定義される粒度に互換性があることを確認します。または、クエリを分けます。</p>
+<p><a id="p28"></a></p>
+<h2 id="p28-using-d-when-group-by-suffices">P28. <code>GROUP BY</code> で十分な場合に <code>+d</code> を使用する <a class="section-link" aria-label="この節へのリンク" href="#p28-using-d-when-group-by-suffices">#</a></h2>
+<p><strong>誤り</strong>: <code>sales_by_region: SUM({sales: {+d: region}})</code> を作成する。<strong>修正</strong>: <code>sales: SUM({amount})</code> を定義し、クエリ <code>SELECT region, AGG(sales) FROM MODEL GROUP BY region</code> を使用します。</p>
+<p><a id="p28b"></a></p>
+<h2 id="p28b-null-contagion-when-a-joined-row-is-missing">P28b. 結合する行がない場合の NULL の伝播 <a class="section-link" aria-label="この節へのリンク" href="#p28b-null-contagion-when-a-joined-row-is-missing">#</a></h2>
+<p><strong>誤り</strong>: <code>profit: '{revenue} - {costs}'</code>。対象範囲の行がどちらか一方でも欠けている場合（FOJ または欠けのある dt）、その側の入力は NULL になり、差も NULL になります。</p>
+<p><strong>修正：行がない場合は既定値で補完する</strong>（<a href="reference--measures.ja.html#fill-default-when-row-missing">欠落行の補完</a>）:</p>
+<ol>
+<li><strong>補完を有効にする</strong>には、欠けのある入力の最外層で <code>isnull</code>、<code>ifnull</code>、または <code>coalesce(公式, 字面量)</code> を使用します。</li>
+</ol>
+<pre><code class="language-yaml">revenue: 'isnull(SUM({amount}), 0)'   # or wrap the existing measure formula outermost
+costs: 'isnull(SUM({cost}), 0)'
+profit: '{revenue} - {costs}'         # use sites of revenue/costs → 0
+</code></pre>
+<ol start="2">
+<li>その粒度で対応する行がない場合でも、<strong>結果列</strong>自体を NULL にしてはいけないなら、結果に対して補完を有効にします。</li>
+</ol>
+<pre><code class="language-yaml">profit: 'isnull({revenue} - {costs}, 0)'
+</code></pre>
+<p><strong>不十分な指定、または補完が有効にならない指定:</strong> <code>isnull({a}, {b})</code>、<code>coalesce(a, b, 0)</code>、単独の <code>{m: pp}</code>、あるいは無関係な外側の複合指標が自動的に <code>isnull</code> で囲まれることを前提とする指定。補完が<strong>すでに有効</strong>な依存指標を複合指標に組み込むと、その依存指標が欠けのある FOJ で使われる箇所では、引き続き補完式が展開されます。<a href="reference--measures.ja.html#fill-default-when-row-missing"><code>measures.md</code> 既定値で補完する</a>を参照してください。</p>
+<p><a id="p28c"></a></p>
+<p><a id="p28c-null-safe-on-on-composition-foj-key-union"></a></p>
+<h2 id="p28c-null-grouping-keys-in-cross-dataset-composition">P28c. データセットをまたいで指標を組み合わせる場合の NULL のグループ化キー <a class="section-link" aria-label="この節へのリンク" href="#p28c-null-grouping-keys-in-cross-dataset-composition">#</a></h2>
+<p><strong>症状。</strong> レポートに、地域が NULL で、複数のソースの指標を含む行が 1 行表示されます。この行は、複数のソースに共通するレポート上のグループを表します。複合キーの場合は、ほかのすべてのディメンションも一致する必要があります。</p>
+<p><strong>確認。</strong> グループ化キーを全項目にわたって比較し、生成された述語を確認します。2026年11月19日の変更を含むビルドでは、この照合に NULL セーフな等価比較を使用します。以前のビルドでは、NULL のキーが一致しないことがあります。主ソースのグループだけを残すには、主ソースに行が存在することを示す、補完していない指標で絞り込みます。<a href="reference--join-null-equality.ja.html">結合時の NULL の等価比較</a>を参照してください。</p>
+<hr>
+<h2 id="category-time-handling">カテゴリ：時間の扱い <a class="section-link" aria-label="この節へのリンク" href="#category-time-handling">#</a></h2>
+<p><a id="p37"></a></p>
+<h2 id="p37-modifiers-on-columns">P37. 列に対する修飾子 <a class="section-link" aria-label="この節へのリンク" href="#p37-modifiers-on-columns">#</a></h2>
+<p><strong>誤り</strong>: 式の中で <code>{customer_id: {+d: customer_id}}</code> を使用する。<strong>修正</strong>: 評価対象の指標にドリルダウンを指定します。例: <code>{sales: {+d: customer_id}}</code>。入力用の <code>+f</code> など、ほかの修飾子には列に指定できる形式もあります。すべての列修飾子が禁止されているわけではありません。</p>
+<p><a id="p38"></a></p>
+<h2 id="p38-unquoted-yaml-formulas">P38. YAML の式を引用符で囲んでいない <a class="section-link" aria-label="この節へのリンク" href="#p38-unquoted-yaml-formulas">#</a></h2>
+<p><strong>誤り</strong>: 値に <code>:</code>、<code>{</code>、または <code>-</code> が含まれているときに、<code>formula: SUMIF({sales: {+d: dt_month}}, {dt_month} = {first_month})</code> の値を引用符で囲まない。<strong>修正</strong>: <code>formula: 'SUMIF(...)'</code></p>
+<p><a id="p39"></a></p>
+<h2 id="p39-dataset-on-composite-measures">P39. 複合指標での <code>dataset:</code> の指定 <a class="section-link" aria-label="この節へのリンク" href="#p39-dataset-on-composite-measures">#</a></h2>
+<p><strong>誤り</strong>: ほかの指標を参照する複合指標に <code>dataset:</code> が残っている。<strong>修正</strong>: 式がほかの指標を参照する場合は <code>dataset:</code> を省略します。<code>dataset:</code> はアトミック指標にのみ残します。</p>
+<p><a id="p40"></a></p>
+<h2 id="p40-measure-cannot-be-redefined--duplicate-formula">P40. 指標の再定義エラーまたは式の重複 <a class="section-link" aria-label="この節へのリンク" href="#p40-measure-cannot-be-redefined--duplicate-formula">#</a></h2>
+<p><strong>誤り</strong>: <code>sales</code> または <code>x</code> がすでに指標として存在するときに、それぞれ <code>SELECT AGG(sales) AS sales</code> または <code>AGG(x) AS x</code> を使用する。<strong>修正</strong>: <code>SELECT AGG(sales)</code> を別名なしで使用するか、既存の指標名とは異なる別名（<code>AS sales_value</code>）を指定します。コンパイラが「<code>use existing measure "X"</code>」と表示した場合は、式を書き直さずに <code>AGG(X)</code> を使用します。</p>
+<p><a id="p41"></a></p>
+<h2 id="p41-dml--syntax-in-model-query-sql">P41. モデルクエリの SQL での DML の <code>{...}</code> 構文 <a class="section-link" aria-label="この節へのリンク" href="#p41-dml--syntax-in-model-query-sql">#</a></h2>
+<p><strong>誤り</strong>: <code>SELECT {dt_month}, AGG({sales}) FROM MODEL</code>。波かっこは <code>.dml</code> の数式専用です。<strong>修正</strong>: <code>SELECT dt_month, AGG(sales) FROM MODEL</code>。クエリで <code>AGG({sales: pop})</code> を使うのは、<strong>修飾子</strong>付きの形式に限ります。</p>
+<p><a id="p42"></a></p>
+<h2 id="p42-bare-name-vs-col-inside-dml-formulas">P42. <code>.dml</code> の数式での、波かっこなしの列名と <code>{col}</code> の違い <a class="section-link" aria-label="この節へのリンク" href="#p42-bare-name-vs-col-inside-dml-formulas">#</a></h2>
+<p><strong>誤った解釈:</strong> <code>formula: calc_amt * 2</code> を「波かっこの付け忘れ」や「コンパイラのチェック漏れ」と捉えることです。波かっこなしの <code>calc_amt</code> は、テーブルの<strong>物理</strong>列として解決されます（SQL にそのまま渡されます）。<strong>修正:</strong> <strong>計算</strong>列の定義を参照する場合は、列名を波かっこで囲みます。例: <code>formula: '{calc_amt} * 2'</code>。物理列の名前には波かっこを付けません。例: <code>net: amount - discount</code>。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセットの定義（<code>type: dataset</code>）</a>を参照してください。</p>
+<h2 id="模型排错">モデルのトラブルシューティング <a class="section-link" aria-label="この節へのリンク" href="#模型排错">#</a></h2>
+<p>まず、起点となるモデルの <code>dialect:</code> の設定と、<code>includes:</code> のパスや名前を確認します。データセットの <code>dimension:</code> でソースの各行を一意に識別できることを確認し、宣言順にキーの全要素を <code>pk(...)</code> に渡します。明確に報告された参照の欠落または競合のうち、最初のものを修正してから、lint を再実行します。</p>
+</main></body></html>

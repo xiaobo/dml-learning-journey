@@ -1,0 +1,44 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>マテリアライズの宣言 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、type: materializeと、そのグループ化キー、属性、指標の選択について説明します。設計上の判断については、マテリアライズの粒度を選ぶを参照してください。マテリアライズの例では、宣言の一部を例示します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="マテリアライズの宣言 · DML"><meta property="og:description" content="このページでは、type: materializeと、そのグループ化キー、属性、指標の選択について説明します。設計上の判断については、マテリアライズの粒度を選ぶを参照してください。マテリアライズの例では、宣言の一部を例示します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--materialization.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--materialization.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--materialization.html">English</a> <a lang="zh" hreflang="zh" href="reference--materialization.zh.html">中文</a></header><main><h1 id="materialization-declarations">マテリアライズの宣言</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#materialize-definition-type-materialize">マテリアライズの定義（<code>type: materialize</code>）</a></li><li><a href="#eligibility-selection-and-measured-performance">利用条件、選択、性能測定</a></li><li><a href="#sql-server-runtime">SQL Server のランタイム</a></li></ul></details>
+<p>このページでは、<code>type: materialize</code>と、そのグループ化キー、属性、指標の選択について説明します。設計上の判断については、<a href="how-to--design-materializations.ja.html">マテリアライズの粒度を選ぶ</a>を参照してください。<a href="reference--examples--models.ja.html#materialize">マテリアライズの例</a>では、宣言の一部を例示します。</p>
+<p><a id="55-materialize-definition-type-materialize"></a></p>
+<h2 id="materialize-definition-type-materialize">マテリアライズの定義（<code>type: materialize</code>） <a class="section-link" aria-label="この節へのリンク" href="#materialize-definition-type-materialize">#</a></h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: materialize
+    parameters:                         # stored-procedure parameters
+        &lt;param&gt;: &lt;column_name&gt;
+    filters:                            # materialize-level filters
+        &lt;column&gt;: &lt;value&gt;
+
+    allows: [&lt;materialize_name&gt;]        # allowed materialize tables
+
+    dataset: &lt;dataset_name&gt;      # optional, for direct dataset materialize
+    dimension: [col1, col2]      # materialization grain — grain keys only
+    dimension_columns:           # functionally dependent attribute columns
+        &lt;col&gt;: &lt;formula&gt;          # (1:1 with grain keys, not grain themselves)
+
+    measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
+</code></pre>
+<p><strong><code>dimension:</code>と<code>dimension_columns:</code></strong>の違い。<code>dimension:</code>には、マテリアライズのディメンションを指定します。そのディメンションのフィールドが、行の粒度を定め、各行を一意に識別するキーになります。コンパイラはこれらを<code>GROUP BY</code>のキーとして使います。<code>dimension_columns:</code>には、<strong>これらのキーから導出できる</strong>属性列を指定します。たとえば、<code>store_name</code>は<code>store_id</code>に依存し、<code>region_code</code>は<code>store_id</code>に依存します。コンパイラは<code>dimension_columns:</code>に指定された列を<code>GROUP BY</code>の結果に引き継ぎますが、粒度を定めるキーには含めません。導出できる属性を<code>dimension:</code>に指定すると、コンパイルエラーになります（「can be derived from [...], should it be moved to dimension_columns instead?」）。</p>
+<p><strong>数式を指定しない場合の継承</strong>。<code>dimension_columns:</code>の項目に<code>formula:</code>を指定しない場合、ソースデータセットから列を継承します。その列はソースデータセットの<code>columns:</code>に存在する必要があります。存在しない場合は「not found from relate dataset(s)」と表示されます。マテリアライズの粒度がソースデータセットのディメンションより<strong>粗い</strong>場合、コンパイラは列を導出できるかどうかを確認します。ソースのより細かい粒度で値が変わる列は、「definition from dataset [...] cannot be derived from dimension [...], please advise」というエラーになります。マテリアライズの粒度がソースデータセットのディメンションと<strong>一致する</strong>場合は、ソースのどの列でも使用できます（行の対応は1:1）。</p>
+<p><strong>数式で参照できる範囲</strong>。<code>dimension_columns:</code>の項目に<code>formula:</code>を指定した場合、数式で参照できるのは、pk() を連ねたルックアップと、マテリアライズのディメンション自体のフィールドだけです。ソースデータセットの列や指標を参照すると、「not defined, did you mean …?」というエラーになります。</p>
+<p><strong>制約</strong>。次のいずれかの形式を指定します。</p>
+<ul>
+<li><code>dimension</code> + <code>measures</code>（指標リストを指定する形式）、または</li>
+<li><code>dataset</code> + <code>dimension</code> + <code>dimension_columns</code>（対象をデータセットに限定する形式）、または</li>
+<li><code>dataset</code>のみ（データセットの粒度を継承）。</li>
+</ul>
+<p><a href="reference--examples--models.ja.html#materialize">マテリアライズの例</a>には、宣言のパターンが記載されています。指標レベルには<code>materialize: true</code>フラグがなく、指定するとコンパイルエラーになります（<code>undefined modifier 'materialize'</code>。<a href="reference--troubleshooting--README.ja.html">トラブルシューティング索引</a>のP64を参照）。宣言形式はこのセクションで説明します。データセットレベルの<code>materialize: &lt;name&gt;</code>については、<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">モデル構造</a>を参照してください。</p>
+<h2 id="eligibility-selection-and-measured-performance">利用条件、選択、性能測定 <a class="section-link" aria-label="この節へのリンク" href="#eligibility-selection-and-measured-performance">#</a></h2>
+<p><code>allows:</code>は、どのマテリアライズが利用候補になるかを制御します。宣言だけでは、クエリがどの保存済み集計を選ぶかは決まりません。生成されたSQLまたは実行計画を確認し、対象エンジンで実際に使用されるオブジェクトを特定してください。</p>
+<p>完全なキーを使って、最適化ありとなしの結果を比較してください。対応するグループがないグループ、NULL、比率も比較に含めます。ソースデータを変更した後は、更新と更新後の結果を確認してください。代表的なワークロードの測定は、これらの確認を済ませてから行ってください。SQLが短くなることやコンパイルが速くなることだけでは、データベースでのクエリ性能は判断できません。更新の権限とスケジュールはデプロイ側で管理します。</p>
+<p>設定、クエリがマテリアライズを利用したかどうかの確認、更新、結果の確認は、<a href="materialization-workflow.ja.html">マテリアライズのワークフロー</a>に従って行います。</p>
+<h2 id="sql-server-runtime">SQL Server のランタイム <a class="section-link" aria-label="この節へのリンク" href="#sql-server-runtime">#</a></h2>
+<p>SQL Server のランタイムは、共有プロシージャ<code>DML_PREPARE_MAZ</code>と<code>DML_REFRESH_MAZ</code>を使って要求を登録し、その後、単一インスタンスの<code>DML_RUN_MAZ</code>を同期的に呼び出します。ランナーが処理中の場合、登録を行った呼び出しは、要求したデータの準備が整う前に戻ることがあります。</p>
+<p><code>setup_sql</code>はランタイムと Maz の書き込みコンポーネントをインストールします。生成された<code>prepare_sql</code>は、準備処理とデータの準備状況の確認を行います。データの準備が整うか、再試行処理が協調的に守る 5 秒の期限に達するまで、通常の準備を繰り返します。成功すると<code>data_ready=1</code>を返し、その後、呼び出し元は業務処理用の<code>sql</code>を実行します。エラーが発生するとクエリは停止します。待機中も<code>prepare_status_sql</code>で状況を確認できます。ステータスクエリは、Query で選択されたパーティションとパラメータのバインドを監視します。処理をキューに追加することも、準備処理とSELECTで共通のスナップショットを保証することもありません。</p>
+<p>共有ビュー<code>dbo.DML_MAZ_PROGRESS</code>は、システム全体の処理待ちパーティション、単位時間あたりの処理完了数と到着数、および処理待ちを解消するまでの推定秒数を表示します。直近60秒の移動ウィンドウを使用し、同じ物理パーティションの処理が複数回完了しても、1 回だけ数えます。全体の進捗から、特定の Query のデータが準備できているかどうかは判断できません。</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>完全一致とLIKEによる照合、force_updateとinvalidate_only、接続要件、および呼び出し中断後の復旧については、<a href="maz-prepare-refresh.ja.html">準備、更新、復旧の仕様</a>を参照してください。</p>
+<p>通常の準備では、パラメータのバインドが同じであれば、テーブル全体と日付指定の有効な結果を再利用します。<code>invalidate_only=1</code>はランナーを呼び出さずに無効化をコミットします。<code>DML_REFRESH_MAZ</code>をパラメータなしで呼び出すと、登録済みで処理待ちの作業を再開します。他の選択指定と併用できない<code>@_source</code>には、登録済みのローカルテーブルを<code>schema.table</code>の形式で指定できます。この指定では、Maz を直接使用するすべての対象を含めます。日付の対応関係を確認できない場合は、安全側に倒して既存の範囲を対象に含めます。</p>
+</main></body></html>

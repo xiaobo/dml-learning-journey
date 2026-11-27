@@ -1,0 +1,34 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Granularität einer Materialisierung wählen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Verwenden Sie eine Materialisierung, wenn wiederholt ausgeführte Abfragen gespeicherte Aggregate auf einer festen Granularitätsebene wiederverwenden können. Die Referenz zur Materialisierung definiert die Dekla"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Granularität einer Materialisierung wählen · DML"><meta property="og:description" content="Verwenden Sie eine Materialisierung, wenn wiederholt ausgeführte Abfragen gespeicherte Aggregate auf einer festen Granularitätsebene wiederverwenden können. Die Referenz zur Materialisierung definiert die Dekla"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--design-materializations.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="how-to--design-materializations.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--design-materializations.html">English</a> <a lang="zh" hreflang="zh" href="how-to--design-materializations.zh.html">中文</a></header><main><h1 id="choose-a-materialization-grain">Granularität einer Materialisierung wählen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#performance-amp-materialize-design-principles">Abfrageleistung und Gestaltungsprinzipien für <code>materialize</code></a></li></ul></details>
+<p>Verwenden Sie eine Materialisierung, wenn wiederholt ausgeführte Abfragen gespeicherte Aggregate auf einer festen Granularitätsebene wiederverwenden können. Die <a href="reference--materialization.de.html">Referenz zur Materialisierung</a> definiert die Deklarationssyntax und die Voraussetzungen.</p>
+<h2 id="performance-amp-materialize-design-principles">Abfrageleistung und Gestaltungsprinzipien für <code>materialize</code> <a class="section-link" aria-label="Link zum Abschnitt" href="#performance-amp-materialize-design-principles">#</a></h2>
+<p>Kurze Checkliste zur Verbesserung der Abfrageleistung:</p>
+<ul>
+<li>Stellen Sie sicher, dass die Zeitspalten der Konvention <code>dt_date/dt_week/dt_month/dt_quarter/dt_year</code> folgen (erster Tag des Zeitraums).</li>
+<li>Bevorzugen Sie wenige wiederverwendbare Kennzahlen (z. B. sales, qty) gegenüber vielen Kennzahlen für Einzelfälle.</li>
+<li>Halten Sie SQL für Model Query einfach: Geben Sie <code>FROM MODEL</code> an, wählen Sie die Dimensionsfelder der Abfrage und <code>AGG(measure)</code> aus und gruppieren Sie anschließend mit <code>GROUP BY</code>.</li>
+<li>Wenn wiederholte Aggregationen Abfragen verlangsamen, fügen Sie <code>materialize</code> auf der passenden Granularitätsebene hinzu.</li>
+</ul>
+<p><strong>Wann Sie <code>materialize</code> einsetzen sollten:</strong> wenn Abfragen dieselben Basisdaten wiederholt auf einer festen Granularitätsebene aggregieren (z. B. monatlich nach Produkt, Filiale oder Kategorie) und die Daten entweder nur durch Anhängen neuer Einträge erweitert oder je Zeitraum aktualisiert werden können. Verzichten Sie darauf, wenn die Datenmenge sehr klein ist, die Granularität je nach Abfrage festgelegt wird oder die Modellsemantik noch untersucht wird.</p>
+<p><strong>Grundsätze für die Wahl der Granularität:</strong></p>
+<ol>
+<li>Die <strong>Granularität</strong> legt fest, auf welcher Ebene Zeilen oder Summen definiert sind. Wählen Sie sie fein genug für nachgelagerte Aggregationen, ohne dass die Zeilenzahl stark ansteigt. Üblich sind DWD (Tag und Schlüssel), DWS (Monat bzw. Quartal und Analysedimensionen) und ADS (direkt für Berichte nutzbar).</li>
+<li>Speichern Sie additive Kennzahlen wie Umsatz und Menge für nachgelagerte Aggregationen. Summieren Sie die Anzahl eindeutiger Kunden nur dann über mehrere Gruppen hinweg, wenn sich deren Kundenmengen nicht überschneiden. Behalten Sie den Entitätsschlüssel bei oder prüfen Sie, ob für die vorgesehene Aggregation eine unterstützte Darstellungsform verfügbar ist.</li>
+<li>Geben Sie die Felder, die eine Zeile eindeutig identifizieren, unter <code>dimension:</code> an. Geben Sie funktional abhängige Attribute, etwa das aus <code>category_id</code> abgeleitete <code>category_name</code>, unter <code>dimension_columns:</code> an. Siehe die <a href="reference--materialization.de.html">Regeln für die Deklaration von Materialisierungen</a>.</li>
+</ol>
+<pre><code class="language-yaml">DWS_SALES_DATE_CATEGORY:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension:
+        - dt_date
+        - category_id
+        - cust_id
+    measures:
+        - 销售额
+        - 销售量
+</code></pre>
+<blockquote>
+<p><code>materialize</code> ist ein Optimierungskonzept für die Modellierung. Das dauerhafte Speichern eines Datensatzes als physische Tabelle in DuckDB ist ein separater Vorgang. Durchgearbeitete Beispiele finden Sie unter <a href="reference--examples--models.de.html#materialize">Beispiele zur Materialisierung</a>.</p>
+</blockquote>
+<p>Folgen Sie dem <a href="materialization-workflow.de.html">Ablauf für die Materialisierung</a>, um sie einzurichten, ihre Nutzung durch Abfragen zu prüfen, sie zu aktualisieren und die Ergebnisse zu kontrollieren.</p>
+</main></body></html>

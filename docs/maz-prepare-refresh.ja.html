@@ -1,0 +1,298 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Maz の prepare と refresh の使い分け · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="prepare はクエリに必要なデータを準備し、refresh はソースデータの変更を処理します。デプロイ時に setup_sql を実行します。クエリの準備ユニットはクエリの実行前にデータが準備できているかを確認し、DML_MAZ_PROGRESS は処理中の全体の進捗を表示します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Maz の prepare と refresh の使い分け · DML"><meta property="og:description" content="prepare はクエリに必要なデータを準備し、refresh はソースデータの変更を処理します。デプロイ時に setup_sql を実行します。クエリの準備ユニットはクエリの実行前にデータが準備できているかを確認し、DML_MAZ_PROGRESS は処理中の全体の進捗を表示します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/maz-prepare-refresh.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="maz-prepare-refresh.de.html">Deutsch</a> <a lang="en" hreflang="en" href="maz-prepare-refresh-en.html">English</a> <a lang="zh" hreflang="zh" href="maz-prepare-refresh.html">中文</a></header><main><h1 id="choosing-maz-prepare-and-refresh">Maz の prepare と refresh の使い分け</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#pick-the-entry-point-by-task">作業に応じた呼び出し方法</a></li><li><a href="#prepare-this-query39s-data-before-reading">読み取り前にこのクエリのデータを準備する</a></li><li><a href="#prepare-parameters">prepare のパラメーター</a></li><li><a href="#refresh-parameters-and-matching">refresh のパラメーターと照合方法</a></li><li><a href="#choose-the-change-range-from-a-maz-or-a-source-table">Maz またはソーステーブルから変更範囲を選ぶ</a></li><li><a href="#watch-global-runner-progress">ランナー全体の進捗を監視する</a></li><li><a href="#interruption-and-retry">中断と再試行</a></li><li><a href="#execution-conditions-and-result-boundaries">実行条件と結果の適用範囲</a></li></ul></details>
+<p>prepare はクエリに必要なデータを準備し、refresh はソースデータの変更を処理します。デプロイ時に <code>setup_sql</code> を実行します。クエリの準備ユニットはクエリの実行前にデータが準備できているかを確認し、<code>DML_MAZ_PROGRESS</code> は処理中の全体の進捗を表示します。</p>
+<h2 id="pick-the-entry-point-by-task">作業に応じた呼び出し方法 <a class="section-link" aria-label="この節へのリンク" href="#pick-the-entry-point-by-task">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>操作</th>
+<th>完了の確認方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>レポートを開く、または対象期間を切り替える</td>
+<td>クエリの通常の <code>prepare_sql</code> を実行する</td>
+<td><code>prepare_sql</code> が正常終了して <code>data_ready=1</code> を返したら、業務処理用の <code>sql</code> を実行する</td>
+</tr>
+<tr>
+<td>レポートを監査し、再計算を強制する</td>
+<td>prepare(force_update=1)</td>
+<td>対象と、その対象に必要な上流の依存先が強制的に再構築される。prepare が正常終了してからクエリを実行する。</td>
+</tr>
+<tr>
+<td>データのロード後に依存する結果を更新する</td>
+<td>refresh(invalidate_only=0、既定値)</td>
+<td>対象と影響を受ける下流の処理に必要な作業が登録される。読み取り時はクエリの prepare を使い、データの準備ができるまで待つ。</td>
+</tr>
+<tr>
+<td>先にロードし、後で再計算する</td>
+<td>refresh(invalidate_only=1)</td>
+<td>無効化マークが送信される。ランナーの呼び出し、新たなアクティブ要求の登録、保留中の作業の取り消しは行われない。</td>
+</tr>
+<tr>
+<td>月末処理に向けた事前準備</td>
+<td>選択したクエリの通常の prepare を事前に実行する</td>
+<td>該当するクエリの <code>prepare_sql</code> が正常終了する</td>
+</tr>
+<tr>
+<td>中断後に登録済みの作業を再開する</td>
+<td><code>DML_REFRESH_MAZ</code> をパラメーターなしで実行する</td>
+<td>全体の保留作業と、このクエリのデータの準備状況を確認する</td>
+</tr>
+</tbody></table>
+<p>prepare は依存関係を上流にたどり、完全一致の名前だけを受け付けます。refresh は変更の起点から下流にたどり、完全一致の名前と SQL LIKE に対応します。ソースの変更が通知されていない場合は、古いデータが再利用されることがあります。データが有効でも、ソースの最新状態と完全に一致するとは限りません。</p>
+<p>差分更新では、処理対象をパーティション単位で選びます。ソースに対して行単位の CDC を行うものではありません。完全更新で強制的に再構築するのは今回指定した範囲であり、全履歴ではありません。各パーティションでは、業務データと成功ステータスをまとめてコミットします。後続のパーティションで処理が失敗しても、コミット済みのパーティションはロールバックされません。</p>
+<h2 id="prepare-this-query39s-data-before-reading">読み取り前にこのクエリのデータを準備する <a class="section-link" aria-label="この節へのリンク" href="#prepare-this-query39s-data-before-reading">#</a></h2>
+<p>共通の prepare と対象を指定した refresh は、まず更新要求を登録し、次に共通プロシージャ <code>DML_RUN_MAZ</code> を同期的に呼び出します。無効化のみの場合は、登録直後に制御を返します。実行権を取得した呼び出しが全体の保留作業を処理します。すでにランナーが動作している場合、呼び出しは待機せずに制御を返します。通常の prepare でも、別の呼び出しによる全体の保留作業の処理が続くことがあります。</p>
+<p>実際に構築を行うランナーは、データベースごとに最大 1 つです。ランナーは、依存関係に従った処理順序、ライターの呼び出し、パーティションごとのコミットを管理します。既定の実装では、Service Broker、SQL Server Agent、アプリケーションのバックグラウンドサービスはいずれも不要です。呼び出しから制御が戻った後や接続が切断された後もバックグラウンドで処理が継続する保証はありません。</p>
+<p>同じリクエストとそのパラメーターを使い、次の順序で実行します。</p>
+<ol>
+<li>デプロイ時に <code>setup_sql</code> を実行し、共通ランタイムと各 Maz のライターをインストールします。</li>
+<li>クエリの実行時に、生成された <code>prepare_sql</code> を実行します。通常の準備とデータが実際に準備できているかの確認を行い、必要に応じて再試行したうえで、<code>data_ready=1</code> を含む 1 行を返します。</li>
+<li>正常終了したら、業務処理用の <code>sql</code> を実行します。準備中にエラーが発生した場合、または待機がタイムアウトした場合は、処理を止めて原因を解消し、再試行します。</li>
+</ol>
+<p>準備ユニットは 100 ミリ秒ごとに通常の準備を再試行し、データが準備できないまま 5 秒間の再試行期限を過ぎるとエラーを発生させます。この期限に達しても、すでに同期実行中のライターや対象のロック待ちは中断されません。クライアント側のタイムアウトと接続のキャンセルは、連携側で処理します。再試行によって強制更新が行われることはありません。</p>
+<p>待機中は、別の接続から同じリクエストの <code>prepare_status_sql</code> を実行して、このクエリのパーティション、日付、パラメーターバインディングだけを確認できます。要求は追加されず、通常の呼び出し元が独自にポーリングを実装する必要もありません。結果の列は <code>data_ready</code> です。準備状況の確認と後続の SELECT は、同じスナップショットを共有しません。</p>
+<p>低レベルの共通 prepare を直接呼び出すと、2 が返る場合があります。これは、要求は登録済みですがランナーが処理中であることを示します。1 は今回の処理が完了したことを示します。refresh の結果には、<code>accepted</code>、<code>runner_busy</code>、および影響を受けたパーティションが含まれます。refresh が受け付けられた場合や全体の保留作業がなくなった場合も、クエリのデータが実際に準備できているかを確認する必要があります。この確認は、クエリ用に生成された準備ユニットが行います。</p>
+<h2 id="prepare-parameters">prepare のパラメーター <a class="section-link" aria-label="この節へのリンク" href="#prepare-parameters">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>パラメーター</th>
+<th>規則</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>必須。Maz の名前を完全一致で指定します。パターンは使用できません。</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>日付でパーティション分割された Maz では、両端を含む範囲の下限と上限が必要です。クエリで両端の値を導出できます。範囲と重なるパーティションは、すべてパーティション全体が対象になります。</td>
+</tr>
+<tr>
+<td>@_force_update</td>
+<td>既定値は 0 です。1 を指定すると、この対象と、その対象に必要な上流の依存先が強制的に再構築されます。null は指定できません。</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>型付きパラメーターバインディングと監査に使用します。</td>
+</tr>
+</tbody></table>
+<p>強制更新では、まず必要な処理と影響を受ける下流の処理を無効化します。アクティブ要求は今回のリクエストに必要な処理と、そこから上流にたどった先の必須の依存先に限定されます。そのため、ほかのレポートの事前計算は行われません。クエリの共有依存先は、パーティションとパラメーターバインディングに基づいて再利用されます。通常の準備では、パラメーターバインディングが一致すれば、日付パーティションやテーブル全体の有効な結果を再利用します。結果が存在しない場合、無効または期限切れの場合、あるいはパラメーターバインディングが変更された場合は、再構築します。再計算を強制するには、force_update=1 を明示的に指定します。ソースの変更は引き続き確実に通知する必要があります。</p>
+<pre><code class="language-sql">EXEC dbo.DML_PREPARE_MAZ
+    @_materialize=N'SALES_QUARTERLY',
+    @_range_start='20250101', @_range_end='20250331', @_force_update=1;
+</code></pre>
+<h2 id="refresh-parameters-and-matching">refresh のパラメーターと照合方法 <a class="section-link" aria-label="この節へのリンク" href="#refresh-parameters-and-matching">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>パラメーター</th>
+<th>規則</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@_materialize</td>
+<td>完全一致の名前またはパターンを指定します。@_source とは同時に指定できません。両方を省略すると、既存の保留作業だけを続行します。</td>
+</tr>
+<tr>
+<td>@_source</td>
+<td>登録済みのローカルの物理ソーステーブルを、schema.table 形式の完全一致の名前で指定します。同じデータベース内であれば database.schema.table 形式も使用できます。like は使用できません。</td>
+</tr>
+<tr>
+<td>@_match</td>
+<td>既定値は exact です。like では、登録済みの列の照合順序に従って照合します。</td>
+</tr>
+<tr>
+<td>@_range_start / @_range_end</td>
+<td>両方の境界を指定するか、両方とも省略します。省略した場合は、カレンダー全体ではなく既存の範囲だけが対象になります。</td>
+</tr>
+<tr>
+<td>@_invalidate_only</td>
+<td>既定値の 0 はアクティブな更新要求を登録し、ランナーを呼び出します。1 は無効化マークだけを登録し、ランナーを呼び出さず、既存の保留中の処理を維持します。null は指定できません。</td>
+</tr>
+<tr>
+<td>@_parameters / @_user</td>
+<td>型付きパラメーターと監査。バッチの各対象に必要なパラメーターは、無効化の前に検証されます。</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>照合</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>単一の対象</td>
+<td>exact + SALES_MONTHLY</td>
+</tr>
+<tr>
+<td>接頭辞</td>
+<td>like + SALES%</td>
+</tr>
+<tr>
+<td>アンダースコアを文字として含む接頭辞</td>
+<td>like + SALES~_%</td>
+</tr>
+<tr>
+<td>現在のデータベースに登録されているすべての Maz</td>
+<td>like + %</td>
+</tr>
+</tbody></table>
+<p>SQL LIKE では %、_、角かっこによるパターンを使います。~ はエスケープ文字です。* はワイルドカードではありません。exact はワイルドカードを展開しません。完全一致で指定した名前が不明な場合はエラーになります。パターンに一致する対象がなければ、対象は 0 件です。完全一致で指定する名前は 128 UTF-16 コード単位まで、パターンは 512 コード単位までです。切り詰められた名前で実行してはいけません。</p>
+<pre><code class="language-sql">-- After the source write commits, register February and its materialized
+-- affected downstream, and call the runner.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N'SALES_MONTHLY',
+    @_range_start='20250201', @_range_end='20250228';
+
+-- Invalidate every materialized range only; backfill later as queries need it.
+EXEC dbo.DML_REFRESH_MAZ
+    @_materialize=N'%', @_match=N'like', @_invalidate_only=1;
+</code></pre>
+<p><code>invalidate_only=1</code> を指定した呼び出しでは、書き込み処理を実行しません。他の接続ですでに動作しているランナーは、既存の保留中の処理を続行できます。</p>
+<h2 id="choose-the-change-range-from-a-maz-or-a-source-table">Maz またはソーステーブルから変更範囲を選ぶ <a class="section-link" aria-label="この節へのリンク" href="#choose-the-change-range-from-a-maz-or-a-source-table">#</a></h2>
+<p>ソーステーブルがわかっている場合は、そのテーブルに登録されているすべての直接のエントリポイントを選択できます。</p>
+<pre><code class="language-sql">EXEC dbo.DML_REFRESH_MAZ
+    @_source=N'dbo.TABLE_SALES',
+    @_range_start='20250201', @_range_end='20250228';
+</code></pre>
+<p>ソース同一性マークで日付とパーティションの一致が確認できる場合は、指定された範囲がそのまま適用されます。一致を確認できない場合は、既存の後続範囲を安全側に見積もって対象に含め、未構築の日付パーティションは推測で追加しません。不明なソース、別のデータベースのソース、スキーマの指定漏れ、source と materialize の同時指定、source と like の併用はいずれもエラーになります。ソースを選択しても、ソースの変更は自動検出されません。</p>
+<p>Maz で選択する場合、ソーステーブルに独立した直接のエントリポイントが複数あれば、そのすべてを報告する必要があります。四半期だけを更新しても、報告されていない古い月次集計は検出されません。どの層のキャッシュが古いかわからない場合は、そのクエリの強制準備（forced prepare）を使用します。</p>
+<p>日付範囲には開始日と終了日の両方が含まれます。後続への影響を計算する前に、指定範囲と重なるすべてのパーティションを全体ごと対象に含めます。期間をまたぐ移動では、移動前と移動後の両方の期間が対象になります。ディメンションテーブルの場合や影響が明確でない場合は、十分に広い範囲を指定します。正確な逆方向の対応関係を確認できない場合、システムは既存の後続範囲を安全側に広げます。片方の日付だけを指定した場合、開始日と終了日が逆の場合、またはカレンダーが指定範囲全体をカバーしていない場合はエラーになり、範囲が暗黙に切り詰められることはありません。</p>
+<p>日付を指定した既定の更新では、明示的に選択した Maz を初めて構築する場合があります。検出された未構築の後続 Maz にも更新内容は伝播しますが、自動で事前構築されることはありません。中間の Maz に状態がなくても、既存の後続 Maz への伝播は妨げられません。日付を指定しない更新では、既存の範囲だけが対象になります。データベース全体を初めて構築するには、開始日と終了日を明示する必要があります。テーブル全体を対象とする Maz は、1 つの物理パーティションとして扱われます。日付を渡すと、範囲はテーブル全体に拡張されます。</p>
+<p>日付パーティションでは、日付以外の値パラメーターを指定できません。テーブル全体に対して有効なパラメーターのバインドは 1 つだけです。</p>
+<p><a id="runner-progress"></a></p>
+<h2 id="watch-global-runner-progress">ランナー全体の進捗を監視する <a class="section-link" aria-label="この節へのリンク" href="#watch-global-runner-progress">#</a></h2>
+<p>現在のビルドで生成された <code>setup_sql</code> を実行してから、共有ビューをクエリします。</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>このビューは、同じデータベース内のすべての Maz の進捗を示します。特定のクエリには紐づかず、クエリのコンパイル結果にも追加されません。通常のビューは、クエリのたびに現在の STATE を読み取り、直近 60 秒の固定ウィンドウで統計を集計します。サンプリング履歴は保存しません。監視用アカウントには、このビューに対する SELECT 権限が必要です。この権限はデプロイ時に自動では付与されません。</p>
+<details><summary>統計列の一覧と定義</summary>
+
+<p>すべての列は <code>SELECT * FROM dbo.DML_MAZ_PROGRESS;</code> で取得できます。</p>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pending_partitions</td>
+<td>現在保留中の物理パーティション。構築中で、まだ公開されていないものも含みます。</td>
+</tr>
+<tr>
+<td>runner_running</td>
+<td>ランナーが現在、単独で実行できる排他的な権利を保持しているかどうか</td>
+</tr>
+<tr>
+<td>completed_partitions / added_partitions</td>
+<td>直近 60 秒間に構築が完了した、または新規登録された物理パーティションの数。それぞれ重複を除いて数えます。</td>
+</tr>
+<tr>
+<td>completed_partitions_per_second / added_partitions_per_second</td>
+<td>ウィンドウ内の各件数を 60 秒で割った値</td>
+</tr>
+<tr>
+<td>net_partitions_per_second</td>
+<td>完了率から追加率を引いた値</td>
+</tr>
+<tr>
+<td>estimated_seconds</td>
+<td>現在の差し引きの処理率で保留中の処理をすべて終えるまでの推定秒数</td>
+</tr>
+<tr>
+<td>average_build_seconds</td>
+<td>ウィンドウ内で各パーティションの直近の成功した構築にかかった時間の平均</td>
+</tr>
+<tr>
+<td>sample_start / sampled_at</td>
+<td>この統計ウィンドウの開始時刻とサンプリング時刻</td>
+</tr>
+</tbody></table>
+<p>物理パーティションは Maz、パーティションの種類、日付の組み合わせで重複を除きます。テーブル全体に複数のパラメーターバインドがあっても、1 つのパーティションとして数えます。同じウィンドウ内で 1 つのパーティションの構築が複数回完了しても、1 回だけ数えます。完了後に再度無効化されたパーティションも、ウィンドウ内の完了件数に含まれます。そのため、各率が表すのは対象パーティション数であり、実際の書き込み処理の実行回数ではありません。</p>
+<p>保留中の処理がない場合、推定値は 0 です。追加率が完了率以上の場合、または保留中の処理が残っている状態でランナーが停止した場合、推定値は NULL です。パーティションごとの処理コストの違いと、移動する集計ウィンドウの両方が推定値に影響します。</p>
+<p>進捗ビューでは、特定のクエリの準備ができているかどうかは判定できません。ビューが読み取るのはコミット済みの状態です。公開トランザクションによって短時間の待機が発生する場合があり、パーティションをまたぐスナップショットは提供されません。別の集計ウィンドウが必要な場合は、単独で使える Java のヘルパー <code>MazRunner.progressSql("mssql", 300)</code> で直近 5 分間の読み取り専用 SQL を生成できます。その SQL を直接実行するには、STATE の読み取り権限が必要です。</p>
+</details>
+
+<h2 id="interruption-and-retry">中断と再試行 <a class="section-link" aria-label="この節へのリンク" href="#interruption-and-retry">#</a></h2>
+<p>初回の無効化と更新要求の登録は、1 つのメタデータトランザクションでまとめてコミットまたはロールバックされます。その後、構築はパーティション単位でコミットされます。STATE には、アクティブな更新が保留中のパーティションと、その実際のパラメーターが永続的に保存されます。中断時は、コミット済みのパーティションが保持され、処理中のパーティションはロールバックされます。未完了の要求は次の呼び出しまで保留されます。</p>
+<table>
+<thead>
+<tr>
+<th>状況</th>
+<th>対処</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ランナーでの構築の失敗、または接続の切断</td>
+<td>原因を取り除いた後、通常の準備（prepare）を実行するか、DML_REFRESH_MAZ をパラメーターなしで実行して、全体の保留中の処理を再開します。</td>
+</tr>
+<tr>
+<td>登録済みの残りの処理だけを続行する</td>
+<td>以下の更新をパラメーターなしで実行します。更新範囲を再指定しないでください。</td>
+</tr>
+<tr>
+<td>force_update=1 またはデフォルト設定での更新要求を再送する</td>
+<td>新たな更新要求として扱われます。処理済みのパーティションが無効化され、再構築されることがあります。</td>
+</tr>
+<tr>
+<td>通常の結果が無効、または新たな更新要求が未登録</td>
+<td>該当するクエリの通常の準備処理を実行し、その後で準備状況を確認します。</td>
+</tr>
+<tr>
+<td>コミットの応答が失われた</td>
+<td>コミットの成否は不明です。コミットされなかったと判断せず、状態を再確認してください。</td>
+</tr>
+</tbody></table>
+<pre><code class="language-sql">-- Continue the current database's registered backlog without
+-- re-invalidating completed partitions.
+EXEC dbo.DML_REFRESH_MAZ;
+</code></pre>
+<p>クライアント側のキャンセルやタイムアウトが発生すると、SQL Server の CATCH を経由せずに処理が中断され、接続が開いたままランナーのセッションレベルのロックが残ることがあります。キャンセル後は、その物理接続を閉じ、接続プールから破棄してください。ROLLBACK だけでは不十分です。切断後は、別の呼び出しで永続化された未処理の作業を進められます。一般の SQL ユーザーは、ランナーが停止したことを確認した後、元の接続で開いたままのトランザクションをロールバックし、続けてセッションロック DML_MAZ_RUNNER を明示的に解放できます。</p>
+<p>引数なしの refresh() は、保留中の作業だけを続行します。全履歴の再構築は行わず、日付、like、無効化のみを行うオプション、パラメーターのバインドオプションは受け付けません。すべての Maze を選択するには、引き続き like に % を明示的に指定する必要があります。通常の無効状態である state=0 では、その状態だけで処理が開始されることはありません。state=3 は、結果が無効で、能動的な更新の実行を待っていることを示します。state=1 は完全な結果が公開済みであることを示します。state=2 は公開トランザクション内にのみ存在します。ソース側のコミットから通知までには時間差が残ります。データの読み込み処理は確実に通知し、必要に応じて再試行する必要があります。</p>
+<h2 id="execution-conditions-and-result-boundaries">実行条件と結果の適用範囲 <a class="section-link" aria-label="この節へのリンク" href="#execution-conditions-and-result-boundaries">#</a></h2>
+<p>IMPLICIT_TRANSACTIONS OFF に設定し、アクティブなトランザクションがない自動コミット接続を使用してください。エントリーポイントは、この要求の対象と、影響を受ける書き込みプロシージャに対する権限を確認します。ランナーは呼び出し元の権限でシステム全体の未処理の作業を処理するため、実行アカウントには、保留中のすべての作業に関連する書き込みプロシージャの権限も必要です。権限が不足している場合、ランナーは元のエラーを返し、更新要求を保持します。</p>
+<details><summary>運用リファレンス：実行時オブジェクトと権限</summary>
+
+<table>
+<thead>
+<tr>
+<th>オブジェクト</th>
+<th>適用範囲</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>各 Maz の結果テーブルと書き込みプロシージャ（PROC_M__...）</td>
+<td>個々の Maz</td>
+</tr>
+<tr>
+<td>prepare_sql、prepare_status_sql、業務用 SQL</td>
+<td>現在のクエリと、この要求のパラメーター</td>
+</tr>
+<tr>
+<td>DML_MATERIALIZE_DEFINITION, DML_MATERIALIZE_DEPENDENCY, DML_MATERIALIZE_STATE</td>
+<td>共有の実行時テーブル。Maz とパーティションの組み合わせごとにレコードを保持します。</td>
+</tr>
+<tr>
+<td>DML_PREPARE_MAZ, DML_REFRESH_MAZ, DML_RUN_MAZ</td>
+<td>共有の実行時プロシージャ</td>
+</tr>
+<tr>
+<td>DML_MAZ_IS_READY</td>
+<td>共有の準備状況確認関数</td>
+</tr>
+<tr>
+<td>DML_MAZ_PROGRESS</td>
+<td>システム全体の進捗を示す共有ビュー</td>
+</tr>
+</tbody></table>
+<p>カレンダーとその保守ルーチンは、システムのセットアップでインストールされます。再デプロイする前に、新規要求の受け付けを停止し、ランナーが終了したことを確認してから、生成されたセットアップを実行してください。</p>
+</details>
+
+<p><a href="maz-sqlserver.ja.html">月次データを四半期単位に集計する演習</a>では、同じ売上データを使用してください。</p>
+</main></body></html>

@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>查询语法中的常见问题 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="这些条目涵盖 SQL 和 YAML 查询。支持的语法以模型查询（SQL）和YAML 查询中的说明为准。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="查询语法中的常见问题 · DML"><meta property="og:description" content="这些条目涵盖 SQL 和 YAML 查询。支持的语法以模型查询（SQL）和YAML 查询中的说明为准。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--queries.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--troubleshooting--queries.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--troubleshooting--queries.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--queries.html">English</a></header><main><h1 id="query-syntax-pitfalls">查询语法中的常见问题</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#p8-forgetting-agg-in-aggregation-queries">P8. 聚合查询中遗漏 AGG()</a></li><li><a href="#p9-adding-redundant-alias-on-agg">P9. 为 AGG() 添加多余的别名</a></li><li><a href="#p10-using-subqueries">P10. 使用子查询</a></li><li><a href="#p11-using-joins">P11. 使用 JOIN</a></li><li><a href="#p12-missing-time-context-for-time-modifiers">P12. 时间修饰符缺少时间上下文</a></li><li><a href="#p13-mixing-time-granularities">P13. 混用不同的时间粒度</a></li><li><a href="#p14-adding-unnecessary-null-filters">P14. 添加不必要的空值筛选条件</a></li><li><a href="#p15-using-between-for-single-periods">P15. 用 BETWEEN 筛选单个时间段</a></li><li><a href="#p16-time-filter-order-is-a-style-convention">P16. 时间筛选条件的顺序属于书写约定</a></li><li><a href="#p17-using-order-by-without-need">P17. 在不需要时使用 ORDER BY</a></li><li><a href="#p18-manual-growth-rate-calculation">P18. 手动计算增长率</a></li><li><a href="#p20-using-distinct-alone-for-existence-checks">P20. 仅用 DISTINCT 检查记录是否存在</a></li><li><a href="#category-dml-model-design">类别：DML 模型设计</a></li><li><a href="#p45-measure-in-a-detail-query">P45. 在明细查询中使用指标</a></li><li><a href="#p46-bare-column-name-in-aggregate-query">P46. 在聚合查询中使用未限定的列名</a></li><li><a href="#p47-mismatched-dimension-field-names-across-datasets">P47. 不同数据集中的维度字段名不一致</a></li><li><a href="#p48-mapping-used-as-a-dimension-field-in-dimension">P48. 在 <code>dimension:</code> 中将映射用作维度字段</a></li><li><a href="#p49-dimension-field-under-measures">P49. 在 <code>measures:</code> 下定义维度字段</a></li><li><a href="#p50-complex-filter-in-query-filters">P50. 在查询的 <code>filters:</code> 中使用复杂筛选条件</a></li><li><a href="#p51-pk-chaining-parameter-count-mismatch">P51. PK 链式调用的参数数量不匹配</a></li><li><a href="#p52-manual-group-by-in-after">P52. 在 <code>after:</code> 中手动指定 GROUP BY</a></li><li><a href="#p60-subquery-for-max-date-in-aggregation-query">P60. 在聚合查询中使用子查询获取 MAX 日期</a></li><li><a href="#p61-aggregating-directly-on-dataset-with-group-by">P61. 使用 GROUP BY 直接在数据集上聚合</a></li><li><a href="#查询排错">查询排错</a></li></ul></details>
+<p>这些条目涵盖 SQL 和 YAML 查询。支持的语法以<a href="reference--model-query-sql.zh.html">模型查询（SQL）</a>和<a href="reference--query-yaml.zh.html">YAML 查询</a>中的说明为准。</p>
+<p><a id="p8"></a></p>
+<h2 id="p8-forgetting-agg-in-aggregation-queries">P8. 聚合查询中遗漏 AGG() <a class="section-link" aria-label="本节链接" href="#p8-forgetting-agg-in-aggregation-queries">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT product, sales FROM MODEL GROUP BY product</code> <strong>修正</strong>：<code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></p>
+<p><a id="p9"></a></p>
+<h2 id="p9-adding-redundant-alias-on-agg">P9. 为 AGG() 添加多余的别名 <a class="section-link" aria-label="本节链接" href="#p9-adding-redundant-alias-on-agg">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT AGG(sales) as sales</code> <strong>修正</strong>：<code>SELECT AGG(sales)</code> 会自动使用别名 <code>sales</code>。</p>
+<p><a id="p10"></a></p>
+<h2 id="p10-using-subqueries">P10. 使用子查询 <a class="section-link" aria-label="本节链接" href="#p10-using-subqueries">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT * FROM MODEL WHERE sales &gt; (SELECT AVG(sales) FROM MODEL)</code> <strong>修正</strong>：将 <code>HAVING</code> 与指标一起使用，例如 <code>HAVING AGG(sales) &gt; AGG(avg_sales)</code>。</p>
+<p><a id="p11"></a></p>
+<h2 id="p11-using-joins">P11. 使用 JOIN <a class="section-link" aria-label="本节链接" href="#p11-using-joins">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT a.*, b.* FROM MODEL a JOIN MODEL b ON a.id = b.id</code> <strong>修正</strong>：在 <code>.dml</code> 文件中使用跨数据集的列宏，或通过 <code>pk(...)</code> 查找。</p>
+<p><a id="p12"></a></p>
+<h2 id="p12-missing-time-context-for-time-modifiers">P12. 时间修饰符缺少时间上下文 <a class="section-link" aria-label="本节链接" href="#p12-missing-time-context-for-time-modifiers">#</a></h2>
+<p><strong>错误</strong>：<code>SELECT product, AGG({sales: yoy}) FROM MODEL GROUP BY product</code>（既没有用于分组的时间字段，也没有时间筛选条件）</p>
+<p><strong>规则</strong>：确定时间上下文，并满足宏的前置条件。最清楚的做法是显式指定用于分组的时间字段。时间筛选条件也可以提供上下文。为便于阅读，建议以同一时间粒度定义行或汇总值。</p>
+<p><strong>时间上下文参考</strong>：<a href="reference--modifiers.zh.html#21-time-modifiers">时间修饰符</a>。</p>
+<p><strong>正确示例（按月计算同比）</strong>：</p>
+<pre><code class="language-sql">SELECT dt_month, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY dt_month
+</code></pre>
+<p><strong>正确示例（日粒度的 YTD）</strong>：</p>
+<pre><code class="language-sql">SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date
+</code></pre>
+<p><a id="p13"></a></p>
+<h2 id="p13-mixing-time-granularities">P13. 混用不同的时间粒度 <a class="section-link" aria-label="本节链接" href="#p13-mixing-time-granularities">#</a></h2>
+<p><strong>建议</strong>：优先使用单一时间粒度。经验证的构建版本接受同时指定 <code>dt_year, dt_month</code>。支持多个字段并不能保证每种宏组合都能获得预期的时间上下文。请检查解析得到的时间粒度。</p>
+<p><a id="p14"></a></p>
+<h2 id="p14-adding-unnecessary-null-filters">P14. 添加不必要的空值筛选条件 <a class="section-link" aria-label="本节链接" href="#p14-adding-unnecessary-null-filters">#</a></h2>
+<p><strong>错误</strong>：未明确要求时仍添加 <code>WHERE customer is not null</code>。<strong>修正</strong>：仅在问题明确要求时排除空值。</p>
+<p><a id="p15"></a></p>
+<h2 id="p15-using-between-for-single-periods">P15. 用 BETWEEN 筛选单个时间段 <a class="section-link" aria-label="本节链接" href="#p15-using-between-for-single-periods">#</a></h2>
+<p><strong>建议</strong>：<code>dt_month = '2024-01-01'</code> 明确选中 1 月。如果确实需要选择某个日期区间，可以使用该区间。请显式指定边界，并检查时间戳和区间最后一天的处理方式。</p>
+<p><a id="p16"></a></p>
+<h2 id="p16-time-filter-order-is-a-style-convention">P16. 时间筛选条件的顺序属于书写约定 <a class="section-link" aria-label="本节链接" href="#p16-time-filter-order-is-a-style-convention">#</a></h2>
+<p>两种谓词顺序都能通过编译。引擎对谓词顺序没有要求，可按可读性选择顺序。</p>
+<p><a id="p17"></a></p>
+<h2 id="p17-using-order-by-without-need">P17. 在不需要时使用 ORDER BY <a class="section-link" aria-label="本节链接" href="#p17-using-order-by-without-need">#</a></h2>
+<p><strong>错误</strong>：为每个查询添加 <code>ORDER BY</code>。<strong>修正</strong>：仅在获取排名前 N 的结果或问题明确要求排名时使用 ORDER BY。</p>
+<p><a id="p18"></a></p>
+<h2 id="p18-manual-growth-rate-calculation">P18. 手动计算增长率 <a class="section-link" aria-label="本节链接" href="#p18-manual-growth-rate-calculation">#</a></h2>
+<p><strong>错误</strong>：<code>DIVIDE(AGG(sales), AGG(sales, 'ya')) - 1</code> <strong>修正</strong>：使用带有内置修饰符的 <code>AGG(sales, 'yoy')</code>。</p>
+<p><a id="p20"></a></p>
+<h2 id="p20-using-distinct-alone-for-existence-checks">P20. 仅用 DISTINCT 检查记录是否存在 <a class="section-link" aria-label="本节链接" href="#p20-using-distinct-alone-for-existence-checks">#</a></h2>
+<p><strong>错误</strong>：用 <code>SELECT DISTINCT customer FROM MODEL.transactions</code> 回答“有客户吗？”。<strong>修正</strong>：用 <code>SELECT customer, dt_date, transaction_id FROM MODEL.transactions LIMIT 1</code> 返回一条具体记录。</p>
+<hr>
+<h2 id="category-dml-model-design">类别：DML 模型设计 <a class="section-link" aria-label="本节链接" href="#category-dml-model-design">#</a></h2>
+<p><a id="p45"></a></p>
+<h2 id="p45-measure-in-a-detail-query">P45. 在明细查询中使用指标 <a class="section-link" aria-label="本节链接" href="#p45-measure-in-a-detail-query">#</a></h2>
+<p><strong>错误</strong>：在选择指标 <code>total_cost:</code> 的查询中指定 <code>dataset: DATASET_PRODUCTS</code>。<strong>修正</strong>：删除 <code>dataset:</code> 以使用聚合模式，或从明细查询中移除该指标。</p>
+<p><a id="p46"></a></p>
+<h2 id="p46-bare-column-name-in-aggregate-query">P46. 在聚合查询中使用未限定的列名 <a class="section-link" aria-label="本节链接" href="#p46-bare-column-name-in-aggregate-query">#</a></h2>
+<p><strong>错误</strong>：列属于 <code>DATASET_PRODUCTS</code> 时，直接写 <code>prod_id:</code> 而未指定 <code>dataset:</code>。<strong>修正</strong>：<code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code>。</p>
+<p><a id="p47"></a></p>
+<h2 id="p47-mismatched-dimension-field-names-across-datasets">P47. 不同数据集中的维度字段名不一致 <a class="section-link" aria-label="本节链接" href="#p47-mismatched-dimension-field-names-across-datasets">#</a></h2>
+<p><strong>错误</strong>：<code>DATASET_PT</code> 使用维度 <code>id</code>，<code>DATASET_MC</code> 使用维度 <code>tag_id</code>。<strong>修正</strong>：统一使用一个名称（例如 <code>tag_id</code>），并在 <code>columns:</code> 中映射数据仓库中的列（<code>tag_id: id</code>）。</p>
+<p><a id="p48"></a></p>
+<h2 id="p48-mapping-used-as-a-dimension-field-in-dimension">P48. 在 <code>dimension:</code> 中将映射用作维度字段 <a class="section-link" aria-label="本节链接" href="#p48-mapping-used-as-a-dimension-field-in-dimension">#</a></h2>
+<p><strong>错误</strong>：在 <code>columns: dimension:</code> 下写入 <code>- f_tag_id: {DATASET_PT}.id</code>。<strong>修正</strong>：只列出 <code>- f_tag_id</code>，并单独定义公式 <code>f_tag_id: |- …</code>。</p>
+<p><a id="p49"></a></p>
+<h2 id="p49-dimension-field-under-measures">P49. 在 <code>measures:</code> 下定义维度字段 <a class="section-link" aria-label="本节链接" href="#p49-dimension-field-under-measures">#</a></h2>
+<p><strong>错误</strong>：在数据集的 <code>measures:</code> 下为 <code>tag_id:</code> 定义公式。<strong>修正</strong>：在数据集的 <code>dimension:</code> 下声明定义数据行的粒度。指标仅用于聚合。</p>
+<p><a id="p50"></a></p>
+<h2 id="p50-complex-filter-in-query-filters">P50. 在查询的 <code>filters:</code> 中使用复杂筛选条件 <a class="section-link" aria-label="本节链接" href="#p50-complex-filter-in-query-filters">#</a></h2>
+<p><strong>错误</strong>：在查询的 <code>filters:</code> 中使用 EXISTS 子查询或涉及多个字段的 PK 链。<strong>修正</strong>：将谓词移到事实数据集的 <code>sql:</code> 中的 WHERE 子句。</p>
+<p><a id="p51"></a></p>
+<h2 id="p51-pk-chaining-parameter-count-mismatch">P51. PK 链式调用的参数数量不匹配 <a class="section-link" aria-label="本节链接" href="#p51-pk-chaining-parameter-count-mismatch">#</a></h2>
+<p><strong>错误</strong>：<code>DATASET_PRODUCTS</code> 的复合 PK 为 <code>(brand_id, tag_id)</code> 时，使用 <code>pk(1, tag_id).{DATASET_PRODUCTS}.state</code>。<strong>修正</strong>：使用 <code>pk(brand_id, tag_id).{DATASET_PRODUCTS}.state</code>，传入 PK 的所有列。</p>
+<p><a id="p52"></a></p>
+<h2 id="p52-manual-group-by-in-after">P52. 在 <code>after:</code> 中手动指定 GROUP BY <a class="section-link" aria-label="本节链接" href="#p52-manual-group-by-in-after">#</a></h2>
+<p><strong>错误</strong>：在标准指标查询的 <code>after:</code> 中使用 <code>group by</code> 再次聚合。<strong>修正</strong>：由查询块聚合指标。省略 <code>after:</code> 可按维度自动排序。如果自定义排序或行数限制需要使用该块，请引用 <code>{QUERY}</code>，并仅用该块控制结果的呈现（<code>select * from {QUERY}</code> 加上 ORDER BY／TOP／LIMIT），除非文档明确记录了无法避免的自定义后处理 SQL。</p>
+<hr>
+<p>有关命令和结果检查方法，请参阅<a href="how-to--compile-and-validate-zh.html">编译和验证查询</a>。</p>
+<p><a id="p60"></a></p>
+<h2 id="p60-subquery-for-max-date-in-aggregation-query">P60. 在聚合查询中使用子查询获取 MAX 日期 <a class="section-link" aria-label="本节链接" href="#p60-subquery-for-max-date-in-aggregation-query">#</a></h2>
+<p><strong>错误写法</strong>：<code>WHERE dt_month = (SELECT MAX(dt_month) FROM MODEL ...)</code> <strong>修正方法</strong>：将用于验证的月份写为固定值，或使用明细查询 <code>SELECT MAX(dt_month) FROM MODEL.&lt;dataset&gt;</code>。</p>
+<p><a id="p61"></a></p>
+<h2 id="p61-aggregating-directly-on-dataset-with-group-by">P61. 使用 GROUP BY 直接在数据集上聚合 <a class="section-link" aria-label="本节链接" href="#p61-aggregating-directly-on-dataset-with-group-by">#</a></h2>
+<p><strong>错误写法</strong>：<code>SELECT 购买方代码, 品牌, SUM(出厂价金额) FROM MODEL.DATASET_X GROUP BY 购买方代码, 品牌</code> <strong>现象</strong>：<code>cannot aggregate directly on dataset MODEL.DATASET_X using GROUP BY</code> <strong>修正方法</strong>：任选一种方式：(a) 在 <code>model.dml</code> 中定义指标，并将 <code>FROM MODEL</code> 与 <code>AGG()</code> 搭配使用；(b) 对于临时查询，通过 <code>/** dml ... **/</code> 格式的注释块使用内联指标，无需修改 <code>.dml</code>（参见<a href="reference--model-query-sql.zh.html#312-inline-measures--dml--">内联指标（<code>/** dml ... **/</code>）</a>）。</p>
+<h2 id="查询排错">查询排错 <a class="section-link" aria-label="本节链接" href="#查询排错">#</a></h2>
+<p>先用只含一个指标的查询确认模型和连接，再逐个加回维度、筛选和指标。行数偏多时检查数据集键重复、连接后的行数以及只在对比期间出现的键。数值不符时，用相同时间范围和数据快照运行独立 SQL，逐组比对键、NULL 和指标值。</p>
+</main></body></html>

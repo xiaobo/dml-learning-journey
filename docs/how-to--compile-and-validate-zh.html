@@ -1,6 +1,6 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>用 dmlc 命令行检查并运行查询 · DML</title><link rel="stylesheet" href="docs.css?v=d1a6e65840"><meta name="description" content="本指南覆盖：编译 Model Query、查看诊断与生成 SQL、校验源键、比较结果。可用旗标以你安装的可执行文件的 --help 与 --advanced-help 为准。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><meta property="og:type" content="website"><meta property="og:title" content="用 dmlc 命令行检查并运行查询 · DML"><meta property="og:description" content="本指南覆盖：编译 Model Query、查看诊断与生成 SQL、校验源键、比较结果。可用旗标以你安装的可执行文件的 --help 与 --advanced-help 为准。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.html">搜索文档</a><a href="how-to--compile-and-validate.html" hreflang="en" lang="en" rel="alternate">English</a></header><main><h1 id="用-dmlc-命令行检查并运行查询">用 dmlc 命令行检查并运行查询</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#1-确认可执行文件与模型">1. 确认可执行文件与模型</a></li><li><a href="#2-lint-与严格编译">2. Lint 与严格编译</a></li><li><a href="#3-捕获-json-且不改变编码">3. 捕获 JSON 且不改变编码</a></li><li><a href="#4-校验源键与数据库可执行性">4. 校验源键与数据库可执行性</a></li><li><a href="#5-执行并比较结果">5. 执行并比较结果</a></li><li><a href="#检查整个模型不先写查询">检查整个模型，不先写查询</a></li><li><a href="#练习发现并修复键声明问题">练习发现并修复键声明问题</a></li></ul></details>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>用 dmlc 命令行检查并运行查询 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本指南覆盖：编译 Model Query、查看诊断与生成 SQL、校验源键、比较结果。可用旗标以你安装的可执行文件的 --help 与 --advanced-help 为准。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="用 dmlc 命令行检查并运行查询 · DML"><meta property="og:description" content="本指南覆盖：编译 Model Query、查看诊断与生成 SQL、校验源键、比较结果。可用旗标以你安装的可执行文件的 --help 与 --advanced-help 为准。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="how-to--compile-and-validate.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="how-to--compile-and-validate.ja.html">日本語</a> <a lang="en" hreflang="en" href="how-to--compile-and-validate.html">English</a></header><main><h1 id="用-dmlc-命令行检查并运行查询">用 dmlc 命令行检查并运行查询</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#1-确认可执行文件与模型">1. 确认可执行文件与模型</a></li><li><a href="#2-lint-与严格编译">2. Lint 与严格编译</a></li><li><a href="#3-捕获-json-且不改变编码">3. 捕获 JSON 且不改变编码</a></li><li><a href="#4-校验源键与数据库可执行性">4. 校验源键与数据库可执行性</a></li><li><a href="#5-执行并比较结果">5. 执行并比较结果</a></li><li><a href="#检查整个模型不先写查询">检查整个模型，不先写查询</a></li><li><a href="#练习发现并修复键声明问题">练习发现并修复键声明问题</a></li><li><a href="#分析指标变化或从现有-sql-生成模型草稿">分析指标变化，或从现有 SQL 生成模型草稿</a></li></ul></details>
 <p>本指南覆盖：编译 Model Query、查看诊断与生成 SQL、校验源键、比较结果。可用旗标以你安装的可执行文件的 <code>--help</code> 与 <code>--advanced-help</code> 为准。</p>
-<h2 id="1-确认可执行文件与模型">1. 确认可执行文件与模型 <a class="section-link" aria-label="Link to section" href="#1-确认可执行文件与模型">#</a></h2>
+<h2 id="1-确认可执行文件与模型">1. 确认可执行文件与模型 <a class="section-link" aria-label="本节链接" href="#1-确认可执行文件与模型">#</a></h2>
 <p>与文档记录的构建比对行为之前，先记录可执行文件路径、版本、构建时间和 SHA-256。</p>
 <pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
 &amp; $dmlc --version
@@ -8,8 +8,8 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 &amp; $dmlc --advanced-help
 </code></pre>
 <p>安装 <code>dmlc.exe</code> 并将其目录加入 PATH。以下命令都在模型与查询所在目录运行。</p>
-<p>模型文件名要与 SQL 的 <code>FROM</code> 名一致：<code>model.dml</code> 对应 <code>FROM MODEL</code>，<code>acme.dml</code> 对应 <code>FROM acme</code>。用 <code>--model=model.dml</code> 指定文件，或传所在目录按文件名发现。参见<a href="reference--model-query-sql.html#2-query-types">查询发现规则</a>。</p>
-<h2 id="2-lint-与严格编译">2. Lint 与严格编译 <a class="section-link" aria-label="Link to section" href="#2-lint-与严格编译">#</a></h2>
+<p>模型文件名要与 SQL 的 <code>FROM</code> 名一致：<code>model.dml</code> 对应 <code>FROM MODEL</code>，<code>acme.dml</code> 对应 <code>FROM acme</code>。用 <code>--model=model.dml</code> 指定文件，或传所在目录按文件名发现。参见<a href="reference--model-query-sql.zh.html#2-query-types">查询发现规则</a>。</p>
+<h2 id="2-lint-与严格编译">2. Lint 与严格编译 <a class="section-link" aria-label="本节链接" href="#2-lint-与严格编译">#</a></h2>
 <p>先 lint 模型，再严格编译消费查询。</p>
 <pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
 &amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
@@ -17,7 +17,7 @@ Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
 <p>每条命令后检查进程退出码，阅读 JSON 里的 status、diagnostics、notes、生成 SQL 与输出顺序，并按查询契约核对生成的分组、关联、谓词、别名和输出列。</p>
 <p>严格编译返回 findings 时，保留警告与生成 SQL；先厘清目标数据范围与 NULL 行为，再改查询。去掉 <code>--strict</code> 不会让严格检查变成通过。</p>
 <p><code>--artifacts</code> 把编译产物存到目录；<code>--output</code> 把命令结果存到文件，两者不可混用。</p>
-<h2 id="3-捕获-json-且不改变编码">3. 捕获 JSON 且不改变编码 <a class="section-link" aria-label="Link to section" href="#3-捕获-json-且不改变编码">#</a></h2>
+<h2 id="3-捕获-json-且不改变编码">3. 捕获 JSON 且不改变编码 <a class="section-link" aria-label="本节链接" href="#3-捕获-json-且不改变编码">#</a></h2>
 <p>用 <code>--output</code> 保存查询结果；加 <code>--with-validation</code> 在目标连接上先校验模型数据集键，通过后才执行。</p>
 <pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --output=result.json --replace
 </code></pre>
@@ -40,7 +40,8 @@ process.exitCode = result.status ?? 1;
 </code></pre>
 <p>JSON 解析失败时，保留原始输出流与进程退出码，先诊断该失败，不要把它当作语言错误。</p>
 <p>Windows PowerShell 5.1 不支持 <code>&amp;&amp;</code>，请逐条运行命令；不要把 stderr 并入 JSON stdout。交互下需要屏蔽 stderr 时用 <code>2&gt;$null</code>。</p>
-<h2 id="4-校验源键与数据库可执行性">4. 校验源键与数据库可执行性 <a class="section-link" aria-label="Link to section" href="#4-校验源键与数据库可执行性">#</a></h2>
+<p><a id="4-validate-source-keys-and-database-acceptance"></a></p>
+<h2 id="4-校验源键与数据库可执行性">4. 校验源键与数据库可执行性 <a class="section-link" aria-label="本节链接" href="#4-校验源键与数据库可执行性">#</a></h2>
 <p>需要报告时用 <code>--validate</code>；当前证据缺失或过期、且需要结果时，用<a href="#5-%E6%89%A7%E8%A1%8C%E5%B9%B6%E6%AF%94%E8%BE%83%E7%BB%93%E6%9E%9C">带校验的查询执行</a>。</p>
 <pre><code class="language-powershell">&amp; $dmlc --validate query.sql --model=model.dml --connection=default --json
 </code></pre>
@@ -48,18 +49,27 @@ process.exitCode = result.status ?? 1;
 <p>校验检查查询用到的每个数据集声明键是否最多标识一行源数据，并用 <code>EXPLAIN</code> 检查数据库能否规划该查询。业务合计要用独立 SQL 结果核对。</p>
 <p>例如两笔不同的台账记录共享 <code>(account, invoice, party)</code> 键，金额分别为 10 和 20。若把该组合声明为数据集 <code>dimension:</code>，校验会报告该键及匹配的两行；用 <code>--with-validation</code> 时查询在执行前停止。应把台账记录 ID 声明为数据集键，再按 account、invoice、party 分组得到合计 30。若两行属于意外重复，修复源数据或产生它的关联。</p>
 <p>模型、查询契约、连接或相关源数据变化后要重新校验。前置条件缺失时，把该项记录为 <code>not run</code> 并写明缺什么。</p>
-<h2 id="5-执行并比较结果">5. 执行并比较结果 <a class="section-link" aria-label="Link to section" href="#5-执行并比较结果">#</a></h2>
+<h2 id="5-执行并比较结果">5. 执行并比较结果 <a class="section-link" aria-label="本节链接" href="#5-执行并比较结果">#</a></h2>
 <p>当前校验证据缺失或过期时，在目标连接上带 <code>--with-validation</code> 运行查询。</p>
 <pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --json
 </code></pre>
 <p>校验通过后查询和导出才会执行。校验失败或未完成时，先阅读报告、解决问题再重跑。校验与执行是两次独立读取，其间源数据可能并发变化。</p>
 <p>核对键、行重数、NULL 和全部度量。若存在独立结果，在同一源快照与口径下比较两条查询。</p>
 <p>DuckDB 缓存被锁时，先找到持有它的进程与连接；仅当另一连接确实代表目标源时才可换用。不要为绕开锁而修改源数据。</p>
-<p>具体失败场景见<a href="reference--troubleshooting--README.html">排错索引</a>与<a href="reference--error-codes.html">错误码</a>。</p>
-<h3 id="检查整个模型不先写查询">检查整个模型，不先写查询 <a class="section-link" aria-label="Link to section" href="#检查整个模型不先写查询">#</a></h3>
+<p>具体失败场景见<a href="reference--troubleshooting--README.zh.html">排错索引</a>与<a href="reference--error-codes.zh.html">错误码</a>。</p>
+<h3 id="检查整个模型不先写查询">检查整个模型，不先写查询 <a class="section-link" aria-label="本节链接" href="#检查整个模型不先写查询">#</a></h3>
 <p>运行 <code>dmlc --validate path/to/model.dml --connection=default</code>。需要结构化报告时加 <code>--json</code>，也可用 shell 重定向保存报告。</p>
 <p>这会加载所选文件及其 includes，检查模型编译，并在线检查各数据集声明的完整 dimension 键或半开区间约束。冲突报告沿用原列名和少量示例。报告中的 <code>checkedDatasets</code> 是实际检查范围；没有声明维度的数据集不会自动产生键约束。它不会构造或执行一条业务查询，不执行物化准备/安装脚本，也不能据此保证任意指标查询都能在数据库执行。要检查特定查询的数据库规划，另行提供该查询。</p>
-<h2 id="练习发现并修复键声明问题">练习发现并修复键声明问题 <a class="section-link" aria-label="Link to section" href="#练习发现并修复键声明问题">#</a></h2>
+<h2 id="练习发现并修复键声明问题">练习发现并修复键声明问题 <a class="section-link" aria-label="本节链接" href="#练习发现并修复键声明问题">#</a></h2>
 <p>运行<a href="examples--compound-key-zh.html">复合键</a>和<a href="examples--range-lookup-zh.html">有效期查找</a>案例，依次观察正常通过、重复键或区间重叠报错、修复后重新通过。再执行查询并核对结果。</p>
-<p><a href="how-to--compile-and-validate.html#inspect-a-change-or-recover-an-existing-query">贡献分析与 SQL 恢复（英文）</a></p>
+<p><a id="inspect-a-change-or-recover-an-existing-query"></a></p>
+<h2 id="分析指标变化或从现有-sql-生成模型草稿">分析指标变化，或从现有 SQL 生成模型草稿 <a class="section-link" aria-label="本节链接" href="#分析指标变化或从现有-sql-生成模型草稿">#</a></h2>
+<p>要看不同地区对指标变化的贡献，可以用 <code>--explain-change</code> 指定指标、当前期间和比较期间。用 <code>dmlc --advanced-help</code> 查看所需参数。模型中有 <code>net_revenue</code>、<code>dt_month</code> 和 <code>region</code> 时，下面的命令按地区比较二月与上月的净收入。</p>
+<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+</code></pre>
+<p>在这组样例数据中，上月为 300，本月为 400，两个地区对变化的贡献分别为 +200 和 −100。先核对两个期间的值，再看地区排名。贡献值和异常程度评分能帮你决定先查哪里；要解释变化的原因，还需要核实其他影响因素。</p>
+<p>如果手头已有查询，可以从 SQL 生成模型和查询草稿。</p>
+<pre><code class="language-powershell">dmlc --to-dml raw.sql --output=recovered.dml
+</code></pre>
+<p>为草稿指定新的输出路径，并保留生成时的警告。以上命令已用 dmlc 0.3.16 核对。各操作支持的参数不同，运行转换命令前请查看对应帮助。检查推断出的键、公式、参与计算的记录和警告，再编译并验证查询。在同一份源数据上分别运行原查询和恢复出的查询，对比结果后再决定是否采用草稿。</p>
 </main></body></html>

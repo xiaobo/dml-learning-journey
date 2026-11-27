@@ -1,0 +1,82 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>dmlc CLIでクエリを確認して実行する · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このガイドでは、モデルクエリのコンパイル、診断情報と生成されたSQLの確認、ソースデータのキーの検証、結果の比較を行います。インストール済みの実行ファイルで使用できるオプションは、--helpと--advanced-helpで確認できます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="dmlc CLIでクエリを確認して実行する · DML"><meta property="og:description" content="このガイドでは、モデルクエリのコンパイル、診断情報と生成されたSQLの確認、ソースデータのキーの検証、結果の比較を行います。インストール済みの実行ファイルで使用できるオプションは、--helpと--advanced-helpで確認できます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--compile-and-validate.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--compile-and-validate.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--compile-and-validate.html">English</a> <a lang="zh" hreflang="zh" href="how-to--compile-and-validate-zh.html">中文</a></header><main><h1 id="use-the-dmlc-cli-to-check-and-run-queries">dmlc CLIでクエリを確認して実行する</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#1-identify-the-executable-and-model">1. 実行ファイルとモデルを特定する</a></li><li><a href="#2-lint-and-strict-compile">2. lint チェックと厳格モードでのコンパイルを行う</a></li><li><a href="#3-capture-json-without-changing-its-encoding">3. 文字エンコーディングを変えずにJSONを保存する</a></li><li><a href="#4-validate-source-keys-and-database-acceptance">4. ソースデータのキーとデータベースでの計画可否を検証する</a></li><li><a href="#5-execute-and-compare-results">5. クエリを実行して結果を比較する</a></li><li><a href="#validate-a-whole-model">モデル全体を検証する</a></li><li><a href="#practice-a-modeldata-contract-repair">モデルとデータの不整合の修正を練習する</a></li><li><a href="#inspect-a-change-or-recover-an-existing-query">変化を調べる、または既存のクエリを復元する</a></li><li><a href="#编译与校验步骤">コンパイルと検証の手順</a></li></ul></details>
+<p>このガイドでは、モデルクエリのコンパイル、診断情報と生成されたSQLの確認、ソースデータのキーの検証、結果の比較を行います。インストール済みの実行ファイルで使用できるオプションは、<code>--help</code>と<code>--advanced-help</code>で確認できます。</p>
+<p>モデル、読み込まれる定義、関連する設定をクエリと一緒に保管してください。いずれかを変更すると、生成されるSQLが変わることがあります。</p>
+<h2 id="1-identify-the-executable-and-model">1. 実行ファイルとモデルを特定する <a class="section-link" aria-label="この節へのリンク" href="#1-identify-the-executable-and-model">#</a></h2>
+<p>ドキュメントに記載されたビルドと動作を比較する前に、実行ファイルのパス、バージョン、ビルドのタイムスタンプ、SHA-256ハッシュを記録します。</p>
+<pre><code class="language-powershell">$dmlc = (Get-Command dmlc.exe).Source
+&amp; $dmlc --version
+Get-FileHash -LiteralPath $dmlc -Algorithm SHA256
+&amp; $dmlc --advanced-help
+</code></pre>
+<p><code>dmlc.exe</code>をインストールし、そのディレクトリをPATHに追加します。以下のコマンドは、モデルとクエリが入っているディレクトリで実行します。</p>
+<p>モデルのファイル名とSQLの<code>FROM</code>句で指定する名前を対応させます。<code>model.dml</code>には<code>FROM MODEL</code>を、<code>acme.dml</code>には<code>FROM acme</code>を使用します。ファイルを指定するには<code>--model=model.dml</code>を渡します。ファイル名に基づいて自動検出するには、そのファイルが入っているディレクトリを渡します。詳しくは<a href="reference--model-query-sql.ja.html#2-query-types">クエリに対応するファイルの検出</a>を参照してください。</p>
+<h2 id="2-lint-and-strict-compile">2. lint チェックと厳格モードでのコンパイルを行う <a class="section-link" aria-label="この節へのリンク" href="#2-lint-and-strict-compile">#</a></h2>
+<p>モデルの lint チェックを行ってから、そのモデルを使うクエリを厳格モードでコンパイルします。</p>
+<pre><code class="language-powershell">&amp; $dmlc --lint model.dml --json
+&amp; $dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen
+</code></pre>
+<p>各コマンドの実行後に、プロセスの終了コードを確認します。JSON出力のステータス、診断情報、補足情報、出力されたSQL、出力順序を確認します。生成されたクエリのグループ化、結合、述語、別名、選択列が、クエリの仕様に合っていることを確認します。</p>
+<p>厳格モードでのコンパイルで指摘が出た場合は、警告と出力されたSQLを保存します。クエリを変更する前に、対象となるデータの範囲とNULLの扱いを明確にします。<code>--strict</code>を外しても、厳格モードのチェックに合格したことにはなりません。</p>
+<p><code>--artifacts</code>を使うと、コンパイルで生成されたSQLと関連ファイルをディレクトリに保存できます。コマンドの結果をファイルに保存するには、<code>--output</code>を使います。</p>
+<h2 id="3-capture-json-without-changing-its-encoding">3. 文字エンコーディングを変えずにJSONを保存する <a class="section-link" aria-label="この節へのリンク" href="#3-capture-json-without-changing-its-encoding">#</a></h2>
+<p><code>--output</code> でクエリの結果行をファイルに保存します。次の例では --replace を指定しているため、既存の result.json を上書きできます。<code>--with-validation</code> を付けると、実行前に、クエリが使うデータセットのキーを対象の接続先で検証します。</p>
+<pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --output=result.json --replace
+</code></pre>
+<p>lint チェックやコンパイルの記録を取るときは、stdout と stderr を別々に取得します。Node.js で引数を配列として渡すと、シェル用の引用符処理を避けられ、デコードにUTF-8を明示的に指定できます。このスクリプトを、モデルとクエリと同じディレクトリに<code>compile.cjs</code>として保存します。</p>
+<pre><code class="language-javascript">const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+const result = spawnSync(process.argv[2], [
+	'--compile', '--strict', 'query.sql', '--model=model.dml',
+	'--json', '--artifacts=gen'
+], { encoding: 'utf8', cwd: __dirname });
+if (result.error) throw result.error;
+fs.writeFileSync('compile.stdout.json', result.stdout);
+fs.writeFileSync('compile.stderr.txt', result.stderr);
+const report = JSON.parse(result.stdout);
+console.log(JSON.stringify({ processExit: result.status, report }, null, 2));
+process.exitCode = result.status ?? 1;
+</code></pre>
+<p>選択した実行ファイルを指定して、スクリプトを実行します。</p>
+<pre><code class="language-powershell">node compile.cjs $dmlc
+</code></pre>
+<p>JSONの解析に失敗した場合は、加工していない出力ストリームとプロセスの終了コードを保存します。クエリ言語のエラーと判断する前に、解析に失敗した原因を調べます。</p>
+<p>Windows PowerShell 5.1では、ネイティブコマンドの出力をパイプで<code>Out-File</code>に渡したり、テキストとして取得したりすると、ASCII以外の文字が通知なしに破損することがあります。stdout を取得する前に、コンソールのデコード設定をUTF-8にします。</p>
+<pre><code class="language-powershell">[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+</code></pre>
+<p>stdout をバイト列のまま保存するには、モデルのディレクトリでコマンド プロンプト（<code>cmd.exe</code>）を開き、次のコマンドを実行します。</p>
+<pre><code class="language-bat">dmlc.exe --compile --strict query.sql --model=model.dml --json --artifacts=gen &gt; compile.stdout.json 2&gt; compile.stderr.txt
+</code></pre>
+<p>Windows PowerShell 5.1は<code>&amp;&amp;</code>に対応していないため、コマンドは個別に実行します。JSONを出力する stdout に stderr を混ぜないでください。対話操作で stderr を抑制する必要がある場合は、PowerShellで<code>2&gt;$null</code>を使います。</p>
+<h2 id="4-validate-source-keys-and-database-acceptance">4. ソースデータのキーとデータベースでの計画可否を検証する <a class="section-link" aria-label="この節へのリンク" href="#4-validate-source-keys-and-database-acceptance">#</a></h2>
+<p>レポートが必要な場合は、<code>--validate</code>を使います。結果が必要で、検証記録がないか、既存の記録が古い場合は、<a href="#5-execute-and-compare-results">検証付きのクエリ実行</a>を使います。</p>
+<pre><code class="language-powershell">&amp; $dmlc --validate query.sql --model=model.dml --connection=default --json
+</code></pre>
+<p><code>default</code> を対象の接続名に置き換えます。終了コード、検証ステータス、検証したデータセット、報告された問題を確認します。CLI の JSON レポートでは、検証の詳細は <code>data</code> にあります。</p>
+<p>検証では、クエリが使用する宣言済みのデータセットキーごとに、同じキー値に対応するソース行が最大1行であることを確認します。また、<code>EXPLAIN</code>を使って、データベースがクエリの実行計画を作成できるかを確認します。業務上の集計値は、独立したSQLクエリの結果で確認します。</p>
+<p>たとえば、異なる2件の仕訳が同じキー<code>(account, invoice, party)</code>を持ち、金額がそれぞれ10と20だとします。この組み合わせがデータセットの<code>dimension:</code>として宣言されている場合、検証ではそのキーと、一致した2行が報告されます。<code>--with-validation</code>を指定すると、クエリは実行前に停止します。仕訳のIDをデータセットキーとして宣言し、クエリで account、invoice、party ごとにグループ化すると、合計は30になります。2行が意図しない重複である場合は、ソースデータか、重複を生じさせた結合を修正します。</p>
+<p>モデル、クエリの仕様、接続、関連するソースデータのいずれかが変わった場合は、検証をやり直します。前提条件が満たされていない場合は、チェックの結果を<code>not run</code>として記録し、不足している前提条件を明記します。</p>
+<h2 id="5-execute-and-compare-results">5. クエリを実行して結果を比較する <a class="section-link" aria-label="この節へのリンク" href="#5-execute-and-compare-results">#</a></h2>
+<p><code>--with-validation</code>を指定し、対象の接続先でクエリを実行します。このオプションを付けずに実行すると、接続先のデータを使ったデータセットキーの検証と、データベースで実行計画を作成できるかどうかの確認が省略されます。</p>
+<pre><code class="language-powershell">&amp; $dmlc --query query.sql --model=model.dml --connection=default --with-validation --json
+</code></pre>
+<p>クエリと指定したエクスポートは、検証に合格した後にのみ実行されます。検証に失敗した場合や検証を完了できない場合は、レポートを確認し、問題を解消してから再実行します。検証と実行では、データベースを別々に読み取ります。その間に、別の処理がデータを変更することがあります。</p>
+<p>キー、各行の出現回数、NULL、すべての指標を確認します。独立して得られた結果がある場合は、同じソースデータのスナップショットと同じ対象範囲で、両方のクエリの結果を比較します。</p>
+<p>DuckDBのキャッシュがロックされている場合は、ロックを保持しているプロセスと接続を特定します。設定済みの別の接続を使うのは、その接続が目的のデータソースを指している場合に限ります。ロックを回避するためだけにソースデータを変更しないでください。</p>
+<p>個別のエラーについては、<a href="reference--troubleshooting--README.ja.html">トラブルシューティングの索引</a>と<a href="reference--error-codes.ja.html">エラーコード</a>を参照してください。</p>
+<h3 id="validate-a-whole-model">モデル全体を検証する <a class="section-link" aria-label="この節へのリンク" href="#validate-a-whole-model">#</a></h3>
+<p><code>dmlc --validate model.dml --connection=default --json</code>を実行すると、モデルを使うクエリを指定せずに、宣言済みのキーと範囲制約を検証できます。検証対象のデータセットは<code>checkedDatasets</code>で確認します。特定のクエリの実行計画を確認するには、代わりにそのクエリを指定します。</p>
+<h2 id="practice-a-modeldata-contract-repair">モデルとデータの不整合の修正を練習する <a class="section-link" aria-label="この節へのリンク" href="#practice-a-modeldata-contract-repair">#</a></h2>
+<p><a href="examples--compound-key.ja.html">複合キー</a>と<a href="examples--range-lookup.ja.html">有効範囲</a>の例を実行します。通常の検証、意図的に作った重複や範囲の重なりによる検証エラー、修正後の検証と、それに続く結果の比較を確認します。これにより、参照結果を使う前に、宣言されたキーと実際のデータの不整合を見つけられます。検証とクエリの実行は別々の処理です。検証に合格しても、両方の処理が同じスナップショットを使うことや、今後もキーの一意性が保たれることは保証されません。</p>
+<h2 id="inspect-a-change-or-recover-an-existing-query">変化を調べる、または既存のクエリを復元する <a class="section-link" aria-label="この節へのリンク" href="#inspect-a-change-or-recover-an-existing-query">#</a></h2>
+<p><code>--explain-change</code> では、指標名と対象期間を指定し、どの期間と比較するかを決めます。次の例では前の期間と比較します。必要な引数は <code>dmlc --advanced-help</code> で確認できます。<code>net_revenue</code>、<code>dt_month</code>、<code>region</code> を含むモデルで確認したコマンドは次のとおりです。</p>
+<pre><code class="language-powershell">dmlc --explain-change --measure=net_revenue --dim_dt=dt_month --current=2025-02-01 --baseline-modifier=pp --dimensions=region --model=model.dml
+</code></pre>
+<p>比較用のテストデータでは、基準値は 300、現在値は 400、地域別の寄与は +200 と -100 です。これらはこのテストデータの値であり、このサイトのすべての例に共通する値ではありません。ディメンションの順位を解釈する前に、基準値と現在値を確認してください。寄与と意外性スコアは、何を調べるかを決める手がかりになります。原因の特定や交絡要因の除外はできません。</p>
+<p>既存の SQL クエリから、<code>--to-dml</code> でモデルとクエリのドラフトを生成できます。</p>
+<pre><code class="language-powershell">dmlc --to-dml raw.sql --output=recovered.dml
+</code></pre>
+<p>新しい出力パスを使い、生成されたドラフトに関する警告は残してください。これらのコマンドは dmlc 0.3.16 で確認済みです。利用できるオプションは操作によって異なるため、コンパイル専用のオプションを復元コマンドに付けないでください。推定されたキー、数式、母集団と、出力された警告を確認します。その後、復元したクエリをコンパイルして検証し、同じソースデータのスナップショットを使って元のクエリと結果を比較してください。ドラフトの生成は、セマンティックモデルが本番環境で使用できることを保証するものではありません。</p>
+<p>これらのツールを組み込む際は、データベースとアプリケーションの責務を明確にしてください。アクセスはデータベースの権限とアプリケーションの認可で制御します。モデルのフィルターだけではアクセス制御を保証できません。生成された SQL には複数の文や一時リレーションが含まれることがあり、カレンダーに依存する場合もあります。性能について述べる前に、対象のエンジンで実行を確認し、代表的なワークロードで性能を測定してください。コンパイラはダッシュボードや実行スケジュールの機能を提供しません。</p>
+<h2 id="编译与校验步骤">コンパイルと検証の手順 <a class="section-link" aria-label="この節へのリンク" href="#编译与校验步骤">#</a></h2>
+<p>作業ディレクトリで、まず <code>dmlc --lint model.dml --json</code> を実行し、次に <code>dmlc --compile --strict query.sql --model=model.dml --json --artifacts=gen</code> を実行します。終了コード、診断メッセージ、生成された SQL を確認してください。検証レポートだけが必要な場合は <code>--validate</code> を使います。クエリ結果が必要な場合は <code>--query</code> と <code>--with-validation</code> を使い、<code>--connection=default</code> で接続先を指定します。<code>--with-validation</code> を付けずに実行すると、接続先のデータベースでのキー検査がスキップされます。</p>
+</main></body></html>

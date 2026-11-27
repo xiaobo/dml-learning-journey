@@ -1,0 +1,59 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DML と DMX の言語リファレンス · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="概念の説明と使い方はドキュメント一覧を、具体例を使った実装パターンはサンプルカタログを参照してください。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--README.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--README.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--README.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--README.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--README.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DML と DMX の言語リファレンス · DML"><meta property="og:description" content="概念の説明と使い方はドキュメント一覧を、具体例を使った実装パターンはサンプルカタログを参照してください。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--README.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--README.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--README.html">English</a> <a lang="zh" hreflang="zh" href="reference--README.zh.html">中文</a></header><main><h1 id="dml-and-dmx-language-reference">DML と DMX の言語リファレンス</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#language-definitions">言語仕様</a></li><li><a href="#diagnostics-and-built-in-definitions">診断と組み込み定義</a></li></ul></details>
+<p>概念の説明と使い方は<a href="docs.ja.html">ドキュメント一覧</a>を、具体例を使った実装パターンは<a href="reference--examples--README.ja.html">サンプルカタログ</a>を参照してください。</p>
+<h2 id="language-definitions">言語仕様 <a class="section-link" aria-label="この節へのリンク" href="#language-definitions">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>トピック</th>
+<th>リファレンス</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>評価コンテキスト、粒度の互換性、合成</td>
+<td><a href="reference--semantics.ja.html">評価のセマンティクス</a></td>
+</tr>
+<tr>
+<td>データセット、列、メタデータ</td>
+<td><a href="reference--model-structure.ja.html">モデルの構造</a></td>
+</tr>
+<tr>
+<td>アトミック指標と複合指標、ウィンドウ、補完</td>
+<td><a href="reference--measures.ja.html">指標の宣言</a></td>
+</tr>
+<tr>
+<td>参照、複合キーまたは有効日による検索、関数、実行時変数</td>
+<td><a href="reference--expressions.ja.html">DMX 式</a></td>
+</tr>
+<tr>
+<td>時間、ディメンション、フィルターの修飾子</td>
+<td><a href="reference--modifiers.ja.html">指標の修飾子</a></td>
+</tr>
+<tr>
+<td><code>FROM</code>、<code>AGG</code>、フィルター、グループ化</td>
+<td><a href="reference--model-query-sql.ja.html">Model Query SQL</a></td>
+</tr>
+<tr>
+<td><code>type: query</code>、列、フィルター</td>
+<td><a href="reference--query-yaml.ja.html">YAML でのクエリ宣言</a></td>
+</tr>
+<tr>
+<td>保存されるグループ化キー、属性、指標</td>
+<td><a href="reference--materialization.ja.html">マテリアライズの宣言</a></td>
+</tr>
+<tr>
+<td>インクルード、前方参照、名前</td>
+<td><a href="reference--model-composition.ja.html">モデルの合成</a></td>
+</tr>
+<tr>
+<td>結合時の等価比較、NULL キー、結果に含まれる行</td>
+<td><a href="reference--join-null-equality.ja.html">結合時の NULL の等価比較</a></td>
+</tr>
+</tbody></table>
+<h2 id="diagnostics-and-built-in-definitions">診断と組み込み定義 <a class="section-link" aria-label="この節へのリンク" href="#diagnostics-and-built-in-definitions">#</a></h2>
+<ul>
+<li><a href="reference--error-codes.ja.html">エラーコード</a> — 各コードの意味と推奨される対処方法。</li>
+<li><a href="reference--troubleshooting--README.ja.html">トラブルシューティング</a> — 症状と、つまずきやすい問題に付けられた安定した識別子。</li>
+<li><a href="02-syntax--system_macros.dml">システムマクロ</a> — サンプルで使用する組み込みマクロの定義。</li>
+</ul>
+<p>コマンドラインオプションについては、インストール済みの実行ファイルで <code>dmlc --help</code> と <code>dmlc --advanced-help</code> を実行し、出力を確認してください。</p>
+</main></body></html>

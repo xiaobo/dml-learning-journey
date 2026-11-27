@@ -1,0 +1,250 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMLC 错误代码参考 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="使用这些代码确定发生错误的阶段，并选择相应的解决方法。除了进程退出码，还要检查诊断信息和生成的 SQL。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="DMLC 错误代码参考 · DML"><meta property="og:description" content="使用这些代码确定发生错误的阶段，并选择相应的解决方法。除了进程退出码，还要检查诊断信息和生成的 SQL。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--error-codes.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--error-codes.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--error-codes.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--error-codes.html">English</a></header><main><h1 id="dmlc-error-codes-reference">DMLC 错误代码参考</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#path-display-convention">路径显示规则</a></li><li><a href="#error-code-categories">错误代码类别</a></li><li><a href="#error-codes">错误代码</a></li><li><a href="#file-io-errors">文件 I/O 错误</a></li><li><a href="#connection-errors">连接错误</a></li><li><a href="#query-execution-errors">查询执行错误</a></li><li><a href="#compilation-errors">编译错误</a></li><li><a href="#generation-errors">生成错误</a></li><li><a href="#dimension-validation-errors">维度验证错误</a></li><li><a href="#workspaceoperation-errors">工作区和操作错误</a></li><li><a href="#general-errors">常规错误</a></li></ul></details>
+<p>使用这些代码确定发生错误的阶段，并选择相应的解决方法。除了进程退出码，还要检查诊断信息和生成的 SQL。</p>
+<h2 id="path-display-convention">路径显示规则 <a class="section-link" aria-label="本节链接" href="#path-display-convention">#</a></h2>
+<p>在所有平台上，向用户显示的文件路径均使用<strong>正斜杠</strong>（<code>/</code>）：</p>
+<ul>
+<li>在错误消息中，<code>..\data</code> 或 <code>../data</code> 等用户输入会规范化为 <code>../data</code>。</li>
+<li>含工作区占位符的路径使用 <code>&lt;workspaceFolder&gt;/relative/path</code> 格式。占位符之后的路径中不得使用反斜杠。</li>
+<li>解析后的文件系统路径尽可能以相对于当前工作目录的形式显示。</li>
+</ul>
+<h2 id="error-code-categories">错误代码类别 <a class="section-link" aria-label="本节链接" href="#error-code-categories">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>说明</th>
+<th>CLI 退出码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INVALID_INPUT</td>
+<td>输入验证失败。用户可以修正输入后重试。</td>
+<td>64</td>
+</tr>
+<tr>
+<td>VALIDATION</td>
+<td>用户级验证失败（解析结果为 OK，但参数无效）</td>
+<td>65</td>
+</tr>
+<tr>
+<td>NOT_FOUND</td>
+<td>找不到请求的资源</td>
+<td>66</td>
+</tr>
+<tr>
+<td>CONFIG</td>
+<td>配置错误（缺少配置、配置无效、连接 ID 未知等）</td>
+<td>78</td>
+</tr>
+<tr>
+<td>TIMEOUT</td>
+<td>操作超时。请更改参数后重试。</td>
+<td>69</td>
+</tr>
+<tr>
+<td>COMPILE</td>
+<td>编译失败（语法错误或模型错误）</td>
+<td>2</td>
+</tr>
+<tr>
+<td>EXECUTION</td>
+<td>执行失败，重试可能成功。</td>
+<td>70</td>
+</tr>
+<tr>
+<td>INTERNAL</td>
+<td>发生意外的内部错误，应报告此错误。</td>
+<td>70</td>
+</tr>
+<tr>
+<td>BLOCKED</td>
+<td>操作因策略或当前状态而受阻</td>
+<td>77</td>
+</tr>
+</tbody></table>
+<h2 id="error-codes">错误代码 <a class="section-link" aria-label="本节链接" href="#error-codes">#</a></h2>
+<h3 id="file-io-errors">文件 I/O 错误 <a class="section-link" aria-label="本节链接" href="#file-io-errors">#</a></h3>
+<h4 id="file_not_found">FILE_NOT_FOUND</h4>
+<ul>
+<li><strong>类别</strong>：NOT_FOUND</li>
+<li><strong>代码</strong>：FILE_NOT_FOUND</li>
+<li><strong>常见原因</strong>：文件路径不正确、文件不存在，或文件位于工作区文件夹之外。</li>
+<li><strong>建议的解决方法</strong>：确认文件路径正确，且位于工作区文件夹内。</li>
+<li><strong>示例</strong>：<code>File not found: /path/to/file.dml</code></li>
+</ul>
+<h4 id="file_already_exists">FILE_ALREADY_EXISTS</h4>
+<ul>
+<li><strong>类别</strong>：BLOCKED</li>
+<li><strong>代码</strong>：FILE_ALREADY_EXISTS</li>
+<li><strong>常见原因</strong>：尝试创建已存在的文件，但未指定覆盖。</li>
+<li><strong>解决方法</strong>：换一个输出文件名。如果确实要替换现有文件，请使用该命令支持的覆盖选项。</li>
+<li><strong>示例</strong>：<code>File already exists: /path/to/file.csv</code></li>
+</ul>
+<h4 id="unsupported_file_type">UNSUPPORTED_FILE_TYPE</h4>
+<ul>
+<li><strong>类别</strong>：INVALID_INPUT</li>
+<li><strong>代码</strong>：UNSUPPORTED_FILE_TYPE</li>
+<li><strong>常见原因</strong>：尝试使用不受支持的文件格式。</li>
+<li><strong>建议的解决方法</strong>：使用受支持的文件类型（parquet、csv、xlsx）。</li>
+<li><strong>示例</strong>：<code>Unsupported file type: .txt. Supported types: .csv, .xlsx, .parquet</code></li>
+</ul>
+<h4 id="path_outside_workspace">PATH_OUTSIDE_WORKSPACE</h4>
+<ul>
+<li><strong>类别</strong>：BLOCKED</li>
+<li><strong>代码</strong>：PATH_OUTSIDE_WORKSPACE</li>
+<li><strong>常见原因</strong>：文件路径位于工作区文件夹之外，例如通过 <code>../</code> 跳出该文件夹的路径、指向其他驱动器的绝对路径，或解析到工作区之外的符号链接。</li>
+<li><strong>建议的解决方法</strong>：使用指向工作区文件夹内的相对路径。</li>
+<li><strong>示例</strong>：<code>File path must be within workspace: ../outside/file.csv. Workspace folder: &lt;workspaceFolder&gt;</code></li>
+<li><strong>路径显示</strong>：在所有平台上，错误消息和 CLI 输出中向用户显示的路径均使用正斜杠（<code>/</code>），包括 <code>&lt;workspaceFolder&gt;/relative/path</code> 这类含占位符的路径。</li>
+<li><strong>说明</strong>：如果在 CLI 中配置了 <code>WORKSPACE_FOLDER</code>，输入和输出文件必须位于该目录内。</li>
+</ul>
+<h4 id="no_sheets_in_excel">NO_SHEETS_IN_EXCEL</h4>
+<ul>
+<li><strong>类别</strong>：INVALID_INPUT</li>
+<li><strong>代码</strong>：NO_SHEETS_IN_EXCEL</li>
+<li><strong>常见原因</strong>：Excel 文件不含工作表，或文件已损坏。</li>
+<li><strong>建议的解决方法</strong>：提供至少包含一张工作表的有效 Excel 文件。</li>
+<li><strong>示例</strong>：<code>Excel file has no sheets: /path/to/file.xlsx</code></li>
+</ul>
+<h3 id="connection-errors">连接错误 <a class="section-link" aria-label="本节链接" href="#connection-errors">#</a></h3>
+<h4 id="connection_not_found">CONNECTION_NOT_FOUND</h4>
+<ul>
+<li><strong>类别</strong>：CONFIG</li>
+<li><strong>代码</strong>：CONNECTION_NOT_FOUND</li>
+<li><strong>常见原因</strong>：connections.json 中不存在该连接 ID。</li>
+<li><strong>建议的解决方法</strong>：列出可用连接并选择有效的连接 ID，或将连接添加到 connections.json。</li>
+<li><strong>示例</strong>：<code>Connection not found: production. Available connections: [dev, staging]</code></li>
+</ul>
+<h4 id="list_connections_error">LIST_CONNECTIONS_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：EXECUTION</li>
+<li><strong>代码</strong>：LIST_CONNECTIONS_ERROR</li>
+<li><strong>常见原因</strong>：由于数据库或配置错误，无法列出可用连接。</li>
+<li><strong>建议的解决方法</strong>：检查连接配置，并确认能否访问数据库。</li>
+<li><strong>示例</strong>：<code>Failed to list connections: Connection refused</code></li>
+</ul>
+<h3 id="query-execution-errors">查询执行错误 <a class="section-link" aria-label="本节链接" href="#query-execution-errors">#</a></h3>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：EXECUTION</li>
+<li><strong>代码</strong>：EXECUTION_ERROR</li>
+<li><strong>常见原因</strong>：查询执行失败，原因可能是 SQL 错误、数据问题、数据库问题，或模型变更后 materialize 缓存已过时。</li>
+<li><strong>建议的解决方法</strong>：检查查询语法、数据类型和数据库连接。如果消息提到 materialize 的 semver 已过时，或包含 <code>pls re-setup related model</code>，请运行 <code>dmlc -s &lt;model.dml&gt; --connection=&lt;id&gt;</code>，然后使用相同的 <code>--model</code> 值重试查询。</li>
+<li><strong>示例</strong>：<code>Execution failed: Column 'invalid_column' does not exist</code></li>
+<li><strong>示例（materialize 已过时）</strong>：<code>materialize abort: procedure PROC_M__CACHED_SALES is obsolete since semver (...) is different from expect: ..., pls re-setup related model</code></li>
+</ul>
+<h4 id="execution_interrupted">EXECUTION_INTERRUPTED</h4>
+<ul>
+<li><strong>类别</strong>：EXECUTION</li>
+<li><strong>代码</strong>：EXECUTION_INTERRUPTED</li>
+<li><strong>常见原因</strong>：查询被用户或系统中断。</li>
+<li><strong>建议的解决方法</strong>：重试查询。</li>
+<li><strong>示例</strong>：<code>Query execution interrupted</code></li>
+</ul>
+<h4 id="timeout_error">TIMEOUT_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：TIMEOUT</li>
+<li><strong>代码</strong>：TIMEOUT_ERROR</li>
+<li><strong>常见原因</strong>：查询执行耗时过长。</li>
+<li><strong>建议的解决方法</strong>：增大 timeoutSeconds 参数的值，或简化查询。可以考虑添加 materialize 来提高性能。</li>
+<li><strong>示例</strong>：<code>Query timed out after 30 seconds</code></li>
+</ul>
+<h3 id="compilation-errors">编译错误 <a class="section-link" aria-label="本节链接" href="#compilation-errors">#</a></h3>
+<h4 id="compile_error">COMPILE_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：VALIDATION</li>
+<li><strong>代码</strong>：COMPILE_ERROR</li>
+<li><strong>常见原因</strong>：DML 语法错误、模型验证错误、SQL 生成错误，或修饰符组合非法。例如，在同一个修饰符对象中，对同一维度同时使用 <code>+d</code> 和 <code>-d</code>/<code>-df</code>。语言规范要求对此类组合明确报错。请参阅<a href="reference--semantics.zh.html#45-modifier-composition">修饰符组合</a>和常见问题 P79。</li>
+<li><strong>建议的解决方法</strong>：修复编译错误，确认 model.dml 位于工作区文件夹内，并检查 error.details.generatedSql 中生成的 SQL。如果 <code>+d</code>/<code>-d</code>/<code>-df</code> 之间存在冲突，请改写为单一、明确的操作，不要依赖修饰符相互抵消。</li>
+<li><strong>示例</strong>：<code>Compilation failed — see details.compilationErrors</code></li>
+<li><strong>说明</strong>：在当前已验证的构建版本中，已检查的同一字段上的 <code>+d</code> 冲突不会报错。请明确指定一个求值阶段，并检查生成的 SQL。不要依赖修饰符相互抵消。</li>
+</ul>
+<h4 id="compile_timeout">COMPILE_TIMEOUT</h4>
+<ul>
+<li><strong>类别</strong>：TIMEOUT</li>
+<li><strong>代码</strong>：COMPILE_TIMEOUT</li>
+<li><strong>常见原因</strong>：编译耗时过长。</li>
+<li><strong>建议的解决方法</strong>：简化 DML 模型、降低复杂度并延长超时时间。</li>
+<li><strong>示例</strong>：<code>Compilation timed out after 30 seconds</code></li>
+</ul>
+<h4 id="validation_error">VALIDATION_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：VALIDATION</li>
+<li><strong>代码</strong>：VALIDATION_ERROR</li>
+<li><strong>常见原因</strong>：违反了已声明的维度约束。请检查 <code>data.status</code> 和 <code>data.issues</code>。</li>
+<li><strong>建议的解决方法</strong>：修正无效的参数或配置。</li>
+<li><strong>示例</strong>：<code>Declared dimension constraints were violated; see data.issues.</code></li>
+</ul>
+<h3 id="generation-errors">生成错误 <a class="section-link" aria-label="本节链接" href="#generation-errors">#</a></h3>
+<h4 id="model_resolution_error">MODEL_RESOLUTION_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：NOT_FOUND</li>
+<li><strong>代码</strong>：MODEL_RESOLUTION_ERROR</li>
+<li><strong>常见原因</strong>：在 SQL 文件所在目录、<code>--model=&lt;dir&gt;</code> 指定的目录或模型搜索路径中均找不到 <code>&lt;FROM&gt;.dml</code>。其他可能的原因包括同时使用了 <code>--model=acme.dml</code> 和 <code>FROM MODEL</code>（文件与 FROM 不匹配，退出码为 65），或向仅接受文件的操作传入了目录。</li>
+<li><strong>建议的修复方法</strong>：对于 query、compile 和 validate 命令，请传入包含匹配的 <code>.dml</code> 文件的目录，或传入文件名与 <code>FROM</code> 匹配的文件。对于 setup 命令，请传入 <code>.dml</code> 文件。</li>
+<li><strong>示例</strong>：<code>model file "acme.dml" does not match FROM "MODEL" (expected "MODEL.dml").</code></li>
+</ul>
+<h4 id="filter_validation_error">FILTER_VALIDATION_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：VALIDATION</li>
+<li><strong>代码</strong>：FILTER_VALIDATION_ERROR</li>
+<li><strong>常见原因</strong>：筛选器语法错误或字段名无效</li>
+<li><strong>建议的修复方法</strong>：修正筛选器中的字段名或语法。</li>
+<li><strong>示例</strong>：<code>Filter validation failed: invalid field 'dt_invalid'</code></li>
+</ul>
+<h3 id="dimension-validation-errors">维度验证错误 <a class="section-link" aria-label="本节链接" href="#dimension-validation-errors">#</a></h3>
+<p><a id="dimension-not-unique"></a>
+<a id="dimension_not_unique"></a></p>
+<h4 id="duplicate-keys-and-overlapping-ranges">重复的键和重叠的范围</h4>
+<ul>
+<li><strong>类别</strong>：VALIDATION</li>
+<li><strong>错误码</strong>：VALIDATION_ERROR。请在 <code>data.issues</code> 中查看问题类型。</li>
+<li><strong>常见原因</strong>：数据集的完整维度值组合出现多次，或按范围查找时可能匹配到范围相互重叠的源数据行。</li>
+<li><strong>建议的修复方法</strong>：修正源键、数据集的 <code>dimension:</code> 字段列表、重叠的范围或源数据，然后重新运行 <code>--validate</code>。无论是在编译生成的 SQL 中使用 <code>DISTINCT</code>/<code>GROUP BY</code>，还是使用 <code>DISTINCTCOUNT</code> 指标，都无法解决 <code>pk(...)</code> 查找结果不唯一的问题。</li>
+<li><strong>示例</strong>：<code>Declared DML dataset dimension is not unique in dataset 'Order Line' on this connection at validation time.</code></li>
+</ul>
+<p><a id="validation_query_failed"></a></p>
+<h4 id="execution_error-1">EXECUTION_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：EXECUTION</li>
+<li><strong>代码</strong>：EXECUTION_ERROR</li>
+<li><strong>常见原因</strong>：验证查询执行失败。</li>
+<li><strong>建议的解决方法</strong>：检查连接配置，并确认能否访问数据库。</li>
+<li><strong>示例</strong>：<code>Validation query failed: Connection refused</code></li>
+</ul>
+<h3 id="workspaceoperation-errors">工作区和操作错误 <a class="section-link" aria-label="本节链接" href="#workspaceoperation-errors">#</a></h3>
+<h4 id="no_workspace">NO_WORKSPACE</h4>
+<ul>
+<li><strong>类别</strong>：BLOCKED</li>
+<li><strong>代码</strong>：NO_WORKSPACE</li>
+<li><strong>常见原因</strong>：未设置工作区文件夹，或无法访问工作区。</li>
+<li><strong>建议的修复方法</strong>：设置工作区文件夹，或检查工作区的访问权限。</li>
+<li><strong>示例</strong>：<code>No workspace folder configured</code></li>
+</ul>
+<h4 id="invalid_params">INVALID_PARAMS</h4>
+<ul>
+<li><strong>类别</strong>：VALIDATION</li>
+<li><strong>代码</strong>：INVALID_PARAMS</li>
+<li><strong>常见原因</strong>：参数名或参数值无效。</li>
+<li><strong>建议的修复方法</strong>：修正参数名或参数值，并检查该参数允许的选项。</li>
+<li><strong>示例</strong>：<code>Invalid parameter: 'invalid_param'. Valid options: ['param1', 'param2']</code></li>
+</ul>
+<h4 id="file_export_error">FILE_EXPORT_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：EXECUTION</li>
+<li><strong>代码</strong>：FILE_EXPORT_ERROR</li>
+<li><strong>常见原因</strong>：数据导出到文件失败。</li>
+<li><strong>解决方法</strong>：检查输出路径和写入权限，再重新导出。如果目标文件已存在，请换一个文件名；确实要替换它时，再启用覆盖。</li>
+<li><strong>示例</strong>：<code>File export failed: Permission denied</code></li>
+</ul>
+<h3 id="general-errors">常规错误 <a class="section-link" aria-label="本节链接" href="#general-errors">#</a></h3>
+<h4 id="unexpected_error">UNEXPECTED_ERROR</h4>
+<ul>
+<li><strong>类别</strong>：INTERNAL</li>
+<li><strong>代码</strong>：UNEXPECTED_ERROR</li>
+<li><strong>常见原因</strong>：发生了意外的内部错误。</li>
+<li><strong>建议的修复方法</strong>：按照<a href="support.html">支持检查清单</a>准备一个最小复现示例，并通过您现有的产品联系人提交。目前尚未列出公开的支持渠道。</li>
+<li><strong>示例</strong>：<code>Unexpected error: NullPointerException</code></li>
+</ul>
+</main></body></html>

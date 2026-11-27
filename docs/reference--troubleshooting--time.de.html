@@ -1,0 +1,65 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stolperfallen beim Zeitkontext · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Einträge behandeln Periodenwerte, den Vergleichskontext und fehlende historische Daten. Die Auswertungssemantik legt die Regeln für den Zeitkontext fest."><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Stolperfallen beim Zeitkontext · DML"><meta property="og:description" content="Diese Einträge behandeln Periodenwerte, den Vergleichskontext und fehlende historische Daten. Die Auswertungssemantik legt die Regeln für den Zeitkontext fest."><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--time.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--troubleshooting--time.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--time.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--time.zh.html">中文</a></header><main><h1 id="time-context-pitfalls">Stolperfallen beim Zeitkontext</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#p29-non-first-day-time-filters">P29. Zeitfilter mit einem Datum, das nicht auf den ersten Tag der Periode fällt</a></li><li><a href="#p30-missing-current-day-in-past-n-days">P30. Der heutige Tag fehlt bei den letzten N Tagen</a></li><li><a href="#p31-including-current-period-in-past-n-months">P31. Der laufende Monat ist in den letzten N Monaten enthalten</a></li><li><a href="#p32-using-ytd-modifier-with-full-period-group-by">P32. ytd-Modifikator mit GROUP BY auf Ebene der gesamten Periode</a></li><li><a href="#p33-period-to-date-with-date-range">P33. Einen Datumsbereich für den kumulierten Wert bis zum Stichtag verwenden</a></li><li><a href="#category-compilation-and-validation">Kategorie: Kompilierung und Validierung</a></li><li><a href="#p59-yoy-without-column-probe">P59. Vorjahresvergleich ohne Prüfung der Vergleichsspalte</a></li><li><a href="#extra-month-after-the-latest-source-data">Zusätzlicher Monat nach dem letzten Monat mit Quelldaten</a></li><li><a href="#reconcile-both-periods-by-category">Beide Perioden nach Kategorie abgleichen</a></li></ul></details>
+<p>Diese Einträge behandeln Periodenwerte, den Vergleichskontext und fehlende historische Daten. Die <a href="reference--semantics.de.html">Auswertungssemantik</a> legt die Regeln für den Zeitkontext fest.</p>
+<p><a id="p29"></a></p>
+<h2 id="p29-non-first-day-time-filters">P29. Zeitfilter mit einem Datum, das nicht auf den ersten Tag der Periode fällt <a class="section-link" aria-label="Link zum Abschnitt" href="#p29-non-first-day-time-filters">#</a></h2>
+<p><strong>Falsch</strong>: <code>dt_month = '2024-01-15'</code> oder <code>dt_month = 'Jan 2024'</code>. <strong>Korrektur</strong>: <code>dt_month = '2024-01-01'</code>. Verwenden Sie immer den ersten Tag der Periode.</p>
+<p><a id="p30"></a></p>
+<h2 id="p30-missing-current-day-in-past-n-days">P30. Der heutige Tag fehlt bei den letzten N Tagen <a class="section-link" aria-label="Link zum Abschnitt" href="#p30-missing-current-day-in-past-n-days">#</a></h2>
+<p><strong>Falsch</strong>: <code>dt_date BETWEEN date(current_date, '-7 days') AND date(current_date, '-1 day')</code>. <strong>Korrektur</strong>: <code>dt_date BETWEEN date(current_date, '-6 days') AND date(current_date)</code>. Das ergibt 7 Tage einschließlich heute.</p>
+<p><a id="p31"></a></p>
+<h2 id="p31-including-current-period-in-past-n-months">P31. Der laufende Monat ist in den letzten N Monaten enthalten <a class="section-link" aria-label="Link zum Abschnitt" href="#p31-including-current-period-in-past-n-months">#</a></h2>
+<p><strong>Falsch</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month')</code>. <strong>Korrektur</strong>: <code>dt_month BETWEEN date(current_date, 'start of month', '-12 months') AND date(current_date, 'start of month', '-1 month')</code>. Schließen Sie den laufenden, noch nicht abgeschlossenen Monat aus.</p>
+<p><a id="p32"></a></p>
+<h2 id="p32-using-ytd-modifier-with-full-period-group-by">P32. ytd-Modifikator mit GROUP BY auf Ebene der gesamten Periode <a class="section-link" aria-label="Link zum Abschnitt" href="#p32-using-ytd-modifier-with-full-period-group-by">#</a></h2>
+<p><strong>Falsch</strong>: <code>SELECT dt_year, AGG(sales, 'ytd') FROM MODEL GROUP BY dt_year</code>. <strong>Korrektur</strong>: <code>ytd</code> liefert einen kumulierten Wert. Verwenden Sie <code>dt_date</code> als Gruppierungsebene: <code>SELECT dt_date, AGG(sales, 'ytd') FROM MODEL WHERE dt_date = date(current_date) GROUP BY dt_date</code>.</p>
+<p><a id="p33"></a></p>
+<h2 id="p33-period-to-date-with-date-range">P33. Einen Datumsbereich für den kumulierten Wert bis zum Stichtag verwenden <a class="section-link" aria-label="Link zum Abschnitt" href="#p33-period-to-date-with-date-range">#</a></h2>
+<p><strong>Falsch</strong>: <code>WHERE dt_date BETWEEN date(current_date, 'start of year') AND date(current_date)</code> für YTD. <strong>Korrektur</strong>: Verwenden Sie <code>WHERE dt_date = date(current_date)</code> mit <code>AGG(sales, 'ytd')</code>. Der Modifikator bestimmt den Datumsbereich.</p>
+<hr>
+<h2 id="category-compilation-and-validation">Kategorie: Kompilierung und Validierung <a class="section-link" aria-label="Link zum Abschnitt" href="#category-compilation-and-validation">#</a></h2>
+<p><a id="p59"></a></p>
+<h2 id="p59-yoy-without-column-probe">P59. Vorjahresvergleich ohne Prüfung der Vergleichsspalte <a class="section-link" aria-label="Link zum Abschnitt" href="#p59-yoy-without-column-probe">#</a></h2>
+<p><strong>Falsch</strong>: <code>AGG(销售额, 'yoy')</code> verwenden, wenn die Summe von <code>去年同期出厂价金额</code> null ergibt. <strong>Korrektur</strong>: Prüfen Sie <code>SUM(去年同期出厂价金额)</code> mit einer Detailabfrage, bevor Sie eine Aussage zur Vorjahresentwicklung in Aussicht stellen.</p>
+<h2 id="extra-month-after-the-latest-source-data">Zusätzlicher Monat nach dem letzten Monat mit Quelldaten <a class="section-link" aria-label="Link zum Abschnitt" href="#extra-month-after-the-latest-source-data">#</a></h2>
+<p>Legen Sie beim Vergleich von Perioden den Monatsbereich des Berichts ausdrücklich fest. Ein Full Outer Join kann auch Gruppen beibehalten, die nur in einer der beiden Perioden vorkommen. Wenn Dezemberumsätze dem Januar als Umsätze der Vorperiode zugeordnet werden, kann eine Abfrage ohne Datumsgrenzen den Januar enthalten, auch wenn er außerhalb des Berichtszeitraums liegt.</p>
+<p>Das Beispiel verwendet Daten von Januar 2024 bis einschließlich Dezember 2025. In jedem Monat gibt es Verkäufe in allen fünf Kategorien. Das Modell definiert <code>revenue: SUM({amount})</code>, eine Monatsdimension namens <code>dt_month</code> und <code>revenue_mom: '{revenue: pop}'</code>.</p>
+<pre><code class="language-sql">SELECT dt_month, category, AGG(revenue), AGG(revenue_mom)
+FROM MODEL
+WHERE dt_month &gt;= '2024-01-01' AND dt_month &lt; '2026-01-01'
+GROUP BY dt_month, category
+</code></pre>
+<p>Mit den Beispieldaten liefert die Abfrage 120 Zeilen. Das Ergebnis stimmt mit dem von Hand geschriebenen SQL überein. Ohne Datumsfilter liefert die geprüfte Abfrage 125 Zeilen. In den fünf zusätzlichen Zeilen für Januar 2026 haben sowohl der Umsatz der aktuellen Periode als auch das Wachstum den Wert NULL, weil nur Dezemberumsätze in diese Gruppen eingehen.</p>
+<h3 id="reconcile-both-periods-by-category">Beide Perioden nach Kategorie abgleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#reconcile-both-periods-by-category">#</a></h3>
+<p>Wenn der Bericht die Gesamtumsätze zweier Perioden vergleicht, behalten Sie alle Kategorien bei, die innerhalb des Monatsbereichs des Berichts in mindestens einer der beiden Perioden Umsatz haben. Um beide Werte anzuzeigen, fügen Sie <code>AGG({revenue: pp}) AS previous_revenue</code> zur SELECT-Liste hinzu.</p>
+<table>
+<thead>
+<tr>
+<th>Kategorie</th>
+<th align="right">Umsatz der aktuellen Periode</th>
+<th align="right">Umsatz der Vorperiode</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td align="right">120</td>
+<td align="right">100</td>
+</tr>
+<tr>
+<td>B</td>
+<td align="right">NULL</td>
+<td align="right">40</td>
+</tr>
+<tr>
+<td>C</td>
+<td align="right">30</td>
+<td align="right">NULL</td>
+</tr>
+<tr>
+<td><strong>Summe</strong></td>
+<td align="right"><strong>150</strong></td>
+<td align="right"><strong>140</strong></td>
+</tr>
+</tbody></table>
+<p>Wenn Sie in diesem Beispiel nur Kategorien mit Verkäufen in der aktuellen Periode anzeigen, entfällt Kategorie B und die angezeigte Summe der Vorperiodenumsätze sinkt auf 100. Verwenden Sie diesen Filter für einen Bericht, der sich gezielt auf die in der aktuellen Periode aktiven Kategorien bezieht, und verwenden Sie für seine Summen dieselbe Kategorieauswahl. Um einen vollständigen Vergleich zu prüfen, summieren Sie jede Umsatzspalte nach Berichtsmonat und gleichen Sie das Ergebnis mit der Quellsumme des jeweils zugehörigen Monats ab. Berechnen Sie das Gesamtwachstum aus den beiden Umsatzsummen.</p>
+<p>Zeigen Sie einen fehlenden Wert nur dann als Null an, wenn die Daten für die betreffende Periode vollständig sind und nach den fachlichen Regeln ausbleibende Verkäufe als Null gelten. Das Auffüllen mit Null ändert den angezeigten Wert.</p>
+</main></body></html>

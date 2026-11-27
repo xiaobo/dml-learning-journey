@@ -1,0 +1,105 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Eine kleine Reise durch DML · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Ein Reisender kommt mit einer Frage an: Wie hoch war der Umsatz in jeder Region?"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Eine kleine Reise durch DML · DML"><meta property="og:description" content="Ein Reisender kommt mit einer Frage an: Wie hoch war der Umsatz in jeder Region?"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--visual-introduction.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="explanation--visual-introduction.ja.html">日本語</a> <a lang="en" hreflang="en" href="explanation--visual-introduction.html">English</a> <a lang="zh" hreflang="zh" href="explanation--visual-introduction.zh.html">中文</a></header><main><h1 id="a-small-journey-through-dml">Eine kleine Reise durch DML</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#each-sale-has-an-identity">Jeder Verkauf ist eindeutig identifizierbar</a></li><li><a href="#dml-records-the-reusable-definitions">DML hält wiederverwendbare Definitionen fest</a></li><li><a href="#dmx-expresses-a-calculation">DMX beschreibt eine Berechnung</a></li><li><a href="#the-query-chooses-what-one-result-row-represents">Die Abfrage legt fest, wofür eine Ergebniszeile steht</a></li><li><a href="#compilation-produces-sql">Die Kompilierung erzeugt SQL</a></li></ul></details>
+<p>Ein Reisender kommt mit einer Frage an: Wie hoch war der Umsatz in jeder Region?</p>
+<p><img src="assets--little-worlds.png" alt="Ein kleiner Reisender mit goldenem Schal betrachtet schwebende Aquarellwelten: einen Garten, ein Notizbuch, ein Fernrohr und Papierkarten."></p>
+<p>Öffnen Sie das <a href="journey.de.html">illustrierte interaktive Tutorial</a>. Es umfasst jetzt zwölf Kapitel, bewertete Übungen, eine Fortschrittsspeicherung und einen Assistenten zum Erstellen des Abschlussberichts. Die <a href="tutorials--interactive-journey.de.html">Übungsanleitung</a> führt durch das gesamte Einstiegsprojekt. Auf dieser Seite bleibt die kürzere Einführung in die Konzepte erhalten.</p>
+<h2 id="each-sale-has-an-identity">Jeder Verkauf ist eindeutig identifizierbar <a class="section-link" aria-label="Link zum Abschnitt" href="#each-sale-has-an-identity">#</a></h2>
+<p>Der Reisende erfasst vier Verkäufe. Die Zeilen wurden für dieses Beispiel erfunden und stammen nicht aus einer Datenbank.</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>region</th>
+<th>amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>North</td>
+<td>10</td>
+</tr>
+<tr>
+<td>2</td>
+<td>North</td>
+<td>20</td>
+</tr>
+<tr>
+<td>3</td>
+<td>South</td>
+<td>30</td>
+</tr>
+<tr>
+<td>4</td>
+<td>South</td>
+<td>40</td>
+</tr>
+</tbody></table>
+<p>Für den Quelldatensatz ist <code>dimension: [id]</code> definiert: Jede Zeile steht für einen Verkauf. Zwei Verkäufe können zur selben Region gehören. Daher lässt sich eine Quellzeile anhand von <code>region</code> nicht eindeutig identifizieren. Eine Abfrage kann diese Zeilen dennoch nach Region gruppieren.</p>
+<p>Die <a href="explanation--dimensions.de.html">Einführung in Dimensionen</a> erläutert im Detail, wie Quellzeilen identifiziert und für Berichte gruppiert werden.</p>
+<h2 id="dml-records-the-reusable-definitions">DML hält wiederverwendbare Definitionen fest <a class="section-link" aria-label="Link zum Abschnitt" href="#dml-records-the-reusable-definitions">#</a></h2>
+<p>Der Reisende hält seine Definitionen in einem Notizbuch fest. DML ist dieses Modell und wird in YAML geschrieben. Der folgende Ausschnitt deklariert zwei atomare Kennzahlen für den Verkaufsdatensatz:</p>
+<pre><code class="language-yaml">FACT_SALES:
+  type: dataset
+  table: TABLE_SALES
+  dimension: [id]
+  columns:
+    id:
+    region:
+    amount:
+  measures:
+    sales: SUM({amount})
+    cnt: COUNT(1)
+</code></pre>
+<p><code>sales</code> summiert die Beträge. <code>cnt</code> zählt die Quellzeilen. Beide sind atomare Kennzahlen. Sie übernehmen <code>FACT_SALES</code> als Datensatz und aggregieren direkt dessen Zeilen oder Ausdrücke über dessen Spalten, ohne auf andere Kennzahlen zu verweisen. Berichte können sie wiederverwenden, sofern die Ebene, auf der Zeilen oder Summen definiert sind, mit der Berechnung der Kennzahlen vereinbar ist.</p>
+<h2 id="dmx-expresses-a-calculation">DMX beschreibt eine Berechnung <a class="section-link" aria-label="Link zum Abschnitt" href="#dmx-expresses-a-calculation">#</a></h2>
+<p>Im Notizbuch steht auch, wie ein Durchschnitt berechnet wird:</p>
+<pre><code class="language-yaml">average_sale:
+  type: measure
+  formula: 'DIVIDE({sales}, {cnt})'
+</code></pre>
+<p>Der YAML-Abschnitt deklariert eine Kennzahl. Die darin enthaltene Formel ist in DMX geschrieben. <code>{sales}</code> und <code>{cnt}</code> verweisen auf Kennzahlen, und <code>DIVIDE</code> gibt bei einem Nenner von null NULL zurück. <code>average_sale</code> ist eine zusammengesetzte Kennzahl, weil sie auf andere Kennzahlen verweist. Sie hat keine Eigenschaft <code>dataset:</code>.</p>
+<p>DMX ist die gemeinsame Ausdruckssyntax für Modelldefinitionen und Abfrageausdrücke. Zwischen Modell und Abfrage gibt es dafür keinen eigenen Verarbeitungsschritt. Die <a href="reference--expressions.de.html">Ausdrucksreferenz</a> legt die Syntax fest.</p>
+<h2 id="the-query-chooses-what-one-result-row-represents">Die Abfrage legt fest, wofür eine Ergebniszeile steht <a class="section-link" aria-label="Link zum Abschnitt" href="#the-query-chooses-what-one-result-row-represents">#</a></h2>
+<p>Der Reisende richtet sein Fernrohr auf die Regionen:</p>
+<pre><code class="language-sql">SELECT region, AGG(sales), AGG(average_sale)
+FROM MODEL
+GROUP BY region
+</code></pre>
+<p><code>AGG</code> verweist auf eine Kennzahl aus dem Modell. Mit <code>GROUP BY region</code> liefert die Abfrage eine Ergebniszeile pro Region. Aus den vier erfundenen Verkäufen ergeben sich diese Werte:</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>sales</th>
+<th>average_sale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>North</td>
+<td>30</td>
+<td>15</td>
+</tr>
+<tr>
+<td>South</td>
+<td>70</td>
+<td>35</td>
+</tr>
+</tbody></table>
+<p>Ohne Gruppierungsfelder ergeben dieselben Modellkennzahlen einen Gesamtumsatz von 100 und einen durchschnittlichen Verkaufsbetrag von 25. Bei einer Gruppierung nach <code>id</code> gibt es ein Ergebnis pro Verkauf. In allen Fällen identifiziert <code>[id]</code> die Quellzeilen.</p>
+<p>Auf der Ebene des deklarierten Quellschlüssels <code>[id]</code> vereinfacht der geprüfte Compiler die Aggregation zu einem Ausdruck pro Zeile und meldet einen Befund der strikten Prüfung. Diese Vereinfachung setzt voraus, dass <code>id</code> in den Quelldaten eindeutig ist. Die Abfragen für den Gesamtwert und die Werte pro Region bestehen mit dem geprüften Build die strikte Kompilierung.</p>
+<p>Das <a href="compiler-observations.json">Compilerprotokoll des Tutorials</a> dokumentiert die für das interaktive Projekt verwendete ausführbare Datei, ihren Fingerabdruck und die durchgeführten Prüfungen.</p>
+<p>Die interaktive Seite berechnet diese kleinen Beispieltabellen im Browser. Sie führt weder DML aus noch stellt sie eine Verbindung zu einer Datenbank her.</p>
+<h2 id="compilation-produces-sql">Die Kompilierung erzeugt SQL <a class="section-link" aria-label="Link zum Abschnitt" href="#compilation-produces-sql">#</a></h2>
+<p>Der Compiler führt Modell und Abfrage zusammen und erzeugt daraus SQL. Die Datenbank führt das erzeugte SQL auf der tatsächlichen Quelltabelle aus.</p>
+<pre><code class="language-text">DML model + Model Query
+          |
+        dmlc
+          |
+     generated SQL
+          |
+       database
+          |
+       result rows
+</code></pre>
+<p>Eine erfolgreiche Kompilierung bestätigt das Verhalten des geprüften Compilers. Die Prüfung der Schlüssel anhand der tatsächlichen Daten und der Vergleich der Ergebnisse liefern gesonderte Nachweise für die Quelldaten und das Abfrageergebnis. Im <a href="tutorials--first-query.de.html">Tutorial zur ersten Abfrage</a> kompilieren Sie dieselbe regionale Abfrage mit diesem Modell und sehen sich das erzeugte SQL an.</p>
+<p>Weitere Informationen finden Sie unter <a href="explanation--core-concepts.de.html">Grundkonzepte</a>, <a href="reference--measures.de.html">Kennzahlendeklarationen</a> oder <a href="reference--model-query-sql.de.html">Model Query SQL</a>.</p>
+</main></body></html>

@@ -1,0 +1,80 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Warum der Mittelwert der Monatsmargen nicht die Marge des gesamten Zeitraums ergibt · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Addieren Sie zuerst Umsatz und Kosten über den gesamten Zeitraum. Teilen Sie dann den gesamten Bruttogewinn durch den Gesamtumsatz. Ein einfacher Mittelwert gewichtet jeden Monat gleich, auch wenn die Umsätze u"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-en.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-zh.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Warum der Mittelwert der Monatsmargen nicht die Marge des gesamten Zeitraums ergibt · DML"><meta property="og:description" content="Addieren Sie zuerst Umsatz und Kosten über den gesamten Zeitraum. Teilen Sie dann den gesamten Bruttogewinn durch den Gesamtumsatz. Ein einfacher Mittelwert gewichtet jeden Monat gleich, auch wenn die Umsätze u"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/guide--cumulative-margin-de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="guide--cumulative-margin-ja.html">日本語</a> <a lang="en" hreflang="en" href="guide--cumulative-margin-en.html">English</a> <a lang="zh" hreflang="zh" href="guide--cumulative-margin-zh.html">中文</a></header><main><h1 id="warum-der-mittelwert-der-monatsmargen-nicht-die-marge-des-gesamten-zeitraums-ergibt">Warum der Mittelwert der Monatsmargen nicht die Marge des gesamten Zeitraums ergibt</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#beispiel-für-die-region-nord">Beispiel für die Region Nord</a></li><li><a href="#die-berechnung-nachvollziehen">Die Berechnung nachvollziehen</a></li><li><a href="#prozent-und-prozentpunkte">Prozent und Prozentpunkte</a></li></ul></details>
+<p>Addieren Sie zuerst Umsatz und Kosten über den gesamten Zeitraum. Teilen Sie dann den gesamten Bruttogewinn durch den Gesamtumsatz. Ein einfacher Mittelwert gewichtet jeden Monat gleich, auch wenn die Umsätze unterschiedlich sind.</p>
+<h2 id="beispiel-für-die-region-nord">Beispiel für die Region Nord <a class="section-link" aria-label="Link zum Abschnitt" href="#beispiel-für-die-region-nord">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Zeitraum</th>
+<th align="right">Umsatz</th>
+<th align="right">Kosten</th>
+<th align="right">Bruttomarge</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Januar 2025</td>
+<td align="right">100</td>
+<td align="right">60</td>
+<td align="right">40 %</td>
+</tr>
+<tr>
+<td>Februar 2025</td>
+<td align="right">300</td>
+<td align="right">240</td>
+<td align="right">20 %</td>
+</tr>
+<tr>
+<td>Januar und Februar</td>
+<td align="right">400</td>
+<td align="right">300</td>
+<td align="right">25 %</td>
+</tr>
+</tbody></table>
+<p>Die <a href="profitability-data.json">Beispieldaten</a> ergeben (400 − 300) / 400 = <strong>25 %</strong>. Der Mittelwert aus 40 % und 20 % beträgt 30 %. Beide Ergebnisse stimmen etwa bei gleichem Monatsumsatz überein, im Allgemeinen jedoch nicht.</p>
+<h2 id="die-berechnung-nachvollziehen">Die Berechnung nachvollziehen <a class="section-link" aria-label="Link zum Abschnitt" href="#die-berechnung-nachvollziehen">#</a></h2>
+<p>Öffnen Sie die <a href="learn.de.html#gross-margin">Animation zur Bruttomarge</a>. Wählen Sie North und im vierten Schritt den Zeitraum seit Jahresbeginn. Der Umsatz steigt von 300 auf 400, die Kosten von 240 auf 300 und die Marge von 20 % auf 25 %.</p>
+<p>Mit <code>formula: &#39;{gross_margin: ytd}&#39;</code> wenden Sie den Zeitraum auf die definierte Marge an. Dadurch wird die Marge aus den kumulierten Beträgen neu berechnet. Diese Schreibweise wurde in DuckDB ausgeführt und mit einer unabhängigen SQL-Abfrage verglichen. Für SQL Server liegt ein Compilerprotokoll vor.</p>
+<details><summary>Vollständiges DML-Modell ansehen</summary>
+
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: &#39;{net_revenue} - {sales_cost}&#39;
+
+gross_margin:
+  type: measure
+  formula: &#39;DIVIDE({gross_profit}, {net_revenue})&#39;
+
+gross_margin_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})&#39;
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: &#39;DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})&#39;
+
+margin_change_pp:
+  type: measure
+  formula: &#39;100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})&#39;
+</code></pre>
+</details>
+
+<h2 id="prozent-und-prozentpunkte">Prozent und Prozentpunkte <a class="section-link" aria-label="Link zum Abschnitt" href="#prozent-und-prozentpunkte">#</a></h2>
+<p>Die kumulierte Marge im gleichen Vorjahreszeitraum beträgt 20 %. Der Anstieg auf 25 % entspricht <strong>5 Prozentpunkten</strong>. Die relative Zunahme beträgt (25 % / 20 %) − 1 = 25 %. Geben Sie im Bericht an, welche der beiden Größen gemeint ist.</p>
+<p>Siehe <a href="reference--examples--composable-metrics.de.html">vollständiges Beispiel</a>, <a href="profitability-comparison.sql">Vergleichsabfrage</a> und <a href="profitability-compiler-observations.json">Compilerprotokoll</a>. Das Protokoll belegt die strikte Kompilierung und die Prüfung des SQL. Verwenden Sie in der Quelltabelle Dezimalspalten für Geldbeträge. Bei einem Umsatz von 0 liefert die Berechnung NULL. Fehlende Vorjahreswerte bleiben leer.</p>
+<p><a href="journey.de.html#expressions">Formeln wiederverwenden</a> · <a href="journey.de.html#time">Zeitraum wechseln</a></p>
+</main></body></html>

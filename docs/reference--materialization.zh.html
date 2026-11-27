@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>物化声明 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页介绍 type: materialize、其分组键和属性，以及如何选择指标。有关设计决策，请参阅选择物化粒度。物化示例提供了声明片段。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--materialization.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="物化声明 · DML"><meta property="og:description" content="本页介绍 type: materialize、其分组键和属性，以及如何选择指标。有关设计决策，请参阅选择物化粒度。物化示例提供了声明片段。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--materialization.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--materialization.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--materialization.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--materialization.html">English</a></header><main><h1 id="materialization-declarations">物化声明</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#materialize-definition-type-materialize">物化定义（<code>type: materialize</code>）</a></li><li><a href="#eligibility-selection-and-measured-performance">适用条件、选择和性能测量</a></li><li><a href="#sql-server-runtime">SQL Server 运行时</a></li></ul></details>
+<p>本页介绍 <code>type: materialize</code>、其分组键和属性，以及如何选择指标。有关设计决策，请参阅<a href="how-to--design-materializations.zh.html">选择物化粒度</a>。<a href="reference--examples--models.zh.html#materialize">物化示例</a>提供了声明片段。</p>
+<p><a id="55-materialize-definition-type-materialize"></a></p>
+<h2 id="materialize-definition-type-materialize">物化定义（<code>type: materialize</code>） <a class="section-link" aria-label="本节链接" href="#materialize-definition-type-materialize">#</a></h2>
+<pre><code class="language-yaml">&lt;name&gt;:
+    type: materialize
+    parameters:                         # stored-procedure parameters
+        &lt;param&gt;: &lt;column_name&gt;
+    filters:                            # materialize-level filters
+        &lt;column&gt;: &lt;value&gt;
+
+    allows: [&lt;materialize_name&gt;]        # allowed materialize tables
+
+    dataset: &lt;dataset_name&gt;      # optional, for direct dataset materialize
+    dimension: [col1, col2]      # materialization grain — grain keys only
+    dimension_columns:           # functionally dependent attribute columns
+        &lt;col&gt;: &lt;formula&gt;          # (1:1 with grain keys, not grain themselves)
+
+    measures: [&lt;measure1&gt;, &lt;measure2&gt;]  # measures to materialize
+</code></pre>
+<p><strong><code>dimension:</code>与<code>dimension_columns:</code></strong>的区别。<code>dimension:</code>包含物化维度。维度字段是确定行粒度的键，能够唯一标识每一行，编译器将这些字段用作 <code>GROUP BY</code> 的键。<code>dimension_columns:</code>列出<strong>可从这些键推导出的</strong>属性列。例如，<code>store_name</code>依赖于<code>store_id</code>，<code>region_code</code>依赖于<code>store_id</code>。编译器在 <code>GROUP BY</code> 处理后保留 <code>dimension_columns:</code> 中的列，但这些列不参与确定粒度。将可推导的属性放入 <code>dimension:</code> 会导致编译错误（“can be derived from [...], should it be moved to dimension_columns instead?”）。</p>
+<p><strong>未指定公式时的继承</strong>。<code>dimension_columns:</code>中的条目如果未指定 <code>formula:</code>，就会从源数据集继承该列。该列必须存在于源数据集的 <code>columns:</code> 中，否则会报错“not found from relate dataset(s)”。如果物化粒度比源数据集维度的粒度<strong>更粗</strong>，编译器会检查该列能否推导出来。如果列值在源数据集较细的粒度上有变化，则会报错“definition from dataset [...] cannot be derived from dimension [...], please advise”。如果物化粒度与源数据集的维度<strong>一致</strong>，则允许使用源数据集中的任意列（行按 1:1 映射）。</p>
+<p><strong>公式的引用范围</strong>。当 <code>dimension_columns:</code> 中的条目指定了 <code>formula:</code> 时，公式只能引用 pk() 链式查找和物化维度自身的字段。引用源数据集的列或指标会报错“not defined, did you mean …?”。</p>
+<p><strong>约束</strong>。必须使用以下任一形式：</p>
+<ul>
+<li><code>dimension</code> + <code>measures</code>（指定指标列表的形式），或者</li>
+<li><code>dataset</code> + <code>dimension</code> + <code>dimension_columns</code>（限定在指定数据集内的形式），或者</li>
+<li>仅指定 <code>dataset</code>（继承数据集的粒度）。</li>
+</ul>
+<p><a href="reference--examples--models.zh.html#materialize">物化示例</a>提供了常见的声明写法。指标级别没有 <code>materialize: true</code> 标志，编译器会拒绝该标志（<code>undefined modifier 'materialize'</code>，请参阅<a href="reference--troubleshooting--README.zh.html">故障排查索引</a>中的 P64）。声明形式见本节，数据集级别的 <code>materialize: &lt;name&gt;</code> 见<a href="reference--model-structure.zh.html#52-dataset-definition-type-dataset">模型结构</a>。</p>
+<h2 id="eligibility-selection-and-measured-performance">适用条件、选择和性能测量 <a class="section-link" aria-label="本节链接" href="#eligibility-selection-and-measured-performance">#</a></h2>
+<p><code>allows:</code>控制哪些物化结果可以使用。仅凭声明无法确定查询会选择哪个已存储的聚合结果。请检查生成的 SQL 或执行计划，确认目标数据库引擎实际使用的对象。</p>
+<p>按完整的键比较优化前后的结果，包括没有匹配项的分组、NULL 和比率。更改源数据后，检查刷新情况及刷新后的结果。完成这些检查后，再测量代表性工作负载的性能。SQL 更短或编译更快，都不足以判断数据库查询性能。刷新权限和调度由部署环境负责。</p>
+<p>请按照<a href="materialization-workflow.html">物化工作流程</a>进行设置、验证查询是否命中物化结果、执行刷新并检查结果。</p>
+<h2 id="sql-server-runtime">SQL Server 运行时 <a class="section-link" aria-label="本节链接" href="#sql-server-runtime">#</a></h2>
+<p>SQL Server 运行时通过共享过程 <code>DML_PREPARE_MAZ</code> 和 <code>DML_REFRESH_MAZ</code> 注册需求，然后同步调用唯一的执行器 <code>DML_RUN_MAZ</code>。执行器忙时，注册调用可能在所请求的数据就绪之前返回。</p>
+<p><code>setup_sql</code>安装运行时和 Maz 写入组件。生成的 <code>prepare_sql</code> 执行准备工作并检查数据是否就绪。它会重试常规准备流程，直到数据就绪或达到以协作方式遵守的五秒重试期限。成功时返回 <code>data_ready=1</code>，随后调用方执行业务 <code>sql</code>。发生错误时，查询停止。等待期间仍可使用 <code>prepare_status_sql</code> 查看状态。状态查询观察 Query 选定的分区及其参数绑定。它不会将任务加入队列，也不保证准备过程和 SELECT 使用同一个快照。</p>
+<p>共享视图 <code>dbo.DML_MAZ_PROGRESS</code> 报告全局待处理分区、完成速率和到达速率，以及清空积压预计需要的秒数。它采用 60 秒的滚动窗口，同一个物理分区即使多次完成处理，也只计一次。全局进度无法确定某个 Query 的数据是否就绪。</p>
+<pre><code class="language-sql">SELECT pending_partitions, runner_running, estimated_seconds
+FROM dbo.DML_MAZ_PROGRESS;
+</code></pre>
+<p>有关精确匹配和 LIKE 匹配、force_update、invalidate_only、连接要求以及调用中断后的恢复，请参阅<a href="maz-prepare-refresh.html">准备、刷新和恢复约定</a>。</p>
+<p>常规准备会在参数绑定相同的情况下复用有效的整表结果和按日期生成的结果。<code>invalidate_only=1</code> 提交失效标记，不调用执行器。不带参数调用 <code>DML_REFRESH_MAZ</code> 会继续处理已登记的待办任务。<code>@_source</code> 不能与其他选择参数同时使用。它接受按 <code>schema.table</code> 格式指定的已注册本地源表，并选中直接使用该源表的所有 Maz。无法确认日期映射时，会将已有日期范围全部纳入处理范围。</p>
+</main></body></html>

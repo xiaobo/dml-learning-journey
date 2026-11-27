@@ -1,0 +1,385 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>モデルクエリのSQL · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="このページでは、SQLクエリの構文、モデルの検索、エイリアス、グループ化、出力のルールを説明します。YAMLでのクエリ宣言では、type: queryについて説明します。最初のクエリをコンパイルするでは、チュートリアルで一連の手順を説明します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="モデルクエリのSQL · DML"><meta property="og:description" content="このページでは、SQLクエリの構文、モデルの検索、エイリアス、グループ化、出力のルールを説明します。YAMLでのクエリ宣言では、type: queryについて説明します。最初のクエリをコンパイルするでは、チュートリアルで一連の手順を説明します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--model-query-sql.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--model-query-sql.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--model-query-sql.html">English</a> <a lang="zh" hreflang="zh" href="reference--model-query-sql.zh.html">中文</a></header><main><h1 id="model-query-sql">モデルクエリのSQL</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#two-query-surfaces">クエリを記述する2つの方法</a></li><li><a href="#query-types">クエリの種類</a></li><li><a href="#aggregation-queries">集計クエリ</a></li><li><a href="#detail-queries">明細クエリ</a></li><li><a href="#model-query-sql-specification">モデルクエリのSQL仕様</a></li><li><a href="#fundamental-constraints">基本的な制約</a></li><li><a href="#select-rules">SELECT のルール</a></li><li><a href="#alias-rules">エイリアスのルール</a></li><li><a href="#where-rules">WHERE のルール</a></li><li><a href="#group-by-rules">GROUP BY のルール</a></li><li><a href="#order-by--limit">ORDER BY / LIMIT</a></li><li><a href="#measure-reference-rules">指標の参照ルール</a></li><li><a href="#time-handling">時刻・日付の扱い</a></li><li><a href="#having">HAVING</a></li><li><a href="#quick-reference">クイックリファレンス</a></li><li><a href="#aggregation-lookup-table">集計の早見表</a></li><li><a href="#inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>）</a></li><li><a href="#filters-vs-measure-semantics">クエリのフィルターと指標の意味</a></li><li><a href="#jdbc-parameters-and-query-kind">JDBC パラメーターとクエリの種類</a></li><li><a href="#a-time-filter-also-scopes-sibling-measures">時間フィルターは同じクエリ内の他の指標にも適用される</a></li><li><a href="#model-query-sql-速查">Model Query SQL クイックリファレンス</a></li></ul></details>
+<p>このページでは、SQLクエリの構文、モデルの検索、エイリアス、グループ化、出力のルールを説明します。<a href="reference--query-yaml.ja.html">YAMLでのクエリ宣言</a>では、<code>type: query</code>について説明します。<a href="tutorials--first-query.ja.html">最初のクエリをコンパイルする</a>では、チュートリアルで一連の手順を説明します。</p>
+<p><a id="1-two-query-surfaces"></a></p>
+<h2 id="two-query-surfaces">クエリを記述する2つの方法 <a class="section-link" aria-label="この節へのリンク" href="#two-query-surfaces">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>構文</th>
+<th>形式</th>
+<th>利用場面</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Model Query SQL</strong></td>
+<td><code>.sql</code> ファイルまたはインライン文字列</td>
+<td>SQLに慣れたユーザー、CLI、ダッシュボード</td>
+</tr>
+<tr>
+<td><strong>DML形式</strong></td>
+<td><code>.dml</code> の YAML 内の <code>type: query</code></td>
+<td>YAMLを標準で使う環境、<code>dmlc --to-dml</code> の出力</td>
+</tr>
+</tbody></table>
+<hr>
+<p><a id="2-query-types"></a></p>
+<h2 id="query-types">クエリの種類 <a class="section-link" aria-label="この節へのリンク" href="#query-types">#</a></h2>
+<h3 id="aggregation-queries">集計クエリ <a class="section-link" aria-label="この節へのリンク" href="#aggregation-queries">#</a></h3>
+<p><code>FROM …</code> を使用し、<code>AGG()</code> で少なくとも1つの指標を指定します。</p>
+<p><code>FROM</code> の後に指定するのは、拡張子 <code>.dml</code> を<strong>除いた</strong>モデルファイル名です。大文字と小文字は区別されません。大半のチュートリアルでは、慣例に従い <code>FROM MODEL</code> ↔ <code>model.dml</code> の組み合わせを使います。</p>
+<table>
+<thead>
+<tr>
+<th>モデルファイル</th>
+<th>SQL での記述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>model.dml</code></td>
+<td><code>FROM MODEL</code></td>
+</tr>
+<tr>
+<td><code>acme.dml</code></td>
+<td><code>FROM acme</code></td>
+</tr>
+<tr>
+<td><code>渠道表现模型.dml</code></td>
+<td><code>FROM 渠道表现模型</code></td>
+</tr>
+</tbody></table>
+<p>クエリ、コンパイル、検証のみの場合に、<code>--model=</code> がこの名前の解決にどう影響するかを示します。</p>
+<table>
+<thead>
+<tr>
+<th>渡す値</th>
+<th>動作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--model=some/dir</code></td>
+<td>dmlc は<strong>そのディレクトリ内</strong>で <code>&lt;FROM&gt;.dml</code> を探します（<code>FROM MODEL</code> → <code>dir/model.dml</code>、<code>FROM acme</code> → <code>dir/acme.dml</code>）。</td>
+</tr>
+<tr>
+<td><code>--model=acme.dml</code></td>
+<td>その<strong>ファイル</strong>がモデルになります。SQL には <code>FROM acme</code> と記述する必要があります（<code>FROM MODEL</code> は使えません）。</td>
+</tr>
+<tr>
+<td>省略</td>
+<td>SQL ファイルと同じディレクトリ、またはモデル検索パスで同じ方法で探します。</td>
+</tr>
+</tbody></table>
+<p><code>FROM</code> 句には拡張子 <code>.dml</code> を付けないでください。<code>queries/</code> 配下にディレクトリが入れ子になっている場合は、<code>.dml</code> ファイルを SQL ファイルと同じディレクトリに置くか、<code>--model=</code> でモデルファイルがあるディレクトリを指定します。</p>
+<p><code>setup</code>（<code>dmlc -s</code>）には<strong><code>.dml</code> ファイル</strong>を渡します。ディレクトリは指定できません。</p>
+<pre><code class="language-sql">-- Query SQL using model.dml
+SELECT product, dt_month, AGG(sales)
+FROM MODEL
+WHERE dt_month = date(current_date, 'start of month', '-1 month')
+GROUP BY product, dt_month
+
+-- Query SQL using acme.dml (dmlc --model=acme.dml …  or  --model=&lt;dir containing acme.dml&gt;)
+SELECT product, dt_month, AGG(sales)
+FROM acme
+GROUP BY product, dt_month
+</code></pre>
+<blockquote>
+<p>IDE でモデルがピン留めされている場合、ナビゲーション機能が <code>FROM MODEL</code> をそのモデルへの参照として扱うことがあります。CLI では、<code>FROM</code> の後の名前を、使用するファイルまたは <code>--model=&lt;dir&gt;</code> 配下で見つかる <code>.dml</code> ファイルに合わせます。</p>
+</blockquote>
+<h3 id="detail-queries">明細クエリ <a class="section-link" aria-label="この節へのリンク" href="#detail-queries">#</a></h3>
+<p>データセットの行を取得するには <code>FROM &lt;model&gt;.&lt;dataset&gt;</code> を使います。<code>GROUP BY</code> を直接指定すると拒否されます。グループごとの指標を取得するには、再利用可能な指標を定義し、モデルにクエリを実行します。モデルの集計クエリでは <code>AGG()</code> を使います。</p>
+<pre><code class="language-sql">-- Query SQL using model.dml
+SELECT dt_date, transaction_id, raw_amount
+FROM MODEL.transactions
+WHERE dt_month = date(current_date, 'start of month')
+
+-- Query SQL using acme.dml
+SELECT ClaimNumber, ClaimOpenDate
+FROM acme.Claim
+</code></pre>
+<p>明細クエリはデータセットの行を返します。検査対象の式のうち、グループ化を伴わない集計式とウィンドウ式も使用できます。<code>GROUP BY</code> を直接指定すると拒否されます。集計クエリは、再利用可能なモデルの指標を指定されたグループ化の粒度で返します。</p>
+<hr>
+<p><a id="3-model-query-sql-specification"></a></p>
+<h2 id="model-query-sql-specification">モデルクエリのSQL仕様 <a class="section-link" aria-label="この節へのリンク" href="#model-query-sql-specification">#</a></h2>
+<p><a id="31-fundamental-constraints"></a></p>
+<h3 id="fundamental-constraints">基本的な制約 <a class="section-link" aria-label="この節へのリンク" href="#fundamental-constraints">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>使用不可</th>
+<th>理由</th>
+<th>代替方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>サブクエリ</td>
+<td>モデルクエリのSQLでは未対応</td>
+<td>指標を使って計算をモデル化するか、データセットの <code>sql:</code> でリレーションを用意します。</td>
+</tr>
+<tr>
+<td><code>UNION</code> / <code>UNION ALL</code></td>
+<td>モデルクエリのSQLでは未対応</td>
+<td>データセットの <code>sql:</code> またはデータベースのビューで、UNION によるリレーションを用意します。</td>
+</tr>
+<tr>
+<td><code>JOIN</code></td>
+<td>モデルクエリのSQLでは未対応</td>
+<td><code>pk(...)</code> を使って属性の参照をモデル化するか、データセットの <code>sql:</code> でリレーションを用意します。</td>
+</tr>
+<tr>
+<td>列名に直接付ける <code>{...}</code></td>
+<td>波かっこは <code>.dml</code> 専用です。ここで使うと通知なしで取り除かれます。</td>
+<td><code>SELECT product, AGG(sales)</code> のように、名前をそのまま指定します。</td>
+</tr>
+</tbody></table>
+<p>利用側のクエリに適用されるこれらの制約は、DML 全体で SQL の使用を禁止するものではありません。データセットの <code>sql:</code> では、サポートされている結合、UNION、サブクエリを使ってリレーションを用意できます。宣言済みのデータセットは <code>{DATASET}</code> として参照し、物理テーブルの所有関係に従ってください。そのリレーションには正しいキーを明示する必要があります。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセットリファレンス</a>では、検査対象となる派生リレーションの検証方法を説明します。データセットの SQL に組み込んだフィルターは、引き続きデータセットに含まれる行を決める条件になります。SQL をモデルに移しても、すべてのルールが利用側のコンテキストに自動で対応するわけではありません。<a href="reference--model-structure.ja.html#52-dataset-definition-type-dataset">データセット定義</a>を参照してください。</p>
+<p>モデルクエリの SQL では、ウィンドウ関数（<code>OVER()</code>）を<strong>使用できます</strong>。コンパイラーはウィンドウ関数を変更せず、生成する SQL に含めます。よく使うパターンでは、<a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a> の関数マクロ（<code>rank</code>、<code>rank_asc</code>、<code>pot</code>、<code>grand</code>）を優先してください。詳しくは<a href="reference--modifiers.ja.html#22-function-modifiers">関数修飾子</a>を参照してください。<code>.dml</code> モデルのどこに <code>OVER</code> を記述するか（<strong>ウィンドウ関数の配置</strong>）については、<a href="explanation--window-placement.ja.html">ウィンドウ関数の配置</a>を参照してください。</p>
+<p><a id="32-select-rules"></a></p>
+<h3 id="select-rules">SELECT のルール <a class="section-link" aria-label="この節へのリンク" href="#select-rules">#</a></h3>
+<ul>
+<li><strong>集計</strong>では、すべての指標に <code>AGG(measure)</code> を使います。ディメンションは名前をそのまま指定します。</li>
+<li><strong>明細</strong>では、すべての列を名前で直接指定します。重複のない値の一覧を取得するには <code>DISTINCT</code> を追加します。</li>
+</ul>
+<pre><code class="language-sql">-- Aggregation
+SELECT product, dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy FROM MODEL GROUP BY product, dt_month
+
+-- Detail
+SELECT DISTINCT product FROM MODEL.transactions
+</code></pre>
+<p><a id="33-alias-rules"></a></p>
+<h3 id="alias-rules">エイリアスのルール <a class="section-link" aria-label="この節へのリンク" href="#alias-rules">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>パターン</th>
+<th>エイリアスは必要か</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AGG(sales)</code></td>
+<td>不要です。自動で <code>sales</code> がエイリアスになります。</td>
+</tr>
+<tr>
+<td><code>AGG(sales) AS sales</code></td>
+<td>使用できますが冗長です（そのまま出力されます）。</td>
+</tr>
+<tr>
+<td><code>AGG({sales: yoy})</code></td>
+<td><strong>必要</strong>です。<code>AS sales_yoy</code> を使います。</td>
+</tr>
+<tr>
+<td><code>AGG(sales, 'pop') AS sales</code></td>
+<td><strong>誤り</strong>です。循環参照になるため、<code>AS sales_mom</code> を使います。</td>
+</tr>
+<tr>
+<td><code>AGG({sales: yoy}) AS sales</code></td>
+<td><strong>誤り</strong>です。循環参照になるため、<code>AS sales_yoy</code> を使います。</td>
+</tr>
+</tbody></table>
+<p>選択リストの前の項目で定義したエイリアスは、指標ではなく<strong>SQL の結果列</strong>を表します。<code>AGG(sales) AS current_value</code> の後に <code>AGG(current_value)</code> と記述する場合のように、後続の式でその名前を使うと、先に定義した結果列が参照されます。無関係な同名の DML 指標に解決されることはありません。</p>
+<p>修飾子付きの指標参照に、その指標自体の名前をエイリアスとして付けると（例 <code>AGG(sales, 'pop') AS sales</code>）、コンパイラーがエイリアスを指標の再定義として扱うため、循環参照になります。<code>AS sales_mom</code> のように別の名前を使います。修飾子のない <code>AGG(sales) AS sales</code> は冗長ですが、値をそのまま返す指定として受け付けられます。</p>
+<p><code>AGG</code> の第1引数には指標名を指定します。通常の値を取得するには <code>AGG(sales)</code> を、この参照を修飾するには <code>AGG({sales: yoy})</code> を使います。モデルクエリの SQL では、それ以外の箇所で列名をそのまま指定します。</p>
+<p><a id="34-where-rules"></a></p>
+<h3 id="where-rules">WHERE のルール <a class="section-link" aria-label="この節へのリンク" href="#where-rules">#</a></h3>
+<ul>
+<li><code>WHERE customer = 'John Doe'</code> のように、列名をそのまま指定します。</li>
+<li>述語の順序に構文上の制約はありません。</li>
+<li>期間の初日を指定する形式で時間フィルターを記述します。例 <code>dt_month = '2024-01-01'</code>。</li>
+<li>単一期間の指定には、<code>BETWEEN</code> よりも <code>=</code> を優先します。</li>
+<li>明示的に求められた場合を除き、冗長な NULL フィルターは追加しないでください。</li>
+</ul>
+<p><a id="35-group-by-rules"></a></p>
+<h3 id="group-by-rules">GROUP BY のルール <a class="section-link" aria-label="この節へのリンク" href="#group-by-rules">#</a></h3>
+<ul>
+<li>SELECT の非集計フィールドは、すべて GROUP BY に含める必要があります。</li>
+<li>出力順序が重要な場合は、GROUP BY のフィールド順を SELECT に合わせます。確認済みのコンパイラーでは異なる順序も受け付けますが、表示される列の順序が変わることがあります。<code>artifacts.sql</code> と <code>effectiveOutputOrder</code> を確認してください。</li>
+<li>時間修飾子には、解決済みの時間コンテキストが必要です。グループ化に使う時間フィールド、または時間フィルターでそのコンテキストを指定できます。複数期間のレポートでは、時間で明示的にグループ化する方法を優先してください。単一期間に絞るフィルターで、出力に現れない時間コンテキストを指定することもできます。</li>
+</ul>
+<pre><code class="language-sql">-- Correct: time modifier + matching time field in GROUP BY
+SELECT dt_month, AGG(sales), AGG({sales: yoy}) AS sales_yoy
+FROM MODEL
+GROUP BY dt_month
+
+-- Wrong: yoy with neither a grouped time field nor a time filter
+SELECT product, AGG(sales), AGG({sales: yoy}) FROM MODEL GROUP BY product
+</code></pre>
+<p><a id="36-order-by--limit"></a></p>
+<h3 id="order-by--limit">ORDER BY / LIMIT <a class="section-link" aria-label="この節へのリンク" href="#order-by--limit">#</a></h3>
+<ul>
+<li>必ず ASC/DESC を指定する</li>
+<li>結果の意味に関わる場合にのみ追加する（上位 N 件、極値）</li>
+<li>あると便利というだけの理由で並べ替えを追加しない。</li>
+</ul>
+<p><a id="37-measure-reference-rules"></a></p>
+<h3 id="measure-reference-rules">指標の参照ルール <a class="section-link" aria-label="この節へのリンク" href="#measure-reference-rules">#</a></h3>
+<ul>
+<li>クエリでは <code>AGG(measure)</code> のように、指標を必ず <code>AGG()</code> で囲みます。</li>
+<li>修飾子を使う形式: <code>AGG({measure: modifier})</code> または <code>AGG(measure, 'modifier')</code></li>
+<li>Model Query SQL では、<code>AGG</code> 内で修飾子を使う形式を除き、列名を <code>{...}</code> で囲まないでください。列名を囲む波括弧は通知なしに取り除かれ、列名だけが残ります。列名はそのまま指定してください。</li>
+<li>コンパイラが <code>use existing measure "X"</code> と表示したら、<code>AGG(X)</code> を使ってください。式を書き直さないでください。</li>
+</ul>
+<p><a id="38-time-handling"></a></p>
+<h3 id="time-handling">時刻・日付の扱い <a class="section-link" aria-label="この節へのリンク" href="#time-handling">#</a></h3>
+<p><strong>フィールド名</strong>: <code>dt_date</code>、<code>dt_week</code>、<code>dt_month</code>、<code>dt_quarter</code>、<code>dt_year</code>。いずれも該当する期間の初日を表します。</p>
+<p><strong>システムによる派生</strong>: モデルで <code>dt_date</code> などの細かい粒度の標準時間フィールドを明示的に宣言すると、<code>dt_month</code> など、サポート対象の粗い粒度のフィールドが同じデータセットで自動的に使えるようになります。派生フィールドの名前をそのまま使ってください。クエリやフィルターの要件を満たすためだけに、またはエディターの診断を解消するためだけに、重複する物理列を追加しないでください。派生フィールド名から定義に移動すると、明示的に宣言された派生元の時間列が開きます。</p>
+<p><strong>フィルタリング</strong>: <code>WHERE dt_month = '2024-01-01'</code>（期間の初日を指定し、単一期間には <code>BETWEEN</code> ではなく <code>=</code> を使います）。</p>
+<p><a href="reference--expressions.ja.html#34-date-functions-sqlite-dialect">日付関数リファレンス</a>では、SQLite 形式の式を説明しています。コンパイラは、サポート対象の式を選択した方言に変換します。</p>
+<p><code>dt_year</code> と <code>dt_month</code> の両方を指定した検証対象のクエリは、生成された出力に <code>dt_year</code> がないため、コンパイル時に拒否されます。この組み合わせで 2 フィールドのレポートが正常に作成できるとは見なさないでください。年が表示ラベルとしてのみ必要な場合は、必要な月単位でクエリを実行し、その後で月のキーからラベルを生成してください。結果の各行がどの単位で定義されているかは別途確認してください。この結果から、複数の時間フィールドを含むすべてのクエリがサポート対象外だとは判断できません。</p>
+<p><a id="39-having"></a></p>
+<h3 id="having">HAVING <a class="section-link" aria-label="この節へのリンク" href="#having">#</a></h3>
+<pre><code class="language-sql">-- Customers with outstanding balance
+SELECT customer, AGG(outstanding)
+FROM MODEL
+GROUP BY customer
+HAVING AGG(outstanding) &gt; 0
+
+-- Products selling less than last month
+SELECT product, AGG(sales) as this_month, AGG(sales, 'pp') as last_month
+FROM MODEL
+WHERE dt_month = date(current_date, 'start of month')
+GROUP BY product
+HAVING AGG(sales) &lt; AGG(sales, 'pp')
+</code></pre>
+<p><strong>指標をディメンションとして使う場合の注意:</strong> 分類ラベル、またはラベルと同じ粒度の別の指標、あるいはその両方に対する述語は、<strong>ラベル生成後</strong>のフィルターです。Model Query の記述には <code>HAVING</code> が現れることがありますが、意味上、フィルターはラベルが生成された後に適用されます。コンパイルされた SQL では、多くの場合、ラベル生成後の CTE に対する <code>WHERE</code> として適用されます。ドキュメントに <code>HAVING</code> と記載されていても、分類前にフィルタリングできると解釈しないでください。<a href="explanation--measure-as-dimension.ja.html#label-channel-filters">分類ラベルのフィルター</a>を参照してください。</p>
+<p><a id="310-quick-reference"></a></p>
+<h3 id="quick-reference">クイックリファレンス <a class="section-link" aria-label="この節へのリンク" href="#quick-reference">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>パターン</th>
+<th>SQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>合計</td>
+<td><code>SELECT AGG(sales) FROM MODEL</code></td>
+</tr>
+<tr>
+<td>ディメンション別</td>
+<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product</code></td>
+</tr>
+<tr>
+<td>フィルターあり</td>
+<td><code>SELECT AGG(sales) FROM MODEL WHERE region = 'North'</code></td>
+</tr>
+<tr>
+<td>上位 N 件</td>
+<td><code>SELECT product, AGG(sales) FROM MODEL GROUP BY product ORDER BY AGG(sales) DESC LIMIT 10</code></td>
+</tr>
+<tr>
+<td>成長率</td>
+<td><code>SELECT dt_month, AGG(sales, 'yoy') AS sales_yoy FROM MODEL GROUP BY dt_month</code></td>
+</tr>
+<tr>
+<td>期間比較</td>
+<td><code>SELECT dt_month, AGG(sales), AGG(sales, 'pp') AS sales_pp FROM MODEL GROUP BY dt_month</code></td>
+</tr>
+<tr>
+<td>合計に占める割合</td>
+<td><code>SELECT product, AGG({sales: pot}) AS sales_share FROM MODEL GROUP BY product</code></td>
+</tr>
+<tr>
+<td>順位付け</td>
+<td><code>SELECT product, AGG(sales, 'rank') AS sales_rank FROM MODEL GROUP BY product</code></td>
+</tr>
+<tr>
+<td>複数レベルの集計</td>
+<td><code>SELECT brand, AGG(total_customer_sales) FROM MODEL GROUP BY brand</code>（<code>.dml</code> またはインラインの <code>/** dml ... **/</code> で定義した <code>+d</code> 指標が必要）</td>
+</tr>
+<tr>
+<td>インライン指標</td>
+<td><code>/** dml temp_m: ... **/ SELECT AGG(temp_m) FROM MODEL</code></td>
+</tr>
+<tr>
+<td>フィルター付き指標</td>
+<td><code>SELECT AGG(sales, '+f', region = 'North') FROM MODEL</code></td>
+</tr>
+</tbody></table>
+<p>検証したビルドでは、期間比較の構文を使うと、キーの和集合に基づく結合について厳格な診断が出ることがあります。これらの例はクエリの記述形式を示しています。実行前に診断メッセージを読み、生成された結合を確認してください。</p>
+<p><a id="311-aggregation-lookup-table"></a></p>
+<h3 id="aggregation-lookup-table">集計の早見表 <a class="section-link" aria-label="この節へのリンク" href="#aggregation-lookup-table">#</a></h3>
+<p>Model Query SQL（<code>FROM MODEL</code>）では、すべての集計を、<code>model.dml</code> またはインラインの <code>/** dml ... **/</code> ブロック（<a href="#312-inline-measures--dml--">インライン指標</a>）で定義した<strong>指標</strong>を使って行う必要があります。元の列を直接集計するクエリは拒否されます。</p>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>誤り（失敗する）</th>
+<th>正しい書き方</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>総行数</td>
+<td><code>COUNT(*)</code></td>
+<td><code>笔数: COUNT({ID})</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(笔数)</code> を使う</td>
+</tr>
+<tr>
+<td>元の列の合計</td>
+<td><code>SUM(出厂价金额)</code></td>
+<td><code>销售额: SUM({出厂价金额})</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(销售额)</code> を使う</td>
+</tr>
+<tr>
+<td>元の列の平均</td>
+<td><code>AVG(销售数量)</code></td>
+<td><code>均价: DIVIDE(SUM({出厂价金额}), NULLIF(SUM({销售数量}),0))</code> を <code>model.dml</code> またはインラインで定義してから、<code>AGG(均价)</code> を使う</td>
+</tr>
+<tr>
+<td>ディメンションのスカラー MIN/MAX</td>
+<td><code>SELECT MIN(dt_month) FROM MODEL</code></td>
+<td>明細データセットを使う: <code>SELECT MIN(dt_month) FROM MODEL.&lt;dataset&gt;</code></td>
+</tr>
+<tr>
+<td>行数でグループを絞り込む</td>
+<td><code>HAVING COUNT(*) &gt; 100</code></td>
+<td><code>行数: COUNT({ID})</code> を <code>model.dml</code> またはインラインで定義してから、<code>HAVING AGG(行数) &gt; 100</code> を使う</td>
+</tr>
+</tbody></table>
+<p>唯一の例外は、明細データセット（<code>FROM MODEL.&lt;dataset&gt;</code>）に対して、メタデータを調べる目的で行うスカラー集計です。この例外は、ビジネス指標のダッシュボードには適用されません。</p>
+<p><a id="312-inline-measures--dml--"></a></p>
+<h3 id="inline-measures--dml--">インライン指標（<code>/** dml ... **/</code>） <a class="section-link" aria-label="この節へのリンク" href="#inline-measures--dml--">#</a></h3>
+<p><code>.dml</code> ファイルを編集せずに、Model Query SQL 内で一時的な指標を直接定義できます。コンパイラは、<code>FROM</code> で指定された <code>.dml</code> ファイル（<code>FROM MODEL</code> → <code>model.dml</code>、<code>FROM acme</code> → <code>acme.dml</code>）を読み込み、インライン定義を統合してからクエリをコンパイルします。</p>
+<pre><code class="language-sql">/** dml
+temp_sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+**/
+SELECT product, AGG(temp_sales) FROM MODEL GROUP BY product
+</code></pre>
+<p>試算の業務上の意味が関係者間で定まったら、同じ式を固定の名前で <code>.dml</code> モデルに移してください。利用者は式を繰り返し記述せずに、引き続きその指標を名前で参照できます。複数の要素から算出する利益率は、<code>DIVIDE({net_revenue} - {sales_cost}, {net_revenue})</code> としてインラインまたはモデル内で定義できます。その指標に <code>ytd</code> を適用すると、累計対象の範囲で各要素が再計算されます。表示された月次比率の平均は取りません。</p>
+<p><strong>使用例</strong>:</p>
+<ul>
+<li><code>.dml</code> を変更せずにその場で集計する（<a href="#311-aggregation-lookup-table">指標を使う要件</a>を満たす）</li>
+<li><code>+d</code> と <code>dimensions</code> を使った複数レベルの集計。中間指標はインラインで定義する。</li>
+<li>RFM 分析: 顧客単位の指標をインラインで定義し、<code>rank</code> 関数マクロを使ってクエリを記述する。</li>
+</ul>
+<p><strong>ルール</strong>:</p>
+<ul>
+<li>複数行の YAML 形式を使うこと（1 行につき 1 プロパティ）</li>
+<li>インライン指標からは、<code>.dml</code> の既存の指標やデータセットを参照できます</li>
+<li>インライン指標からは、同じブロック内で先に定義した他のインライン指標を参照できます</li>
+<li><code>.dml</code> の指標定義と同じ構文（<code>type</code>、<code>formula</code>、<code>dataset</code>、<code>dimensions</code>）</li>
+</ul>
+<p><a id="7-filters-vs-measure-semantics"></a></p>
+<h2 id="filters-vs-measure-semantics">クエリのフィルターと指標の意味 <a class="section-link" aria-label="この節へのリンク" href="#filters-vs-measure-semantics">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Model Query SQL の <code>WHERE</code> 句に記述する</th>
+<th><code>.dml</code> の指標定義に記述する</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>クエリの行と同じ粒度で定義されたチャネル、地域、データ品質フラグ</td>
+<td>コホートの基準点、エンティティを対象に含める条件</td>
+</tr>
+<tr>
+<td><strong>クエリの行と同じ粒度</strong>での時間範囲（<code>dt_period</code>、<code>dt_month</code>）</td>
+<td><strong>顧客単位</strong>で定義する期間横断のフラグ</td>
+</tr>
+</tbody></table>
+<h2 id="jdbc-parameters-and-query-kind">JDBC パラメーターとクエリの種類 <a class="section-link" aria-label="この節へのリンク" href="#jdbc-parameters-and-query-kind">#</a></h2>
+<p>検証対象の JDBC ディストリビューションでは、物理 SQL と Model Query の両方で位置パラメーター <code>?</code> をバインドできます。タスクのテスト用データでは、フィルターと指標の式にそれぞれ 2 をバインドすると、どちらのクエリ形式でも、フィルターでは 20、指標の式では 60 が返りました。再現手順は<a href="examples--index.ja.html">タスクのサンプルプロジェクト</a>に含まれています。</p>
+<p>マテリアライズ用のパラメータと、内部でのリテラルのパラメータ化は別の仕組みです。アプリケーションからの入力は、呼び出し側でパラメータにバインドしてください。信頼できない値を文字列連結で SQL に組み込まないでください。</p>
+<h2 id="a-time-filter-also-scopes-sibling-measures">時間フィルターは同じクエリ内の他の指標にも適用される <a class="section-link" aria-label="この節へのリンク" href="#a-time-filter-also-scopes-sibling-measures">#</a></h2>
+<p>クエリレベルの月フィルターは、YTD 指標の基準時点を指定できます。このフィルターは、同じクエリ内の通常の指標にも適用されます。<a href="examples--time-context.ja.html">単一の KPI を使う例</a>では、2 月の YTD マージンには 1 月と 2 月のデータが使われますが、通常の売上高には 2 月のデータだけが使われます。基準時点のないクエリは失敗します。カレンダー上の期間でグループ化したクエリでは、累計値はあるものの、その月の売上高がない月が結果に含まれることがあります。どの行を出力するかと、どのデータを指標の計算に使うかは別の問題です。今日の日付やファクトデータの最新日付を暗黙に基準時点として選択しないでください。</p>
+<h2 id="model-query-sql-速查">Model Query SQL クイックリファレンス <a class="section-link" aria-label="この節へのリンク" href="#model-query-sql-速查">#</a></h2>
+<p><code>FROM MODEL</code> は <code>model.dml</code> をバインドします。<code>AGG(sales)</code> で指標を参照し、<code>GROUP BY region</code> で地域ごとに 1 行を出力するよう指定します。<code>WHERE</code> でクエリの対象範囲を限定し、<code>HAVING AGG(sales) &gt; 0</code> で集計後のグループを絞り込みます。出力列名は <code>AS</code> で指定します。</p>
+</main></body></html>

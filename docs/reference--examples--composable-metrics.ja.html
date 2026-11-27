@@ -1,0 +1,65 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指標を組み立ててから、問いを変える · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="この独立した例では、収益性をモデル化します。インタラクティブガイドの売上モデルを補完する例です。定義同士の関係は、概要アニメーションで確認できます。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="指標を組み立ててから、問いを変える · DML"><meta property="og:description" content="この独立した例では、収益性をモデル化します。インタラクティブガイドの売上モデルを補完する例です。定義同士の関係は、概要アニメーションで確認できます。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--examples--composable-metrics.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="reference--examples--composable-metrics.de.html">Deutsch</a> <a lang="en" hreflang="en" href="reference--examples--composable-metrics.html">English</a> <a lang="zh" hreflang="zh" href="reference--examples--composable-metrics.zh.html">中文</a></header><main><h1 id="compose-a-metric-then-change-the-question">指標を組み立ててから、問いを変える</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#agree-the-definition">定義をすり合わせる</a></li><li><a href="#the-model">モデル</a></li><li><a href="#change-the-context">コンテキストを変える</a></li><li><a href="#compare-the-same-period">同じ期間で比較する</a></li><li><a href="#inspect-the-evidence">検証結果を確認する</a></li><li><a href="#continue">次に読む</a></li></ul></details>
+<p>この独立した例では、収益性をモデル化します。<a href="journey.ja.html">インタラクティブガイド</a>の売上モデルを補完する例です。定義同士の関係は、<a href="index.ja.html">概要アニメーション</a>で確認できます。</p>
+<h2 id="agree-the-definition">定義をすり合わせる <a class="section-link" aria-label="この節へのリンク" href="#agree-the-definition">#</a></h2>
+<p>業務チームとデータチームは、純売上高と売上原価に何を含めるかを取り決めます。モデルはこれらの計算に名前を付け、粗利益を導出し、粗利益を売上高で割って粗利益率を求めます。DMLとDMXでルールを記述し、コンパイラがデータベース向けのSQLを生成します。これらを組み合わせることで、分析用セマンティックレイヤーの計算の中核を構成できます。</p>
+<h2 id="the-model">モデル <a class="section-link" aria-label="この節へのリンク" href="#the-model">#</a></h2>
+<p>論理データセットは FACT_PROFITABILITY、その物理ソースは TABLE_PROFITABILITY です。参照先が一意に決まるように、ソースのフィールド名とメジャー名は異なります。ソースの完全なキーは [id] です。物理テーブルでは、revenue_amount と cost_amount に十進数型を使用してください。CSV には SQL の列の型情報が含まれず、整数除算では利益率の小数部分が失われます。</p>
+<pre><code class="language-yaml">dialect: mssql
+
+FACT_PROFITABILITY:
+  type: dataset
+  table: TABLE_PROFITABILITY
+  dimension: [id]
+  columns:
+    id:
+    region:
+    dt_month:
+    revenue_amount:
+    cost_amount:
+  measures:
+    net_revenue: SUM({revenue_amount})
+    sales_cost: SUM({cost_amount})
+
+gross_profit:
+  type: measure
+  formula: '{net_revenue} - {sales_cost}'
+
+gross_margin:
+  type: measure
+  formula: 'DIVIDE({gross_profit}, {net_revenue})'
+
+gross_margin_ytd:
+  type: measure
+  formula: 'DIVIDE({net_revenue: ytd} - {sales_cost: ytd}, {net_revenue: ytd})'
+
+gross_margin_prior_ytd:
+  type: measure
+  formula: 'DIVIDE({net_revenue: {ytd, ya}} - {sales_cost: {ytd, ya}}, {net_revenue: {ytd, ya}})'
+
+margin_change_pp:
+  type: measure
+  formula: '100 * ({gross_margin_ytd} - {gross_margin_prior_ytd})'
+</code></pre>
+<p><a href="profitability-model.dml">model.dmlをダウンロード</a>するか、<a href="TABLE_PROFITABILITY.csv">CSV形式のソースデータ</a>または<a href="profitability-data.json">JSON形式のソースデータ</a>をダウンロードできます。</p>
+<h2 id="change-the-context">コンテキストを変える <a class="section-link" aria-label="この節へのリンク" href="#change-the-context">#</a></h2>
+<p>North の 2025 年 2 月の売上高は 300、原価は 240 で、利益率は 20% です。1 月の売上高は 100、原価は 60 で、利益率は 40% です。年初来の売上高は 400、原価は 300 です。累計利益率は 25% で、月別利益率の単純平均である 30% にはなりません。</p>
+<p>名前を付けた比率に時間修飾子を直接適用します。<code>formula: '{gross_margin: ytd}'</code>。これにより、粗利益率は、参照先である売上高と原価をもとに累計期間全体で再計算されます。月別の比率は合計も平均もしません。前年の YTD には <code>'{gross_margin: {ytd, ya}}'</code> を使用します。</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY region, dt_month
+</code></pre>
+<h2 id="compare-the-same-period">同じ期間で比較する <a class="section-link" aria-label="この節へのリンク" href="#compare-the-same-period">#</a></h2>
+<p>North の 2024 年 1～2 月の売上高は 200、原価は 160 で、累計利益率は 20% です。現在の累計利益率は 25% で、前年同期より <strong>5 パーセントポイント高くなっています</strong>。相対的な増加率は 25% になります。これは別の計算であり、表示される差ではありません。</p>
+<pre><code class="language-sql">SELECT region, dt_month, AGG(gross_margin_ytd), AGG(gross_margin_prior_ytd), AGG(margin_change_pp)
+FROM MODEL
+WHERE dt_month = '2025-02-01'
+GROUP BY region, dt_month
+</code></pre>
+<p><a href="profitability-monthly.sql">月次クエリ</a>、<a href="profitability-cumulative.sql">累計クエリ</a>、または<a href="profitability-comparison.sql">比較クエリ</a>をダウンロードできます。標準の時間計算には、対象の接続先にコンパイラの DML_CALENDAR も必要です。</p>
+<h2 id="inspect-the-evidence">検証結果を確認する <a class="section-link" aria-label="この節へのリンク" href="#inspect-the-evidence">#</a></h2>
+<p><a href="profitability-compiler-observations.json">コンパイラの記録</a>には、使用した実行ファイルの識別情報、クエリの正確な内容、プロセスの終了結果、ステータス、診断情報、生成された SQL が含まれます。確認した 3 つのクエリはいずれも厳格なコンパイルを通過します。生成結果を確認すると、累計を求める分岐では売上高と原価をそれぞれ合計してから除算し、前年を求める分岐では累計期間を 1 年前にずらしています。</p>
+<p>これらの確認結果は、この例と、このコンパイラビルドに適用されます。これらの短い式を別途 DuckDB で実行確認した際は、厳格なコンパイルとソースキーの検証を通過しました。独立した SQL による確認では、2 月時点の YTD 利益率は North が 25%、South が 33⅓% で、前年の YTD 利益率はどちらも 20% でした。この結果だけでは、SQL Server で同じ実行結果が得られることは確認できません。ブラウザーは架空のデータ行をもとに独自に計算し、DML は実行しません。分母の売上高が 0 の場合は NULL になります。比較対象の過去期間にデータがない場合は、0 で補わず欠損のまま扱います。</p>
+<h2 id="continue">次に読む <a class="section-link" aria-label="この節へのリンク" href="#continue">#</a></h2>
+<p>正確なルールと検証項目については、<a href="explanation--core-concepts.ja.html">基本概念</a>、<a href="reference--modifiers.ja.html">修飾子リファレンス</a>、<a href="how-to--compile-and-validate.ja.html">コンパイルと検証のガイド</a>を参照してください。</p>
+</main></body></html>

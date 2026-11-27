@@ -1,0 +1,41 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>クエリのトラブルシューティング · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="コンパイルに失敗した場合、厳格モードの警告が表示された場合、または出力されたSQLがクエリの意図と一致しない場合は、この手順を使用します。動作が不明な場合は、選択したdmlc.exeで確認します。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.ja.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="クエリのトラブルシューティング · DML"><meta property="og:description" content="コンパイルに失敗した場合、厳格モードの警告が表示された場合、または出力されたSQLがクエリの意図と一致しない場合は、この手順を使用します。動作が不明な場合は、選択したdmlc.exeで確認します。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/how-to--troubleshoot-query.ja.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.ja.html">DML</a><a href="docs.ja.html">ドキュメント</a><a href="learn.ja.html">学習</a><a href="search.ja.html">ドキュメントを検索</a><a lang="de" hreflang="de" href="how-to--troubleshoot-query.de.html">Deutsch</a> <a lang="en" hreflang="en" href="how-to--troubleshoot-query.html">English</a> <a lang="zh" hreflang="zh" href="how-to--troubleshoot-query.zh.html">中文</a></header><main><h1 id="troubleshoot-a-query">クエリのトラブルシューティング</h1><details class="page-toc"><summary>このページの内容</summary><ul><li><a href="#debugging-workflow-model-query-sql">デバッグ手順（Model Query SQL）</a></li><li><a href="#reading-compiler-errors">コンパイルエラーの読み方</a></li><li><a href="#prevention-checklist">エラー防止チェックリスト</a></li></ul></details>
+<p>コンパイルに失敗した場合、厳格モードの警告が表示された場合、または出力されたSQLがクエリの意図と一致しない場合は、この手順を使用します。動作が不明な場合は、選択した<code>dmlc.exe</code>で確認します。</p>
+<h2 id="debugging-workflow-model-query-sql">デバッグ手順（Model Query SQL） <a class="section-link" aria-label="この節へのリンク" href="#debugging-workflow-model-query-sql">#</a></h2>
+<p>コンパイル時に<code>COMPILE_ERROR</code>が報告されるか、メッセージに<code>UNION</code>、<code>JOIN</code>、<code>subquery</code>、<code>aggregation is not possible</code>、<code>ref {...} not defined</code>、<code>measure cannot be redefined</code>、<code>use existing measure</code>のいずれかが含まれる場合に使用します。</p>
+<ol>
+<li><strong>エラー全体を読む</strong>。ペイロード内にある、生成された<code>-- dialect: …</code> SQLも確認します。</li>
+<li><strong>クエリの種類を判定する</strong>。明細クエリ（存在確認、一覧、単一レコード）か、集計クエリかを確認します。集計には<code>FROM MODEL</code> + <code>AGG()</code>を使用します。モデルファイルが<code>&lt;name&gt;.dml</code>の場合は、参照元に<code>FROM &lt;name&gt;</code>を使用します。</li>
+<li><strong>適切なFROM句を選ぶ</strong>。集計には<code>FROM MODEL</code>を使用します。ファイル名が<code>&lt;name&gt;.dml</code>の場合は<code>FROM &lt;name&gt;</code>を使用します。明細には<code>FROM MODEL.&lt;dataset&gt;</code>または<code>FROM &lt;name&gt;.&lt;dataset&gt;</code>を使用し、<code>AGG</code>も<code>GROUP BY</code>も使用しません。名前は<code>.dml</code>ファイルと一致させます（<code>model.dml</code> ↔ <code>FROM MODEL</code>）。</li>
+<li><strong>サポートされていないSQLを削除する</strong>。サブクエリ、UNION、JOINは使用できません。移植性のあるウィンドウ処理には<a href="02-syntax--system_macros.dml"><code>system_macros.dml</code></a>の fn マクロ（<code>rank</code>、<code>pot</code>、<code>grand</code>）、複数のレベルでの集計には<code>+d</code>指標、複雑なロジックには<code>.dml</code>定義を使用します（<a href="how-to--design-measures.ja.html">指標の設計</a>、<a href="reference--modifiers.ja.html#25-modifier-stacking">修飾子の組み合わせ</a>）。<code>OVER</code>を手書きする場合のデータセット内での<strong>ウィンドウ処理の配置</strong>については、<a href="explanation--window-placement.ja.html">ウィンドウ処理の配置</a>を参照してください。対象のパターンに対応する fn マクロがない場合は、Model Query に<code>OVER()</code>を直接記述できます。</li>
+<li><strong>指標と列を区別する</strong>。クエリでは<code>AGG(measure)</code>を、<code>.dml</code>ファイルでは<code>{column}</code>または<code>'{measure: modifier}'</code>を使用します。Model Query SQLで列を直接参照する場合は、<code>AGG({measure: modifier})</code>を除き、<code>{...}</code>を使用しません。</li>
+<li><strong>段階的にデバッグする</strong>。まず<code>SELECT AGG(one_measure) FROM MODEL</code>を検証し、その後で<code>GROUP BY</code>とフィルターを追加します。検証には<code>dmlc --validate &lt;query.sql&gt; --model=&lt;model&gt; --connection=&lt;id&gt; --json</code>を使用します。</li>
+</ol>
+<p><a id="reading-mcp-wrapped-errors"></a></p>
+<h3 id="reading-compiler-errors">コンパイルエラーの読み方 <a class="section-link" aria-label="この節へのリンク" href="#reading-compiler-errors">#</a></h3>
+<p>コンパイラのメッセージと生成されたSQLを併せて確認します。原因が不明な場合は、クエリを指標1つに絞り、列とフィルターを1つずつ追加します。</p>
+<h2 id="prevention-checklist">エラー防止チェックリスト <a class="section-link" aria-label="この節へのリンク" href="#prevention-checklist">#</a></h2>
+<p>DMLまたは Model Query SQLを提出する前に、次の項目を確認します。</p>
+<ol>
+<li>指標には技術名ではなく業務上の名称を使用している。</li>
+<li><code>.dml</code>の指標の式に<code>AGG()</code>が含まれていない。</li>
+<li>単純な<code>AGG(measure)</code>に不要な別名が付いていない。</li>
+<li>時間修飾子の時間コンテキストが確定しており、マクロの前提条件を満たしている。</li>
+<li>時間フィルターでは、対象期間の初日を表す形式を使用している。</li>
+<li>読みやすくするため、時間フィルターを最後に置くことができます。構文上、述語の順序に決まりはありません。</li>
+<li>サブクエリ、JOIN、UNION を使用していない。</li>
+<li>読みやすく整形した Model Query SQLを<code>.sql</code>ファイルに保存する。</li>
+<li>クエリの種類（明細または集計）が目的に合っている。</li>
+<li>使用予定のデータベース接続で<code>--validate</code>による検証に合格する。</li>
+<li><code>MODEL.DATASET_*</code>を<code>GROUP BY</code>で直接集計しません。<code>FROM MODEL</code> + <code>AGG()</code>を使用するか、明細データをエクスポートします。</li>
+<li>疎なデータまたはFOJを扱う複合指標では、参照する入力で既定値による補完を有効にします（最外層に<code>isnull</code>、<code>ifnull</code>、<code>coalesce(公式, 字面量)</code>のいずれかを配置、P28b）。補完を有効にした依存先を埋め込んだ場合も、補完処理は展開されます。</li>
+<li>指標をディメンションとして使う場合、指標から導出した各ディメンションに、完全なエンティティキーを明示します（<code>+d</code>を推奨）。ラベルが複数ある場合、各ラベルは独立した同一のキーを持ちます。出力するすべての指標は、<code>Q ∪ K</code>で定義される粒度から正しくロールアップできる必要があります。ラベルのフィルターは、ラベルが生成された後に適用します（P66–P68）。</li>
+<li>細かい粒度のCTEで<code>WHERE</code>を適用してから外側で<code>SUM</code>を行う場合は、対応する<code>{+d: …}</code>を指定して<code>SUMIF</code>または<code>SUM(iif)</code>を使用します。粗い粒度のクエリで指標を直接フィルターに指定しません（P69）。</li>
+<li>ウィンドウ処理の配置では、明細レベルの<code>OVER</code>を<code>columns:</code>の下に置き、その後にアトミック集計を行います。<code>GROUP-BY</code>の後は、ウィンドウ処理を複合指標、<code>{-d:}</code>、<code>{-df:}</code>のいずれかに配置します。アトミック指標には<code>OVER</code>を使用しません（P70–P71）。</li>
+<li>粒度を定義する2つのフィールドが同じ物理列を別名で参照する場合は、ロールアップ用に出力されたすべての<code>ON</code>句で、正しいキーが使われていることを確認します（P72）。明示的なキーを使う代替手段は、ディメンションを宣言した<code>sql:</code>データセットに<code>pk()</code>で取り込むことです（P77）。</li>
+<li>データセットをまたぐ<code>-df</code>の複合ロールアップはFULL OUTERになります。相手側にしかない行は<code>'{primary_measure} is not null':</code>で除外します（P73）。相手側の一時データに<code>max()</code>で補ったキーが含まれることがあるため、「余分な行」が、行を自分自身と組み合わせた有効なペアに見える場合があります。</li>
+<li>同じオブジェクトに対して<code>{+d:x,-d:x}</code>や<code>{+d:x,-df:x}</code>を記述しません。この指定は明示的なエラーとし、式を明示的に書き換えます（P79）。</li>
+<li><code>-f</code>はクエリの対象行集合を定めるフィルターを解除しません。粒度を定義する項目に対するフィルター以外で、適用がブロックされるフィルターには<code>EXISTS</code>が必要です（P80）。</li>
+<li>粒度をまたいで時間の<code>dimension:</code>を置き換えるには、カレンダーを使った橋渡しと、値を対象行に展開する処理が必要です（P81）。</li>
+<li><code>{m:{+d:x}}</code>単体では、細かい粒度の結果だけが得られます。元の粒度に戻すには、外側で<code>SUM</code>、<code>AVG</code>などによる集計が必要です。ただし、MADのラベルバインディングは例外です。</li>
+</ol>
+</main></body></html>

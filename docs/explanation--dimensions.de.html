@@ -1,0 +1,216 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dimensionssemantik und abgeleitete Granularität · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Dieser Leitfaden hilft Ihnen, das Verhalten von Dimensionen beim Modellieren von Datensätzen, Schreiben von Kennzahlen, Kompilieren von Abfragen und Untersuchen von Zeilenvervielfachungen zu verstehen. Er erläu"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Dimensionssemantik und abgeleitete Granularität · DML"><meta property="og:description" content="Dieser Leitfaden hilft Ihnen, das Verhalten von Dimensionen beim Modellieren von Datensätzen, Schreiben von Kennzahlen, Kompilieren von Abfragen und Untersuchen von Zeilenvervielfachungen zu verstehen. Er erläu"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/explanation--dimensions.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="explanation--dimensions.ja.html">日本語</a> <a lang="en" hreflang="en" href="explanation--dimensions.html">English</a> <a lang="zh" hreflang="zh" href="explanation--dimensions.zh.html">中文</a></header><main><h1 id="dimension-semantics-and-derived-grain">Dimensionssemantik und abgeleitete Granularität</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#1-the-object-model">1. Das Objektmodell</a></li><li><a href="#2-the-five-dimension-roles">2. Die fünf Rollen von Dimensionen</a></li><li><a href="#3-grain-is-derived-from-a-dimension">3. Die Granularität ergibt sich aus der Dimension</a></li><li><a href="#4-dataset-dimension-source-row-identity">4. Datensatzdimension und Identität der Quellzeilen</a></li><li><a href="#5-query-dimension-result-grouping">5. Abfragedimension und Gruppierung der Ergebnisse</a></li><li><a href="#6-evaluation-dimension-one-measure-reference">6. Auswertungsdimension einer einzelnen Kennzahlreferenz</a></li><li><a href="#7-allowed-dimensions-measure-validity">7. Zulässige Dimensionen für die Auswertung von Kennzahlen</a></li><li><a href="#8-materialization-dimension-stored-output-identity">8. Materialisierungsdimension und Identität gespeicherter Ergebniszeilen</a></li><li><a href="#9-compatibility-and-validation">9. Kompatibilität und Validierung</a></li><li><a href="#10-authoring-workflow">10. Ablauf beim Erstellen und Bearbeiten</a></li><li><a href="#related-references">Weiterführende Dokumentation</a></li></ul></details>
+<p>Dieser Leitfaden hilft Ihnen, das Verhalten von Dimensionen beim Modellieren von Datensätzen, Schreiben von Kennzahlen, Kompilieren von Abfragen und Untersuchen von Zeilenvervielfachungen zu verstehen. Er erläutert das Sprachmodell. Maßgeblich bleibt die Referenz zur <a href="reference--semantics.de.html">Auswertungssemantik von DML</a>.</p>
+<h2 id="1-the-object-model">1. Das Objektmodell <a class="section-link" aria-label="Link zum Abschnitt" href="#1-the-object-model">#</a></h2>
+<p>Ein <strong>Dimensionsfeld</strong> ist ein einzelnes benanntes Feld in DML.</p>
+<p>Eine <strong>Dimension</strong> ist eine Liste mit einem oder mehreren Dimensionsfeldern.</p>
+<p>Beispiele:</p>
+<pre><code class="language-text">[order_id]
+[order_id, line_id]
+[product_id, dt_month]
+</code></pre>
+<p>Jede Zeile oben definiert eine Dimension. <code>[product_id, dt_month]</code> ist eine Dimension mit zwei Feldern.</p>
+<p>Die Kennzahloption <code>dimensions:</code> hat eine zusätzliche Listenebene, weil sie mehrere zulässige Dimensionen zur Auswahl enthalten kann:</p>
+<pre><code class="language-yaml">dimensions:
+  - [customer_id]
+  - [account_id, dt_month]
+</code></pre>
+<p>Die äußere Liste enthält zwei zulässige Dimensionen. Jede innere Liste bildet eine Dimension.</p>
+<p>Eine Gesamtsumme hat keine Dimension. In der Syntax für Kennzahlmodifikatoren hebt <code>{dimension: []}</code> die Auswertungsdimension auf, um diesen Kontext anzufordern. Die leere Liste steht für eine Operation, nicht für eine Dimension ohne Felder.</p>
+<h2 id="2-the-five-dimension-roles">2. Die fünf Rollen von Dimensionen <a class="section-link" aria-label="Link zum Abschnitt" href="#2-the-five-dimension-roles">#</a></h2>
+<p>Die Listenstruktur ist immer dieselbe. Das Verhalten hängt davon ab, an welcher Stelle in DML die Liste steht:</p>
+<table>
+<thead>
+<tr>
+<th>Position in DML</th>
+<th>Rolle</th>
+<th>Verhalten</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dimension:</code> im Dataset</td>
+<td>Datensatzdimension</td>
+<td>Deklariert die Dimensionsfelder, deren vollständige Wertekombination eine einzelne Quellzeile identifiziert.</td>
+</tr>
+<tr>
+<td>Formel mit Dimensionsmodifikatoren</td>
+<td>Auswertungsdimension</td>
+<td>Bestimmt, mit welcher Dimension eine einzelne Kennzahlreferenz ausgewertet wird.</td>
+</tr>
+<tr>
+<td><code>GROUP BY</code> oder <code>columns.dimension</code> in der Abfrage</td>
+<td>Abfragedimension</td>
+<td>Gruppiert die zurückgegebenen Zeilen und bestimmt, wofür eine einzelne Ergebniszeile steht.</td>
+</tr>
+<tr>
+<td><code>dimension:</code> in der Materialisierung</td>
+<td>Materialisierungsdimension</td>
+<td>Definiert die Gruppierung und den Schlüssel der materialisierten Relation.</td>
+</tr>
+<tr>
+<td><code>dimensions:</code> in der Kennzahl</td>
+<td>Zulässige Dimensionen</td>
+<td>Beschränkt die Auswahl an Dimensionen, mit denen die Kennzahl ausgewertet werden darf. Legt weder die Identität der Quellzeilen noch die Gruppierung der Abfrage fest.</td>
+</tr>
+</tbody></table>
+<p>Diese Rollen sind nicht austauschbar. Wenn Sie etwa <code>[region]</code> unter <code>dimensions:</code> einer Kennzahl hinzufügen, erscheint <code>region</code> dadurch nicht im Abfrageergebnis. Die Abfrage benötigt weiterhin <code>GROUP BY region</code> oder <code>columns.dimension: [region]</code>.</p>
+<h2 id="3-grain-is-derived-from-a-dimension">3. Die Granularität ergibt sich aus der Dimension <a class="section-link" aria-label="Link zum Abschnitt" href="#3-grain-is-derived-from-a-dimension">#</a></h2>
+<p>Die <strong>Granularität</strong> beschreibt, wofür eine einzelne Zeile steht, nachdem eine Dimension in einem bestimmten Kontext angewendet wurde.</p>
+<table>
+<thead>
+<tr>
+<th>Kontext</th>
+<th>Dimension</th>
+<th>Abgeleitete Granularität</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Datensatz mit Bestellpositionen</td>
+<td><code>[order_id, line_id]</code></td>
+<td>Eine Quellzeile pro Bestellposition</td>
+</tr>
+<tr>
+<td>Monatliche Abfrage nach Produkt</td>
+<td><code>[product_id, dt_month]</code></td>
+<td>Eine Ergebniszeile pro Produkt und Monat</td>
+</tr>
+<tr>
+<td>Auswertung nach Kunde</td>
+<td><code>[customer_id]</code></td>
+<td>Ein Zwischenwert pro Kunde</td>
+</tr>
+<tr>
+<td>Monatliche Materialisierung nach Konto</td>
+<td><code>[account_id, dt_month]</code></td>
+<td>Eine materialisierte Zeile pro Konto und Monat</td>
+</tr>
+</tbody></table>
+<p>Die Dimension ist die verbindliche Angabe in der Sprache. Die Granularität beschreibt, wofür eine Zeile gemäß dieser Angabe steht. Anhand der Granularität können Sie die Bedeutung von Zeilen vergleichen, Zeilenvervielfachungen nachvollziehen und erklären, warum zwei Dimensionen nicht kompatibel sind. Verwenden Sie die gewünschte Berichtsgranularität nicht als Ersatz für die Identität der Quellzeilen.</p>
+<p>Wenn Sie ein Dimensionsfeld hinzufügen, wird die Granularität in der Regel feiner. Wenn Sie eines entfernen, wird sie in der Regel gröber. Diese Faustregel reicht nicht aus, um Kompatibilität nachzuweisen. Auch die Herleitung der Felder, zeitliche Beziehungen, Kennzahlbeschränkungen und Datensatzgrenzen spielen eine Rolle. Lassen Sie den Compiler die deklarierte Beziehung prüfen.</p>
+<h2 id="4-dataset-dimension-source-row-identity">4. Datensatzdimension und Identität der Quellzeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#4-dataset-dimension-source-row-identity">#</a></h2>
+<p>Die Datensatzdimension enthält die Felder, die eine einzelne physische Quellzeile identifizieren:</p>
+<pre><code class="language-yaml">Order Line:
+    type: dataset
+    table: tabOrderLine
+    dimension: [order_id, line_id]
+    columns:
+        order_id:
+        line_id:
+        product_id:
+        net_amount:
+</code></pre>
+<p>Die vollständige Wertekombination von <code>[order_id, line_id]</code> muss eindeutig sein. <code>order_id</code> kann sich über mehrere Bestellpositionen hinweg wiederholen und <code>line_id</code> über mehrere Bestellungen hinweg. Die vollständige Datensatzdimension bleibt dabei eindeutig.</p>
+<p>Ersetzen Sie die physische Zeilenidentität nicht durch eine fachliche Gruppierung, deren Werte sich wiederholen können. Enthält die Quelle mehrere Buchungseinträge mit derselben Wertekombination für <code>[account_id, invoice_id]</code>, ist diese Liste keine gültige Datensatzdimension, auch wenn Berichte häufig danach gruppieren. Verwenden Sie den physischen Schlüssel des Buchungseintrags als Datensatzdimension und <code>[account_id, invoice_id]</code> als Abfrage- oder Materialisierungsdimension.</p>
+<p><code>pk(...)</code> stützt sich auf die Datensatzdimension des Zieldatensatzes:</p>
+<ul>
+<li>Die Nachschlageargumente entsprechen den Dimensionsfeldern des Zieldatensatzes.</li>
+<li>Anzahl und Bedeutung der Argumente müssen zu dieser Dimension passen.</li>
+<li>Ein Nachschlagevorgang darf höchstens eine Zeile im Zieldatensatz finden.</li>
+</ul>
+<p>Der Compiler setzt voraus, dass diese Anforderungen erfüllt sind, und kann einen Nachschlagevorgang in einen <code>LEFT JOIN</code> übersetzen. Doppelte Zielschlüssel können daher Zeilen vervielfachen und Kennzahlwerte mehrfach in die Berechnung einfließen lassen. Wenn Sie dem kompilierten SQL ein <code>DISTINCT</code> oder <code>GROUP BY</code> hinzufügen, behebt das den Verstoß gegen die Modellanforderungen nicht.</p>
+<h2 id="5-query-dimension-result-grouping">5. Abfragedimension und Gruppierung der Ergebnisse <a class="section-link" aria-label="Link zum Abschnitt" href="#5-query-dimension-result-grouping">#</a></h2>
+<p>In Model Query SQL:</p>
+<pre><code class="language-sql">SELECT dt_month, product_id, AGG(net_sales)
+FROM MODEL
+GROUP BY dt_month, product_id
+</code></pre>
+<p>Die Abfragedimension ist <code>[dt_month, product_id]</code>. Jede Ergebniszeile steht für eine Kombination aus Monats- und Produktwert.</p>
+<p>Bei einer Abfrage im DML-Format ist diese Rolle explizit angegeben:</p>
+<pre><code class="language-yaml">Monthly Product Sales:
+    type: query
+    columns:
+        dimension: [dt_month, product_id]
+        net_sales: "{net_sales}"
+</code></pre>
+<p>Eine Abfrage ohne Gruppierung hat keine Abfragedimension. Wenn ihre Kennzahlen es zulassen, liefert sie ein Ergebnis im Gesamtsummenkontext.</p>
+<p>Wenn kompatible Kennzahlen aus unterschiedlichen Datensätzen stammen, aggregiert der Compiler jede Kennzahl separat auf die Granularität der Abfrage und führt die Ergebnisse anschließend anhand gemeinsamer Dimensionsfelder zusammen. So vermeidet er die typische Vervielfachung von Beiträgen zu Aggregaten, die entsteht, wenn Detailzeilen zuerst verknüpft werden. Gültige Datensatzdimensionen und eindeutige Nachschlagevorgänge mit <code>pk(...)</code> sind weiterhin erforderlich.</p>
+<p>Ein Feld der Abfragedimension kann auch eine <strong>Kennzahl als Dimension</strong> sein. Dabei dient das Ergebnis einer Kennzahl als Feld der Abfragedimension und wird häufig mit <code>{name: {+d: dim}}</code> gebunden. Das Feld behält die Rolle einer Abfragedimension und legt die Identität der Quellzeilen über <code>dimension:</code> nicht fest. Die Regeln für die Definition finden Sie unter <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a>.</p>
+<h2 id="6-evaluation-dimension-one-measure-reference">6. Auswertungsdimension einer einzelnen Kennzahlreferenz <a class="section-link" aria-label="Link zum Abschnitt" href="#6-evaluation-dimension-one-measure-reference">#</a></h2>
+<p>Die Abfragedimension liefert den Ausgangskontext für eine Kennzahlreferenz. Die Formelstruktur, die zulässigen Dimensionen und die Modifikatoren bestimmen ihre effektive Auswertungsdimension.</p>
+<p>Für die Abfragedimension <code>[dt_month, region, brand]</code> gilt:</p>
+<table>
+<thead>
+<tr>
+<th>Kennzahlreferenz</th>
+<th>Dimensionsoperation</th>
+<th>Resultierende Auswertungsdimension</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>{sales}</code></td>
+<td>Kein Dimensionsmodifikator</td>
+<td>Ermittelte Zieldimension</td>
+</tr>
+<tr>
+<td><code>{sales: {+d: customer_id}}</code></td>
+<td>Dimensionsfeld <code>customer_id</code> hinzufügen</td>
+<td><code>[dt_month, region, brand, customer_id]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {-d: brand}}</code></td>
+<td>Dimensionsfeld <code>brand</code> entfernen</td>
+<td><code>[dt_month, region]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {dimension: [region]}}</code></td>
+<td>Die gesamte Dimension ersetzen</td>
+<td><code>[region]</code></td>
+</tr>
+<tr>
+<td><code>{sales: {dimension: []}}</code></td>
+<td>Die Dimension aufheben</td>
+<td>Gesamtsummenkontext</td>
+</tr>
+</tbody></table>
+<p>Diese Operationen wirken sich nur auf die jeweilige Kennzahlreferenz aus. Das <code>GROUP BY</code> der Abfrage bleibt unverändert.</p>
+<p><code>-d</code> entfernt ein Dimensionsfeld, behält aber einen Abfragefilter auf diesem Feld bei, wenn der Compiler die Filter an den Datensatz weitergibt. <code>-df</code> entfernt das Feld und unterbindet für diese Referenz die Weitergabe des zugehörigen Filters. Verwenden Sie den zweiten Modifikator, wenn ein Nenner auch Werte berücksichtigen muss, die der Abfragefilter ausschließt. Syntax und Filterverhalten sind unter <a href="reference--modifiers.de.html">Kennzahlmodifikatoren</a> beschrieben.</p>
+<h2 id="7-allowed-dimensions-measure-validity">7. Zulässige Dimensionen für die Auswertung von Kennzahlen <a class="section-link" aria-label="Link zum Abschnitt" href="#7-allowed-dimensions-measure-validity">#</a></h2>
+<p>Mit <code>dimensions:</code> in der Kennzahldeklaration lassen sich die zulässigen Auswertungsdimensionen einschränken, wenn die fachliche Definition dies erfordert:</p>
+<pre><code class="language-yaml">Revenue per Customer:
+    type: measure
+    formula: DIVIDE({net_sales}, {active_customers})
+    dimensions:
+      - [customer_id]
+</code></pre>
+<p><code>[customer_id]</code> ist eine zulässige Dimension mit einer abgeschlossenen Feldliste. Sie schränkt die Auswertung ein, identifiziert aber weder Datensatzzeilen noch gruppiert sie das Abfrageergebnis.</p>
+<p>Auslassungspunkte lassen zusätzliche Dimensionsfelder zu, während die aufgeführten Felder Pflicht bleiben:</p>
+<pre><code class="language-yaml">dimensions:
+  - [customer_id, ...]
+</code></pre>
+<p>Damit sind kompatible Auswertungsdimensionen zulässig, die <code>customer_id</code> enthalten. Fehlt <code>dimensions:</code> in der Kennzahldeklaration, ist jede Dimension zulässig, die mit der Kennzahl und ihren Datensatzabhängigkeiten kompatibel ist.</p>
+<p>Benötigt eine Formel ein Pflichtfeld der Dimension, das die Abfrage nicht bereitstellt, ergänzen Sie es mit <code>+d</code> in der betreffenden Kennzahlreferenz und führen Sie die erforderliche äußere Aggregation durch. Fügen Sie der Abfrage keine Gruppierung hinzu, nur um eine Zwischenberechnung zu ermöglichen.</p>
+<h2 id="8-materialization-dimension-stored-output-identity">8. Materialisierungsdimension und Identität gespeicherter Ergebniszeilen <a class="section-link" aria-label="Link zum Abschnitt" href="#8-materialization-dimension-stored-output-identity">#</a></h2>
+<p>Eine Materialisierungsdimension legt die Gruppierung und den Schlüssel der gespeicherten Ergebnisse fest:</p>
+<pre><code class="language-yaml">Monthly Account Balance:
+    type: materialize
+    dimension: [account_id, dt_month]
+    measures: [closing_balance]
+</code></pre>
+<p><code>dimension_columns:</code> enthält Attribute, die funktional von diesen Schlüsseln abhängen und mit ihnen gespeichert werden. Diese Attribute sind keine zusätzlichen Felder der Materialisierungsdimension. Lässt sich ein Attribut aus der Materialisierungsdimension ableiten, belassen Sie es in <code>dimension_columns:</code>, ohne die Identität der gespeicherten Zeilen zu ändern.</p>
+<h2 id="9-compatibility-and-validation">9. Kompatibilität und Validierung <a class="section-link" aria-label="Link zum Abschnitt" href="#9-compatibility-and-validation">#</a></h2>
+<p>Bei der Kompilierung werden die deklarierten Modellvorgaben geprüft:</p>
+<ul>
+<li>Dimensionsfelder lassen sich über die relevanten Datensätze und Spaltenmakros auflösen.</li>
+<li>Die Auswertungsdimensionen erfüllen die unter <code>dimensions:</code> deklarierten Einschränkungen der Kennzahl.</li>
+<li>Die Modifikatoren können eine gültige Auswertungsdimension erzeugen.</li>
+<li>Kennzahlen aus verschiedenen Datensätzen unterstützen die Abfragedimension.</li>
+<li>Für Zeitmodifikatoren ist das erforderliche aktive Zeitfeld vorhanden.</li>
+</ul>
+<p>Bei der Kompilierung wird keine Verbindung zu den aktuellen Daten hergestellt. Daher lässt sich dabei nicht nachweisen, dass die Datensatzdimension eindeutige Werte hat.</p>
+<p>Führen Sie <code>validateOnly</code> aus, wenn kein aktueller Validierungsnachweis vorliegt oder der vorhandene veraltet ist. Für die kompilierte Abfrage führt die Option die generierten Prüfungen der Datensatzschlüssel über die ausgewählte Verbindung aus. Mit <code>EXPLAIN</code> prüft sie, ob die Datenbank die Hauptabfrage akzeptiert und einen Ausführungsplan dafür erstellt. Die Hauptabfrage wird dabei nicht zur Ermittlung ihrer Ergebniszeilen ausgeführt.</p>
+<p>Der Validierungsnachweis gilt für die Modell- und Abfragevorgaben, die Verbindung und den Zustand der Quelle zum Zeitpunkt der Validierung. Eine relevante Modelländerung, eine Aktualisierung der Quelle oder eine Änderung der Schlüsselregeln oder der Verbindung macht den Nachweis ungültig.</p>
+<p>Wenn die Validierung <code>VALIDATION_ERROR</code> meldet, korrigieren Sie den Schlüssel der Quelle, die Datensatzdimension, die sich überschneidenden Bereiche oder die Quelldaten. Kann eine Validierungsabfrage nicht ausgeführt werden oder liefert sie ein fehlerhaft aufgebautes Ergebnis, behandeln Sie <code>EXECUTION_ERROR</code> separat. Diese Meldung weist keine doppelten Schlüssel nach.</p>
+<p>Die Validierung weist weder die fachliche Korrektheit noch die Übereinstimmung mit einem vertrauenswürdigen Bericht nach. Wenn Sie eine bestehende Abfrage migrieren, vergleichen Sie beide Ergebnisse mit denselben Filtern, demselben Zeitfenster und derselben Abfragedimension.</p>
+<h2 id="10-authoring-workflow">10. Ablauf beim Erstellen und Bearbeiten <a class="section-link" aria-label="Link zum Abschnitt" href="#10-authoring-workflow">#</a></h2>
+<p>Der <a href="how-to--build-analysis.de.html">Ablauf für die Vorwärtsanalyse</a> wendet diese Rollen auf Änderungen an Modellen und Abfragen an. <a href="how-to--compile-and-validate.de.html">Die dmlc CLI verwenden</a> beschreibt die Kompilierung und die Validierung anhand aktueller Daten.</p>
+<h2 id="related-references">Weiterführende Dokumentation <a class="section-link" aria-label="Link zum Abschnitt" href="#related-references">#</a></h2>
+<ul>
+<li>Kurzer Überblick über <a href="explanation--core-concepts.de.html">DML, DMX und Model Query</a></li>
+<li>Kennzahl als Dimension: <a href="explanation--measure-as-dimension.de.html">Kennzahl als Dimension</a></li>
+<li>Verbindliche Sprachsemantik: <a href="reference--semantics.de.html">Auswertungssemantik von DML</a></li>
+<li>Kennzahlen und zulässige Dimensionen: <a href="reference--measures.de.html">Kennzahldeklarationen</a></li>
+<li>Dimensionsmodifikatoren: <a href="reference--modifiers.de.html">Kennzahlmodifikatoren</a></li>
+<li>Syntax von Model Query: <a href="reference--model-query-sql.de.html">Model Query SQL</a></li>
+<li>Fehlerbilder: <a href="reference--troubleshooting--README.de.html">Übersicht zur Fehlerbehebung</a></li>
+<li>Durchgearbeitete Beispiele für Modelle und Abfragen: <a href="reference--examples--README.de.html">Beispiele nach Aufgabe</a></li>
+</ul>
+</main></body></html>

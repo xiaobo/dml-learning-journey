@@ -1,0 +1,61 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Einen expliziten Stichtag für eine kumulative KPI festlegen · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Eine kumulative Kennzahl benötigt einen Zeitkontext. Ein Datumsfilter schränkt auch die übrigen, nicht kumulativen Kennzahlen derselben Abfrage ein. DML wählt weder das heutige Datum noch das jüngste Datum in d"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.de.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context-en.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/examples--time-context.ja.html"><meta property="og:type" content="website"><meta property="og:title" content="Einen expliziten Stichtag für eine kumulative KPI festlegen · DML"><meta property="og:description" content="Eine kumulative Kennzahl benötigt einen Zeitkontext. Ein Datumsfilter schränkt auch die übrigen, nicht kumulativen Kennzahlen derselben Abfrage ein. DML wählt weder das heutige Datum noch das jüngste Datum in d"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/examples--time-context.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="examples--time-context.ja.html">日本語</a> <a lang="en" hreflang="en" href="examples--time-context-en.html">English</a> <a lang="zh" hreflang="zh" href="examples--time-context-zh.html">中文</a></header><main><h1 id="give-a-cumulative-kpi-an-explicit-cutoff">Einen expliziten Stichtag für eine kumulative KPI festlegen</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#compare-two-scopes-in-one-result">Zwei Berechnungszeiträume in einem Ergebnis vergleichen</a></li><li><a href="#observe-missing-context">Das Verhalten bei fehlendem Zeitkontext prüfen</a></li><li><a href="#grouped-months-can-exist-without-sales">Die Gruppierung kann auch Monate ohne Verkäufe enthalten</a></li><li><a href="#run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen</a></li></ul></details>
+<p>Eine kumulative Kennzahl benötigt einen Zeitkontext. Ein Datumsfilter schränkt auch die übrigen, nicht kumulativen Kennzahlen derselben Abfrage ein. DML wählt weder das heutige Datum noch das jüngste Datum in den Faktendaten automatisch aus.</p>
+<h2 id="compare-two-scopes-in-one-result">Zwei Berechnungszeiträume in einem Ergebnis vergleichen <a class="section-link" aria-label="Link zum Abschnitt" href="#compare-two-scopes-in-one-result">#</a></h2>
+<p>Im Januar beträgt der Umsatz 10 und der Gewinn 3. Im Februar beträgt der Umsatz 20 und der Gewinn 3. In der Februarabfrage beträgt die Marge für YTD genau <code>(3+3)/(10+20)=20%</code>. Der nicht kumulierte Umsatz beträgt 20; der kumulierte Umsatz von 30 wird dafür nicht ausgegeben.</p>
+<details><summary>Vollständige Datei: ytd/model.dml</summary>
+
+<pre><code class="language-yaml">dialect: duckdb
+F:
+  type: dataset
+  table: YTD_FACT
+  dimension: [id]
+  columns:
+    id:
+    dt_month:
+    revenue_amount:
+    profit_amount:
+  measures:
+    revenue: SUM({revenue_amount})
+    profit: SUM({profit_amount})
+margin:
+  type: measure
+  formula: 'DIVIDE({profit} * 1.0, {revenue})'
+margin_ytd:
+  type: measure
+  formula: '{margin: ytd}'
+</code></pre>
+</details>
+<details><summary>Vollständige Datei: ytd/setup.sql</summary>
+
+<pre><code class="language-sql">CREATE TABLE YTD_FACT(id INTEGER, dt_month DATE,revenue_amount INTEGER,profit_amount INTEGER); INSERT INTO YTD_FACT VALUES (1,'2024-01-01',10,3),(2,'2024-02-01',20,3);
+</code></pre>
+</details>
+<details><summary>Vollständige Datei: ytd/february.sql</summary>
+
+<pre><code class="language-sql">SELECT AGG(margin_ytd), AGG(revenue) FROM MODEL WHERE dt_month='2024-02-01'
+</code></pre>
+</details>
+
+<p>Das Modell definiert <code>margin_ytd</code> als <code>'{margin: ytd}'</code>. Zähler und Nenner werden jeweils über den gesamten kumulierten Zeitraum berechnet, bevor sie dividiert werden. Der Durchschnitt aus 30% und 15% beantwortet eine andere Frage.</p>
+<h2 id="observe-missing-context">Das Verhalten bei fehlendem Zeitkontext prüfen <a class="section-link" aria-label="Link zum Abschnitt" href="#observe-missing-context">#</a></h2>
+<details><summary>Vollständige Datei: ytd/missing_context.sql</summary>
+
+<pre><code class="language-sql">SELECT AGG(margin_ytd) FROM MODEL
+</code></pre>
+</details>
+
+<p>Diese Abfrage lässt sich nicht kompilieren. Die Fehlermeldung weist darauf hin, dass <code>dim_dt</code> fehlt. Mit dem Filter für Februar liefert die Abfrage 20%. Der Filter ist kein unabhängiger Stichtagsparameter. Er beschränkt auch den nicht kumulierten Umsatz in derselben Abfrage auf Februar. Wenn ein Bericht Kennzahlen für unterschiedliche Zeiträume benötigt, legen Sie den Zeitraum für jede Kennzahl fest und prüfen Sie ihn.</p>
+<h2 id="grouped-months-can-exist-without-sales">Die Gruppierung kann auch Monate ohne Verkäufe enthalten <a class="section-link" aria-label="Link zum Abschnitt" href="#grouped-months-can-exist-without-sales">#</a></h2>
+<details><summary>Vollständige Datei: ytd/months.sql</summary>
+
+<pre><code class="language-sql">SELECT dt_month, AGG(margin_ytd), AGG(revenue) FROM MODEL GROUP BY dt_month ORDER BY dt_month
+</code></pre>
+</details>
+
+<p>Dieses Testbeispiel liefert zwölf Monate. Im Januar beträgt die kumulierte Marge 30% und der Umsatz 10. Im Februar beträgt die kumulierte Marge 20% und der Umsatz 20. Von März bis Dezember beträgt die kumulierte Marge jeweils 20% und der nicht kumulierte Umsatz jeweils NULL. Der Abfragezweig für die kumulative Berechnung verwendet Monate, die aus dem Kalender erzeugt werden. Diese Zeilen stehen für keine neuen Transaktionen. NULL bedeutet nicht, dass der Wert 0 gemessen wurde.</p>
+<p>Wenn der Bericht genau einen Monat als Ende des kumulierten Zeitraums benötigt, setzen Sie dafür einen expliziten Filter. Prüfen Sie nach einer Änderung des Zeitraums sowohl die ausgegebenen Monate als auch den Zeitraum der Eingangsdaten für jede Kennzahl.</p>
+<p><a hreflang="zh" href="examples--time-context-zh.html">中文</a> · <a href="examples--index.de.html">Beispiele</a> · <a href="how-to--compile-and-validate.de.html">Kompilieren und prüfen</a></p>
+<h2 id="run-and-interpret-the-checks">Prüfung ausführen und Ergebnis lesen <a class="section-link" aria-label="Link zum Abschnitt" href="#run-and-interpret-the-checks">#</a></h2>
+<p><a href="task-examples.zip">Laden Sie das vollständige Projekt herunter</a> und führen Sie <code>verify.py</code> wie in der Datei README beschrieben aus. Sie benötigen dmlc, Python und DuckDB. Das Skript legt die Übungsdatenbank im neuen Ausgabeordner Ihrer Wahl an. Dort speichert es auch die Ergebnisse und die Diagnosemeldungen.</p>
+<p>Dieses Beispiel wurde auf DuckDB mit dmlc 0.3.16 (Build 2026-11-13) geprüft. Den Fingerabdruck der ausführbaren Datei und den Status der einzelnen Prüffälle finden Sie in der Datei <code>verification-summary.json</code> im Download. Die Datenbankvalidierung und die anschließende Ausführung sind voneinander unabhängige Vorgänge. Es ist daher nicht gewährleistet, dass beide denselben Datenbank-Snapshot verwenden. Prüfen Sie das Beispiel für andere Datenbank-Engines separat.</p>
+</main></body></html>

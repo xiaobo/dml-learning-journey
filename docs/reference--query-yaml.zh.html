@@ -1,0 +1,337 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YAML 查询声明 · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="本页介绍 type: query、列、筛选器、物化方式的选择以及 after:。此查询使用的模型指标与模型查询 SQL 相同。"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.zh.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="YAML 查询声明 · DML"><meta property="og:description" content="本页介绍 type: query、列、筛选器、物化方式的选择以及 after:。此查询使用的模型指标与模型查询 SQL 相同。"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--query-yaml.zh.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.zh.html">DML</a><a href="docs.zh.html">文档</a><a href="learn.zh.html">学习</a><a href="search.zh.html">搜索文档</a><a lang="de" hreflang="de" href="reference--query-yaml.de.html">Deutsch</a> <a lang="ja" hreflang="ja" href="reference--query-yaml.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--query-yaml.html">English</a></header><main><h1 id="yaml-query-declarations">YAML 查询声明</h1><details class="page-toc"><summary>本页目录</summary><ul><li><a href="#basic-structure">基本结构</a></li><li><a href="#detail-vs-aggregation">明细与聚合</a></li><li><a href="#auto-join-of-multi-dataset-measures">自动联接多个数据集中的指标</a></li><li><a href="#column-references-in-dml-format">DML 格式的列引用</a></li><li><a href="#auto-aliasing-and-direct-reference">自动别名与直接引用</a></li><li><a href="#visibility-hidden"><code>visibility: hidden</code></a></li><li><a href="#query-dimension-format">查询维度格式</a></li><li><a href="#filter-placement-hierarchy">过滤器的放置层级</a></li><li><a href="#pk-chaining"><code>pk</code> 链式查找</a></li><li><a href="#after-clause"><code>after:</code> 子句</a></li><li><a href="#allows-all"><code>allows: ALL</code></a></li><li><a href="#yaml-syntax-pitfalls">YAML 语法常见问题</a></li><li><a href="#yaml-查询速查">YAML 查询速查</a></li></ul></details>
+<p>本页介绍 <code>type: query</code>、列、筛选器、物化方式的选择以及 <code>after:</code>。此查询使用的模型指标与<a href="reference--model-query-sql.zh.html">模型查询 SQL</a> 相同。</p>
+<blockquote>
+<p><strong>文件名约束：</strong>使用 <code>dmlc -c</code> 编译 <code>.dml</code> 文件时，<code>type: query</code> 块的名称必须与去掉扩展名 <code>.dml</code> 后的文件名一致。例如，名为 <code>my_report.dml</code> 的文件必须包含 <code>my_report: type: query</code>，不能使用 <code>some_other_name: type: query</code>。如果名称不一致，编译器会拒绝编译并报错：<code>query name should be &lt;filename&gt; (the same as filename) instead of &lt;block_name&gt;</code>。</p>
+</blockquote>
+<p><a id="41-basic-structure"></a></p>
+<h2 id="basic-structure">基本结构 <a class="section-link" aria-label="本节链接" href="#basic-structure">#</a></h2>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL              # optional: consider compatible materializations
+
+    columns:
+        dimension:
+            - dt_month
+            - product
+        sales:               # measure reference (no AGG needed)
+        sales_yoy:
+            formula: '{sales: yoy}'
+</code></pre>
+<p><code>columns:</code> 为必填项。除维度键外，其中的每个键都表示一个输出列名，对应的值是公式或对指标的直接引用。可选键 <code>dataset:</code> 用于选择数据集查询形式，不能与 <code>columns.dimension</code> 同时使用。</p>
+<p>查询筛选器有以下形式。每个键都是一个筛选器的名称，指标引用修饰符可以通过该名称指定筛选器。</p>
+<table>
+<thead>
+<tr>
+<th>值的形式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;column&gt;: &lt;value&gt;</code></td>
+<td>对同名列应用等值条件</td>
+</tr>
+<tr>
+<td><code>&lt;column&gt;: [a, b]</code></td>
+<td>判断值是否在列表中</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, value: &lt;value&gt;}</code></td>
+<td>对显式指定的列应用命名等值筛选器</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {column: &lt;column&gt;, range: [lo, hi]}</code></td>
+<td>对显式指定的列应用命名范围筛选器，包含上下限</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;: {visibility: hidden, default: on}</code></td>
+<td>已启用默认值的隐藏筛选器</td>
+</tr>
+</tbody></table>
+<p><a href="#48-filter-placement-hierarchy">筛选器放置规则</a>决定每个谓词在哪个阶段应用。</p>
+<p><a id="42-detail-vs-aggregation"></a></p>
+<h2 id="detail-vs-aggregation">明细与聚合 <a class="section-link" aria-label="本节链接" href="#detail-vs-aggregation">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>指定方式</th>
+<th>约束</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>聚合</td>
+<td>无 <code>dataset:</code> 键</td>
+<td>允许使用指标，由编译器进行聚合</td>
+</tr>
+<tr>
+<td>明细</td>
+<td><code>dataset: DATASET_NAME</code></td>
+<td>不允许使用指标，仅允许使用原始列</td>
+</tr>
+</tbody></table>
+<pre><code class="language-yaml"># Detail query
+product_list:
+    type: query
+    dataset: DATASET_PRODUCTS
+    columns:
+        dimension:
+            - product
+</code></pre>
+<p><a id="43-auto-join-of-multi-dataset-measures"></a></p>
+<h2 id="auto-join-of-multi-dataset-measures">自动联接多个数据集中的指标 <a class="section-link" aria-label="本节链接" href="#auto-join-of-multi-dataset-measures">#</a></h2>
+<p>聚合查询引用<strong>不同数据集</strong>中的指标时，按 <strong>FULL OUTER JOIN</strong> 的语义在共有的维度字段上联接。仅存在于一个数据集中的行也会保留，另一个数据集的指标值为 NULL。</p>
+<p><strong>生成的</strong>联接类型取决于已证实的行保留规则。编译器以 <code>FULL OUTER JOIN</code> 为起点，将每个联接收紧为查询筛选条件能够证实的最严格类型。在 <code>filters:</code> 中使用 <code>"{primary_measure} is not null":</code>，会排除仅存在于次侧的行，并将生成的联接改为 <code>LEFT JOIN</code>。如果两侧都有要求值存在的条件，则生成 <code>INNER JOIN</code>。只有在有效的主侧分组中，主指标不可能为 NULL 时，这个条件的结果才与作为基准的 SQL <code>LEFT JOIN</code> 一致。请证实这项关于 NULL 和空分组的约束，并检查生成的联接类型和输出。否则，筛选器也会删除有效分组。请将此条件写在 <code>after:</code> 之外，以便在追踪数据血缘、审查和复用时都能看到它。</p>
+<p>必须使用公式作为键，即写成 <code>"{expr}":</code>，并将值留空。<code>name: {condition: …}</code> 不符合架构定义。</p>
+<p><a id="44-column-references-in-dml-format"></a></p>
+<h2 id="column-references-in-dml-format">DML 格式的列引用 <a class="section-link" aria-label="本节链接" href="#column-references-in-dml-format">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>列类型</th>
+<th>语法</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同一数据集中的维度字段</td>
+<td>直接使用名称</td>
+<td><code>product:</code></td>
+</tr>
+<tr>
+<td>其他数据集中的维度字段</td>
+<td><code>"{DATASET}.column"</code></td>
+<td><code>prod_id: "{DATASET_PRODUCTS}.prod_id"</code></td>
+</tr>
+<tr>
+<td>指标</td>
+<td>直接使用名称</td>
+<td><code>sales:</code></td>
+</tr>
+<tr>
+<td>带修饰符的指标</td>
+<td><code>formula:</code></td>
+<td><code>sales_yoy: {sales: yoy}</code></td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：在未指定 <code>dataset:</code> 的聚合查询中，如果列属于某个特定数据集，仅使用列名会报错。请使用 <code>"{DATASET}.column"</code> 形式。</p>
+<p><a id="45-auto-aliasing-and-direct-reference"></a></p>
+<h2 id="auto-aliasing-and-direct-reference">自动别名与直接引用 <a class="section-link" aria-label="本节链接" href="#auto-aliasing-and-direct-reference">#</a></h2>
+<p>如果名称匹配，没有公式的查询列可以解析为指标或数据集列。这称为<strong>自动别名</strong>。共有三个层级：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>机制</th>
+<th>示例</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>column</code>（直接引用）</strong></td>
+<td>数据集的 <code>columns:</code> 下的条目不含公式，且该条目在 DML 中的名称与表中的列名相同。</td>
+<td><code>prod_amount:</code></td>
+<td><code>SUM(prod_amount)</code>，原样传递名称，不使用别名</td>
+</tr>
+<tr>
+<td><strong>查询列 → 指标（自动别名）</strong></td>
+<td>查询列没有公式，列名与指标名相同</td>
+<td><code>revenue:</code>（指标 <code>revenue</code> 已存在）</td>
+<td>编译器代入该指标的 <code>formula:</code> 表达式</td>
+</tr>
+<tr>
+<td><strong>查询列 → 数据集列（自动别名）</strong></td>
+<td>查询列没有公式，列名与数据集列名相同，且该数据集列<strong>可从查询维度推导</strong></td>
+<td><code>prod_name:</code>（通过 <code>pk({prod_id})</code> 链找到的数据集列）</td>
+<td>编译器根据数据集定义解析该列</td>
+</tr>
+</tbody></table>
+<p><strong>主要行为：</strong></p>
+<ul>
+<li><code>dmlc -c</code> 不会根据表结构检查数据集列是否存在。列名不匹配时，编译仍会通过，但执行时会出现 SQL 错误。请使用 <code>validateOnly</code> 检查列名是否匹配。此选项需要数据库连接。</li>
+<li>如果查询列名与任何指标名或可推导的数据集列名都不匹配，则会报错 <code>not defined, add formula?</code>。</li>
+<li>如果查询列名与指标名不同，请添加显式公式（<code>display_name: '{measure_name}'</code>），或使用 <code>abbr:</code> 重命名该指标。</li>
+<li>如果数据集列<strong>无法从查询维度推导</strong>，例如原始事实列不依赖任何维度字段，则会报错 <code>cannot be derived from dimension [store_id]</code>。</li>
+<li>直接传递的列（无 <code>formula:</code>）可以用对象形式添加元数据属性（<code>description:</code>、<code>visibility:</code>），无需指定 <code>formula:</code>。例如，<code>revenue: { description: 'Total revenue' }</code> 会通过自动别名引用指标 <code>revenue</code>，同时添加描述。</li>
+</ul>
+<p><a id="46-visibility-hidden"></a></p>
+<h2 id="visibility-hidden"><code>visibility: hidden</code> <a class="section-link" aria-label="本节链接" href="#visibility-hidden">#</a></h2>
+<p>从最终查询输出中隐藏列，同时让该列在中间临时表中仍然可用。</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最终的 SELECT</td>
+<td>隐藏列通常不会出现在输出中，但如果筛选器或 HAVING 子句引用了隐藏列，该列可能会进入最终输出。确定具体输出列之前，请检查生成的 SQL。</td>
+</tr>
+<tr>
+<td>中间临时表</td>
+<td>隐藏列<strong>仍可</strong>用于 JOIN 条件和 <code>filters:</code></td>
+</tr>
+<tr>
+<td>引用隐藏维度字段的 <code>filters:</code></td>
+<td>可以通过编译，但可能会收紧可选联接，也可能强制物化辅助结果。请检查生成的 SQL。</td>
+</tr>
+<tr>
+<td><code>after:</code> 中按名称引用隐藏维度字段的 SQL</td>
+<td><strong>失败</strong> — <code>query columns refer to nonexistence source column</code></td>
+</tr>
+<tr>
+<td>PK 链</td>
+<td><strong>保持完整</strong> — 仅设置 <code>visibility: hidden</code> 不会触发 PK 警告</td>
+</tr>
+</tbody></table>
+<p><strong>指导：</strong> 如果 <code>after:</code> 按名称引用维度字段，请移除 <code>visibility: hidden</code>。如果 <code>after:</code> 仅使用指标列，请保留该设置。如果输出受契约约束，请编译查询，确认最终结果中没有隐藏的辅助列。只有输出契约明确允许时，才能包含额外的列。</p>
+<p><strong>有效的 YAML 写法：</strong> 使用 <code>- dim: {visibility: hidden}</code>，或使用键位于 dim 条目<strong>下一级</strong>的嵌套映射。将 <code>visibility:</code> 与 dim 键并列在同一缩进层级会因缩进不足而触发架构检查错误。请使用内联或嵌套写法。仅使用 <code>dmlc -c</code> 时，务必检查编译生成的 SELECT（架构检查在编辑器中或通过 <code>dmlc --lint</code> 运行）。</p>
+<p><a id="47-query-dimension-format"></a></p>
+<h2 id="query-dimension-format">查询维度格式 <a class="section-link" aria-label="本节链接" href="#query-dimension-format">#</a></h2>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - dt_month
+        - product
+        # Correct: list dimension field names only
+</code></pre>
+<p><strong>错误</strong>：不要将跨数据集的列<strong>映射</strong>放入查询的维度字段中。请将这些公式定义为单独的查询列：</p>
+<pre><code class="language-yaml"># Wrong
+columns:
+    dimension:
+        - f_tag_id: {DATASET_PT}.id
+
+# Correct
+columns:
+    dimension:
+        - f_tag_id
+    f_tag_id: "{DATASET_PT}.id"
+</code></pre>
+<p><strong>例外：将指标用作维度。</strong> 查询维度条目可以绑定一个<strong>指标</strong>（通常使用 <code>+d</code>），使查询按该指标值对行分组，并以此确定查询粒度：</p>
+<pre><code class="language-yaml">columns:
+    dimension:
+        - first_purchase_month: '{first_purchase_month: {+d: store_id}}'
+    sales:
+</code></pre>
+<p>使用 <code>+d</code>（首选）或 <code>dimension:</code> 显式声明分类实体的键。只有完整键一致时，才允许使用多个独立字段。常规输出指标必须能够从 <code>Q ∪ K</code> 所定义的层级正确向上汇总。标签通道过滤器（公式的 <code>filters:</code> 或 Model Query 的 <code>HAVING</code>）在标签生成<strong>之后</strong>才生效。请参阅<a href="explanation--measure-as-dimension.zh.html">将指标用作维度</a>。请勿将此例外用于物理映射或 <code>{DATASET}.col</code> 映射。</p>
+<p><a id="48-filter-placement-hierarchy"></a></p>
+<h2 id="filter-placement-hierarchy">过滤器的放置层级 <a class="section-link" aria-label="本节链接" href="#filter-placement-hierarchy">#</a></h2>
+<p>过滤器的放置位置决定查询语义，并非语法偏好：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>位置</th>
+<th>此处填写的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查询的 <code>filters:</code></td>
+<td>查询块</td>
+<td>特定于报表的数据切片（渠道、品牌、日期范围）</td>
+</tr>
+<tr>
+<td>中间列或中间指标</td>
+<td><code>.dml</code> 数据集或顶层指标</td>
+<td>指标专属的纳入条件，适用于被排除的行可以留在指标值为 NULL 的组中的情况</td>
+</tr>
+<tr>
+<td>数据集中的 <code>sql:</code></td>
+<td>数据集定义</td>
+<td>源数据行集合中始终成立的不变条件，或 DML 无法以声明方式表达的结构</td>
+</tr>
+</tbody></table>
+<p>将源数据的 <code>WHERE</code> 条件移到指标输入的筛选条件中，会改变结果中是否存在相应的行，除非仅由被排除行构成的组不可能出现，或按契约，这类组与结果中实际存在且指标值为 NULL 的组等价。请明确证明这一例外成立。如果例外不成立或无法确定，请保留会移除行的写法。</p>
+<p><strong>结构化范围的语义：</strong> 查询的 <code>filters:</code> 中，<code>range: [start, end]</code> 按 <code>dt_&lt;grain&gt;</code> 声明的时间粒度包含两个端点。对于 2025 年的日度数据，使用 <code>['2025-01-01', '2025-12-31']</code>；对于月度数据，使用 <code>['2025-01-01', '2025-12-01']</code>。SQL 方言可以使用 <code>&lt; dateadd(day, 1, end)</code> 之类的不包含上界的物理条件来实现该范围，但 DML 输入的结束值仍是范围内最后一个包含的值。</p>
+<p><strong>列表与范围的常见误用：</strong> 直接使用列表值 <code>dim: ['a', 'b']</code> 会编译为 <code>WHERE dim IN ('a', 'b')</code>（精确匹配两个值之一），<strong>不会</strong>编译为包含端点的范围。对于日期维度，这可能导致数据在没有提示的情况下被遗漏。<code>dt_date: ['2024-01-01', '2025-12-31']</code> 只返回指定两天的行，不会返回整个 2 年时间跨度内的行。需要指定包含端点的区间时，请始终使用 <code>range: [start, end]</code>：</p>
+<pre><code class="language-yaml"># Wrong — only 2 days of data
+filters:
+    dt_date: ['2024-01-01', '2025-12-31']
+
+# Right — full inclusive range
+filters:
+    dt_date:
+        range: ['2024-01-01', '2025-12-31']
+</code></pre>
+<p><strong>常见过滤问题</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>修复方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td>移至查询的 <code>filters:</code>、指标公式或 <code>sql:</code> 中的 WHERE</td>
+</tr>
+<tr>
+<td>查询过滤器中出现 <code>referred column {DATASET}.col is undefined</code></td>
+<td>使用字符串形式：<code>"{DATASET}.col = value":</code></td>
+</tr>
+<tr>
+<td>日期维度上的双元素列表仅返回 2 天的数据</td>
+<td>使用 <code>range: [start, end]</code> 代替直接填写的列表。<code>dim: [a, b]</code> 会编译为 <code>IN (a, b)</code>，而非 <code>BETWEEN</code>。</td>
+</tr>
+<tr>
+<td>查询的 <code>filters:</code> 中存在复杂的 EXISTS / PK 链</td>
+<td>仅在条件用于判断行是否应纳入特定指标时，才在指标输入阶段筛选。如果条件用于选择源数据行，请将其保留在处理源数据行的阶段。将条件移入指标可能改变报表所涵盖的数据范围。请检查生成的谓词和连接。</td>
+</tr>
+</tbody></table>
+<p><a id="49-pk-chaining"></a></p>
+<h2 id="pk-chaining"><code>pk</code> 链式查找 <a class="section-link" aria-label="本节链接" href="#pk-chaining">#</a></h2>
+<pre><code class="language-yaml"># Single PK lookup
+formula: 'pk(customer_id).{DATASET_CUSTOMERS}.tier'
+
+# Composite PK — all columns required
+formula: 'pk(brand_id, tag_id).{DATASET_PRODUCTS}.state'
+</code></pre>
+<p><strong>键数量规则</strong>：<code>pk(...)</code> 中的键数量必须与目标数据集的 <code>dimension:</code> 中的维度字段数量一致。如果不一致，则会产生 <code>expect N expr(s) to query dataset X using pk, but got M</code>（参阅<a href="reference--troubleshooting--README.zh.html">故障排查索引</a>中的 P65）。</p>
+<p><strong>嵌套的查找链</strong>：从一条 <code>pk()</code> 查找链派生的列可以用作另一条 <code>pk()</code> 查找链的键。编译器会追踪派生链，并生成对应的嵌套 <code>LEFT JOIN</code>。这是直接表达“查找一个属性，再用该属性查找另一个属性”的原生方式，无需使用 <code>sql:</code> 或 <code>after:</code>。</p>
+<pre><code class="language-yaml"># fact dataset
+columns:
+    store_id:
+    # First hop: store_id → Dim Customer → hq_id
+    hq_id: pk({store_id}).{Dim Customer}.hq_id
+    # Second hop: hq_id (itself a pk chain result) → Dim Customer → store_code
+    hq_code: pk({hq_id}).{Dim Customer}.store_code
+    # Third hop: hq_id → Dim Customer → org_id, then org_id → Dim Org → emp_name
+    hq_org_id: pk({hq_id}).{Dim Customer}.org_id
+    hq_emp_name: pk({hq_org_id}).{Dim Org}.emp_name
+</code></pre>
+<p>在已检查的构建版本中，支持同一文件内的前向引用，包括列依赖和 <code>pk()</code> 的目标。为便于阅读，请将被依赖项写在前面。包含文件有独立的可见性边界，请参阅<a href="reference--model-composition.zh.html">模型组合</a>。</p>
+<p><a id="410-after-clause"></a></p>
+<h2 id="after-clause"><code>after:</code> 子句 <a class="section-link" aria-label="本节链接" href="#after-clause">#</a></h2>
+<p><code>after:</code> 是可选的。省略时，编译器会解析出代表查询维度字段的<strong>可见输出列</strong>，并按解析后的维度字段顺序依次使用这些列作为排序键，对结果行进行升序排序。因此，隐藏维度字段可能通过可见查询列的别名参与排序，而不使用定义中写明的字段名。如果没有有效的输出维度，则不保证行顺序。省略 NULL 的排序修饰符时，使用目标 SQL 方言的默认规则。</p>
+<p>只要存在 <code>after:</code> 块，最终结果的顺序就由该块决定。具体而言，<code>select * from {QUERY}</code> 如果没有自己的 <code>ORDER BY</code>，就会取消编译器的默认排序。只有当具有业务意义的自定义设置与默认行为不同时，才使用 <code>after:</code>。这些设置包括排序方向、NULL 的排序位置、排序值相同时的次级排序规则、按指标或表达式排序，以及 TOP 或 LIMIT。请勿再次聚合：</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    columns:
+        dimension: [product]
+        sales:
+    after: 'select * from {QUERY} ORDER BY sales DESC LIMIT 10'
+</code></pre>
+<p>存在 <code>after:</code> 时，必须使用 <code>{QUERY}</code> 指代编译后的查询结果，供查询后语句使用。“仅排序”表示除这层包装和 ORDER BY/TOP/LIMIT 外，不包含任何业务逻辑。如果显式指定的排序与查询的默认输出顺序一致，上游编译器会发出 <code>redundant ORDER BY</code> 警告。请按该警告针对当前位置给出的提示操作。如果 <code>after:</code> 中还有其他重要处理，只删除冗余的 <code>ORDER BY</code> 子句。只有没有其他处理时，才删除整个块。</p>
+<p><strong>错误</strong>：在标准指标查询的 <code>after:</code> 中使用 <code>group by</code> 进行二次聚合。应由查询块聚合指标。</p>
+<p><a id="411-allows-all"></a></p>
+<h2 id="allows-all"><code>allows: ALL</code> <a class="section-link" aria-label="本节链接" href="#allows-all">#</a></h2>
+<p>要让编译器考虑所有兼容的物化结果，请使用以下配置：</p>
+<pre><code class="language-yaml">my_report:
+    type: query
+    allows: ALL
+    columns:
+        dimension:
+            - dt_date
+        sales:
+</code></pre>
+<p><code>allows:</code> 控制哪些物化结果可以作为候选项。<code>ALL</code> 允许使用候选项，<code>NONE</code> 禁止使用物化结果。显式指定名称会将候选范围限制在这些名称内。候选项是否可用，仍取决于其定义行或汇总值的粒度和筛选条件是否都与查询兼容。此设置不会放宽指标的 <code>dimensions:</code> 约束，也不允许任意指定查询粒度。请参阅<a href="reference--materialization.zh.html">物化声明</a>。</p>
+<p><a id="412-yaml-syntax-pitfalls"></a></p>
+<h2 id="yaml-syntax-pitfalls">YAML 语法常见问题 <a class="section-link" aria-label="本节链接" href="#yaml-syntax-pitfalls">#</a></h2>
+<ul>
+<li>如果公式包含 <code>:</code>、<code>{</code> 或 <code>-</code>，<strong>请用引号括起公式</strong>：<code>formula: 'SUMIF(...)'</code></li>
+<li><strong>在 <code>measures:</code> 下声明维度字段</strong>：错误。维度字段只能在 <code>dimension:</code> 下声明。</li>
+<li><strong>为复合指标指定 <code>dataset:</code></strong>：错误。如果公式引用了其他指标，请省略 <code>dataset:</code>。</li>
+<li><strong>不同数据集中的维度字段名称不一致</strong>：统一为同一个名称（例如 <code>tag_id</code>），并在 <code>columns:</code> 中配置映射。</li>
+</ul>
+<h2 id="yaml-查询速查">YAML 查询速查 <a class="section-link" aria-label="本节链接" href="#yaml-查询速查">#</a></h2>
+<p>用 <code>type: query</code> 定义查询。用 <code>dimension:</code> 指定结果分组，用 <code>columns:</code> 指定输出。筛选条件的位置决定它作用于源行、单个指标还是聚合后的结果。跨数据集组合时，先确认关联键、值为 NULL 的键以及仅在一侧出现的分组。用 <code>after:</code> 处理最终排序等查询操作。</p>
+</main></body></html>

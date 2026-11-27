@@ -1,0 +1,210 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fallstricke bei Granularität und Joins · DML</title><link rel="stylesheet" href="docs.css?v=3f0f820ffd"><meta name="description" content="Diese Einträge behandeln die Granularität der Auswertung, die Zuordnung von Klassifikatoren, Fenster, die Zugehörigkeit zu Quellen und das Verhalten von Joins. Die Gleichheitsregeln stehen unter Gleichheitsprüf"><link rel="canonical" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.de.html"><link rel="alternate" hreflang="en" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.html"><link rel="alternate" hreflang="de" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.de.html"><link rel="alternate" hreflang="ja" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.ja.html"><link rel="alternate" hreflang="zh-Hans" href="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.zh.html"><meta property="og:type" content="website"><meta property="og:title" content="Fallstricke bei Granularität und Joins · DML"><meta property="og:description" content="Diese Einträge behandeln die Granularität der Auswertung, die Zuordnung von Klassifikatoren, Fenster, die Zugehörigkeit zu Quellen und das Verhalten von Joins. Die Gleichheitsregeln stehen unter Gleichheitsprüf"><meta property="og:url" content="https://xiaobo.github.io/dml-learning-journey/reference--troubleshooting--grain-and-joins.de.html"><meta property="og:image" content="https://xiaobo.github.io/dml-learning-journey/assets--little-worlds.png"><meta name="twitter:card" content="summary_large_image"></head><body><header><a href="index.de.html">DML</a><a href="docs.de.html">Dokumentation</a><a href="learn.de.html">Lernen</a><a href="search.de.html">Dokumentation durchsuchen</a><a lang="ja" hreflang="ja" href="reference--troubleshooting--grain-and-joins.ja.html">日本語</a> <a lang="en" hreflang="en" href="reference--troubleshooting--grain-and-joins.html">English</a> <a lang="zh" hreflang="zh" href="reference--troubleshooting--grain-and-joins.zh.html">中文</a></header><main><h1 id="grain-and-join-pitfalls">Fallstricke bei Granularität und Joins</h1><details class="page-toc"><summary>Inhalt dieser Seite</summary><ul><li><a href="#filter-placement-errors">Filter auf der falschen Ebene</a></li><li><a href="#alternative-lookup-eligibility-can-strengthen-joins">Eine Auswahlregel mit alternativem Lookup kann Joins restriktiver machen</a></li><li><a href="#p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> und <code>{-d: dim_dt}</code> im Vergleich (unterschiedliche SQL-Struktur)</a></li><li><a href="#p44-window-share-vs--d-dim">P44. Anteil am Fenstergesamtwert und <code>{-d: dim}</code> im Vergleich</a></li><li><a href="#p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">P62. <code>dimensions:</code> einer Messgröße als Zeilenschlüssel des Datasets oder zur Abfragegruppierung verwenden</a></li><li><a href="#p64-materialize-true-on-a-measure">P64. <code>materialize: true</code> an einer Messgröße</a></li><li><a href="#p66-measure-as-dimension-without-an-explicit-entity-key">P66. Messgröße als Dimension ohne expliziten Entitätsschlüssel</a></li><li><a href="#p67-incompatible-or-dependent-measure-derived-dimensions">P67. Aus Kennzahlen abgeleitete Dimensionen mit Inkompatibilitäten oder Abhängigkeiten</a></li><li><a href="#p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">P68. Ausgabekennzahl lässt sich von der Klassifizierungsebene aus nicht auf eine gröbere Ebene aggregieren</a></li><li><a href="#p69-fine-grain-where-hung-on-coarse-query-filters">P69. <code>WHERE</code> für eine feinere Granularität in <code>filters:</code> einer gröber aggregierten Abfrage</a></li><li><a href="#p70-over-on-an-atomic-measure">P70. <code>OVER</code> bei einer atomaren Kennzahl</a></li><li><a href="#p71-bare-col-in-measure-partition-by">P71. Direkte Referenz <code>{col}</code> in <code>PARTITION BY</code> einer Kennzahl</a></li><li><a href="#p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. Zwei Granularitätsfelder für dieselbe Spalte führen bei datensatzübergreifender Aggregation zum falschen Join-Schlüssel</a></li><li><a href="#p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. Zusammengesetzte Kennzahlen mit <code>-df</code>-Aggregation geben Zeilen aus, die nur im Partnerdatensatz vorkommen, und können Schlüsselwerte künstlich erzeugen</a></li><li><a href="#p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">P74. Zwei <code>table:</code>-Datasets auf derselben physischen Tabelle – Besonderheiten beim Zusammenführen und unbemerkter Verlust der <code>-df</code>-Granularität</a></li><li><a href="#p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">P75. Schutzfilter für Kennzahlen in <code>filters:</code> der Abfrage – Syntax und Fehlerverhalten</a></li><li><a href="#p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">P76. <code>-df</code> und <code>-d</code> erwarten deklarierte Feldnamen der Granularität statt Namen von Quellspalten</a></li><li><a href="#p77-pk-into-an-aggregate-relation-sql-target--dataset-on-the-wrapper">P77. Zugriff auf eine aggregierte Relation mit <code>pk()</code> – <code>sql:</code> als Ziel und <code>dataset:</code> an der umschließenden Kennzahl</a></li><li><a href="#p79-same-dimension-d-with--d---df">P79. <code>+d</code> zusammen mit <code>-d</code> oder <code>-df</code> für dieselbe Dimension</a></li><li><a href="#p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> lässt bei den Berichtszeilen einen Abfragefilter auf einem Feld außerhalb der Ausgabegranularität weg</a></li><li><a href="#p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">P81. Wechsel der Granularität einer Zeitdimension mit <code>dimension:</code> ohne kalendergestützte Verteilung der Ergebnisse auf die Zeilen der feineren Ebene</a></li><li><a href="#p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">P78. Ein <code>sql:</code>-Escape muss die Filterbedingungen für die Grundgesamtheit und das Zeitfenster selbst enthalten</a></li></ul></details>
+<p>Diese Einträge behandeln die Granularität der Auswertung, die Zuordnung von Klassifikatoren, Fenster, die Zugehörigkeit zu Quellen und das Verhalten von Joins. Die Gleichheitsregeln stehen unter <a href="reference--join-null-equality.de.html">Gleichheitsprüfung für NULL in Joins</a>.</p>
+<h2 id="filter-placement-errors">Filter auf der falschen Ebene <a class="section-link" aria-label="Link zum Abschnitt" href="#filter-placement-errors">#</a></h2>
+<p><strong>Symptome</strong>: <code>[filters]: not supported</code>, <code>cannot derive from dimension</code>, <code>referred column … is undefined</code></p>
+<p><strong>Ursache</strong>: Nach <code>--to-dml</code> stehen Prädikate noch auf der falschen Ebene. Typische Fälle sind <code>filters:</code> an einem Dataset (das Schema lässt <code>filters:</code> an Datasets grundsätzlich nicht zu), eine in <code>sql:</code> der Faktenquelle wiederholte Einschränkung der Dimension oder die Kurzform für Abfragefilter bei datasetübergreifenden Attributen.</p>
+<p><strong>Lösung</strong>: Ordnen Sie jedes Prädikat nach seinem semantischen Geltungsbereich ein (<a href="reference--query-yaml.de.html#48-filter-placement-hierarchy">Hierarchie der Filterplatzierung</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Zielort</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[dataset …] [filters]: not supported</code></td>
+<td><code>filters:</code> der Abfrage, Formel der Messgröße oder <code>sql:</code> WHERE (Datasets unterstützen <code>filters:</code> grundsätzlich nicht)</td>
+</tr>
+<tr>
+<td>In jedem Faktenzweig wiederholtes Prädikat zum Lebenszyklus oder zu einem Attribut</td>
+<td>Verwenden Sie <code>filters:</code> der Abfrage nur, wenn das Prädikat je nach Bericht variiert. Wenn es die dauerhaft einbezogene Grundgesamtheit definiert, behalten Sie eine Darstellung bei, die Zeilen ausschließt.</td>
+</tr>
+<tr>
+<td>Numerisches Prädikat oder Verknüpfungsprädikat in <code>sql:</code> WHERE der Faktenquelle</td>
+<td>Verwenden Sie eine zwischengeschaltete Kennzahl als Filter erst, wenn Sie das Verhalten für Gruppen mit ausschließlich ausgeschlossenen Zeilen, für andere Kennzahlen derselben Ebene, für Joins und Fenster sowie den semantischen Unterschied zwischen einem fehlenden Wert und explizitem NULL überprüft haben.</td>
+</tr>
+<tr>
+<td><code>referred column {DATASET}.col is undefined</code> im Abfragefilter</td>
+<td>Schreibweise als Zeichenfolge: <code>"{DATASET}.col = value":</code></td>
+</tr>
+<tr>
+<td>Die Liste mit zwei Elementen <code>dt_date: ['2024-01-01', '2025-12-31']</code> liefert nur 2 Tage</td>
+<td>Eine direkt angegebene Liste wird zur exakten Wertübereinstimmung mit <code>IN (...)</code> kompiliert, nicht zu einem Bereich. Verwenden Sie <code>dt_date: { range: ['2024-01-01', '2025-12-31'] }</code> für Intervalle, die beide Grenzen einschließen.</td>
+</tr>
+<tr>
+<td>Datumsfenster für einen einzelnen Zweig</td>
+<td>Deklarieren Sie <code>dt_date</code> am betreffenden Dataset und verwenden Sie <code>filters: dt_date: range: [...]</code> in der Abfrage.</td>
+</tr>
+</tbody></table>
+<h3 id="alternative-lookup-eligibility-can-strengthen-joins">Eine Auswahlregel mit alternativem Lookup kann Joins restriktiver machen <a class="section-link" aria-label="Link zum Abschnitt" href="#alternative-lookup-eligibility-can-strengthen-joins">#</a></h3>
+<p>Eine Auswahlregel wie „Übereinstimmung mit der Zieldimension <strong>oder</strong>, falls es dort keine Entsprechung gibt, mit einer indirekten Dimension“ verwendet zwei optionale Beziehungen. Steht das abgeleitete Kennzeichen in <code>filters:</code> der Abfrage, kann das kompilierte SQL einen der Lookups zur Pflicht machen (<code>INNER JOIN</code>) oder den Ausdruck mit <code>AND</code>/<code>OR</code> so umsetzen, dass die Ausweichlogik verloren geht.</p>
+<p>Verwenden Sie vorzugsweise diese Struktur:</p>
+<pre><code class="language-yaml">target_state: pk({snapshot_month}, {customer_id}).{TARGET_CUSTOMER}.state
+customer_is_eligible: |-
+  iif({target_state} = 1, 1,
+    iif(pk({customer_id}).{INDIRECT_CUSTOMER}.customer_id is not null, 1, 0))
+included_amount: iif({customer_is_eligible} = 1, {amount}, null)
+
+measures:
+  amount: SUM({included_amount})
+</code></pre>
+<p>Prüfen Sie anschließend das erzeugte SQL. Beide Lookups müssen als <code>LEFT JOIN</code> erhalten bleiben und die Ausweichlogik muss innerhalb von <code>CASE</code> bleiben. Eine etwaige Bedingung für Ausgabegruppen sollte eine bereits ausgewählte primäre Messgröße wiederverwenden (<code>HAVING AGG(amount) is not null</code>), damit keine zusätzliche verborgene Spalte in das Ergebnis gelangt. Nutzen Sie nicht eindeutige Schlüssel und Überschneidungen zwischen Ziel- und indirekter Dimension als Diagnosehinweise. Beziehungen in DML sollten eine unbeabsichtigte Vervielfachung von Zeilen nicht stillschweigend reproduzieren.</p>
+<p><a id="p43"></a></p>
+<h2 id="p43-dimension--vs--d-dim_dt-different-sql-shape">P43. <code>{dimension: [...]}</code> und <code>{-d: dim_dt}</code> im Vergleich (unterschiedliche SQL-Struktur) <a class="section-link" aria-label="Link zum Abschnitt" href="#p43-dimension--vs--d-dim_dt-different-sql-shape">#</a></h2>
+<p><strong>Fehler</strong>: <code>{-d: dim_dt}</code> verwenden, obwohl das Referenz-SQL einen separaten GROUP BY-CTE auf einer gröberen Aggregationsebene verwendet. <strong>Lösung</strong>: Übernehmen Sie die Struktur der Referenz. <code>{dimension: [cols]}</code> erzwingt einen separaten CTE für die Aggregation. <code>{-d: dim_dt}</code> verwendet den Fensterausdruck <code>OVER (PARTITION BY …)</code>. Siehe <a href="#p44">P44</a> und <a href="reference--troubleshooting--queries.de.html#p45">P45</a>.</p>
+<p><a id="p44"></a></p>
+<h2 id="p44-window-share-vs--d-dim">P44. Anteil am Fenstergesamtwert und <code>{-d: dim}</code> im Vergleich <a class="section-link" aria-label="Link zum Abschnitt" href="#p44-window-share-vs--d-dim">#</a></h2>
+<p><strong>Fehler</strong>: Den mit <code>--to-dml</code> erzeugten Entwurf <code>divide({m}, {m_minus_dim_X})</code> als endgültiges fachliches DML übernehmen. <strong>Lösung</strong>: Verwenden Sie <code>divide({m}*1.0, {m: {-d: dim}})</code> in <code>columns:</code> der Abfrage oder in Messgrößen. Siehe <a href="reference--modifiers.de.html">Dimensions- und Filtermodifikatoren</a>.</p>
+<hr>
+<p>Entspricht Model Query SQL. Hier geht es um Fallstricke, die nur bei YAML auftreten. Die vollständigen Regeln stehen unter <a href="reference--query-yaml.de.html">YAML-Abfragedeklarationen</a>.</p>
+<p><a id="p62"></a></p>
+<h2 id="p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">P62. <code>dimensions:</code> einer Messgröße als Zeilenschlüssel des Datasets oder zur Abfragegruppierung verwenden <a class="section-link" aria-label="Link zum Abschnitt" href="#p62-treating-measure-dimensions-as-dataset-identity-or-query-grouping">#</a></h2>
+<p><strong>Symptom</strong>: An einer Messgröße steht <code>dimensions: [[region]]</code> in der Erwartung, dass das Abfrageergebnis nach <code>region</code> gruppiert wird, entsprechend <code>dimension:</code> am Dataset. Die Abfrage wird ohne diese Gruppierung kompiliert oder schlägt mit einer anderen Abfragedimension fehl. <strong>Falsche Annahme</strong>: <code>dimensions:</code> einer Messgröße legt fest, wie Zeilen im Dataset identifiziert werden, oder steuert die Gruppierung der Abfrage. <strong>Tatsächliches Verhalten</strong>: <code>dimensions:</code> einer Messgröße enthält die <strong>zulässigen Dimensionen</strong>. Jede innere Liste bildet eine Dimension. Die äußere Liste enthält Alternativen. Die Zeilenidentität wird in <code>dimension:</code> am Dataset festgelegt. Die Gruppierung wird mit <code>GROUP BY</code> oder <code>columns.dimension:</code> in der Abfrage festgelegt. <strong>Lösung</strong>: Entfernen Sie <code>dimensions:</code> von der Messgröße, sofern die Kennzahl diese zulässigen Dimensionen nicht tatsächlich benötigt. Legen Sie die Gruppierung des Ergebnisses in der Abfrage fest (<code>GROUP BY</code> / <code>columns.dimension:</code>).</p>
+<pre><code class="language-yaml"># Wrong: expecting dimensions: to produce GROUP BY region
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    dimensions:
+        - [region]
+
+# Right: no dimensions: lock; grouping lives in the query
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+# SELECT region, AGG(sales) FROM MODEL GROUP BY region
+</code></pre>
+<p>Die verbindlichen Regeln finden Sie unter <a href="explanation--dimensions.de.html">Dimensionsrollen</a>.</p>
+<p><a id="p64"></a></p>
+<h2 id="p64-materialize-true-on-a-measure">P64. <code>materialize: true</code> an einer Messgröße <a class="section-link" aria-label="Link zum Abschnitt" href="#p64-materialize-true-on-a-measure">#</a></h2>
+<p><strong>Symptom</strong>: Beim Kompilieren erscheint <code>ERROR error during processing [ref null]: undefined modifier 'materialize'</code>. Die Messgröße wird stillschweigend verworfen (<code>0 measure(s) processed</code>). <strong>Fehler</strong>: <code>materialize: true</code> zur Definition einer Messgröße hinzufügen und erwarten, dass der Compiler sie vorab aggregiert. Für Messgrößen gibt es keine Materialisierungsoption (mit <code>dmlc -c</code> in dmlc 0.3.16 überprüft). <strong>Lösung</strong>: Deklarieren Sie die Materialisierung mit einem Objekt vom Typ <code>type: materialize</code> auf oberster Ebene (<code>parameters:</code> + <code>dimension:</code> + <code>measures:</code>) oder mit <code>materialize: &lt;name&gt;</code> am Dataset. Geben Sie sie niemals an einer Messgröße an. Siehe <a href="reference--materialization.de.html#55-materialize-definition-type-materialize">Materialisierungsdefinition (<code>type: materialize</code>)</a> und <a href="reference--examples--models.de.html#materialize">Beispiele zur Materialisierung</a>.</p>
+<pre><code class="language-yaml"># Wrong
+sales:
+    type: measure
+    dataset: transactions
+    formula: SUM({amount})
+    materialize: true   # ← undefined modifier 'materialize'
+
+# Right
+DWS_SALES:
+    type: materialize
+    parameters:
+        dt_date: date
+    dimension: [dt_date, product]
+    measures: [sales]
+</code></pre>
+<p><a id="p66"></a></p>
+<h2 id="p66-measure-as-dimension-without-an-explicit-entity-key">P66. Messgröße als Dimension ohne expliziten Entitätsschlüssel <a class="section-link" aria-label="Link zum Abschnitt" href="#p66-measure-as-dimension-without-an-explicit-entity-key">#</a></h2>
+<p><strong>Symptom</strong>: Für die Kompilierung muss der Entitätsschlüssel explizit mit <code>+d</code> oder <code>dimension:</code> angegeben werden. Verwenden Sie vorzugsweise <code>+d</code> und lesen Sie die Einschränkungen der jeweiligen Version, bevor Sie die Schreibweise zum Ersetzen von Dimensionen verwenden. <strong>Fehler</strong>: Eine Messgröße ohne Schlüssel verwenden und erwarten, dass eine andere ausgegebene Messgröße die Entitätsebene vorgibt oder impliziert. <strong>Lösung</strong>: Deklarieren Sie den vollständigen Entitätsschlüssel dort, wo Sie die Messgröße als Dimension verwenden. Direkt eingebettete Skalarfunktionen sind zulässig, wenn die als Eingabe verwendeten Messgrößen den Schlüssel explizit angeben. Siehe <a href="explanation--measure-as-dimension.de.html">Messgröße als Dimension</a>.</p>
+<pre><code class="language-yaml"># Wrong
+dimension:
+    - payment_day
+
+# Right, inline scalar
+dimension:
+    - payment_day: 'cast({authorization_ts: {+d: payment_id}} as date)'
+</code></pre>
+<p><a id="p67"></a></p>
+<h2 id="p67-incompatible-or-dependent-measure-derived-dimensions">P67. Aus Kennzahlen abgeleitete Dimensionen mit Inkompatibilitäten oder Abhängigkeiten <a class="section-link" aria-label="Link zum Abschnitt" href="#p67-incompatible-or-dependent-measure-derived-dimensions">#</a></h2>
+<p><strong>Symptom</strong>: Bei der Kompilierung werden inkompatible Klassifizierungsschlüssel oder eine Abhängigkeit zwischen Bezeichnungen gemeldet. <strong>Fehler</strong>: Eine Bezeichnung verwendet <code>{+d: store_id}</code> und eine andere <code>{+d: customer_id}</code>, oder eine Bezeichnung verweist auf eine andere Bezeichnung, die in derselben Abfrage deklariert ist. <strong>Lösung</strong>: Verwenden Sie für unabhängige Bezeichnungen denselben vollständigen Entitätsschlüssel. Die Reihenfolge der Schlüsselfelder darf abweichen. Wenn die Bezeichnungen tatsächlich auf unterschiedlichen Granularitätsebenen definiert sind, modellieren Sie eine separate Relation oder eine wiederverwendbare fachliche Kennzahl.</p>
+<p><a id="p68"></a></p>
+<h2 id="p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">P68. Ausgabekennzahl lässt sich von der Klassifizierungsebene aus nicht auf eine gröbere Ebene aggregieren <a class="section-link" aria-label="Link zum Abschnitt" href="#p68-output-measure-cannot-be-rolled-up-from-the-classification-grain">#</a></h2>
+<p><strong>Symptom</strong>: Bei der Kompilierung wird gemeldet, dass eine Aggregation fehlt oder dass eine erneute Aggregation nicht möglich ist. <strong>Fehler</strong>: <code>{sales: {+d: store_id}}</code> direkt ausgeben, bereits berechnete Anzahlen unterschiedlicher Werte summieren oder Mittelwerte von Quotienten bilden, ohne die gewünschte Gewichtung festzulegen. <strong>Lösung</strong>: Umschließen Sie die Referenz auf die feinere Ebene mit der gewünschten Aggregation, etwa <code>SUM({sales: {+d: store_id}})</code>. Aggregieren Sie bei Quotienten die Komponenten und berechnen Sie den Quotienten neu. Behalten Sie für Anzahlen unterschiedlicher Werte, Mediane, Perzentile und ähnliche Kennzahlen geeignete Eingabewerte oder Aggregationszustände bei oder definieren Sie eine separate unterstützte Kennzahl. Andernfalls müssen Sie den Kompilierungsfehler in Kauf nehmen.</p>
+<p><a id="p69"></a></p>
+<h2 id="p69-fine-grain-where-hung-on-coarse-query-filters">P69. <code>WHERE</code> für eine feinere Granularität in <code>filters:</code> einer gröber aggregierten Abfrage <a class="section-link" aria-label="Link zum Abschnitt" href="#p69-fine-grain-where-hung-on-coarse-query-filters">#</a></h2>
+<p><strong>Symptom</strong>: Der CTE aggregiert auf Ebene (G), etwa Produkt × Region, filtert (<code>cnt &gt; 3</code>) und summiert dann mit <code>SUM</code> auf Ebene (Q), etwa Produkt. Der Entwurf bzw. <code>--to-dml</code> gibt nur die Abfragedimension (Q) aus, zusammen mit <code>filters: "cnt &gt; 3"</code> und <code>SUM({total: {+d: region}})</code>. Bei der Kompilierung oder Zusammenführung kann daraus <code>HAVING COUNT(1) &gt; 3</code> auf Produktebene werden. Dadurch gehen die falschen Zeilen in die Auswertung ein.</p>
+<p><strong>Fehler</strong>:</p>
+<pre><code class="language-yaml">filters:
+  "cnt &gt; 3":                 # cnt is not defined at product-only grain
+columns:
+  dimension: [product]
+  grand_total: 'SUM({total: {+d: region}})'
+</code></pre>
+<p><strong>Ebenfalls fehlerhaft</strong>: <code>SUM({total: {+d: region, +f: '{cnt} &gt; 3'}})</code> verwendet eine aggregierte Kennzahl in einem Eingabeprädikat. Die Diagnose bezieht sich auf dieses Prädikat und bedeutet kein generelles Verbot, <code>+f</code> auf Kennzahlreferenzen anzuwenden. Siehe die <a href="reference--modifiers.de.html#22-function-modifiers">Tabelle der unterstützten Funktionen</a>.</p>
+<p><strong>Lösung</strong>: Filtern Sie innerhalb der Aggregation auf der gemeinsamen feineren Ebene:</p>
+<pre><code class="language-yaml">grand_total: |-
+  SUMIF({total: {+d: region}}, {cnt: {+d: region}} &gt; 3)
+# No accepted fine rows -&gt; NULL; ELSE 0 would change that result.
+</code></pre>
+<p>Verwenden Sie <code>filters:</code> auf Abfrageebene nur für Filter im Berichts- bzw. <code>HAVING</code>-Kontext. Siehe <a href="reference--examples--aggregation.de.html#26-multi-level-aggregation-with-d">Mehrstufige Aggregation mit <code>+d</code></a>a.</p>
+<p><a id="p70"></a></p>
+<h2 id="p70-over-on-an-atomic-measure">P70. <code>OVER</code> bei einer atomaren Kennzahl <a class="section-link" aria-label="Link zum Abschnitt" href="#p70-over-on-an-atomic-measure">#</a></h2>
+<p><strong>Symptom</strong>: Die Meldung <code>window functions are not allowed in atomic measures</code> erscheint. Ältere Programmversionen können sich mit Exitcode 0 beenden und dabei ein ungültiges <code>SUM(…) OVER (…) … GROUP BY</code> mit fehlenden Partitionsspalten erzeugen.</p>
+<p><strong>Fehler</strong>:</p>
+<pre><code class="language-yaml">measures:
+  净购进量: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+</code></pre>
+<p><strong>Lösung</strong>: Bei der <strong>Platzierung der Fensterfunktion</strong> gehört OVER für Detailzeilen unter <code>columns:</code>. Danach folgt die atomare Aggregation:</p>
+<pre><code class="language-yaml">columns:
+  net_qty: 'SUM({qty}) over (partition by {store_id}, {prod_id})'
+measures:
+  sum_net_qty: 'SUM({net_qty})'
+</code></pre>
+<p>Rang oder Anteil nach <code>GROUP-BY</code> bleibt eine <strong>zusammengesetzte Kennzahl</strong> (ohne <code>dataset:</code>) mit <code>{-d:}</code> bzw. <code>{-df:}</code>. Die Regeln stehen unter <a href="explanation--window-placement.de.html">Platzierung von Fensterfunktionen</a>.</p>
+<p><a id="p71"></a></p>
+<h2 id="p71-bare-col-in-measure-partition-by">P71. Direkte Referenz <code>{col}</code> in <code>PARTITION BY</code> einer Kennzahl <a class="section-link" aria-label="Link zum Abschnitt" href="#p71-bare-col-in-measure-partition-by">#</a></h2>
+<p><strong>Symptom</strong>: Die Meldung <code>… reference is not allowed in PARTITION BY</code> oder ein Hinweis auf <code>{dimension:}</code> oder <code>{-d:}</code> erscheint.</p>
+<p><strong>Fehler</strong> (bei einer Kennzahl): <code>SUM({total}) over (partition by {product})</code>. <strong>Lösung</strong>:</p>
+<ul>
+<li>Verschieben Sie eine Fensterfunktion für Detailzeilen nach <code>columns:</code> und referenzieren Sie <code>{product}</code> dort weiterhin direkt.</li>
+<li>Verwenden Sie für eine Fensterfunktion nach der Aggregation <code>partition by {-d: region}</code> oder <code>{dimension: product}</code> in einer zusammengesetzten Kennzahl.</li>
+</ul>
+<p>Setzen Sie <code>{-d:}</code> für eine Fensterfunktion auf Detailzeilen nicht unter <code>columns:</code> des Datensatzes. Dort werden Spalten direkt referenziert.</p>
+<hr>
+<p>Mit dmlc 0.3.16 überprüft (Migration der Warenkorbanalyse mit zwei Produktrollen). Diese Fälle lassen sich fehlerfrei kompilieren und ändern dabei unbemerkt die Semantik. Prüfen Sie stets die erzeugten <code>ON</code>-Klauseln.</p>
+<p><a id="p72"></a></p>
+<h2 id="p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">P72. Zwei Granularitätsfelder für dieselbe Spalte führen bei datensatzübergreifender Aggregation zum falschen Join-Schlüssel <a class="section-link" aria-label="Link zum Abschnitt" href="#p72-two-grain-fields-aliasing-one-column-mis-anchor-cross-dataset-rollups">#</a></h2>
+<p><strong>Symptom</strong>: Die Kompilierung im strikten Modus ist erfolgreich und es gibt keine Diagnosemeldungen, aber ein Quotient ist falsch. Beispielsweise lautet der Nenner des Lift <code>left_count * left_count</code> statt <code>left_count * right_count</code>.</p>
+<p><strong>Fehler</strong>: Ein Datensatz stellt zwei Felder bereit, die auf derselben physischen Spalte basieren (<code>left_product_id: '{product_id}'</code>, <code>right_product_id: '{product_id}'</code>). Für die Aggregation der zweiten Rolle mit <code>{sold_baskets: {-df: [left_product_id]}}</code> (oder <code>{dimension: [month, store, right_product_id]}</code>) wird erwartet, dass der Join über <code>right_product_id</code> erfolgt. Der Compiler weist dem Schlüssel des temporären Ergebnisses auf gröberer Ebene einen neuen Alias zu und erzeugt einen Join über den Schlüssel der <strong>ersten</strong> Rolle (<code>support.product = pair.left_product_id</code>).</p>
+<p><strong>Lösung</strong>: Schlagen Sie jede Rolle mit <code>pk()</code> in einem <code>sql:</code>-Datensatz nach, der die Quelle auf der Ebene <code>(shared dims, product_id)</code> gruppiert und <code>dimension:</code> deklariert (P77). Die Schlüssel für <code>pk()</code> werden explizit und anhand ihrer Position zugeordnet. Dadurch können linker und rechter Schlüssel nicht zusammenfallen. Alternativ können Sie <code>-df</code>-Aggregationen auf Ebenen beschränken, auf denen keine Aliaskollision auftritt. Prüfen Sie im generierten SQL, ob zwei getrennte Joins vorliegen, <code>… product_id = t.left_product_id</code> und <code>… product_id = t.right_product_id</code>.</p>
+<p><a id="p73"></a></p>
+<h2 id="p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">P73. Zusammengesetzte Kennzahlen mit <code>-df</code>-Aggregation geben Zeilen aus, die nur im Partnerdatensatz vorkommen, und können Schlüsselwerte künstlich erzeugen <a class="section-link" aria-label="Link zum Abschnitt" href="#p73--df-rollup-composites-emit-partner-only-rows--and-can-fabricate-key-values">#</a></h2>
+<p><strong>Symptom</strong>: Bei der Kompilierung entsteht aus einer Kennzahl, die aus einem anderen Datensatz auf eine gröbere Ebene aggregiert wird, eine zusammengesetzte Kennzahl mit <code>FULL OUTER JOIN</code>. Zeilen, die nur im aggregierten Partnerdatensatz vorkommen, erscheinen in der Ausgabe. Das temporäre Ergebnis des Partnerdatensatzes kann fehlende Granularitätsfelder mit <code>max(&lt;col&gt;)</code> auffüllen. Dadurch kann eine Zeile <code>(month, store, product)</code> ohne Entsprechung als <code>left = right = product</code> erscheinen. Es entsteht also ein künstliches Paar eines Produkts mit sich selbst, anstatt dass lediglich NULL-Werte ausgegeben werden.</p>
+<p><strong>Lösung</strong>: Behalten Sie in der Ausgabe eine primäre Kennzahl bei, die für Zeilen, die nur im Partnerdatensatz vorkommen, den Wert NULL hat. Sichern Sie die Abfrage mit einem Filter ab, der die Formel als Schlüssel verwendet:</p>
+<pre><code class="language-yaml">filters:
+    '{pair_basket_count} is not null':      # formula as key, empty value
+</code></pre>
+<p>Bei der Kompilierung entsteht für den Rückjoin die Bedingung <code>WHERE &lt;primary&gt; IS NOT NULL</code>. Der damit nachgewiesene vorhandene Wert vereinfacht außerdem den erzeugten <code>FULL OUTER JOIN</code> zu <code>LEFT JOIN</code>. Maßgeblich für den endgültigen Join-Typ ist das erzeugte SQL, nicht die Vorlage für die zusammengesetzte Kennzahl. Weisen Sie zuerst die Voraussetzungen nach. In einer gültigen primären Gruppe darf die primäre Kennzahl niemals NULL sein. Der Filter funktioniert nur, wenn Zeilen, die ausschließlich im Partnerdatensatz vorkommen, keinen Wert für diese Kennzahl haben. (Ergänzt <a href="reference--modifiers.de.html#23-dimension-modifiers">Dimensionsmodifikatoren</a>b.)</p>
+<p><a id="p74"></a></p>
+<h2 id="p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">P74. Zwei <code>table:</code>-Datasets auf derselben physischen Tabelle – Besonderheiten beim Zusammenführen und unbemerkter Verlust der <code>-df</code>-Granularität <a class="section-link" aria-label="Link zum Abschnitt" href="#p74-two-table-datasets-on-one-physical-table--merge-quirks-and-silent--df-grain-loss">#</a></h2>
+<p><strong>Symptom</strong>: <code>warn during processing [dataset B]: similar dataset(s) [A] exist, consolidate?</code>. Wenn die beiden Datasets unterschiedliche Spalten haben, folgt <code>skip dimension column &lt;f&gt; for measure &lt;m&gt; which does not exist in dataset &lt;A&gt;</code>. Der Rollup aggregiert ohne weiteren Hinweis auf einer <strong>gröberen</strong> Ebene (z. B. <code>pk(store_id)</code> statt <code>pk(store_id, left_id)</code>).</p>
+<p><strong>Überprüft mit dmlc 0.3.16</strong>: Zwei <code>table:</code>-Datasets auf derselben Tabelle führen für sich genommen <strong>nicht</strong> zu einem Absturz. Der minimale symmetrische Fall lässt sich kompilieren. Ein zweites Dataset in einer anderen Rolle bindet sogar <code>-df</code> korrekt (<code>right_id = t1.right_id</code>). Die Datasets werden per Self-Join über den Primärschlüssel zu einer einzigen <code>#TEMP</code> zusammengeführt. Wird nur auf einer Seite eine Spalte hinzugefügt, fallen beim Zusammenführen die Aliasfelder des anderen Datasets aus der Namensauflösung für <code>-df</code> heraus. (Die frühere Meldung „doppeltes <code>table:</code> → NPE“ nannte die falsche Ursache. Der Absturz ging auf die Filterstruktur in P75 zurück.)</p>
+<p><strong>Abhilfe</strong>: Verwenden Sie vorzugsweise pro physischer Tabelle ein einziges <code>table:</code>-Dataset mit Aliasspalten. Wenn mehrere Rollen nötig sind, halten Sie die Spaltenmengen identisch und prüfen Sie für jede temporäre Rollup-Tabelle <code>pk(...)</code> im generierten SQL. Eine Warnung an dieser Stelle weist auf einen semantischen Fehler hin.</p>
+<p><a id="p75"></a></p>
+<h2 id="p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">P75. Schutzfilter für Kennzahlen in <code>filters:</code> der Abfrage – Syntax und Fehlerverhalten <a class="section-link" aria-label="Link zum Abschnitt" href="#p75-measure-guard-filters-in-query-filters--shape-and-failure-mode">#</a></h2>
+<p><strong>Richtig</strong>: <code>'{measure} is not null':</code>. Die gesamte Formel ist der Schlüssel, der Wert bleibt leer. So schließen Sie verwaiste FOJ-Zeilen auf der Ebene aus, auf der die Abfrage ihre Zeilen definiert.</p>
+<p><strong>Falsch</strong>: <code>my_measure: {condition: '...'}</code> → Schemafehler (<code>condition</code> ist keine Filtereigenschaft). Bei <code>my_measure: '&lt;expr&gt;'</code> wird der Schlüssel als Spaltenname interpretiert. Wird er als Kennzahl aufgelöst, kann <code>Query.treat_filters</code> eine NPE auslösen, statt eine Diagnose auszugeben.</p>
+<p><strong>Abhilfe</strong>: Verwenden Sie die Formel selbst als Schlüssel und stellen Sie sicher, dass die referenzierte Kennzahl auf der Granularität der Abfrage aufgelöst werden kann. Lässt sich der Verweis nicht auflösen, tritt eine NPE auf, statt dass eine verständliche Fehlermeldung ausgegeben wird.</p>
+<p><a id="p76"></a></p>
+<h2 id="p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">P76. <code>-df</code> und <code>-d</code> erwarten deklarierte Feldnamen der Granularität statt Namen von Quellspalten <a class="section-link" aria-label="Link zum Abschnitt" href="#p76--df---d-arguments-are-declared-grain-field-names-not-source-columns">#</a></h2>
+<p><strong>Symptom</strong>: Nach dem Umbenennen einer Abfragedimension über eine Bindung (<code>columns.dimension: [..., new_name: '{col}']</code>) erscheint <code>column(s) [x] has been specified as -d/-df, but not in dimension [...]</code>.</p>
+<p><strong>Ursache</strong>: Die Bindung erzeugt ein internes Feld (<code>new_name__&lt;query&gt;</code>). Modifikatoren entfernen Felder anhand der Namen, unter denen sie die <strong>Granularität</strong> definieren. Der zugrunde liegende Spaltenname gehört nicht mehr zu diesen Feldern.</p>
+<p><strong>Abhilfe</strong>: Übergeben Sie an <code>-df</code>, <code>-d</code> und <code>dimension:</code> die deklarierten Feldnamen der Granularität. Wenn ein Feld weiterhin über seinen Namen entfernbar sein muss, behalten Sie es unter diesem Namen im Dataset.</p>
+<p><a id="p77"></a></p>
+<h2 id="p77-pk-into-an-aggregate-relation-sql-target--dataset-on-the-wrapper">P77. Zugriff auf eine aggregierte Relation mit <code>pk()</code> – <code>sql:</code> als Ziel und <code>dataset:</code> an der umschließenden Kennzahl <a class="section-link" aria-label="Link zum Abschnitt" href="#p77-pk-into-an-aggregate-relation-sql-target--dataset-on-the-wrapper">#</a></h2>
+<p><strong>Symptom</strong>: Bei <code>MAX(pk(...).{Support}.col)</code> erscheint <code>dataset must be specified when aggregate non-measure column, did you mean &lt;SupportDataset&gt;?</code>.</p>
+<p><strong>Regeln</strong>:</p>
+<ul>
+<li><code>pk()</code> verweist auf Datasets oder verwendet direkt die Form <code>TABLE(pk_cols)</code>. <strong>Eine Kennzahl kann kein Ziel von pk() sein</strong>. Ein aggregierter Nachschlagewert (z. B. <code>count(distinct …)</code> auf gröberer Ebene) braucht daher ein <code>sql:</code>-Dataset mit deklariertem <code>dimension:</code>-Eintrag. Der Compiler erzeugt daraus eine temporäre Tabelle mit Index, die sich wie eine Dimension verknüpfen lässt.</li>
+<li>Die umschließende aggregierende Kennzahl durchläuft die Zeilen des <strong>nutzenden</strong> Datasets. Geben Sie dieses Dataset unter <code>dataset:</code> an (<code>dataset: BasketProductPair</code>, nicht das Hilfsdataset).</li>
+<li>Ein <code>INNER JOIN</code> in der Referenzabfrage auf ein Hilfsdataset mit garantierten Treffern wird als <code>LEFT JOIN</code> kompiliert. Das ist nur zulässig, wenn die Nachschlageschlüssel aus derselben Grundgesamtheit stammen. Halten Sie die Begründung im Ausnahmeregister fest.</li>
+</ul>
+<p><a id="p79"></a></p>
+<h2 id="p79-same-dimension-d-with--d---df">P79. <code>+d</code> zusammen mit <code>-d</code> oder <code>-df</code> für dieselbe Dimension <a class="section-link" aria-label="Link zum Abschnitt" href="#p79-same-dimension-d-with--d---df">#</a></h2>
+<p><strong>Falsch</strong>: <code>{销量: {+d: 门店, -d: 门店}}</code> oder <code>{销量: {+d: 门店, -df: 门店}}</code> wird akzeptiert und zu <code>{销量}</code> bzw. <code>{-f: 门店}</code> vereinfacht.</p>
+<p><strong>Ursache</strong>: Es gibt keine eindeutige implizite Auslegung. Das gegenseitige Aufheben der Modifikatoren verdeckt Tippfehler. Bei <code>AVG</code> unterscheidet sich die Auswertung auf feiner Ebene von einem einfachen Verweis. Wenn das Feld bereits zur Ausgabegranularität gehört, gilt <code>-df</code> ≠ <code>-f</code>.</p>
+<p><strong>Abhilfe</strong>: Geben Sie genau die gewünschte Auswertungsstufe an. Verwenden Sie einen einfachen Verweis, einen expliziten Verweis auf feiner Ebene mit äußerer Aggregation oder einen Modifikator zum Entfernen. Für unterschiedliche Felder können Modifikatoren weiterhin kombiniert werden. Der aktuell geprüfte Build akzeptiert die untersuchten Konflikte ohne Diagnose und wiederholt die regionalen Summen vor einer äußeren Summierung. Damit verletzt er die Vorgabe, solche Konflikte zurückzuweisen. Siehe <a href="reference--semantics.de.html#45-modifier-composition">Kombination von Modifikatoren</a>.</p>
+<p><a id="p80"></a></p>
+<h2 id="p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">P80. <code>-f</code> / <code>-df</code> lässt bei den Berichtszeilen einen Abfragefilter auf einem Feld außerhalb der Ausgabegranularität weg <a class="section-link" aria-label="Link zum Abschnitt" href="#p80--f---df-drops-a-non-grain-query-filter-from-the-report-row-set">#</a></h2>
+<p><strong>Fehlerhaftes Verhalten</strong>: Die Abfrage filtert mit <code>{store_id}=1</code>, während eine Kennzahl <code>{-f: store_id}</code> verwendet und <code>store_id</code> nicht zur Ausgabegranularität gehört. Dadurch entfällt der Filter ohne Hinweis, und FOJ-Partnerzeilen aus dem ungefilterten Zweig erscheinen.</p>
+<p><strong>Abhilfe</strong>: <code>-f</code> entfernt den Filter nur aus der <strong>Kennzahlauswertung</strong>. Abfragefilter bestimmen weiterhin die Grundgesamtheit. Wenn der blockierte Filter keine Ausgabespalte referenzieren kann, schränken Sie die Zeilen mit einem korrelierten <code>EXISTS</code> oder einem Semi-Join ein. Ändern Sie die Gruppierung nicht allein über <code>-f</code>.</p>
+<p><a id="p81"></a></p>
+<h2 id="p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">P81. Wechsel der Granularität einer Zeitdimension mit <code>dimension:</code> ohne kalendergestützte Verteilung der Ergebnisse auf die Zeilen der feineren Ebene <a class="section-link" aria-label="Link zum Abschnitt" href="#p81-cross-grain-dimension-time-replacement-without-calendar-broadcast">#</a></h2>
+<p><strong>Fehlerhaftes Verhalten</strong>: <code>{销量: {dimension: [dt_quarter]}}</code> in einer Abfrage auf Ebene <code>dt_month</code> führt dazu, dass ein einzelner Skalarwert angefügt wird oder sich <code>dt_quarter</code> aus einer Monats-CTE nicht auflösen lässt.</p>
+<p><strong>Abhilfe</strong>: Werten Sie die Kennzahl auf Quartalsebene aus. Ordnen Sie dazu Monat oder Datum über den Kalender dem Quartal zu. Übertragen Sie dann die Quartalssumme auf jede Monatszeile des Quartals (Muster <code>nullpk(pk(dt_month).CAL.dt_quarter)</code>). Mit additivem <code>SUM</code> lassen sich Monatswerte erneut aggregieren. Nicht additive Kennzahlen müssen auf der gröberen Ebene aus den Faktendaten berechnet werden.</p>
+<p><a id="p78"></a></p>
+<h2 id="p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">P78. Ein <code>sql:</code>-Escape muss die Filterbedingungen für die Grundgesamtheit und das Zeitfenster selbst enthalten <a class="section-link" aria-label="Link zum Abschnitt" href="#p78-a-sql-escape-must-bake-its-own-populationwindow-predicates">#</a></h2>
+<p><strong>Symptom</strong>: Die <code>dt_*</code>-Bereichsfilter der Abfrage werden <strong>nicht</strong> in den Text eines <code>sql:</code>-Blocks verschoben. Sie landen in der äußeren <code>WHERE</code>-Klausel der bei der Kompilierung erzeugten temporären abgeleiteten Tabelle. Bei einem Self-Join im Escape vergrößert eine Seite des Joins ohne Zeitgrenzen die Grundgesamtheit unbemerkt (z. B. bilden Zeilen auf der rechten Seite außerhalb des Berichtszeitraums Paare).</p>
+<p><strong>Lösung</strong>: Hinterlegen Sie die dauerhaft geltenden Filterbedingungen für die Grundgesamtheit (<code>line_status = 'SOLD'</code>) und symmetrische Zeitfenstergrenzen in der inneren Abfrage des Escapes, damit für alle Join-Seiten und Zweige dieselben Auswahlkriterien gelten. Grenzen Sie den Berichtsumfang mit <code>filters:</code> der Abfrage anhand der äußeren Schlüssel ein. Wenn der Escape aus einer physischen Tabelle liest, die zu <code>table:</code> gehört, verwenden Sie <code>from {Dataset}</code> (P22b) und niemals den physischen Tabellennamen direkt.</p>
+</main></body></html>
